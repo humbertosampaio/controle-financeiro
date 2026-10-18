@@ -60,7 +60,9 @@ pwsh scripts/CoverageReport.ps1                       # relatório de cobertura 
 node scripts/harness/guardrail.test.mjs               # testes do guardrail
 ```
 
-Antes de rodar o AppHost pela primeira vez, defina a senha do Postgres: `dotnet user-secrets set "Parameters:PostgresPassword" "<senha>" --project src/ControleFinanceiro.AppHost`.
+Antes de rodar o AppHost pela primeira vez:
+- instale a Aspire CLI na mesma versão do `Aspire.AppHost.Sdk`: `dotnet tool install -g Aspire.Cli --version <versão>` (o AppHost usa o orquestrador dela; ao atualizar o Aspire, atualize também a CLI com `dotnet tool update -g Aspire.Cli`);
+- defina a senha do Postgres: `dotnet user-secrets set "Parameters:PostgresPassword" "<senha>" --project src/ControleFinanceiro.AppHost`.
 
 ## Harness
 
