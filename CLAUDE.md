@@ -41,6 +41,8 @@ Discordar de uma regra é motivo para conversar, não para contorná-la no códi
 5. **Verificação antes do PR**: `dotnet build` e `dotnet test` verdes e o diff relido. Rode a skill `revisar-mudanca`.
 6. **PR com `Closes #N`** no corpo, aberto pela skill `abrir-pr`. Nada vai direto para a `main`.
 
+**Exceção: PRs do Dependabot** (`.github/dependabot.yml`) não nascem de issue nem seguem o nome de branch acima. O CI roda neles como em qualquer PR; revise o changelog dos pacotes antes do merge. Atualizações bloqueadas de propósito (FluentAssertions 8+, que é pago; MessagePack 3+) estão justificadas no próprio arquivo.
+
 Detalhes, template de pedido e checklist: [docs/trabalhando-com-ia.md](docs/trabalhando-com-ia.md).
 
 ## Convenções
