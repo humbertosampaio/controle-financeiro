@@ -21,8 +21,12 @@ jobs:
       - name: Build
         run: dotnet build ControleFinanceiro.slnx --nologo
 
-      - name: Testes
-        run: dotnet test ControleFinanceiro.slnx --no-build --nologo
+      - name: Testes de unidade
+        run: dotnet test ControleFinanceiro.slnx --no-build --nologo --filter "FullyQualifiedName!~ControleFinanceiro.WebApi.Tests"
+
+      # Suíte completa, com Postgres do Testcontainers: o ubuntu-latest já tem Docker.
+      - name: Testes de integração
+        run: dotnet test tests/ControleFinanceiro.WebApi.Tests --no-build --nologo
 
   harness:
     runs-on: ubuntu-latest
@@ -37,6 +41,9 @@ jobs:
 
       - name: Testes do guardrail
         run: node --test scripts/harness/guardrail.test.mjs
+
+      - name: Testes do script de testes afetados
+        run: node --test scripts/harness/testes-afetados.test.mjs
 
       - name: Varredura de dados financeiros e secrets
         if: github.event_name == 'pull_request'
