@@ -21,7 +21,7 @@ updates:
       aspire:
         patterns: ["Aspire.*"]
       microsoft-e-npgsql:
-        patterns: ["Microsoft.EntityFrameworkCore*", "Microsoft.Extensions.*", "Npgsql.*"]
+        patterns: ["Microsoft.AspNetCore.*", "Microsoft.EntityFrameworkCore*", "Microsoft.Extensions.*", "Npgsql.*"]
       opentelemetry:
         patterns: ["OpenTelemetry*"]
       fastendpoints:
@@ -35,6 +35,9 @@ updates:
           - "Microsoft.NET.Test.Sdk"
           - "FluentAssertions*"
           - "CSharpFunctionalExtensions.FluentAssertions"
+          - "Testcontainers*"
+          - "Respawn"
+          - "Bogus"
     ignore:
       # A partir da 8, o FluentAssertions tem licença paga para uso comercial.
       - dependency-name: "FluentAssertions"
