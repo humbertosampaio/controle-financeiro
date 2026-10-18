@@ -1,6 +1,4 @@
-﻿using CSharpFunctionalExtensions;
-
-namespace ControleFinanceiro.Domain.Shared.ValueObjects;
+﻿namespace ControleFinanceiro.Domain.Shared.ValueObjects;
 
 public sealed class DiaCompraRecorrente : SimpleValueObject<int>
 {

@@ -1,7 +1,6 @@
 using ControleFinanceiro.Domain.Despesas;
 using ControleFinanceiro.Domain.Shared.ValueObjects;
 using ControleFinanceiro.Domain.Usuarios;
-using CSharpFunctionalExtensions;
 using CSharpFunctionalExtensions.ValueTasks;
 
 namespace ControleFinanceiro.Domain.Services;

@@ -1,5 +1,4 @@
 using ControleFinanceiro.Domain.Shared.ValueObjects;
-using CSharpFunctionalExtensions;
 
 namespace ControleFinanceiro.Domain.Beneficiarios;
 

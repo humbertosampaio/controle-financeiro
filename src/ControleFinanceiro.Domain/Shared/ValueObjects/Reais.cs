@@ -1,4 +1,3 @@
-using CSharpFunctionalExtensions;
 using System.Globalization;
 
 namespace ControleFinanceiro.Domain.Shared.ValueObjects;
