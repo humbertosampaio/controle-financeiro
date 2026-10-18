@@ -24,6 +24,9 @@
   <Folder Name="/tests/">
     <Project Path="tests/ControleFinanceiro.Tests.Shared/ControleFinanceiro.Tests.Shared.csproj" Id="205cb089-cfc9-40a1-9b0c-cffcfe4ee92a" />
   </Folder>
+  <Folder Name="/tests/1. Presentation/">
+    <Project Path="tests/ControleFinanceiro.WebApi.Tests/ControleFinanceiro.WebApi.Tests.csproj" />
+  </Folder>
   <Folder Name="/tests/3. Domain/">
     <Project Path="tests/ControleFinanceiro.Domain.Tests/ControleFinanceiro.Domain.Tests.csproj" Id="309a0f24-d601-4299-b79a-452acbd9e975" />
   </Folder>

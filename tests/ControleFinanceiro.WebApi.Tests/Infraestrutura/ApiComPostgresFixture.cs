@@ -1,0 +1,107 @@
+using ControleFinanceiro.AppHost.Resources;
+using ControleFinanceiro.Infrastructure.Persistence;
+using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Mvc.Testing;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
+using Npgsql;
+using Respawn;
+using Testcontainers.PostgreSql;
+
+namespace ControleFinanceiro.WebApi.Tests.Infraestrutura;
+
+/// <summary>
+/// Sobe um Postgres descartável e a API em memória apontando para ele, uma vez para a suíte inteira.
+/// O schema vem das migrations reais, aplicadas pelo <c>Program.cs</c> no ambiente Development.
+/// Sem Docker, a fixture falha e os testes falham junto: não são pulados.
+/// </summary>
+public sealed class ApiComPostgresFixture : IAsyncLifetime
+{
+    private readonly PostgreSqlContainer _postgres = new PostgreSqlBuilder(PostgresImagem.Completa).Build();
+
+    private WebApplicationFactory<Program>? _factory;
+    private Respawner? _respawner;
+
+    public HttpClient Client { get; private set; } = null!;
+
+    public string ConexaoDoContainer => _postgres.GetConnectionString();
+
+    private WebApplicationFactory<Program> Factory =>
+        _factory ?? throw new InvalidOperationException("A API ainda não subiu.");
+
+    public async Task InitializeAsync()
+    {
+        await _postgres.StartAsync();
+
+        _factory = new WebApplicationFactory<Program>()
+            .WithWebHostBuilder(builder => builder
+                .UseEnvironment("Development")
+                .UseSetting("ConnectionStrings:controlefinanceiro", ConexaoDoContainer));
+
+        // Criar o client sobe a API e, com ela, aplica as migrations.
+        Client = _factory.CreateClient();
+
+        // Em Development a API também lê os User Secrets, onde está a conexão do banco local com dados
+        // reais. Se um dia ela vencer o UseSetting acima, nenhum teste pode rodar.
+        string? conexaoDaApi = await ConsultarAsync(db => Task.FromResult(db.Database.GetConnectionString()));
+        if (!MesmoBanco(conexaoDaApi, ConexaoDoContainer))
+            throw new InvalidOperationException("A API dos testes não está usando o Postgres do container.");
+
+        await using NpgsqlConnection conexao = await AbrirConexaoAsync();
+        _respawner = await Respawner.CreateAsync(conexao, new RespawnerOptions
+        {
+            DbAdapter = DbAdapter.Postgres,
+            SchemasToInclude = ["public"],
+            TablesToIgnore = ["__EFMigrationsHistory"],
+        });
+    }
+
+    /// <summary>
+    /// Apaga os dados de todas as tabelas. Roda antes de cada teste, não depois: o que um teste que
+    /// falhou gravou fica no banco para depuração.
+    /// </summary>
+    public async Task ResetarBancoAsync()
+    {
+        if (_respawner is null)
+            throw new InvalidOperationException("A API ainda não subiu.");
+
+        await using NpgsqlConnection conexao = await AbrirConexaoAsync();
+        await _respawner.ResetAsync(conexao);
+    }
+
+    /// <summary>
+    /// Executa <paramref name="consulta"/> num escopo novo, com um DbContext sem nada rastreado:
+    /// o que ele lê veio do banco, não da memória da requisição.
+    /// </summary>
+    public async Task<T> ConsultarAsync<T>(Func<ControleFinanceiroDbContext, Task<T>> consulta)
+    {
+        await using AsyncServiceScope escopo = Factory.Services.CreateAsyncScope();
+        ControleFinanceiroDbContext dbContext = escopo.ServiceProvider.GetRequiredService<ControleFinanceiroDbContext>();
+        return await consulta(dbContext);
+    }
+
+    public async Task DisposeAsync()
+    {
+        Client?.Dispose();
+        if (_factory is not null)
+            await _factory.DisposeAsync();
+        await _postgres.DisposeAsync();
+    }
+
+    internal static bool MesmoBanco(string? conexao, string outra)
+    {
+        if (string.IsNullOrWhiteSpace(conexao))
+            return false;
+
+        NpgsqlConnectionStringBuilder a = new(conexao);
+        NpgsqlConnectionStringBuilder b = new(outra);
+        return a.Host == b.Host && a.Port == b.Port && a.Database == b.Database;
+    }
+
+    private async Task<NpgsqlConnection> AbrirConexaoAsync()
+    {
+        NpgsqlConnection conexao = new(ConexaoDoContainer);
+        await conexao.OpenAsync();
+        return conexao;
+    }
+}
