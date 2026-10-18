@@ -1,0 +1,31 @@
+using ControleFinanceiro.Domain.Shared.ValueObjects;
+using ControleFinanceiro.Domain.Usuarios;
+using ControleFinanceiro.Tests.Shared.AutoFixture.Attributes;
+
+namespace ControleFinanceiro.Domain.Tests.Usuarios;
+
+public sealed class UsuarioTests
+{
+    [Theory, DomainAutoData]
+    public void RendaLiquida_Quando_SemDescontos_Deve_RetornarRendaBruta(TextoObrigatorio nome, ReaisPositivo rendaBruta, Cartao cartao)
+    {
+        Usuario sut = Usuario.Criar(nome, rendaBruta, [], cartao);
+
+        decimal result = sut.RendaLiquida;
+
+        result.Should().Be(rendaBruta);
+    }
+
+    [Theory, DomainAutoData]
+    public void RendaLiquida_Quando_ComDescontos_Deve_RetornarRendaBrutaMenosSomaDosValores(Cartao cartao)
+    {
+        ReaisPositivo rendaBruta = (ReaisPositivo)1000m;
+        DescontoSalarial desconto1 = DescontoSalarial.Criar((TextoObrigatorio)"INSS", (ReaisPositivo)100m);
+        DescontoSalarial desconto2 = DescontoSalarial.Criar((TextoObrigatorio)"IR", (ReaisPositivo)50m);
+        Usuario sut = Usuario.Criar((TextoObrigatorio)"Nome", rendaBruta, [desconto1, desconto2], cartao);
+
+        decimal result = sut.RendaLiquida;
+
+        result.Should().Be(850m);
+    }
+}
