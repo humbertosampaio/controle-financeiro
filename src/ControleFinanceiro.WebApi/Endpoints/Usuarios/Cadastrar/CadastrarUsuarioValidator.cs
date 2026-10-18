@@ -30,7 +30,7 @@ public sealed class CadastrarUsuarioValidator : Validator<CadastrarUsuarioReques
             .ChildRules(cartao =>
             {
                 cartao.RuleFor(x => x.Sufixo)
-                    .MustBeTextoObrigatorio();
+                    .MustBeValueObject(SufixoCartao.Criar);
 
                 cartao.RuleFor(x => x.DiaVencimento)
                     .MustBeValueObject(DiaVencimentoCartao.Criar);
