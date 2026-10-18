@@ -1,0 +1,40 @@
+name: História de usuário
+description: Comportamento novo, visível para quem usa o controle financeiro
+labels: ["tipo:us"]
+body:
+  - type: textarea
+    id: objetivo
+    attributes:
+      label: Objetivo
+      description: O que deve passar a acontecer, numa frase, e por quê.
+      placeholder: Quero importar o extrato OFX da conta do C6 para não digitar transações à mão.
+    validations:
+      required: true
+  - type: textarea
+    id: criterios
+    attributes:
+      label: Critério de pronto
+      description: Como verificar que está feito. Se não cabe em poucos itens, a história deve ser dividida.
+      placeholder: |
+        - [ ] Importar o arquivo cria as transações com data, valor e descrição
+        - [ ] Reimportar o mesmo período não duplica nada
+    validations:
+      required: true
+  - type: dropdown
+    id: fase
+    attributes:
+      label: Fase
+      options: ["Fase 0 - base de dados", "Fase 1 - servidor MCP", "Fase 2 - agente", "Fase 3 - avaliação", "Depois do MVP"]
+    validations:
+      required: true
+  - type: textarea
+    id: privacidade
+    attributes:
+      label: Privacidade
+      description: Algum dado sai da máquina (modelo, Pluggy)? Quais campos?
+      placeholder: Nada sai da máquina.
+  - type: textarea
+    id: notas
+    attributes:
+      label: Notas
+      description: Referências, arquivos parecidos que já existem, dúvidas em aberto.

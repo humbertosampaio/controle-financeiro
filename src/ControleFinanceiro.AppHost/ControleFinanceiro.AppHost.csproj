@@ -1,4 +1,4 @@
-﻿<Project Sdk="Aspire.AppHost.Sdk/13.4.6">
+﻿<Project Sdk="Aspire.AppHost.Sdk/13.6.1">
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
@@ -6,6 +6,9 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <UserSecretsId>158ce70b-07af-4594-be28-125a3ed8240c</UserSecretsId>
+    <!-- Orquestrador e dashboard vêm da Aspire CLI (dotnet tool install -g Aspire.Cli). Sem a CLI
+         no PATH, como no CI, o build usa a versão pareada com o SDK via dnx. -->
+    <AspireUseCliBundle>true</AspireUseCliBundle>
   </PropertyGroup>
 
   <ItemGroup>

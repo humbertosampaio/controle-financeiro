@@ -1,0 +1,4 @@
+# Scripts de shell e git hooks precisam de LF: com CRLF o sh falha.
+.githooks/* text eol=lf
+*.sh text eol=lf
+*.mjs text eol=lf

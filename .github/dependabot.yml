@@ -1,0 +1,63 @@
+# Atualizações de versão semanais. Correções de segurança chegam a qualquer momento, pelas
+# "Dependabot security updates" ativadas no repositório, e respeitam os bloqueios abaixo.
+#
+# Fora do alcance do Dependabot: a versão do SDK no .csproj do AppHost (Aspire.AppHost.Sdk/x.y.z)
+# e a Aspire CLI global. Para o Aspire, use `aspire update` e `dotnet tool update -g Aspire.Cli`.
+version: 2
+
+updates:
+  - package-ecosystem: nuget
+    directory: "/"
+    schedule:
+      interval: weekly
+      day: monday
+      time: "06:00"
+      timezone: America/Sao_Paulo
+    labels: ["tipo:tech", "dependencias"]
+    commit-message:
+      prefix: build
+      include: scope
+    groups:
+      aspire:
+        patterns: ["Aspire.*"]
+      microsoft-e-npgsql:
+        patterns: ["Microsoft.EntityFrameworkCore*", "Microsoft.Extensions.*", "Npgsql.*"]
+      opentelemetry:
+        patterns: ["OpenTelemetry*"]
+      fastendpoints:
+        patterns: ["FastEndpoints*"]
+      testes:
+        patterns:
+          - "xunit*"
+          - "AutoFixture*"
+          - "Ardalis.SmartEnum.AutoFixture"
+          - "coverlet.*"
+          - "Microsoft.NET.Test.Sdk"
+          - "FluentAssertions*"
+          - "CSharpFunctionalExtensions.FluentAssertions"
+    ignore:
+      # A partir da 8, o FluentAssertions tem licença paga para uso comercial.
+      - dependency-name: "FluentAssertions"
+        versions: [">= 8.0.0"]
+      # Hoje ele trava o FluentAssertions na 7.2.0; uma major nova pode exigir a 8.
+      - dependency-name: "CSharpFunctionalExtensions.FluentAssertions"
+        update-types: ["version-update:semver-major"]
+      # O StreamJsonRpc do Aspire é compilado contra a 2.x; o pino só existe para corrigir uma
+      # vulnerabilidade, que a 2.5.307 já resolve.
+      - dependency-name: "MessagePack"
+        versions: [">= 3.0.0"]
+
+  - package-ecosystem: github-actions
+    directory: "/"
+    schedule:
+      interval: weekly
+      day: monday
+      time: "06:00"
+      timezone: America/Sao_Paulo
+    labels: ["tipo:tech", "dependencias"]
+    commit-message:
+      prefix: ci
+      include: scope
+    groups:
+      actions:
+        patterns: ["*"]
