@@ -12,13 +12,17 @@ while read -r local_ref local_sha remote_ref remote_sha; do
     echo "Push na main bloqueado: abra um PR a partir de uma branch <tipo>/<issue>-<slug>." >&2
     exit 1
   fi
-  branch=${local_ref#refs/heads/}
+  # O nome vem da referência remota: com "git push origin HEAD" a local chega como "HEAD".
+  branch=${remote_ref#refs/heads/}
   if [ "$local_sha" != "0000000000000000000000000000000000000000" ] && \
      ! echo "$branch" | grep -qE '^(feat|fix|chore|docs|refactor|test|perf|build|ci)/[0-9]+-[a-z0-9-]+$'; then
     echo "Branch '$branch' fora do padrão <tipo>/<numero-da-issue>-<slug> (ex.: feat/7-importar-ofx-c6)." >&2
     exit 1
   fi
 done
+
+# Usado pelos testes do guardrail: valida só as referências, sem rodar os testes (evita recursão).
+[ "$1" = "--somente-refs" ] && exit 0
 
 node "$raiz/scripts/harness/guardrail.test.mjs" >/dev/null 2>&1 || {
   echo "Os testes do guardrail falharam: rode node scripts/harness/guardrail.test.mjs" >&2
