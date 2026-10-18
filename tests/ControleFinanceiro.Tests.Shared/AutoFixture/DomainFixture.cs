@@ -19,6 +19,8 @@ public class DomainFixture : Fixture
             .Customize(new ReaisPositivoCustomization())
             .Customize(new MesReferenciaCustomization())
             .Customize(new DiaVencimentoCartaoCustomization())
+            .Customize(new SufixoCartaoCustomization())
+            .Customize(new CartaoCustomization())
             .Customize(new DiaCompraRecorrenteCustomization())
             .Customize(new TextoObrigatorioCustomization())
             .Customize(new EntityIdCustomization());
