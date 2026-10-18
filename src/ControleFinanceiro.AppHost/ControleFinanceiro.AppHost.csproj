@@ -1,0 +1,21 @@
+﻿<Project Sdk="Aspire.AppHost.Sdk/13.4.6">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <UserSecretsId>158ce70b-07af-4594-be28-125a3ed8240c</UserSecretsId>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Aspire.Hosting.PostgreSQL" />
+    <!-- Corrige GHSA-qhrr-8q5h-9q3h: o StreamJsonRpc do Aspire ainda traz o MessagePack 2.5.302 -->
+    <PackageReference Include="MessagePack" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\ControleFinanceiro.WebApi\ControleFinanceiro.WebApi.csproj" />
+  </ItemGroup>
+
+</Project>
