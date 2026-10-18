@@ -40,6 +40,7 @@ Discordar de uma regra é motivo para conversar, não para contorná-la no códi
 4. **Commits em Conventional Commits, em PT-BR**, divididos por assunto: cada commit agrupa mudanças que fazem sentido juntas. Formato `tipo(escopo): Descrição no presente`, ex. `feat(importacao): Lê o extrato OFX da conta do C6`. Referencie a issue no corpo (`Refs #7`).
 5. **Verificação antes do PR**: `dotnet build` e `dotnet test` verdes e o diff relido. Rode a skill `revisar-mudanca`.
 6. **PR com `Closes #N`** no corpo, aberto pela skill `abrir-pr`. Nada vai direto para a `main`.
+7. **Merge com merge commit, nunca squash nem rebase** (o repositório só oferece essa opção). Assim os commits semânticos chegam à `main` e cada PR continua visível: `git log --first-parent main` mostra uma linha por PR. Por isso, antes de abrir o PR, a correção de algo criado na própria branch é dobrada no commit original (`git commit --fixup <sha>` + `git rebase -i --autosquash origin/main`), em vez de virar um commit `fix` solto.
 
 **Exceção: PRs do Dependabot** (`.github/dependabot.yml`) não nascem de issue nem seguem o nome de branch acima. O CI roda neles como em qualquer PR; revise o changelog dos pacotes antes do merge. Atualizações bloqueadas de propósito (FluentAssertions 8+, que é pago; MessagePack 3+) estão justificadas no próprio arquivo.
 

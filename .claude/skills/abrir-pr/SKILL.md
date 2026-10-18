@@ -23,6 +23,15 @@ git log origin/main..HEAD --format='%h %s'
 
 Mostre a lista. Cada commit é um bloco coeso em Conventional Commits PT-BR. Se algum misturar assuntos, proponha a divisão antes de publicar.
 
+O merge na `main` é com merge commit, sem squash: estes commits entram na `main` exatamente como estão. Por isso, um commit que só corrige algo criado na própria branch (ex.: `fix(hooks)` sobre um hook adicionado dois commits antes) deve ser dobrado no commit original antes do push:
+
+```bash
+git commit --fixup <sha-do-commit-original>
+GIT_SEQUENCE_EDITOR=true git rebase -i --autosquash origin/main
+```
+
+O rebase pede confirmação ao guardrail. Se a branch já foi publicada, o push depois disso precisa de `--force-with-lease`, que também pede confirmação. Correções que respondem à revisão de um PR já aberto entram como commits normais.
+
 ## 3. Push
 
 ```bash
@@ -53,3 +62,11 @@ gh pr view --json closingIssuesReferences --jq '.closingIssuesReferences[].numbe
 ```
 
 Se vier vazio, o `Closes #n` não foi reconhecido: corrija o corpo com `gh pr edit`.
+
+## 6. Merge (só com o ok do dono do repositório)
+
+Depois da aprovação e com o CI verde, o merge é sempre com merge commit (squash e rebase estão desligados no repositório):
+
+```bash
+gh pr merge <numero> --merge --delete-branch
+```
