@@ -1,0 +1,17 @@
+name: Tarefa técnica
+description: Infraestrutura, harness, refatoração ou dívida técnica, sem mudar o comportamento para o usuário
+labels: ["tipo:tech"]
+body:
+  - type: textarea
+    id: objetivo
+    attributes:
+      label: Objetivo
+      description: O que muda e qual problema isso resolve.
+    validations:
+      required: true
+  - type: textarea
+    id: criterios
+    attributes:
+      label: Critério de pronto
+    validations:
+      required: true
