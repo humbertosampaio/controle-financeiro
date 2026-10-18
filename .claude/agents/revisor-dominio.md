@@ -30,6 +30,7 @@ Os arquivos `.Designer.cs` e `ModelSnapshot.cs` são gerados pelo EF: não leia.
 8. **Transferência entre contas próprias** (pagamento de fatura, Pix entre as contas do titular) não pode virar receita nem despesa no balanço.
 9. **Migrations.** Sem `DropColumn`, `DropTable`, `RenameColumn` ou mudança de tipo com perda sem decisão registrada na issue. `Down()` coerente com o `Up()`.
 10. **Testes acompanham regra nova.** Regra sem teste do caminho válido e de cada invariante é achado.
+11. **Endpoint tem teste de integração na pasta espelhada.** Endpoint novo ou alterado em `src/ControleFinanceiro.WebApi/Endpoints/<Area>/<Acao>/` sem teste em `tests/ControleFinanceiro.WebApi.Tests/<Area>/<Acao>/` é achado: fora do espelho, o `pre-push` não roda o teste quando o endpoint muda.
 
 ## Dívidas conhecidas — não reportar
 

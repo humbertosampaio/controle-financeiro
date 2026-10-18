@@ -28,12 +28,20 @@ Rode todos, inclusive os que "com certeza passam":
 
 ```bash
 dotnet build ControleFinanceiro.slnx
-dotnet test ControleFinanceiro.slnx
+dotnet test ControleFinanceiro.slnx --no-build --filter "FullyQualifiedName!~ControleFinanceiro.WebApi.Tests"
+filtro=$(git diff --name-only origin/main...HEAD | node scripts/harness/testes-afetados.mjs); echo "integração: ${filtro:-nenhum}"
 node scripts/harness/guardrail.test.mjs
+node scripts/harness/testes-afetados.test.mjs
 sh .githooks/scan-staged.sh --branch origin/main
 ```
 
-O último varre os arquivos alterados na branch em busca de secret e de dado financeiro.
+Depois, os testes de integração afetados (precisam do Docker), conforme o `filtro`:
+
+- vazio: nenhum;
+- `todos`: `dotnet test tests/ControleFinanceiro.WebApi.Tests --no-build`;
+- outro valor: `dotnet test tests/ControleFinanceiro.WebApi.Tests --no-build --filter "$filtro"`.
+
+O último comando da lista varre os arquivos alterados na branch em busca de secret e de dado financeiro.
 
 Algum vermelho: **pare e corrija antes de seguir.**
 
@@ -56,7 +64,7 @@ Rode os revisores escolhidos no passo 1, em paralelo. Se o `autor-de-testes` esc
 
 ```
 ## Gates
-build ✅ | testes ✅ (N) | guardrail ✅ | varredura ✅
+build ✅ | unidade ✅ (N) | integração ✅ (N, filtro) | guardrail ✅ | varredura ✅
 
 ## Revisores
 <achados agrupados por severidade, com arquivo:linha>

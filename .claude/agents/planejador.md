@@ -42,7 +42,7 @@ Que dado sai da máquina, se algum. Se o plano manda transações ao modelo (MCP
 Se houver: o que muda no schema e se algo é destrutivo. Apagar ou renomear coluna ou tabela é ponto de decisão (seção 7), porque o banco local tem dados reais.
 
 ### 6. Testes
-O que cobrir e onde. Domínio: caminho válido, cada invariante, bordas (zero, negativo, vazio, limite). Importação: fixture fictícia com o mesmo layout do banco, reimportação sem duplicar, linha malformada. Diga o que a infraestrutura atual não cobre (hoje não há teste de integração com banco).
+O que cobrir e onde. Domínio: caminho válido, cada invariante, bordas (zero, negativo, vazio, limite). Importação: fixture fictícia com o mesmo layout do banco, reimportação sem duplicar, linha malformada. Endpoint novo ou alterado: teste de integração em `tests/ControleFinanceiro.WebApi.Tests/<Area>/<Acao>/`, na pasta que espelha a do endpoint, com a customização do request e um 400 por regra do validator. Diga o que a infraestrutura atual não cobre.
 
 ### 7. Riscos e decisões pendentes
 O que exige confirmação (pacote novo, migration destrutiva, campo novo indo ao modelo) e o que você não conseguiu determinar lendo o código.
