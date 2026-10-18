@@ -111,6 +111,30 @@ test("escrita de arquivos", () => {
   }
 });
 
+// O pre-push recebe "<local_ref> <local_sha> <remote_ref> <remote_sha>" no stdin.
+// Com "git push origin HEAD", local_ref chega como "HEAD": o nome precisa vir do remote_ref.
+test("pre-push valida a branch pelo nome no remoto", async () => {
+  const { execFileSync } = await import("node:child_process");
+  const { fileURLToPath } = await import("node:url");
+  const raiz = fileURLToPath(new URL("../../", import.meta.url));
+  const rodar = (linha) => {
+    try {
+      execFileSync("sh", ["-c", `printf '%s\\n' "$1" | sh .githooks/pre-push --somente-refs`, "_", linha], {
+        cwd: raiz,
+        stdio: "pipe",
+      });
+      return "passa";
+    } catch {
+      return "bloqueia";
+    }
+  };
+  const sha = "a".repeat(40);
+  assert.equal(rodar(`HEAD ${sha} refs/heads/chore/1-base-do-repositorio ${"0".repeat(40)}`), "passa");
+  assert.equal(rodar(`refs/heads/feat/7-x ${sha} refs/heads/feat/7-x ${sha}`), "passa");
+  assert.equal(rodar(`HEAD ${sha} refs/heads/main ${sha}`), "bloqueia");
+  assert.equal(rodar(`HEAD ${sha} refs/heads/minha-branch ${"0".repeat(40)}`), "bloqueia");
+});
+
 test("deny vence ask: secret em arquivo guardado bloqueia", () => {
   assert.equal(decision(checkWrite(".github/workflows/ci.yml", `token: ${tokenGitHub}`)), "deny");
 });
