@@ -55,10 +55,17 @@ function currentBranch(cwd) {
   }
 }
 
+// Corpo de heredoc (<<EOF ... EOF) é texto, não comando: mensagem de commit, corpo de PR, arquivo.
+// Sem isso, um PR que explica "git add -f" seria barrado como se o rodasse.
+function stripHeredocs(command) {
+  return command.replace(/<<-?\s*(['"]?)([A-Za-z_][A-Za-z0-9_]*)\1[^\n]*\n[\s\S]*?\n[ \t]*\2[ \t]*(?=\n|$)/g, "<<heredoc");
+}
+
 // Comandos de shell (Bash e PowerShell).
 export function checkCommand(command, { branch } = {}) {
-  const cmd = command ?? "";
-  const secret = findSecret(cmd);
+  // Secret vale no comando inteiro, heredoc incluído: o heredoc pode estar escrevendo um arquivo.
+  const secret = findSecret(command ?? "");
+  const cmd = stripHeredocs(command ?? "");
   if (secret) {
     return deny(`O comando contém o que parece ser um(a) ${secret}. Secrets ficam em User Secrets e nunca passam por comando que fica no histórico.`);
   }

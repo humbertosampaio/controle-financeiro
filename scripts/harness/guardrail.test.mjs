@@ -72,6 +72,18 @@ test("comandos de shell", () => {
   }
 });
 
+test("texto dentro de heredoc não é comando", () => {
+  const corpo = "cat > pr.md <<'EOF'\nPara ver o bloqueio, tente `git add -f dados/x.ofx` ou git push origin main.\nEOF\ngh pr create --body-file pr.md";
+  assert.equal(decision(checkCommand(corpo, { branch: "feat/1-x" })), "allow");
+  const commitComCorpo = "git commit -F - <<'EOF'\ndocs: Explica por que --no-verify é proibido\nEOF";
+  assert.equal(decision(checkCommand(commitComCorpo, { branch: "feat/1-x" })), "allow");
+  // Um comando de verdade depois do heredoc continua sendo avaliado.
+  const depois = "cat > a.txt <<'EOF'\ntexto\nEOF\ngit add -f dados/x.ofx";
+  assert.equal(decision(checkCommand(depois, { branch: "feat/1-x" })), "deny");
+  // Secret dentro de heredoc continua bloqueado: o heredoc pode estar escrevendo um arquivo.
+  assert.equal(decision(checkCommand(`cat > a.cs <<'EOF'\n${chaveAnthropic}\nEOF`, { branch: "feat/1-x" })), "deny");
+});
+
 test("push sem refspec depende da branch atual", () => {
   assert.equal(decision(checkCommand("git push", { branch: "main" })), "deny");
   assert.equal(decision(checkCommand("git push origin", { branch: "main" })), "deny");
