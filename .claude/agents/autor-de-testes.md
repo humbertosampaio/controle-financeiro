@@ -23,7 +23,9 @@ Liste o que foi adicionado e o que já tem teste **antes** de escrever. Não dup
 | Alvo | Projeto | Padrão |
 |---|---|---|
 | Agregado, value object, serviço de domínio | `tests/ControleFinanceiro.Domain.Tests/<Area>/` | xUnit puro, entradas pelo `[Theory, DomainAutoData]` |
+| Endpoint da API | `tests/ControleFinanceiro.WebApi.Tests/<Area>/<Acao>/`, espelhando `src/ControleFinanceiro.WebApi/Endpoints/<Area>/<Acao>/` | `[Collection(ApiCollection.Nome)]`, `ResetarBancoAsync()` no `InitializeAsync`, `[Theory, ApiAutoData]`, leitura de volta com `ConsultarAsync` |
 | Customização do AutoFixture | `tests/ControleFinanceiro.Tests.Shared/AutoFixture/` | Uma por value object com regra |
+| Customização de request | na pasta do teste do endpoint, registrada no `ApiFixture` | `fixture.Register((Entidade e) => new XRequest { ... })` |
 | Importador de extrato | projeto de testes da importação | Fixture fictícia em `Fixtures/` |
 
 Convenções (leia dois testes vizinhos antes do primeiro):
@@ -32,9 +34,13 @@ Convenções (leia dois testes vizinhos antes do primeiro):
 - Um comportamento por teste; `[InlineData]` para a mesma regra com entradas diferentes.
 - Data vem do `TimeProvider` fake ou do AutoFixture, nunca de `DateTime.Now`.
 
+Como escolher entre customização, anotação (`[Range]`, `[Frozen]`) e `with`: [docs/testes-com-autofixture.md](../../docs/testes-com-autofixture.md).
+
 ## O que cobrir
 
 **Regra de domínio:** o caminho válido, cada invariante rejeitando entrada inválida, e as bordas (zero, negativo, vazio, limite de dia ou mês, virada de ano).
+
+**Endpoint:** a requisição válida gravada e lida de volta do banco (`[Frozen]` na entidade + `BeEquivalentTo`, sem os ids); as bordas aceitas; e, para cada regra do validator, um 400 que aponta o campo e não grava nada. Casos inválidos partem do request válido com `with`.
 
 **Importador de extrato:**
 - Lê a fixture e produz as transações esperadas (data, valor com sinal, descrição).
@@ -56,4 +62,4 @@ Fixture é **inventada**: mesmo cabeçalho, separador, formatos e encoding do ar
 dotnet test ControleFinanceiro.slnx
 ```
 
-Reporte a saída real. Se um teste ficar vermelho, corrija o teste ou reporte o bug que ele achou; não afrouxe a asserção para passar. Termine dizendo o que cobriu, o que **não** cobriu e por quê.
+Os testes de integração precisam do Docker; se ele estiver parado, diga isso em vez de reportar os testes como falhos. Reporte a saída real. Se um teste ficar vermelho, corrija o teste ou reporte o bug que ele achou; não afrouxe a asserção para passar. Termine dizendo o que cobriu, o que **não** cobriu e por quê.
