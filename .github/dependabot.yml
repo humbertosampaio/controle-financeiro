@@ -50,6 +50,24 @@ updates:
       - dependency-name: "MessagePack"
         versions: [">= 3.0.0"]
 
+  # A imagem do Postgres do AppHost e dos testes de integração, fixada em
+  # src/ControleFinanceiro.AppHost/Resources/postgres.Dockerfile.
+  - package-ecosystem: docker
+    directory: "/src/ControleFinanceiro.AppHost/Resources"
+    schedule:
+      interval: weekly
+      day: monday
+      time: "06:00"
+      timezone: America/Sao_Paulo
+    labels: ["tipo:tech", "dependencias"]
+    commit-message:
+      prefix: build
+      include: scope
+    ignore:
+      # Uma major nova não sobe sobre o volume com os dados reais sem pg_upgrade: é decisão manual.
+      - dependency-name: "postgres"
+        update-types: ["version-update:semver-major"]
+
   - package-ecosystem: github-actions
     directory: "/"
     schedule:
