@@ -1,0 +1,26 @@
+@ControleFinanceiro.WebApi_HostAddress = https://localhost:7029
+
+POST {{ControleFinanceiro.WebApi_HostAddress}}/api/usuarios
+Accept: application/json
+Content-Type: application/json
+
+{
+  "nome": null,
+  "rendaBruta": 1000,
+  "descontosSalariais": [
+    {
+      "descricao": "INSS",
+      "valor": 0.1
+    },
+    {
+      "descricao": "Contabilidade",
+      "valor": 1
+    }
+  ],
+  "cartao": {
+    "sufixo": "1234",
+    "diaVencimento": 1
+  }
+}
+
+###
