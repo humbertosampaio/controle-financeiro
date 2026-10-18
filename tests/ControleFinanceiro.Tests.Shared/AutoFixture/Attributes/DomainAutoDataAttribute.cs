@@ -1,5 +1,4 @@
-﻿using AutoFixture;
-using AutoFixture.Xunit2;
+﻿using AutoFixture.Xunit2;
 
 namespace ControleFinanceiro.Tests.Shared.AutoFixture.Attributes;
 

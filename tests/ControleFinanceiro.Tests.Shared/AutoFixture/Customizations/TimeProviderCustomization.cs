@@ -1,5 +1,4 @@
-﻿using AutoFixture;
-using Microsoft.Extensions.Time.Testing;
+﻿using Microsoft.Extensions.Time.Testing;
 
 namespace ControleFinanceiro.Tests.Shared.AutoFixture.Customizations;
 

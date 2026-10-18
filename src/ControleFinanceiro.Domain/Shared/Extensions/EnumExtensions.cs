@@ -1,5 +1,4 @@
 ﻿using Ardalis.SmartEnum;
-using CSharpFunctionalExtensions;
 
 namespace ControleFinanceiro.Domain.Shared.Extensions;
 

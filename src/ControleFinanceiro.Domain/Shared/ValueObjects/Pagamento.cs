@@ -1,4 +1,3 @@
-using CSharpFunctionalExtensions;
 using System.Diagnostics.CodeAnalysis;
 
 namespace ControleFinanceiro.Domain.Shared.ValueObjects;
