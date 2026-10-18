@@ -11,6 +11,7 @@
     <PackageReference Include="AutoFixture" />
     <PackageReference Include="AutoFixture.AutoNSubstitute" />
     <PackageReference Include="AutoFixture.Xunit2" />
+    <PackageReference Include="Bogus" />
     <PackageReference Include="CSharpFunctionalExtensions.FluentAssertions" />
     <PackageReference Include="FluentAssertions.Analyzers">
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
