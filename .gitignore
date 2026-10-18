@@ -414,3 +414,14 @@ FodyWeavers.xsd
 
 # Resultados do script de cobertura de código
 /coveragereport
+
+# Dados financeiros reais: extratos, faturas e bancos locais nunca vão para o git.
+# Fixtures fictícias de teste ficam em tests/**/Fixtures/ e são liberadas abaixo.
+/dados/
+/volumes/
+*.ofx
+*.csv
+*.xlsx
+*.db
+*.sqlite
+!tests/**/Fixtures/**

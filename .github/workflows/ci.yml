@@ -1,0 +1,43 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  build-e-testes:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-dotnet@v6
+        with:
+          dotnet-version: "10.0.x"
+
+      - name: Build
+        run: dotnet build ControleFinanceiro.slnx --nologo
+
+      - name: Testes
+        run: dotnet test ControleFinanceiro.slnx --no-build --nologo
+
+  harness:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: "26"
+
+      - name: Testes do guardrail
+        run: node --test scripts/harness/guardrail.test.mjs
+
+      - name: Varredura de dados financeiros e secrets
+        if: github.event_name == 'pull_request'
+        run: sh .githooks/scan-staged.sh --branch "origin/${{ github.base_ref }}"

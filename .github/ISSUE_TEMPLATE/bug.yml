@@ -1,0 +1,24 @@
+name: Bug
+description: Algo que já existe e se comporta errado
+labels: ["tipo:bug"]
+body:
+  - type: textarea
+    id: esperado
+    attributes:
+      label: O que era esperado
+    validations:
+      required: true
+  - type: textarea
+    id: aconteceu
+    attributes:
+      label: O que aconteceu
+      description: Mensagem de erro, saída ou comportamento observado. Não cole dados reais (valores, nomes, contas).
+    validations:
+      required: true
+  - type: textarea
+    id: reproduzir
+    attributes:
+      label: Como reproduzir
+      description: Passos, comando ou arquivo de teste fictício que mostra o problema.
+    validations:
+      required: true
