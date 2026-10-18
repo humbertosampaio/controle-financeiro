@@ -1,0 +1,27 @@
+#!/bin/sh
+# Conventional Commits em PT-BR: tipo(escopo opcional): Descrição começando com maiúscula.
+# Ex.: feat(importacao): Lê o extrato OFX da conta do C6
+
+primeira=$(head -n 1 "$1")
+
+case "$primeira" in
+  "Merge "*|"Revert "*|"fixup! "*|"squash! "*) exit 0 ;;
+esac
+
+if echo "$primeira" | grep -qE '^(feat|fix|chore|docs|refactor|test|perf|build|ci)(\([a-z0-9-]+\))?!?: [^a-z[:space:]]'; then
+  case "$primeira" in
+    *.) echo "Mensagem de commit sem ponto final na primeira linha." >&2; exit 1 ;;
+  esac
+  exit 0
+fi
+
+cat >&2 <<EOF
+Mensagem de commit fora do padrão:
+  $primeira
+
+Use Conventional Commits em PT-BR, com a descrição começando em maiúscula:
+  feat(importacao): Lê o extrato OFX da conta do C6
+  fix(dominio): Corrige o arredondamento de parcelas
+Tipos: feat, fix, chore, docs, refactor, test, perf, build, ci
+EOF
+exit 1

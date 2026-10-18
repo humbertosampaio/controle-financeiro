@@ -1,0 +1,3 @@
+#!/bin/sh
+# Pegar dado real ou secret aqui é barato; depois do push, só resta trocar a credencial.
+exec sh "$(git rev-parse --show-toplevel)/.githooks/scan-staged.sh"
