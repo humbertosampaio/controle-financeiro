@@ -1,4 +1,6 @@
 <Project>
+  <Import Project="$([MSBuild]::GetPathOfFileAbove('Directory.Build.props', '$(MSBuildThisFileDirectory)../'))" />
+
   <!-- Vale para todo projeto sob tests/, inclusive os que ainda forem criados. -->
   <ItemGroup>
     <Compile Include="$(MSBuildThisFileDirectory)CulturaDosTestes.cs" Link="CulturaDosTestes.cs" />
