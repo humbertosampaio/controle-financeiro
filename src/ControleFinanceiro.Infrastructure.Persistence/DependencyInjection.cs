@@ -17,8 +17,11 @@ public static class DependencyInjection
             if (string.IsNullOrWhiteSpace(connectionString))
                 throw new InvalidOperationException("Connection string 'controlefinanceiro' não encontrada.");
 
+            // Os agregados vêm inteiros (AutoInclude); split query evita o produto cartesiano entre as coleções.
             services.AddDbContext<ControleFinanceiroDbContext>(options =>
-                options.UseNpgsql(connectionString));
+                options.UseNpgsql(
+                    connectionString,
+                    npgsql => npgsql.UseQuerySplittingBehavior(QuerySplittingBehavior.SplitQuery)));
 
             return services
                 .AddScoped<IUnitOfWork, EntityFrameworkUnitOfWork>()

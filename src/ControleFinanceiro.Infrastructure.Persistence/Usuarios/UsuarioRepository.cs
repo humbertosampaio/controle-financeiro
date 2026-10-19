@@ -1,4 +1,5 @@
 using ControleFinanceiro.Domain.Usuarios;
+using CSharpFunctionalExtensions;
 using Microsoft.EntityFrameworkCore;
 
 namespace ControleFinanceiro.Infrastructure.Persistence.Usuarios;
@@ -14,4 +15,7 @@ internal sealed class UsuarioRepository : IUsuarioRepository
 
     public async Task AddAsync(Usuario usuario, CancellationToken cancellationToken) =>
         await _dbSet.AddAsync(usuario, cancellationToken);
+
+    public async Task<Maybe<Usuario>> ObterPorIdAsync(IdUsuario id, CancellationToken cancellationToken) =>
+        await _dbSet.SingleOrDefaultAsync(u => u.Id == id, cancellationToken);
 }

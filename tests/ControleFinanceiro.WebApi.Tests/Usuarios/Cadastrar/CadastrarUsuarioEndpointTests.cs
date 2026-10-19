@@ -151,10 +151,6 @@ public sealed class CadastrarUsuarioEndpointTests : IAsyncLifetime
 
     private Task<Usuario> LerUnicoUsuarioAsync()
     {
-        return _api.ConsultarAsync(db => db.Usuarios
-            .AsNoTracking()
-            .Include(usuario => usuario.DescontosSalariais)
-            .Include(usuario => usuario.Cartoes)
-            .SingleAsync());
+        return _api.ConsultarAsync(db => db.Usuarios.AsNoTracking().SingleAsync());
     }
 }
