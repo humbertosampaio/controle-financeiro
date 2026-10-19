@@ -31,6 +31,11 @@ Os arquivos `.Designer.cs` e `ModelSnapshot.cs` são gerados pelo EF: não leia.
 9. **Migrations.** Sem `DropColumn`, `DropTable`, `RenameColumn` ou mudança de tipo com perda sem decisão registrada na issue. `Down()` coerente com o `Up()`.
 10. **Testes acompanham regra nova.** Regra sem teste do caminho válido e de cada invariante é achado.
 11. **Endpoint tem teste de integração na pasta espelhada.** Endpoint novo ou alterado em `src/ControleFinanceiro.WebApi/Endpoints/<Area>/<Acao>/` sem teste em `tests/ControleFinanceiro.WebApi.Tests/<Area>/<Acao>/` é achado: fora do espelho, o `pre-push` não roda o teste quando o endpoint muda.
+12. **Agregado sempre carregado inteiro** (decisão do dono, #36). Cada navegação de coleção de um agregado é `AutoInclude()` na sua `IEntityTypeConfiguration`, como `Cartoes` e `DescontosSalariais` no `UsuarioConfiguration`. O split query é global (`UseQuerySplittingBehavior` no `AddDbContext`). É achado:
+    - uma coleção nova num agregado mapeado sem `AutoInclude()`;
+    - `IgnoreAutoIncludes()` numa consulta que devolve o agregado para ser alterado;
+    - `AsSplitQuery()` ou `AsSingleQuery()` sem justificativa no código.
+13. **Falha única vira erro tipado quando deixa de ser única.** Um método marcado com `// Falha única:` tem uma só falha possível, e o endpoint que o chama mapeia qualquer `IsFailure` para um status só (`Usuario.AdicionarCartao` → 409 em `AdicionarCartaoEndpoint`). Um diff que acrescenta outro `Result.Failure` a esse método é achado ALTO: a nova falha sairia com o status errado. A correção é trocar o `Result` por erro tipado (`UnitResult<E>` do CSharpFunctionalExtensions), mapear cada erro para o seu status e remover os dois marcadores.
 
 ## Dívidas conhecidas — não reportar
 
