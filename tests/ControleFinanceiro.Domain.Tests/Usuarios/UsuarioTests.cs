@@ -1,3 +1,4 @@
+using AutoFixture.Xunit2;
 using ControleFinanceiro.Domain.Shared.ValueObjects;
 using ControleFinanceiro.Domain.Usuarios;
 using ControleFinanceiro.Tests.Shared.AutoFixture.Attributes;
@@ -8,11 +9,12 @@ namespace ControleFinanceiro.Domain.Tests.Usuarios;
 public sealed class UsuarioTests
 {
     [Theory, DomainAutoData]
-    public void Criar_Deve_IniciarSemCartoes(TextoObrigatorio nome, ReaisPositivo rendaBruta)
+    public void Criar_Deve_IniciarSemCartoesNemContas(TextoObrigatorio nome, ReaisPositivo rendaBruta)
     {
         Usuario sut = Usuario.Criar(nome, rendaBruta, []);
 
         sut.Cartoes.Should().BeEmpty();
+        sut.Contas.Should().BeEmpty();
     }
 
     [Theory, DomainAutoData]
@@ -74,6 +76,45 @@ public sealed class UsuarioTests
 
         result.Should().Succeed();
         sut.Cartoes.Should().HaveCount(2);
+    }
+
+    [Theory, DomainAutoData]
+    public void AdicionarConta_Quando_PrimeiraConta_Deve_AdicionarNaLista(Usuario sut, ContaBancaria conta)
+    {
+        Result result = sut.AdicionarConta(conta);
+
+        result.Should().Succeed();
+        sut.Contas.Should().ContainSingle().Which.Should().Be(conta);
+    }
+
+    [Theory, DomainAutoData]
+    public void AdicionarConta_Quando_SufixoRepetidoNoMesmoBanco_Deve_RetornarFalha(
+        Usuario sut,
+        [Frozen] Banco banco,
+        [Frozen] SufixoConta sufixo,
+        ContaBancaria conta,
+        ContaBancaria outraContaComOMesmoSufixo)
+    {
+        sut.AdicionarConta(conta).Should().Succeed();
+
+        Result result = sut.AdicionarConta(outraContaComOMesmoSufixo);
+
+        result.Should().FailWith($"O usuário já tem uma conta {banco.Name} com final {sufixo}.");
+        sut.Contas.Should().ContainSingle();
+    }
+
+    [Theory, DomainAutoData]
+    public void AdicionarConta_Quando_MesmoSufixoEmOutroBanco_Deve_Adicionar(
+        Usuario sut,
+        SufixoConta sufixo,
+        TipoConta tipo)
+    {
+        sut.AdicionarConta(ContaBancaria.Criar(Banco.C6, tipo, sufixo)).Should().Succeed();
+
+        Result result = sut.AdicionarConta(ContaBancaria.Criar(Banco.MercadoPago, tipo, sufixo));
+
+        result.Should().Succeed();
+        sut.Contas.Should().HaveCount(2);
     }
 
     [Theory, DomainAutoData]
