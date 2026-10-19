@@ -21,6 +21,9 @@ internal sealed class ControleFinanceiroDatabase
 
         IResourceBuilder<PostgresServerResource> postgres = builder
             .AddPostgres("postgres")
+            .WithImageRegistry(PostgresImagem.Registro)
+            .WithImage(PostgresImagem.Imagem)
+            .WithImageTag(PostgresImagem.Tag)
             .WithContainerName("postgres")
             .WithUserName(postgresUser)
             .WithPassword(postgresPassword)

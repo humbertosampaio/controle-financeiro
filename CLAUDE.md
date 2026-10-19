@@ -17,6 +17,7 @@ Organizador financeiro pessoal: importa extratos e faturas de vários bancos, ca
 | `src/ControleFinanceiro.AppHost` | Aspire: sobe o Postgres e a API localmente | WebApi |
 | `src/ControleFinanceiro.ServiceDefaults` | Telemetria e health checks do Aspire | — |
 | `tests/ControleFinanceiro.Domain.Tests` | Testes de domínio (xUnit + AutoFixture + FluentAssertions) | Domain |
+| `tests/ControleFinanceiro.WebApi.Tests` | Testes de integração dos endpoints: API em memória + Postgres do Testcontainers (precisa do Docker) | WebApi, Tests.Shared |
 | `tests/ControleFinanceiro.Tests.Shared` | Customizações do AutoFixture compartilhadas | Domain |
 
 ## Regras invioláveis
@@ -49,7 +50,8 @@ Detalhes, template de pedido e checklist: [docs/trabalhando-com-ia.md](docs/trab
 ## Convenções
 
 - **PT-BR em tudo**: domínio, identificadores (`Usuario`, `Despesa`, `MesReferencia`), mensagens, commits, issues, PRs e comentários. Termos técnicos consagrados ficam em inglês (`Result`, `Repository`, `Endpoint`).
-- **Nome de teste**: `Metodo_Quando_Cenario_Deve_Resultado`, com `[Theory, DomainAutoData]` para gerar entradas. Um comportamento por teste; sem relógio real (`TimeProvider`).
+- **Nome de teste**: `Metodo_Quando_Cenario_Deve_Resultado`, com `[Theory, DomainAutoData]` para gerar entradas. Um comportamento por teste; sem relógio real (`TimeProvider`). Como usar o AutoFixture: [docs/testes-com-autofixture.md](docs/testes-com-autofixture.md).
+- **Endpoint novo ou alterado tem teste de integração** na pasta espelhada: `src/ControleFinanceiro.WebApi/Endpoints/<Area>/<Acao>/` → `tests/ControleFinanceiro.WebApi.Tests/<Area>/<Acao>/`, com `[ApiAutoData]` e lendo de volta do banco. O espelho é o que faz o `pre-push` rodar só os testes afetados.
 - **Dinheiro é `Reais`/`ReaisPositivo`**, nunca `decimal` solto no domínio.
 - **Siga o exemplo existente**: antes de criar algo, leia o análogo mais próximo e cite-o no plano. Não invente API nem pacote. Dependência nova pede justificativa e confirmação.
 
@@ -57,11 +59,14 @@ Detalhes, template de pedido e checklist: [docs/trabalhando-com-ia.md](docs/trab
 
 ```bash
 dotnet build ControleFinanceiro.slnx
-dotnet test ControleFinanceiro.slnx
+dotnet test ControleFinanceiro.slnx                   # unidade + integração (precisa do Docker)
+dotnet test tests/ControleFinanceiro.WebApi.Tests --filter "FullyQualifiedName~ControleFinanceiro.WebApi.Tests.Usuarios.Cadastrar."   # um endpoint
 dotnet run --project src/ControleFinanceiro.AppHost   # Postgres + API; dashboard do Aspire no console
 pwsh scripts/CoverageReport.ps1                       # relatório de cobertura em coveragereport/
 node scripts/harness/guardrail.test.mjs               # testes do guardrail
 ```
+
+Os testes de integração e o `pre-push` precisam do **Docker** rodando: sem ele, a suíte de integração falha (não é pulada). A cobertura (`CoverageReport.ps1`) também.
 
 Antes de rodar o AppHost pela primeira vez:
 - instale a Aspire CLI na mesma versão do `Aspire.AppHost.Sdk`: `dotnet tool install -g Aspire.Cli --version <versão>` (o AppHost usa o orquestrador dela; ao atualizar o Aspire, atualize também a CLI com `dotnet tool update -g Aspire.Cli`);
@@ -74,7 +79,7 @@ Três camadas, descritas em [docs/harness.md](docs/harness.md):
 - **Guardrail** (`.claude/settings.json` → `scripts/harness/guardrail.mjs`): bloqueia commit de dados financeiros, secret em arquivo e push na `main`; pede confirmação em git destrutivo, pacote novo e migration.
 - **Agentes** (`.claude/agents/`): `planejador`, `autor-de-testes`, `revisor-dominio` e `revisor-privacidade`. Os revisores só reportam.
 - **Skills** (`.claude/skills/`): `planejar-issue` (plano na issue + sub-issues, antes do código), `revisar-mudanca` (gates + revisores) e `abrir-pr` (push + PR vinculado), depois do código.
-- **Gates** (`.githooks/` + `.github/workflows/ci.yml`): varredura de secrets e de dados no pre-commit, Conventional Commits no commit-msg, bloqueio de push na `main` no pre-push, build e testes no CI. Ative uma vez por clone: `git config core.hooksPath .githooks`.
+- **Gates** (`.githooks/` + `.github/workflows/ci.yml`): varredura de secrets e de dados no pre-commit, Conventional Commits no commit-msg, bloqueio de push na `main`, testes de unidade e testes de integração afetados (`scripts/harness/testes-afetados.mjs`) no pre-push, build e as duas suítes completas no CI. Ative uma vez por clone: `git config core.hooksPath .githooks`.
 
 ## GitHub
 

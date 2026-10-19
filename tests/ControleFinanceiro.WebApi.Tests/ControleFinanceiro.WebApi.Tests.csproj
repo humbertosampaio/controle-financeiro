@@ -1,0 +1,41 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <IsPackable>false</IsPackable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="coverlet.collector">
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+    <PackageReference Include="Microsoft.AspNetCore.Mvc.Testing" />
+    <PackageReference Include="Microsoft.NET.Test.Sdk" />
+    <PackageReference Include="Respawn" />
+    <PackageReference Include="Testcontainers.PostgreSql" />
+    <PackageReference Include="xunit" />
+    <PackageReference Include="xunit.runner.visualstudio">
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\ControleFinanceiro.WebApi\ControleFinanceiro.WebApi.csproj" />
+    <ProjectReference Include="..\ControleFinanceiro.Tests.Shared\ControleFinanceiro.Tests.Shared.csproj" />
+  </ItemGroup>
+
+  <!-- A imagem do Postgres é a mesma do AppHost. O Dockerfile vai junto para o teste que confere a coerência. -->
+  <ItemGroup>
+    <Compile Include="..\..\src\ControleFinanceiro.AppHost\Resources\PostgresImagem.cs" Link="Infraestrutura\PostgresImagem.cs" />
+    <None Include="..\..\src\ControleFinanceiro.AppHost\Resources\postgres.Dockerfile" Link="Infraestrutura\postgres.Dockerfile" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Using Include="AutoFixture" />
+    <Using Include="Xunit" />
+    <Using Include="FluentAssertions" />
+  </ItemGroup>
+
+</Project>
