@@ -24,6 +24,14 @@ public sealed class TextoObrigatorioTests
         result.Should().Succeed().And.Subject.Value.Value.Should().Be(valor);
     }
 
+    [Theory, AutoData]
+    public void Criar_Quando_EspacosNasPontas_Deve_RetornarTextoAparado(string valor)
+    {
+        Result<TextoObrigatorio> result = TextoObrigatorio.Criar($"  {valor}	 ", "Texto");
+
+        result.Should().Succeed().And.Subject.Value.Value.Should().Be(valor);
+    }
+
     [Theory, MemberData(nameof(ValoresVazios))]
     public void OperadorExplicito_Quando_ValorVazio_Deve_RetornarFalha(string? valor)
     {

@@ -68,6 +68,27 @@ Valor fixo direto no teste (`(TextoObrigatorio)"INSS"`) só quando o próprio va
 - **Um container para a suíte.** A `ApiComPostgresFixture` fica na collection `ApiCollection`. Cada classe chama `ResetarBancoAsync()` no `InitializeAsync`, antes de cada teste, para o que um teste que falhou gravou ficar no banco para depuração.
 - **Leitura de volta pelo banco**, com `ConsultarAsync` num escopo novo e `AsNoTracking`. O teste confere o que foi gravado, não o que a requisição tinha em memória.
 
+### O que vai para a integração
+
+Cada teste de integração sobe uma requisição HTTP e vai ao Postgres. Se cada borda de regra virar um teste de endpoint, a suíte fica lenta à medida que os endpoints chegam. Por isso a integração cobre **só o que depende da API e do banco juntos**:
+
+- a requisição válida gravada e lida de volta;
+- cada status que o endpoint decide (404, 409...), com o campo do erro;
+- **um** 400 com todos os campos inválidos, que prova que o validator está ligado e que cada erro sai no campo certo;
+- o que é risco do mapeamento do EF, visto pela API: entidade nova num agregado carregado, conversão de tipo.
+
+Nada de teste que grava direto no banco, com SQL ou fora da API: a API é a única porta de entrada dos dados, então índice, `CHECK` e cascade não ganham teste próprio.
+
+O resto vai para a unidade:
+
+| Regra | Onde |
+|---|---|
+| Borda de value object (limite do dia, trim, sufixo malformado) | `ControleFinanceiro.Domain.Tests`, no teste do value object |
+| Invariante do agregado (sufixo repetido no mesmo banco) | `ControleFinanceiro.Domain.Tests`, no teste do agregado |
+| Regra que o validator acrescenta (código de SmartEnum, id vazio) | `<Acao>ValidatorTests`, na pasta do teste do endpoint, sem `ApiCollection`, com `TestValidate` |
+
+O `AdicionarCartao` é o modelo: cinco casos de integração no `AdicionarCartaoEndpointTests` e as regras do banco e do id no `AdicionarCartaoValidatorTests`.
+
 ```bash
 dotnet test tests/ControleFinanceiro.WebApi.Tests
 dotnet test tests/ControleFinanceiro.WebApi.Tests --filter "FullyQualifiedName~ControleFinanceiro.WebApi.Tests.Usuarios.Cadastrar."

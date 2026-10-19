@@ -1,5 +1,6 @@
 using ControleFinanceiro.Tests.Shared.AutoFixture;
 using ControleFinanceiro.Tests.Shared.AutoFixture.Customizations.Realistas;
+using ControleFinanceiro.WebApi.Tests.Usuarios.AdicionarCartao;
 using ControleFinanceiro.WebApi.Tests.Usuarios.Cadastrar;
 
 namespace ControleFinanceiro.WebApi.Tests.AutoFixture;
@@ -13,7 +14,8 @@ public sealed class ApiFixture : DomainFixture
     public ApiFixture()
     {
         this.Customize(new RealistasCustomization())
-            .Customize(new CadastrarUsuarioRequestCustomization());
+            .Customize(new CadastrarUsuarioRequestCustomization())
+            .Customize(new AdicionarCartaoRequestCustomization());
     }
 
     public static new ApiFixture Create() => new();
