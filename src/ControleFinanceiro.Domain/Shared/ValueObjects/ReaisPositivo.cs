@@ -13,7 +13,7 @@ public sealed class ReaisPositivo : Reais
 
     public static Result<ReaisPositivo> Criar(decimal valor)
     {
-        return Result.Success(valor)
+        return Result.Success(Arredondar(valor))
             .Ensure(
                 v => v >= 0,
                 v =>
