@@ -20,3 +20,16 @@ Content-Type: application/json
 }
 
 ###
+
+# Troque o id pelo devolvido no cadastro acima.
+POST {{ControleFinanceiro.WebApi_HostAddress}}/api/usuarios/00000000-0000-0000-0000-000000000000/cartoes
+Accept: application/json
+Content-Type: application/json
+
+{
+  "banco": "336",
+  "sufixo": "1234",
+  "diaVencimento": 10
+}
+
+###
