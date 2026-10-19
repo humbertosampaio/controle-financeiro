@@ -17,5 +17,5 @@ public sealed class CadastrarUsuarioMapper : Mapper<CadastrarUsuarioRequest, Cad
             descontosSalariais);
     }
 
-    public override CadastrarUsuarioResponse FromEntity(Usuario e) => new(e.Id.Value);
+    public override CadastrarUsuarioResponse FromEntity(Usuario e) => new(e.Id);
 }
