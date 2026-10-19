@@ -8,6 +8,7 @@ namespace ControleFinanceiro.Infrastructure.Persistence.ValueConverters;
 
 [EfCoreConverter<IdUsuario>]
 [EfCoreConverter<IdDescontoSalarial>]
+[EfCoreConverter<IdCartao>]
 [EfCoreConverter<IdCategoriaDespesa>]
 [EfCoreConverter<IdDespesa>]
 [EfCoreConverter<IdBeneficiario>]

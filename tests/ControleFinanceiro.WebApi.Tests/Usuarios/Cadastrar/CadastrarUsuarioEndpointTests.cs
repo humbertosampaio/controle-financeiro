@@ -153,5 +153,6 @@ public sealed class CadastrarUsuarioEndpointTests : IAsyncLifetime
         _api.ConsultarAsync(db => db.Usuarios
             .AsNoTracking()
             .Include(usuario => usuario.DescontosSalariais)
+            .Include(usuario => usuario.Cartoes)
             .SingleAsync());
 }

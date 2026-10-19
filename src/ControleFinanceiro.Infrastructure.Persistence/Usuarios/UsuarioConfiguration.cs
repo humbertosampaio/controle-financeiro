@@ -29,7 +29,14 @@ internal sealed class UsuarioConfiguration : IEntityTypeConfiguration<Usuario>
             .HasField("_descontosSalariais")
             .UsePropertyAccessMode(PropertyAccessMode.Field);
 
-        entity.Ignore(u => u.Cartoes);
+        entity.HasMany(u => u.Cartoes)
+            .WithOne()
+            .HasForeignKey("id_usuario")
+            .OnDelete(DeleteBehavior.Cascade);
+
+        entity.Navigation(u => u.Cartoes)
+            .HasField("_cartoes")
+            .UsePropertyAccessMode(PropertyAccessMode.Field);
 
         entity.Ignore(u => u.DespesasRecorrentes);
     }

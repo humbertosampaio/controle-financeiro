@@ -17,10 +17,50 @@ namespace ControleFinanceiro.Infrastructure.Persistence.Migrations
         {
 #pragma warning disable 612, 618
             modelBuilder
-                .HasAnnotation("ProductVersion", "10.0.1")
+                .HasAnnotation("ProductVersion", "10.0.13")
                 .HasAnnotation("Relational:MaxIdentifierLength", 63);
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
+
+            modelBuilder.Entity("ControleFinanceiro.Domain.Usuarios.Cartao", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<string>("Banco")
+                        .IsRequired()
+                        .HasMaxLength(3)
+                        .HasColumnType("character varying(3)")
+                        .HasColumnName("banco");
+
+                    b.Property<int>("DiaVencimento")
+                        .HasColumnType("integer")
+                        .HasColumnName("dia_vencimento");
+
+                    b.Property<string>("Sufixo")
+                        .IsRequired()
+                        .HasMaxLength(4)
+                        .HasColumnType("character varying(4)")
+                        .HasColumnName("sufixo");
+
+                    b.Property<Guid>("id_usuario")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("id_usuario", "Banco", "Sufixo")
+                        .IsUnique();
+
+                    b.ToTable("cartoes", null, t =>
+                        {
+                            t.HasCheckConstraint("CK_cartoes_banco", "banco ~ '^[0-9]{3}$'");
+
+                            t.HasCheckConstraint("CK_cartoes_dia_vencimento", "dia_vencimento BETWEEN 1 AND 28");
+
+                            t.HasCheckConstraint("CK_cartoes_sufixo", "sufixo ~ '^[0-9]{4}$'");
+                        });
+                });
 
             modelBuilder.Entity("ControleFinanceiro.Domain.Usuarios.DescontoSalarial", b =>
                 {
@@ -67,6 +107,15 @@ namespace ControleFinanceiro.Infrastructure.Persistence.Migrations
                     b.ToTable("usuarios", (string)null);
                 });
 
+            modelBuilder.Entity("ControleFinanceiro.Domain.Usuarios.Cartao", b =>
+                {
+                    b.HasOne("ControleFinanceiro.Domain.Usuarios.Usuario", null)
+                        .WithMany("Cartoes")
+                        .HasForeignKey("id_usuario")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
             modelBuilder.Entity("ControleFinanceiro.Domain.Usuarios.DescontoSalarial", b =>
                 {
                     b.HasOne("ControleFinanceiro.Domain.Usuarios.Usuario", null)
@@ -78,34 +127,8 @@ namespace ControleFinanceiro.Infrastructure.Persistence.Migrations
 
             modelBuilder.Entity("ControleFinanceiro.Domain.Usuarios.Usuario", b =>
                 {
-                    b.OwnsOne("ControleFinanceiro.Domain.Usuarios.Cartao", "Cartao", b1 =>
-                        {
-                            b1.Property<Guid>("UsuarioId")
-                                .HasColumnType("uuid");
+                    b.Navigation("Cartoes");
 
-                            b1.Property<int>("DiaVencimento")
-                                .HasColumnType("integer")
-                                .HasColumnName("cartao_dia_vencimento");
-
-                            b1.Property<string>("Sufixo")
-                                .IsRequired()
-                                .HasColumnType("text")
-                                .HasColumnName("cartao_sufixo");
-
-                            b1.HasKey("UsuarioId");
-
-                            b1.ToTable("usuarios");
-
-                            b1.WithOwner()
-                                .HasForeignKey("UsuarioId");
-                        });
-
-                    b.Navigation("Cartao")
-                        .IsRequired();
-                });
-
-            modelBuilder.Entity("ControleFinanceiro.Domain.Usuarios.Usuario", b =>
-                {
                     b.Navigation("DescontosSalariais");
                 });
 #pragma warning restore 612, 618
