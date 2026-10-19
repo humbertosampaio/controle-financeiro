@@ -23,11 +23,6 @@ internal sealed class CadastrarUsuarioRequestCustomization : ICustomization
                     Valor = desconto.Valor.Value,
                 })
                 .ToList(),
-            Cartao = new CartaoDto
-            {
-                Sufixo = usuario.Cartao.Sufixo.Value,
-                DiaVencimento = usuario.Cartao.DiaVencimento.Value,
-            },
         });
     }
 }

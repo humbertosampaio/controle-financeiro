@@ -14,8 +14,12 @@ public static class DespesaFactory
             : CriarSimples(usuario, despesaRecorrente, mesReferencia);
     }
 
-    private static DespesaAdiada CriarAdiada(Usuario usuario, DespesaRecorrente despesaRecorrente, MesReferencia mesReferencia)
+    private static Result<Despesa> CriarAdiada(Usuario usuario, DespesaRecorrente despesaRecorrente, MesReferencia mesReferencia)
     {
+        Cartao? cartao = usuario.Cartoes.FirstOrDefault(c => c.Id == despesaRecorrente.IdCartao);
+        if (cartao is null)
+            return Result.Failure<Despesa>("O cartão da despesa recorrente não pertence ao usuário.");
+
         DateTimeOffset dataCompra = mesReferencia.Anterior()
             .NoDia(despesaRecorrente.DiaCompra)
             .ToLocalDateTimeOffset();
@@ -28,7 +32,7 @@ public static class DespesaFactory
                 despesaRecorrente.IdCategoria,
                 dataCompra,
                 despesaRecorrente.Valor,
-                usuario.Cartao.DiaVencimento);
+                cartao.DiaVencimento);
     }
 
     private static Result<Despesa> CriarSimples(Usuario usuario, DespesaRecorrente despesaRecorrente, MesReferencia mesReferencia)

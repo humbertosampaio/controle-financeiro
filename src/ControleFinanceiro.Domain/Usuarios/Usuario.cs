@@ -17,11 +17,13 @@ public sealed class Usuario : AggregateRoot<IdUsuario>
     private readonly List<DescontoSalarial> _descontosSalariais = [];
     public IReadOnlyList<DescontoSalarial> DescontosSalariais => _descontosSalariais;
 
-    public Reais RendaLiquida => RendaBruta - DescontosSalariais.Sum(desconto => desconto.Valor);
+    public Reais RendaLiquida => RendaBruta - _descontosSalariais.Sum(desconto => desconto.Valor);
 
     private readonly List<DespesaRecorrente> _despesasRecorrentes = [];
     public IReadOnlyList<DespesaRecorrente> DespesasRecorrentes => _despesasRecorrentes;
-    public Cartao Cartao { get; private set; } = null!;
+
+    private readonly List<Cartao> _cartoes = [];
+    public IReadOnlyList<Cartao> Cartoes => _cartoes;
 
     private Usuario()
     {
@@ -31,29 +33,38 @@ public sealed class Usuario : AggregateRoot<IdUsuario>
         IdUsuario id,
         TextoObrigatorio nome,
         ReaisPositivo rendaBruta,
-        IEnumerable<DescontoSalarial> descontosSalariais,
-        Cartao cartao)
+        IEnumerable<DescontoSalarial> descontosSalariais)
             : base(id)
     {
         Nome = nome;
         RendaBruta = rendaBruta;
         _descontosSalariais = descontosSalariais.ToList();
-        Cartao = cartao;
     }
 
     public static Usuario Criar(
         TextoObrigatorio nome,
         ReaisPositivo rendaBruta,
-        IEnumerable<DescontoSalarial> descontosSalariais,
-        Cartao cartao)
+        IEnumerable<DescontoSalarial> descontosSalariais)
     {
-        return new(IdUsuario.FromNewVersion7Guid(), nome, rendaBruta, descontosSalariais, cartao);
+        return new(IdUsuario.FromNewVersion7Guid(), nome, rendaBruta, descontosSalariais);
+    }
+
+    public Result AdicionarCartao(Cartao cartao)
+    {
+        if (_cartoes.Exists(c => c.Banco == cartao.Banco && c.Sufixo == cartao.Sufixo))
+            return Result.Failure($"O usuário já tem um cartão {cartao.Banco.Name} com final {cartao.Sufixo}.");
+
+        _cartoes.Add(cartao);
+        return Result.Success();
     }
 
     public Result AdicionarDespesaRecorrente(DespesaRecorrente despesaRecorrente)
     {
-        if (DespesasRecorrentes.Contains(despesaRecorrente))
+        if (_despesasRecorrentes.Contains(despesaRecorrente))
             return Result.Failure("Despesa recorrente já existe para este usuário.");
+
+        if (despesaRecorrente.IdCartao is IdCartao idCartao && !_cartoes.Exists(c => c.Id == idCartao))
+            return Result.Failure("O cartão da despesa recorrente não pertence ao usuário.");
 
         _despesasRecorrentes.Add(despesaRecorrente);
         return Result.Success();
