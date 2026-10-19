@@ -24,16 +24,5 @@ public sealed class CadastrarUsuarioValidator : Validator<CadastrarUsuarioReques
                 desconto.RuleFor(x => x.Valor)
                     .MustBeValueObject(ReaisPositivo.Criar);
             });
-
-        RuleFor(x => x.Cartao)
-            .NotNull()
-            .ChildRules(cartao =>
-            {
-                cartao.RuleFor(x => x.Sufixo)
-                    .MustBeValueObject(SufixoCartao.Criar);
-
-                cartao.RuleFor(x => x.DiaVencimento)
-                    .MustBeValueObject(DiaVencimentoCartao.Criar);
-            });
     }
 }

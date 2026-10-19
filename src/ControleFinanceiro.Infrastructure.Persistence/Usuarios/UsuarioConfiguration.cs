@@ -29,14 +29,7 @@ internal sealed class UsuarioConfiguration : IEntityTypeConfiguration<Usuario>
             .HasField("_descontosSalariais")
             .UsePropertyAccessMode(PropertyAccessMode.Field);
 
-        entity.OwnsOne(u => u.Cartao, cartaoBuilder =>
-        {
-            cartaoBuilder.Property(c => c.Sufixo)
-                .HasColumnName("cartao_sufixo");
-
-            cartaoBuilder.Property(c => c.DiaVencimento)
-                .HasColumnName("cartao_dia_vencimento");
-        });
+        entity.Ignore(u => u.Cartoes);
 
         entity.Ignore(u => u.DespesasRecorrentes);
     }

@@ -16,7 +16,7 @@ public sealed class GeracaoDespesasRecorrentesServiceTests
         Fixture fixture)
     {
         fixture.Inject(FormaPagamento.Pix);
-        usuario.AdicionarDespesaRecorrente(fixture.Create<DespesaRecorrente>());
+        usuario.AdicionarDespesaRecorrente(fixture.Create<DespesaRecorrente>()).Should().Succeed();
 
         Result<IReadOnlyList<Despesa>> result = GeracaoDespesasRecorrentesService.GerarParaMes(usuario, mesReferencia);
 
@@ -32,11 +32,14 @@ public sealed class GeracaoDespesasRecorrentesServiceTests
     [Theory, DomainAutoData]
     public void GerarParaMes_Quando_UsuarioComDespesasRecorrentesCredito_Deve_RetornarListaDeDespesasAdiadas(
         Usuario usuario,
+        Cartao cartao,
         MesReferencia mesReferencia,
         Fixture fixture)
     {
+        usuario.AdicionarCartao(cartao).Should().Succeed();
         fixture.Inject(FormaPagamento.Credito);
-        usuario.AdicionarDespesaRecorrente(fixture.Create<DespesaRecorrente>());
+        fixture.Inject(cartao.Id);
+        usuario.AdicionarDespesaRecorrente(fixture.Create<DespesaRecorrente>()).Should().Succeed();
 
         Result<IReadOnlyList<Despesa>> result = GeracaoDespesasRecorrentesService.GerarParaMes(usuario, mesReferencia);
 
