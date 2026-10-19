@@ -18,6 +18,8 @@ git diff origin/main...HEAD --stat
 
 Liste o que foi adicionado e o que já tem teste **antes** de escrever. Não duplique teste existente.
 
+Depois, **leia [docs/testes-com-autofixture.md](../../docs/testes-com-autofixture.md) inteiro** antes do primeiro teste. Ele diz como fixar valores (`[Frozen]` por padrão, `fixture.Inject` só quando o `[Frozen]` não serve, nunca `[Frozen] T _`), quando usar customização ou `with` e como nomear o teste.
+
 ## Onde e como
 
 | Alvo | Projeto | Padrão |
@@ -29,12 +31,10 @@ Liste o que foi adicionado e o que já tem teste **antes** de escrever. Não dup
 | Importador de extrato | projeto de testes da importação | Fixture fictícia em `Fixtures/` |
 
 Convenções (leia dois testes vizinhos antes do primeiro):
-- Nome: `Metodo_Quando_Cenario_Deve_Resultado`.
+- Nome: `Metodo_Quando_Cenario_Deve_Resultado`; sem cenário, o `Quando` sai (`Criar_Deve_IniciarSemCartoes`).
 - `Result` se verifica com `result.Should().Succeed()` / `.Fail()` (CSharpFunctionalExtensions.FluentAssertions).
 - Um comportamento por teste; `[InlineData]` para a mesma regra com entradas diferentes.
 - Data vem do `TimeProvider` fake ou do AutoFixture, nunca de `DateTime.Now`.
-
-Como escolher entre customização, anotação (`[Range]`, `[Frozen]`) e `with`: [docs/testes-com-autofixture.md](../../docs/testes-com-autofixture.md).
 
 ## O que cobrir
 

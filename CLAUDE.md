@@ -50,7 +50,7 @@ Detalhes, template de pedido e checklist: [docs/trabalhando-com-ia.md](docs/trab
 ## Convenções
 
 - **PT-BR em tudo**: domínio, identificadores (`Usuario`, `Despesa`, `MesReferencia`), mensagens, commits, issues, PRs e comentários. Termos técnicos consagrados ficam em inglês (`Result`, `Repository`, `Endpoint`).
-- **Nome de teste**: `Metodo_Quando_Cenario_Deve_Resultado`, com `[Theory, DomainAutoData]` para gerar entradas. Um comportamento por teste; sem relógio real (`TimeProvider`). Como usar o AutoFixture: [docs/testes-com-autofixture.md](docs/testes-com-autofixture.md).
+- **Nome de teste**: `Metodo_Quando_Cenario_Deve_Resultado` (sem cenário, o `Quando` sai: `Criar_Deve_IniciarSemCartoes`), com `[Theory, DomainAutoData]` para gerar entradas. Um comportamento por teste; sem relógio real (`TimeProvider`). Valor fixo vem de `[Frozen]`; `fixture.Inject` só quando o `[Frozen]` não serve. **Leia [docs/testes-com-autofixture.md](docs/testes-com-autofixture.md) antes de escrever teste.**
 - **Endpoint novo ou alterado tem teste de integração** na pasta espelhada: `src/ControleFinanceiro.WebApi/Endpoints/<Area>/<Acao>/` → `tests/ControleFinanceiro.WebApi.Tests/<Area>/<Acao>/`, com `[ApiAutoData]` e lendo de volta do banco. O espelho é o que faz o `pre-push` rodar só os testes afetados.
 - **Dinheiro é `Reais`/`ReaisPositivo`**, nunca `decimal` solto no domínio.
 - **Siga o exemplo existente**: antes de criar algo, leia o análogo mais próximo e cite-o no plano. Não invente API nem pacote. Dependência nova pede justificativa e confirmação.
