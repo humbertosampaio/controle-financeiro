@@ -26,6 +26,7 @@ internal sealed class UsuarioConfiguration : IEntityTypeConfiguration<Usuario>
             .OnDelete(DeleteBehavior.Cascade);
 
         entity.Navigation(u => u.DescontosSalariais)
+            .AutoInclude()
             .HasField("_descontosSalariais")
             .UsePropertyAccessMode(PropertyAccessMode.Field);
 
@@ -35,6 +36,7 @@ internal sealed class UsuarioConfiguration : IEntityTypeConfiguration<Usuario>
             .OnDelete(DeleteBehavior.Cascade);
 
         entity.Navigation(u => u.Cartoes)
+            .AutoInclude()
             .HasField("_cartoes")
             .UsePropertyAccessMode(PropertyAccessMode.Field);
 
