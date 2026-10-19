@@ -8,7 +8,7 @@ internal static class PostgresImagem
 {
     internal const string Registro = "docker.io";
     internal const string Imagem = "library/postgres";
-    internal const string Tag = "18.3";
+    internal const string Tag = "18.6";
 
     internal const string Completa = $"{Registro}/{Imagem}:{Tag}";
 }
