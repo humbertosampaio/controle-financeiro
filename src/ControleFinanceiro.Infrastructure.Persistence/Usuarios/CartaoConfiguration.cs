@@ -8,7 +8,7 @@ internal sealed class CartaoConfiguration : IEntityTypeConfiguration<Cartao>
 {
     public void Configure(EntityTypeBuilder<Cartao> entity)
     {
-        // O domínio já garante as regras; os CHECK protegem a tabela de quem escrever fora dele.
+        // Os CHECK repetem no esquema o formato que o domínio já garante; a API é a única porta de entrada dos dados.
         entity.ToTable("cartoes", tabela =>
         {
             tabela.HasCheckConstraint("CK_cartoes_banco", "banco ~ '^[0-9]{3}$'");
