@@ -3,6 +3,7 @@ using ControleFinanceiro.Domain.Usuarios;
 using ControleFinanceiro.Infrastructure.Persistence.ValueConverters;
 using ControleFinanceiro.Infrastructure.Persistence.ValueConverters.ValueObjects;
 using Microsoft.EntityFrameworkCore;
+using SmartEnum.EFCore;
 using System.Reflection;
 
 namespace ControleFinanceiro.Infrastructure.Persistence;
@@ -44,12 +45,19 @@ public sealed class ControleFinanceiroDbContext : DbContext
 
         configurationBuilder
             .Properties<SufixoCartao>()
-            .HaveConversion<SufixoCartaoConverter>();
+            .HaveConversion<SufixoCartaoConverter>()
+            .HaveMaxLength(SufixoCartao.QuantidadeDigitos);
 
         configurationBuilder
             .Properties<DiaCompraRecorrente>()
             .HaveConversion<DiaCompraRecorrenteConverter>();
 
         configurationBuilder.RegisterAllInVogenEfCoreConverters();
+
+        configurationBuilder.ConfigureSmartEnum();
+
+        configurationBuilder
+            .Properties<Banco>()
+            .HaveMaxLength(Banco.QuantidadeDigitosCodigoCompe);
     }
 }

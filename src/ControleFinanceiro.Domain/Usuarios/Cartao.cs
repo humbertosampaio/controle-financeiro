@@ -2,8 +2,15 @@ using ControleFinanceiro.Domain.Shared.ValueObjects;
 
 namespace ControleFinanceiro.Domain.Usuarios;
 
-public sealed class Cartao : ComparableValueObject
+[ValueObject]
+public readonly partial struct IdCartao
 {
+    private static Validation Validate(Guid input) => Id.Validar(input);
+}
+
+public sealed class Cartao : Entity<IdCartao>
+{
+    public Banco Banco { get; private set; } = null!;
     public SufixoCartao Sufixo { get; private set; } = null!;
     public DiaVencimentoCartao DiaVencimento { get; private set; } = null!;
 
@@ -11,15 +18,16 @@ public sealed class Cartao : ComparableValueObject
     {
     }
 
-    public Cartao(SufixoCartao sufixo, DiaVencimentoCartao diaVencimento)
+    private Cartao(IdCartao id, Banco banco, SufixoCartao sufixo, DiaVencimentoCartao diaVencimento)
+        : base(id)
     {
+        Banco = banco;
         Sufixo = sufixo;
         DiaVencimento = diaVencimento;
     }
 
-    protected override IEnumerable<IComparable> GetComparableEqualityComponents()
+    public static Cartao Criar(Banco banco, SufixoCartao sufixo, DiaVencimentoCartao diaVencimento)
     {
-        yield return Sufixo;
-        yield return DiaVencimento;
+        return new Cartao(IdCartao.FromNewVersion7Guid(), banco, sufixo, diaVencimento);
     }
 }

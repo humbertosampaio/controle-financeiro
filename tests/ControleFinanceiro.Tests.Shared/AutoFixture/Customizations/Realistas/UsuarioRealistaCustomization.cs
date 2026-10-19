@@ -5,8 +5,8 @@ using ControleFinanceiro.Domain.Usuarios;
 namespace ControleFinanceiro.Tests.Shared.AutoFixture.Customizations.Realistas;
 
 /// <summary>
-/// Usuário com nome completo em pt-BR e renda bruta entre R$ 1.500,00 e R$ 30.000,00. Os descontos
-/// e o cartão vêm do fixture, então seguem as outras customizações realistas.
+/// Usuário com nome completo em pt-BR e renda bruta entre R$ 1.500,00 e R$ 30.000,00, sem cartões. Os
+/// descontos vêm do fixture, então seguem as outras customizações realistas.
 /// </summary>
 public sealed class UsuarioRealistaCustomization : ICustomization
 {
@@ -24,11 +24,10 @@ public sealed class UsuarioRealistaCustomization : ICustomization
 
     public void Customize(IFixture fixture)
     {
-        fixture.Register((IEnumerable<DescontoSalarial> descontos, Cartao cartao) => Usuario.Criar(
+        fixture.Register((IEnumerable<DescontoSalarial> descontos) => Usuario.Criar(
             (TextoObrigatorio)_nomes.FullName(),
             (ReaisPositivo)SortearRenda(),
-            descontos.ToList(),
-            cartao));
+            descontos.ToList()));
     }
 
     private decimal SortearRenda() =>

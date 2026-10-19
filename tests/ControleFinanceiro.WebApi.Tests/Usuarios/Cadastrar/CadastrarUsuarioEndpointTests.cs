@@ -67,18 +67,14 @@ public sealed class CadastrarUsuarioEndpointTests : IAsyncLifetime
         gravado.RendaBruta.Value.Should().Be(0m);
     }
 
-    [Theory]
-    [InlineApiAutoData(1)]
-    [InlineApiAutoData(28)]
-    public async Task Post_Quando_DiaVencimentoNoLimite_Deve_GravarUsuario(int diaVencimento, CadastrarUsuarioRequest requisicao)
+    [Theory, ApiAutoData]
+    public async Task Post_Quando_RequisicaoValida_Deve_GravarUsuarioSemCartoes(CadastrarUsuarioRequest requisicao)
     {
-        using HttpResponseMessage resposta = await _api.Client.PostAsJsonAsync(
-            _rota,
-            requisicao with { Cartao = requisicao.Cartao with { DiaVencimento = diaVencimento } });
+        using HttpResponseMessage resposta = await _api.Client.PostAsJsonAsync(_rota, requisicao);
 
         resposta.StatusCode.Should().Be(HttpStatusCode.Created);
         Usuario gravado = await LerUnicoUsuarioAsync();
-        gravado.Cartao.DiaVencimento.Value.Should().Be(diaVencimento);
+        gravado.Cartoes.Should().BeEmpty();
     }
 
     [Theory, ApiAutoData]
@@ -89,7 +85,6 @@ public sealed class CadastrarUsuarioEndpointTests : IAsyncLifetime
         {
             Nome = $"  {requisicao.Nome}  ",
             DescontosSalariais = [desconto with { Descricao = $"  {desconto.Descricao}  " }],
-            Cartao = requisicao.Cartao with { Sufixo = $" {requisicao.Cartao.Sufixo} " },
         };
 
         using HttpResponseMessage resposta = await _api.Client.PostAsJsonAsync(_rota, comEspacos);
@@ -98,7 +93,6 @@ public sealed class CadastrarUsuarioEndpointTests : IAsyncLifetime
         Usuario gravado = await LerUnicoUsuarioAsync();
         gravado.Nome.Value.Should().Be(requisicao.Nome);
         gravado.DescontosSalariais.Should().ContainSingle().Which.Descricao.Value.Should().Be(desconto.Descricao);
-        gravado.Cartao.Sufixo.Value.Should().Be(requisicao.Cartao.Sufixo);
     }
 
     [Theory]
@@ -135,33 +129,6 @@ public sealed class CadastrarUsuarioEndpointTests : IAsyncLifetime
         await DeveRejeitarAsync(requisicao with { DescontosSalariais = [desconto] }, "descontosSalariais[0].valor");
     }
 
-    [Theory, ApiAutoData]
-    public async Task Post_Quando_SemCartao_Deve_RetornarErroNoCartao(CadastrarUsuarioRequest requisicao)
-    {
-        await DeveRejeitarAsync(requisicao with { Cartao = null! }, "cartao");
-    }
-
-    [Theory]
-    [InlineApiAutoData(null)]
-    [InlineApiAutoData("")]
-    [InlineApiAutoData("123")]
-    [InlineApiAutoData("12345")]
-    [InlineApiAutoData("12a4")]
-    public async Task Post_Quando_SufixoDoCartaoSemQuatroDigitos_Deve_RetornarErroNoSufixo(string? sufixo, CadastrarUsuarioRequest requisicao)
-    {
-        await DeveRejeitarAsync(requisicao with { Cartao = requisicao.Cartao with { Sufixo = sufixo } }, "cartao.sufixo");
-    }
-
-    [Theory]
-    [InlineApiAutoData(0)]
-    [InlineApiAutoData(29)]
-    public async Task Post_Quando_DiaVencimentoForaDe1A28_Deve_RetornarErroNoDia(int diaVencimento, CadastrarUsuarioRequest requisicao)
-    {
-        await DeveRejeitarAsync(
-            requisicao with { Cartao = requisicao.Cartao with { DiaVencimento = diaVencimento } },
-            "cartao.diaVencimento");
-    }
-
     private async Task DeveRejeitarAsync(CadastrarUsuarioRequest requisicao, string campoComErro)
     {
         using HttpResponseMessage resposta = await _api.Client.PostAsJsonAsync(_rota, requisicao);
@@ -186,5 +153,6 @@ public sealed class CadastrarUsuarioEndpointTests : IAsyncLifetime
         _api.ConsultarAsync(db => db.Usuarios
             .AsNoTracking()
             .Include(usuario => usuario.DescontosSalariais)
+            .Include(usuario => usuario.Cartoes)
             .SingleAsync());
 }
