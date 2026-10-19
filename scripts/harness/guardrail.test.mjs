@@ -148,6 +148,14 @@ test("pre-push valida a branch pelo nome no remoto", () => {
   assert.equal(rodarPrePush(`HEAD ${sha} refs/heads/minha-branch ${zero}`), "bloqueia");
 });
 
+// Branches do Dependabot não seguem <tipo>/<issue>-<slug>, mas às vezes precisam de um ajuste nosso.
+test("pre-push aceita branch do Dependabot", () => {
+  const dependabot = "refs/heads/dependabot/docker/src/ControleFinanceiro.AppHost/Resources/library/postgres-18.6";
+  assert.equal(rodarPrePush(`HEAD ${sha} ${dependabot} ${sha}`), "passa");
+  assert.equal(rodarPrePush(`HEAD ${sha} refs/heads/dependabot ${sha}`), "bloqueia");
+  assert.equal(rodarPrePush(`HEAD ${sha} refs/heads/feat/dependabot/x ${sha}`), "bloqueia");
+});
+
 test("deny vence ask: secret em arquivo guardado bloqueia", () => {
   assert.equal(decision(checkWrite(".github/workflows/ci.yml", `token: ${tokenGitHub}`)), "deny");
 });

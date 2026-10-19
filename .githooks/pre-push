@@ -1,7 +1,7 @@
 #!/bin/sh
 # Na ordem, parando no primeiro que falhar: os checks baratos vêm antes dos caros.
 #   1. nada vai direto para a main (tudo entra por PR)
-#   2. nome da branch no padrão <tipo>/<issue>-<slug>
+#   2. nome da branch no padrão <tipo>/<issue>-<slug> (ou dependabot/..., para ajustar um PR dele)
 #   3. o guardrail e o script de testes afetados continuam íntegros
 #   4. build e testes de unidade
 #   5. testes de integração dos endpoints afetados pelo push (precisam do Docker)
@@ -19,7 +19,7 @@ while read -r local_ref local_sha remote_ref remote_sha; do
   [ "$local_sha" = "$zero" ] && continue
   # O nome vem da referência remota: com "git push origin HEAD" a local chega como "HEAD".
   branch=${remote_ref#refs/heads/}
-  if ! echo "$branch" | grep -qE '^(feat|fix|chore|docs|refactor|test|perf|build|ci)/[0-9]+-[a-z0-9-]+$'; then
+  if ! echo "$branch" | grep -qE '^((feat|fix|chore|docs|refactor|test|perf|build|ci)/[0-9]+-[a-z0-9-]+|dependabot/.+)$'; then
     echo "Branch '$branch' fora do padrão <tipo>/<numero-da-issue>-<slug> (ex.: feat/7-importar-ofx-c6)." >&2
     exit 1
   fi
