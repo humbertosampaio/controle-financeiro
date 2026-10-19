@@ -15,6 +15,18 @@ public sealed class ReaisTests
     }
 
     [Theory]
+    [InlineData(15.344, 15.34)]
+    [InlineData(15.345, 15.35)]
+    [InlineData(-15.345, -15.35)]
+    [InlineData(15.3, 15.30)]
+    public void Construtor_Quando_MaisDeDuasCasasDecimais_Deve_ArredondarParaCentavos(decimal valor, decimal esperado)
+    {
+        Reais sut = new(valor);
+
+        sut.Value.Should().Be(esperado);
+    }
+
+    [Theory]
     [InlineData(0, "R$ 0,00")]
     [InlineData(10, "R$ 10,00")]
     [InlineData(15.3, "R$ 15,30")]

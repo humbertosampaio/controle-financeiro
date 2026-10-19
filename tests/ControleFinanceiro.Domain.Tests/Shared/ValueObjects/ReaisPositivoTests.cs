@@ -17,6 +17,14 @@ public sealed class ReaisPositivoTests
             .And.Subject.Value.AsDecimal().Should().Be(valor);
     }
 
+    [Fact]
+    public void Criar_Quando_NegativoQueArredondaParaZero_Deve_RetornarZero()
+    {
+        Result<ReaisPositivo> result = ReaisPositivo.Criar(-0.004m);
+
+        result.Should().Succeed().Which.Value.Should().Be(0m);
+    }
+
     [Theory, DomainAutoData]
     public void Criar_Quando_ValorMenorQueZero_Deve_RetornarFalha(decimal valor)
     {
