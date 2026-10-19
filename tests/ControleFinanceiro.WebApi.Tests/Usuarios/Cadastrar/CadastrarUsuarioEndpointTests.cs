@@ -36,7 +36,7 @@ public sealed class CadastrarUsuarioEndpointTests : IAsyncLifetime
         resposta.StatusCode.Should().Be(HttpStatusCode.Created);
         CadastrarUsuarioResponse? corpo = await resposta.Content.ReadFromJsonAsync<CadastrarUsuarioResponse>();
         Usuario gravado = await LerUnicoUsuarioAsync();
-        corpo!.Id.Should().Be(gravado.Id.Value);
+        corpo!.Id.Should().Be(gravado.Id);
         gravado.Should().BeEquivalentTo(esperado, options => options
             .ComparingByMembers<Usuario>()
             .ComparingByMembers<DescontoSalarial>()
