@@ -14,13 +14,13 @@ internal sealed class CadastrarUsuarioRequestCustomization : ICustomization
     {
         fixture.Register((Usuario usuario) => new CadastrarUsuarioRequest
         {
-            Nome = usuario.Nome.Value,
-            RendaBruta = usuario.RendaBruta.Value,
+            Nome = usuario.Nome,
+            RendaBruta = usuario.RendaBruta,
             DescontosSalariais = usuario.DescontosSalariais
                 .Select(desconto => new DescontoSalarialDto
                 {
-                    Descricao = desconto.Descricao.Value,
-                    Valor = desconto.Valor.Value,
+                    Descricao = desconto.Descricao,
+                    Valor = desconto.Valor,
                 })
                 .ToList(),
         });
