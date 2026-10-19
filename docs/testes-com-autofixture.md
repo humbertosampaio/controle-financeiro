@@ -1,6 +1,6 @@
 # Testes com AutoFixture
 
-O AutoFixture existe aqui para uma coisa: **dar ao teste um objeto válido sem que ele precise saber os valores de dentro.** Um teste de `RendaLiquida` precisa de um `Cartao`, mas não liga para o sufixo nem para o dia de vencimento. Se o teste montasse o cartão à mão, um `"1234"` e um `10` apareceriam no código como se importassem para o resultado.
+O AutoFixture existe aqui para uma coisa: **dar ao teste um objeto válido sem que ele precise saber os valores de dentro.** Um teste de `AdicionarCartao` precisa de um `Usuario`, mas não liga para o nome nem para a renda. Se o teste montasse o usuário à mão, um `"Maria"` e um `5000m` apareceriam no código como se importassem para o resultado.
 
 Por isso, a regra é: **o que o teste não verifica, o AutoFixture gera; o que ele verifica, o teste declara.**
 
@@ -21,10 +21,10 @@ Três caminhos, do mais geral para o mais local:
 3. **Mutação do objeto devolvido**: o teste parte de um objeto válido e muda só o que importa, com `with` nos records.
 
    ```csharp
-   requisicao with { Cartao = requisicao.Cartao with { DiaVencimento = 29 } }
+   requisicao with { RendaBruta = -0.01m }
    ```
 
-   Fica explícito que o caso é "uma requisição válida, exceto o dia". É o caminho dos casos inválidos e das bordas.
+   Fica explícito que o caso é "uma requisição válida, exceto a renda". É o caminho dos casos inválidos e das bordas.
 
 Valor fixo direto no teste (`(TextoObrigatorio)"INSS"`) só quando o próprio valor é o assunto, como num teste de soma com o resultado calculado à mão.
 
