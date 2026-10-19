@@ -5,6 +5,8 @@
 
 import { test } from "node:test";
 import assert from "node:assert/strict";
+import { execFileSync } from "node:child_process";
+import { fileURLToPath } from "node:url";
 import { checkCommand, checkWrite } from "./guardrail.mjs";
 
 // Valores com cara de secret montados por concatenação, para este arquivo não disparar a varredura.
@@ -124,27 +126,34 @@ test("escrita de arquivos", () => {
 });
 
 // O pre-push recebe "<local_ref> <local_sha> <remote_ref> <remote_sha>" no stdin.
+const rodarPrePush = (linha) => {
+  try {
+    execFileSync("sh", ["-c", `printf '%s\\n' "$1" | sh .githooks/pre-push --somente-refs`, "_", linha], {
+      cwd: fileURLToPath(new URL("../../", import.meta.url)),
+      stdio: "pipe",
+    });
+    return "passa";
+  } catch {
+    return "bloqueia";
+  }
+};
+const sha = "a".repeat(40);
+const zero = "0".repeat(40);
+
 // Com "git push origin HEAD", local_ref chega como "HEAD": o nome precisa vir do remote_ref.
-test("pre-push valida a branch pelo nome no remoto", async () => {
-  const { execFileSync } = await import("node:child_process");
-  const { fileURLToPath } = await import("node:url");
-  const raiz = fileURLToPath(new URL("../../", import.meta.url));
-  const rodar = (linha) => {
-    try {
-      execFileSync("sh", ["-c", `printf '%s\\n' "$1" | sh .githooks/pre-push --somente-refs`, "_", linha], {
-        cwd: raiz,
-        stdio: "pipe",
-      });
-      return "passa";
-    } catch {
-      return "bloqueia";
-    }
-  };
-  const sha = "a".repeat(40);
-  assert.equal(rodar(`HEAD ${sha} refs/heads/chore/1-base-do-repositorio ${"0".repeat(40)}`), "passa");
-  assert.equal(rodar(`refs/heads/feat/7-x ${sha} refs/heads/feat/7-x ${sha}`), "passa");
-  assert.equal(rodar(`HEAD ${sha} refs/heads/main ${sha}`), "bloqueia");
-  assert.equal(rodar(`HEAD ${sha} refs/heads/minha-branch ${"0".repeat(40)}`), "bloqueia");
+test("pre-push valida a branch pelo nome no remoto", () => {
+  assert.equal(rodarPrePush(`HEAD ${sha} refs/heads/chore/1-base-do-repositorio ${zero}`), "passa");
+  assert.equal(rodarPrePush(`refs/heads/feat/7-x ${sha} refs/heads/feat/7-x ${sha}`), "passa");
+  assert.equal(rodarPrePush(`HEAD ${sha} refs/heads/main ${sha}`), "bloqueia");
+  assert.equal(rodarPrePush(`HEAD ${sha} refs/heads/minha-branch ${zero}`), "bloqueia");
+});
+
+// Branches do Dependabot não seguem <tipo>/<issue>-<slug>, mas às vezes precisam de um ajuste nosso.
+test("pre-push aceita branch do Dependabot", () => {
+  const dependabot = "refs/heads/dependabot/docker/src/ControleFinanceiro.AppHost/Resources/library/postgres-18.6";
+  assert.equal(rodarPrePush(`HEAD ${sha} ${dependabot} ${sha}`), "passa");
+  assert.equal(rodarPrePush(`HEAD ${sha} refs/heads/dependabot ${sha}`), "bloqueia");
+  assert.equal(rodarPrePush(`HEAD ${sha} refs/heads/feat/dependabot/x ${sha}`), "bloqueia");
 });
 
 test("deny vence ask: secret em arquivo guardado bloqueia", () => {

@@ -77,7 +77,7 @@ git config core.hooksPath .githooks
 |---|---|
 | `pre-commit` | `scan-staged.sh`: arquivo de `dados/`, extrato fora de Fixtures, chave da Anthropic, token do GitHub, chave privada, senha em appsettings |
 | `commit-msg` | Conventional Commits em PT-BR, descrição com maiúscula e sem ponto final |
-| `pre-push` | nada vai para a `main`; branch `<tipo>/<issue>-<slug>`; testes do guardrail e de `testes-afetados.mjs`; build; testes de unidade; testes de integração dos endpoints afetados (precisa do Docker) |
+| `pre-push` | nada vai para a `main`; branch `<tipo>/<issue>-<slug>` ou `dependabot/...` (para ajustar um PR do Dependabot, como acompanhar no código a versão que ele subiu); testes do guardrail e de `testes-afetados.mjs`; build; testes de unidade; testes de integração dos endpoints afetados (precisa do Docker) |
 | CI (`ci.yml`) | build; testes de unidade; suíte de integração completa; testes do guardrail e de `testes-afetados.mjs`; varredura dos arquivos do PR |
 
 ### Testes de integração afetados
