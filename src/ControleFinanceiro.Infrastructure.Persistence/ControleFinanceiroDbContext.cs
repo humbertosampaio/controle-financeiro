@@ -43,6 +43,10 @@ public sealed class ControleFinanceiroDbContext : DbContext
             .HaveConversion<DiaVencimentoCartaoConverter>();
 
         configurationBuilder
+            .Properties<SufixoCartao>()
+            .HaveConversion<SufixoCartaoConverter>();
+
+        configurationBuilder
             .Properties<DiaCompraRecorrente>()
             .HaveConversion<DiaCompraRecorrenteConverter>();
 

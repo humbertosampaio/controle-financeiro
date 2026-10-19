@@ -77,8 +77,25 @@ git config core.hooksPath .githooks
 |---|---|
 | `pre-commit` | `scan-staged.sh`: arquivo de `dados/`, extrato fora de Fixtures, chave da Anthropic, token do GitHub, chave privada, senha em appsettings |
 | `commit-msg` | Conventional Commits em PT-BR, descrição com maiúscula e sem ponto final |
-| `pre-push` | nada vai para a `main`; branch `<tipo>/<issue>-<slug>`; testes do guardrail; build e testes |
-| CI (`ci.yml`) | build e testes; testes do guardrail; varredura dos arquivos do PR |
+| `pre-push` | nada vai para a `main`; branch `<tipo>/<issue>-<slug>`; testes do guardrail e de `testes-afetados.mjs`; build; testes de unidade; testes de integração dos endpoints afetados (precisa do Docker) |
+| CI (`ci.yml`) | build; testes de unidade; suíte de integração completa; testes do guardrail e de `testes-afetados.mjs`; varredura dos arquivos do PR |
+
+### Testes de integração afetados
+
+A suíte de integração sobe um Postgres no Docker, então o `pre-push` não a roda inteira a cada push. O `scripts/harness/testes-afetados.mjs` recebe os arquivos alterados e diz o que rodar:
+
+| Arquivo alterado | Testes de integração |
+|---|---|
+| `src/ControleFinanceiro.WebApi/Endpoints/<Area>/<Acao>/` ou `tests/ControleFinanceiro.WebApi.Tests/<Area>/<Acao>/` | só os de `ControleFinanceiro.WebApi.Tests.<Area>.<Acao>` |
+| Domain e Application (regras de value object e validators compartilhados mudam a resposta dos endpoints), Persistence (migrations incluídas), o resto da WebApi, a imagem do Postgres, a infraestrutura dos testes, `Directory.Packages.props` | todos |
+| qualquer outro (testes de unidade, docs, harness) | nenhum |
+
+O `pre-push` compara com o que o remoto já tem ou, numa branch nova, com a `origin/main`. Sem base para comparar, roda todos. Se for preciso rodar integração e o Docker estiver parado, o push falha avisando. O CI roda a suíte inteira em todo PR.
+
+```bash
+git diff --name-only origin/main...HEAD | node scripts/harness/testes-afetados.mjs
+node scripts/harness/testes-afetados.test.mjs
+```
 
 ## Manutenção
 
