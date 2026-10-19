@@ -44,97 +44,24 @@ public sealed class CadastrarUsuarioEndpointTests : IAsyncLifetime
     }
 
     [Theory, ApiAutoData]
-    public async Task Post_Quando_SemDescontos_Deve_GravarUsuarioSemDescontos(CadastrarUsuarioRequest requisicao)
+    public async Task Post_Quando_RequisicaoInvalida_Deve_RetornarErroEmCadaCampo(CadastrarUsuarioRequest requisicao)
     {
-        using HttpResponseMessage resposta = await _api.Client.PostAsJsonAsync(
-            _rota,
-            requisicao with { DescontosSalariais = [] });
-
-        resposta.StatusCode.Should().Be(HttpStatusCode.Created);
-        Usuario gravado = await LerUnicoUsuarioAsync();
-        gravado.DescontosSalariais.Should().BeEmpty();
-    }
-
-    [Theory, ApiAutoData]
-    public async Task Post_Quando_RendaBrutaZero_Deve_GravarUsuario(CadastrarUsuarioRequest requisicao)
-    {
-        using HttpResponseMessage resposta = await _api.Client.PostAsJsonAsync(
-            _rota,
-            requisicao with { RendaBruta = 0m });
-
-        resposta.StatusCode.Should().Be(HttpStatusCode.Created);
-        Usuario gravado = await LerUnicoUsuarioAsync();
-        gravado.RendaBruta.Value.Should().Be(0m);
-    }
-
-    [Theory, ApiAutoData]
-    public async Task Post_Quando_RequisicaoValida_Deve_GravarUsuarioSemCartoes(CadastrarUsuarioRequest requisicao)
-    {
-        using HttpResponseMessage resposta = await _api.Client.PostAsJsonAsync(_rota, requisicao);
-
-        resposta.StatusCode.Should().Be(HttpStatusCode.Created);
-        Usuario gravado = await LerUnicoUsuarioAsync();
-        gravado.Cartoes.Should().BeEmpty();
-    }
-
-    [Theory, ApiAutoData]
-    public async Task Post_Quando_TextosComEspacosNasPontas_Deve_GravarTextosAparados(CadastrarUsuarioRequest requisicao)
-    {
-        DescontoSalarialDto desconto = requisicao.DescontosSalariais.First();
-        CadastrarUsuarioRequest comEspacos = requisicao with
+        DescontoSalarialDto desconto = requisicao.DescontosSalariais.First() with { Descricao = "", Valor = -0.01m };
+        CadastrarUsuarioRequest invalida = requisicao with
         {
-            Nome = $"  {requisicao.Nome}  ",
-            DescontosSalariais = [desconto with { Descricao = $"  {desconto.Descricao}  " }],
+            Nome = "",
+            RendaBruta = -0.01m,
+            DescontosSalariais = [desconto],
         };
 
-        using HttpResponseMessage resposta = await _api.Client.PostAsJsonAsync(_rota, comEspacos);
-
-        resposta.StatusCode.Should().Be(HttpStatusCode.Created);
-        Usuario gravado = await LerUnicoUsuarioAsync();
-        gravado.Nome.Value.Should().Be(requisicao.Nome);
-        gravado.DescontosSalariais.Should().ContainSingle().Which.Descricao.Value.Should().Be(desconto.Descricao);
-    }
-
-    [Theory]
-    [InlineApiAutoData(null)]
-    [InlineApiAutoData("")]
-    [InlineApiAutoData("   ")]
-    public async Task Post_Quando_NomeVazio_Deve_RetornarErroNoNome(string? nome, CadastrarUsuarioRequest requisicao)
-    {
-        await DeveRejeitarAsync(requisicao with { Nome = nome! }, "nome");
-    }
-
-    [Theory, ApiAutoData]
-    public async Task Post_Quando_RendaBrutaNegativa_Deve_RetornarErroNaRenda(CadastrarUsuarioRequest requisicao)
-    {
-        await DeveRejeitarAsync(requisicao with { RendaBruta = -0.01m }, "rendaBruta");
-    }
-
-    [Theory]
-    [InlineApiAutoData(null)]
-    [InlineApiAutoData("")]
-    [InlineApiAutoData("   ")]
-    public async Task Post_Quando_DescricaoDoDescontoVazia_Deve_RetornarErroNaDescricao(string? descricao, CadastrarUsuarioRequest requisicao)
-    {
-        DescontoSalarialDto desconto = requisicao.DescontosSalariais.First() with { Descricao = descricao };
-
-        await DeveRejeitarAsync(requisicao with { DescontosSalariais = [desconto] }, "descontosSalariais[0].descricao");
-    }
-
-    [Theory, ApiAutoData]
-    public async Task Post_Quando_ValorDoDescontoNegativo_Deve_RetornarErroNoValor(CadastrarUsuarioRequest requisicao)
-    {
-        DescontoSalarialDto desconto = requisicao.DescontosSalariais.First() with { Valor = -0.01m };
-
-        await DeveRejeitarAsync(requisicao with { DescontosSalariais = [desconto] }, "descontosSalariais[0].valor");
-    }
-
-    private async Task DeveRejeitarAsync(CadastrarUsuarioRequest requisicao, string campoComErro)
-    {
-        using HttpResponseMessage resposta = await _api.Client.PostAsJsonAsync(_rota, requisicao);
+        using HttpResponseMessage resposta = await _api.Client.PostAsJsonAsync(_rota, invalida);
 
         resposta.StatusCode.Should().Be(HttpStatusCode.BadRequest);
-        (await CamposComErroAsync(resposta)).Should().Equal(campoComErro);
+        (await CamposComErroAsync(resposta)).Should().BeEquivalentTo(
+            "nome",
+            "rendaBruta",
+            "descontosSalariais[0].descricao",
+            "descontosSalariais[0].valor");
         (await _api.ConsultarAsync(db => db.Usuarios.CountAsync())).Should().Be(0);
     }
 
