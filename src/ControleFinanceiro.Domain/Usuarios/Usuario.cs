@@ -25,6 +25,9 @@ public sealed class Usuario : AggregateRoot<IdUsuario>
     private readonly List<Cartao> _cartoes = [];
     public IReadOnlyList<Cartao> Cartoes => _cartoes;
 
+    private readonly List<ContaBancaria> _contas = [];
+    public IReadOnlyList<ContaBancaria> Contas => _contas;
+
     private Usuario()
     {
     }
@@ -56,6 +59,15 @@ public sealed class Usuario : AggregateRoot<IdUsuario>
             return Result.Failure($"O usuário já tem um cartão {cartao.Banco.Name} com final {cartao.Sufixo}.");
 
         _cartoes.Add(cartao);
+        return Result.Success();
+    }
+
+    public Result AdicionarConta(ContaBancaria conta)
+    {
+        if (_contas.Exists(c => c.Banco == conta.Banco && c.Sufixo == conta.Sufixo))
+            return Result.Failure($"O usuário já tem uma conta {conta.Banco.Name} com final {conta.Sufixo}.");
+
+        _contas.Add(conta);
         return Result.Success();
     }
 
