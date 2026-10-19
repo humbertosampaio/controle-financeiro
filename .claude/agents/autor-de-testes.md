@@ -26,6 +26,7 @@ Depois, **leia [docs/testes-com-autofixture.md](../../docs/testes-com-autofixtur
 |---|---|---|
 | Agregado, value object, serviço de domínio | `tests/ControleFinanceiro.Domain.Tests/<Area>/` | xUnit puro, entradas pelo `[Theory, DomainAutoData]` |
 | Endpoint da API | `tests/ControleFinanceiro.WebApi.Tests/<Area>/<Acao>/`, espelhando `src/ControleFinanceiro.WebApi/Endpoints/<Area>/<Acao>/` | `[Collection(ApiCollection.Nome)]`, `ResetarBancoAsync()` no `InitializeAsync`, `[Theory, ApiAutoData]`, leitura de volta com `ConsultarAsync` |
+| Validator do endpoint (regra que não é de value object) | mesma pasta do teste do endpoint, `<Acao>ValidatorTests` | Unidade: sem `ApiCollection`, `[Theory, ApiAutoData]`, `TestValidate` do FluentValidation |
 | Customização do AutoFixture | `tests/ControleFinanceiro.Tests.Shared/AutoFixture/` | Uma por value object com regra |
 | Customização de request | na pasta do teste do endpoint, registrada no `ApiFixture` | `fixture.Register((Entidade e) => new XRequest { ... })` |
 | Importador de extrato | projeto de testes da importação | Fixture fictícia em `Fixtures/` |
@@ -40,7 +41,15 @@ Convenções (leia dois testes vizinhos antes do primeiro):
 
 **Regra de domínio:** o caminho válido, cada invariante rejeitando entrada inválida, e as bordas (zero, negativo, vazio, limite de dia ou mês, virada de ano).
 
-**Endpoint:** a requisição válida gravada e lida de volta do banco (`[Frozen]` na entidade + `BeEquivalentTo`, sem os ids); as bordas aceitas; e, para cada regra do validator, um 400 que aponta o campo e não grava nada. Casos inválidos partem do request válido com `with`.
+**Endpoint:** teste de integração cobre **só o que depende da API e do banco juntos**. Cada caso sobe HTTP e Postgres, e a suíte cresce com cada endpoint. Borda de regra vai para a unidade (veja "O que vai para a integração" no doc de testes):
+- a requisição válida gravada e lida de volta do banco (`[Frozen]` na entidade + `BeEquivalentTo`, sem os ids);
+- cada status que o endpoint decide (404, 409...), com o campo do erro;
+- **um** 400 com todos os campos inválidos, que confere o erro em cada campo e que nada foi gravado;
+- o que é risco do mapeamento do EF, visto pela API (entidade nova num agregado carregado, conversão de tipo).
+
+Não escreva teste que grava direto no banco (SQL ou fora da API): a API é a única porta de entrada dos dados.
+
+Não repita na integração a borda de um value object (limite de dia, trim, sufixo malformado): ela é do teste de domínio. Regra que o validator acrescenta ao domínio (código de SmartEnum, id vazio) tem teste de unidade do validator, `<Acao>ValidatorTests`, na mesma pasta do teste do endpoint, sem `ApiCollection` e com `TestValidate`.
 
 **Importador de extrato:**
 - Lê a fixture e produz as transações esperadas (data, valor com sinal, descrição).
