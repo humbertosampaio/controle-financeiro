@@ -49,6 +49,7 @@ public sealed class Usuario : AggregateRoot<IdUsuario>
         return new(IdUsuario.FromNewVersion7Guid(), nome, rendaBruta, descontosSalariais);
     }
 
+    // Falha única: mapeada para 409 em AdicionarCartaoEndpoint. Nova falha aqui exige erro tipado.
     public Result AdicionarCartao(Cartao cartao)
     {
         if (_cartoes.Exists(c => c.Banco == cartao.Banco && c.Sufixo == cartao.Sufixo))
