@@ -16,11 +16,7 @@ Content-Type: application/json
       "descricao": "Contabilidade",
       "valor": 1
     }
-  ],
-  "cartao": {
-    "sufixo": "1234",
-    "diaVencimento": 1
-  }
+  ]
 }
 
 ###

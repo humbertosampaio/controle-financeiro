@@ -1,6 +1,6 @@
 # Testes com AutoFixture
 
-O AutoFixture existe aqui para uma coisa: **dar ao teste um objeto válido sem que ele precise saber os valores de dentro.** Um teste de `RendaLiquida` precisa de um `Cartao`, mas não liga para o sufixo nem para o dia de vencimento. Se o teste montasse o cartão à mão, um `"1234"` e um `10` apareceriam no código como se importassem para o resultado.
+O AutoFixture existe aqui para uma coisa: **dar ao teste um objeto válido sem que ele precise saber os valores de dentro.** Um teste de `AdicionarCartao` precisa de um `Usuario`, mas não liga para o nome nem para a renda. Se o teste montasse o usuário à mão, um `"Maria"` e um `5000m` apareceriam no código como se importassem para o resultado.
 
 Por isso, a regra é: **o que o teste não verifica, o AutoFixture gera; o que ele verifica, o teste declara.**
 
@@ -10,23 +10,43 @@ Os value objects só existem válidos (`SufixoCartao.Criar` falha para algo que 
 
 Value object novo com regra pede customização nova no `DomainFixture`. Sem ela, qualquer teste que peça o tipo, ou uma entidade que o contenha, quebra com a exceção do `Criar`.
 
+Entidade cujo `Criar` devolve `Result<T>` também precisa de ajuda, porque o AutoFixture só usa sozinho um método de fábrica que devolva o próprio tipo. O `DespesaRecorrenteGenerator` é o modelo: um `ISpecimenBuilder` que pede cada argumento ao contexto, chama o `Criar` e devolve o `.Value`. Como os argumentos vêm do contexto, um `[Frozen]` ou um `fixture.Inject` no teste chega até a entidade.
+
 ## Quando o teste precisa de um valor específico
 
-Três caminhos, do mais geral para o mais local:
+Quatro caminhos, do mais geral para o mais local:
 
 1. **Customização**: a regra vale para todo teste. É o caso do `DiaVencimentoCartaoCustomization`, que traz qualquer inteiro para 1–28. Use quando o valor gerado por padrão seria inválido.
 2. **Anotação no parâmetro**: o teste restringe só a si mesmo.
    - `[Range(1, 12)] int mes`, como em `MesReferenciaTests`, quando qualquer valor de uma faixa serve.
    - `[Frozen] Usuario esperado` congela a instância: todo objeto que o fixture montar depois e dependa de um `Usuario` recebe esse mesmo. É assim que o teste do cadastro sabe o que esperar no banco.
+
+   **O `[Frozen]` é o jeito padrão de fixar um valor**, e o parâmetro congelado é lido pelo teste, no arrange ou no assert. Em `DespesaFactoryTests`, `[Frozen] DiaCompraRecorrente diaCompra` faz a despesa recorrente que o fixture montar comprar nesse dia, e a data esperada sai de `diaCompra.Value`.
 3. **Mutação do objeto devolvido**: o teste parte de um objeto válido e muda só o que importa, com `with` nos records.
 
    ```csharp
-   requisicao with { Cartao = requisicao.Cartao with { DiaVencimento = 29 } }
+   requisicao with { RendaBruta = -0.01m }
    ```
 
-   Fica explícito que o caso é "uma requisição válida, exceto o dia". É o caminho dos casos inválidos e das bordas.
+   Fica explícito que o caso é "uma requisição válida, exceto a renda". É o caminho dos casos inválidos e das bordas.
+4. **`fixture.Inject` no corpo do teste**: só quando o `[Frozen]` não expressa o caso. Peça `Fixture fixture` como parâmetro e injete antes do `fixture.Create<T>()`. São dois casos:
+   - o teste precisa de um valor específico, que o parâmetro não escolhe: `fixture.Inject(FormaPagamento.Credito)`;
+   - o valor depende de algo montado no próprio teste: `fixture.Inject(cartao.Id)`, depois de `usuario.AdicionarCartao(cartao)`.
+
+   ```csharp
+   usuario.AdicionarCartao(cartao).Should().Succeed();
+   fixture.Inject(FormaPagamento.Credito);
+   fixture.Inject(cartao.Id);
+   usuario.AdicionarDespesaRecorrente(fixture.Create<DespesaRecorrente>()).Should().Succeed();
+   ```
+
+**Não contorne essas limitações.** Nada de atributo próprio que alimente o `[Frozen]` com `MemberData`, nem de parâmetro `[Frozen] T _` (ou `_1`) que só existe para congelar e nunca é lido: a assinatura do teste passa a esconder o que ele depende. Para variar poucos valores da mesma regra, use `[InlineDomainAutoData(...)]`.
 
 Valor fixo direto no teste (`(TextoObrigatorio)"INSS"`) só quando o próprio valor é o assunto, como num teste de soma com o resultado calculado à mão.
+
+## Nome do teste
+
+`Metodo_Quando_Cenario_Deve_Resultado`, como no `CLAUDE.md`. Quando não há cenário, porque o comportamento vale sempre, o `Quando` sai em vez de ganhar um cenário vazio: `Criar_Deve_IniciarSemCartoes`, e não `Criar_Quando_Chamado_Deve_IniciarSemCartoes`.
 
 ## Customizações realistas (só na integração)
 
