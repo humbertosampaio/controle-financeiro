@@ -12,6 +12,26 @@ Value object novo com regra pede customização nova no `DomainFixture`. Sem ela
 
 Entidade cujo `Criar` devolve `Result<T>` também precisa de ajuda, porque o AutoFixture só usa sozinho um método de fábrica que devolva o próprio tipo. O `DespesaRecorrenteGenerator` é o modelo: um `ISpecimenBuilder` que pede cada argumento ao contexto, chama o `Criar` e devolve o `.Value`. Como os argumentos vêm do contexto, um `[Frozen]` ou um `fixture.Inject` no teste chega até a entidade.
 
+### Peça o objeto ao AutoFixture, não o monte no teste
+
+Antes de escrever `new` ou chamar um método de fábrica no corpo do teste, veja se o objeto pode vir como parâmetro. Se o AutoFixture ainda não sabe criá-lo e é provável que outros testes peçam o mesmo tipo, **crie a customização** em vez de montá-lo no teste. Num caso isolado, montar o objeto no teste ainda é melhor que uma customização que só ele usa. Os exemplos abaixo são tipos que vários testes pedem:
+
+- `IdentidadeLancamentoCustomization` registra `(string id) => IdentidadeLancamento.Unica(id).Value`. Assim, o teste pede `IdentidadeLancamento identidade`, em vez de pedir uma `string idExterno` que só serviria para chamar o `Unica`.
+- `OrigemTransacaoCustomization` registra a origem a partir de uma `ContaBancaria`. Com `[Frozen] ContaBancaria conta`, a `OrigemTransacao origem` do mesmo teste aponta para essa conta, sem `OrigemTransacao.DaConta(conta.Id)` no corpo.
+- `[Frozen] Banco banco` e `[Frozen] SufixoConta sufixo` fazem duas `ContaBancaria` pedidas como parâmetro terem o mesmo banco e o mesmo sufixo, em vez de dois `ContaBancaria.Criar(...)`.
+
+O teste monta o objeto à mão só quando os valores dele são o assunto do teste: o texto canônico de um hash conhecido, duas contas em bancos **diferentes**, a data e a descrição de um teste de sobreposição.
+
+### Use o atributo mais simples que dê conta
+
+`[DomainAutoData]` instancia e aplica todas as customizações do domínio a cada caso. Quando o teste não precisa de nenhuma delas, use o `[AutoData]` ou o `[InlineAutoData]` do `AutoFixture.Xunit2`, e o `[InlineData]` do xUnit quando nada for gerado.
+
+O teste precisa do `DomainAutoData` quando pede value object com regra, id Vogen, SmartEnum, entidade, `decimal` com centavos ou `DateOnly`. O `DateOnly` entra na lista porque o AutoFixture puro gera um com dia e mês aleatórios, e o construtor estoura.
+
+### Método interno se testa pela entrada pública
+
+Não use `InternalsVisibleTo`. Um método `internal` está fechado porque só uma entrada pública pode chamá-lo, e é por ela que o teste passa, do mesmo jeito que a aplicação. O `Transacao.Criar` é interno, então a cópia dos campos e o id v7 são testados pela `LoteTransacoesFactory`.
+
 ## Quando o teste precisa de um valor específico
 
 Quatro caminhos, do mais geral para o mais local:
