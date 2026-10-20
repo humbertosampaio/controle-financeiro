@@ -18,16 +18,19 @@ git diff origin/main...HEAD --stat
 
 Liste o que foi adicionado e o que já tem teste **antes** de escrever. Não duplique teste existente.
 
-Depois, **leia [docs/testes-com-autofixture.md](../../docs/testes-com-autofixture.md) inteiro** antes do primeiro teste. Ele diz como fixar valores (`[Frozen]` por padrão, `fixture.Inject` só quando o `[Frozen]` não serve, nunca `[Frozen] T _`), quando usar customização ou `with` e como nomear o teste.
+Depois, **leia [docs/testes-com-autofixture.md](../../docs/testes-com-autofixture.md) inteiro** antes do primeiro teste. Ele diz como fixar valores (`[Frozen]` por padrão, `fixture.Inject` só quando o `[Frozen]` não serve, nunca `[Frozen] T _`), quando usar customização ou `with` e como nomear o teste. Diz também três coisas que costumam passar despercebidas:
+- peça o objeto como parâmetro em vez de usar `new` ou um método de fábrica no corpo do teste, e crie a customização que falta quando outros testes provavelmente vão pedir o mesmo tipo;
+- use o atributo mais simples que dê conta (`[AutoData]` ou `[InlineData]` quando nenhuma customização do domínio é necessária);
+- método `internal` se testa pela entrada pública que o chama, nunca com `InternalsVisibleTo`.
 
 ## Onde e como
 
 | Alvo | Projeto | Padrão |
 |---|---|---|
-| Agregado, value object, serviço de domínio | `tests/ControleFinanceiro.Domain.Tests/<Area>/` | xUnit puro, entradas pelo `[Theory, DomainAutoData]` |
+| Agregado, value object, serviço de domínio | `tests/ControleFinanceiro.Domain.Tests/<Area>/` | xUnit puro, entradas pelo AutoFixture: `[Theory, DomainAutoData]`, ou `[AutoData]` quando nenhuma customização do domínio é necessária |
 | Endpoint da API | `tests/ControleFinanceiro.WebApi.Tests/<Area>/<Acao>/`, espelhando `src/ControleFinanceiro.WebApi/Endpoints/<Area>/<Acao>/` | `[Collection(ApiCollection.Nome)]`, `ResetarBancoAsync()` no `InitializeAsync`, `[Theory, ApiAutoData]`, leitura de volta com `ConsultarAsync` |
 | Validator do endpoint (regra que não é de value object) | mesma pasta do teste do endpoint, `<Acao>ValidatorTests` | Unidade: sem `ApiCollection`, `[Theory, ApiAutoData]`, `TestValidate` do FluentValidation |
-| Customização do AutoFixture | `tests/ControleFinanceiro.Tests.Shared/AutoFixture/` | Uma por value object com regra |
+| Customização do AutoFixture | `tests/ControleFinanceiro.Tests.Shared/AutoFixture/` | Uma por value object com regra, e uma para o tipo que vários testes montariam à mão |
 | Customização de request | na pasta do teste do endpoint, registrada no `ApiFixture` | `fixture.Register((Entidade e) => new XRequest { ... })` |
 | Importador de extrato | projeto de testes da importação | Fixture fictícia em `Fixtures/` |
 

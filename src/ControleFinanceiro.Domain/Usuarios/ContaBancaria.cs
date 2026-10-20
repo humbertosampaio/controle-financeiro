@@ -1,0 +1,41 @@
+using ControleFinanceiro.Domain.Shared.ValueObjects;
+
+namespace ControleFinanceiro.Domain.Usuarios;
+
+[ValueObject]
+public readonly partial struct IdConta
+{
+    private static Validation Validate(Guid input) => Id.Validar(input);
+}
+
+/// <summary>
+/// Conta de onde vêm os lançamentos de um extrato. Guarda só o sufixo do número: o número completo, a
+/// agência e o titular não são gravados.
+/// </summary>
+public sealed class ContaBancaria : Entity<IdConta>
+{
+    public Banco Banco { get; private set; } = null!;
+    public TipoConta Tipo { get; private set; } = null!;
+    public SufixoConta Sufixo { get; private set; } = null!;
+    public TextoObrigatorio Apelido { get; private set; } = null!;
+
+    private ContaBancaria()
+    {
+    }
+
+    private ContaBancaria(IdConta id, Banco banco, TipoConta tipo, SufixoConta sufixo, TextoObrigatorio apelido)
+        : base(id)
+    {
+        Banco = banco;
+        Tipo = tipo;
+        Sufixo = sufixo;
+        Apelido = apelido;
+    }
+
+    /// <param name="apelido">Opcional. Sem ele, a conta se chama "&lt;tipo&gt; &lt;banco&gt; final &lt;sufixo&gt;".</param>
+    public static ContaBancaria Criar(Banco banco, TipoConta tipo, SufixoConta sufixo, TextoObrigatorio? apelido = null)
+    {
+        apelido ??= (TextoObrigatorio)$"{tipo.Name} {banco.Name} final {sufixo}";
+        return new ContaBancaria(IdConta.FromNewVersion7Guid(), banco, tipo, sufixo, apelido);
+    }
+}
