@@ -10,3 +10,7 @@
 .githooks/* text eol=lf
 *.sh text eol=lf
 *.mjs text eol=lf
+
+# Fixtures de extrato ficam byte a byte como o banco exporta: o BOM e o CRLF fazem parte do layout que
+# o leitor testa.
+tests/**/Fixtures/** -text
