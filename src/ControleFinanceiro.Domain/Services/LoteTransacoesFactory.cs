@@ -1,3 +1,4 @@
+using ControleFinanceiro.Domain.Shared;
 using ControleFinanceiro.Domain.Shared.ValueObjects;
 using ControleFinanceiro.Domain.Transacoes;
 using ControleFinanceiro.Domain.Usuarios;
@@ -10,16 +11,15 @@ namespace ControleFinanceiro.Domain.Services;
 /// </summary>
 public static class LoteTransacoesFactory
 {
-    public static Result<IReadOnlyList<Transacao>> Criar(
+    public static Result<IReadOnlyList<Transacao>, Erro> Criar(
         Usuario usuario,
         OrigemTransacao origem,
         IReadOnlyList<LancamentoExtrato> lancamentos)
     {
         Banco? banco = BancoDaOrigem(usuario, origem);
         if (banco is null)
-            return Result.Failure<IReadOnlyList<Transacao>>("A origem das transações não pertence ao usuário.");
+            return Erros.LoteTransacoes.OrigemNaoPertenceAoUsuario;
 
-        // A mensagem cita as posições, e não o identificador: ele é do banco e pode chegar ao modelo.
         int[]? posicoesRepetidas = lancamentos
             .Select((lancamento, indice) => (lancamento.Identidade, Posicao: indice + 1))
             .Where(l => l.Identidade.EhUnica)
@@ -28,10 +28,7 @@ public static class LoteTransacoesFactory
             ?.ToArray();
 
         if (posicoesRepetidas is not null)
-        {
-            string posicoes = $"{string.Join(", ", posicoesRepetidas[..^1])} e {posicoesRepetidas[^1]}";
-            return Result.Failure<IReadOnlyList<Transacao>>($"Os lançamentos {posicoes} do lote têm o mesmo identificador do banco.");
-        }
+            return Erros.LoteTransacoes.IdentificadorRepetido(posicoesRepetidas);
 
         IReadOnlyList<ChaveDeduplicacao> chaves = ChaveDeduplicacao.CalcularLote(banco, origem, lancamentos.Select(l => l.Identidade));
 

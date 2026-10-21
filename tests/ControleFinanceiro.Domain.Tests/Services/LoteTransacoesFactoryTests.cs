@@ -1,5 +1,6 @@
 using AutoFixture.Xunit2;
 using ControleFinanceiro.Domain.Services;
+using ControleFinanceiro.Domain.Shared;
 using ControleFinanceiro.Domain.Shared.ValueObjects;
 using ControleFinanceiro.Domain.Transacoes;
 using ControleFinanceiro.Domain.Usuarios;
@@ -20,7 +21,7 @@ public sealed class LoteTransacoesFactoryTests
     {
         usuario.AdicionarConta(conta).Should().Succeed();
 
-        Result<IReadOnlyList<Transacao>> result = LoteTransacoesFactory.Criar(usuario, origem, [primeiro, segundo]);
+        Result<IReadOnlyList<Transacao>, Erro> result = LoteTransacoesFactory.Criar(usuario, origem, [primeiro, segundo]);
 
         IReadOnlyList<Transacao> transacoes = result.Should().Succeed().Subject;
         transacoes.Select(t => t.Descricao).Should().Equal(primeiro.Descricao, segundo.Descricao);
@@ -38,7 +39,7 @@ public sealed class LoteTransacoesFactoryTests
     {
         usuario.AdicionarConta(conta).Should().Succeed();
 
-        Result<IReadOnlyList<Transacao>> result = LoteTransacoesFactory.Criar(usuario, origem, [lancamento]);
+        Result<IReadOnlyList<Transacao>, Erro> result = LoteTransacoesFactory.Criar(usuario, origem, [lancamento]);
 
         Transacao transacao = result.Should().Succeed().Which.Should().ContainSingle().Subject;
         transacao.Data.Should().Be(lancamento.Data);
@@ -57,7 +58,7 @@ public sealed class LoteTransacoesFactoryTests
     {
         usuario.AdicionarConta(conta).Should().Succeed();
 
-        Result<IReadOnlyList<Transacao>> result = LoteTransacoesFactory.Criar(usuario, origem, [lancamento]);
+        Result<IReadOnlyList<Transacao>, Erro> result = LoteTransacoesFactory.Criar(usuario, origem, [lancamento]);
 
         result.Should().Succeed()
             .Which.Should().ContainSingle()
@@ -73,7 +74,7 @@ public sealed class LoteTransacoesFactoryTests
         usuario.AdicionarCartao(cartao).Should().Succeed();
         OrigemTransacao origem = OrigemTransacao.DoCartao(cartao.Id);
 
-        Result<IReadOnlyList<Transacao>> result = LoteTransacoesFactory.Criar(usuario, origem, [lancamento]);
+        Result<IReadOnlyList<Transacao>, Erro> result = LoteTransacoesFactory.Criar(usuario, origem, [lancamento]);
 
         result.Should().Succeed()
             .Which.Should().ContainSingle()
@@ -89,7 +90,7 @@ public sealed class LoteTransacoesFactoryTests
     {
         usuario.AdicionarConta(conta).Should().Succeed();
 
-        Result<IReadOnlyList<Transacao>> result = LoteTransacoesFactory.Criar(usuario, origem, [lancamento, lancamento]);
+        Result<IReadOnlyList<Transacao>, Erro> result = LoteTransacoesFactory.Criar(usuario, origem, [lancamento, lancamento]);
 
         result.Should().Succeed()
             .Which.Select(t => t.Chave).Should().HaveCount(2).And.OnlyHaveUniqueItems();
@@ -101,9 +102,9 @@ public sealed class LoteTransacoesFactoryTests
         OrigemTransacao origem,
         LancamentoExtrato lancamento)
     {
-        Result<IReadOnlyList<Transacao>> result = LoteTransacoesFactory.Criar(usuario, origem, [lancamento]);
+        Result<IReadOnlyList<Transacao>, Erro> result = LoteTransacoesFactory.Criar(usuario, origem, [lancamento]);
 
-        result.Should().FailWith("A origem das transações não pertence ao usuário.");
+        result.Should().FailWith(Erros.LoteTransacoes.OrigemNaoPertenceAoUsuario);
     }
 
     [Theory, DomainAutoData]
@@ -112,10 +113,10 @@ public sealed class LoteTransacoesFactoryTests
         IdCartao idCartao,
         LancamentoExtrato lancamento)
     {
-        Result<IReadOnlyList<Transacao>> result = LoteTransacoesFactory.Criar(
+        Result<IReadOnlyList<Transacao>, Erro> result = LoteTransacoesFactory.Criar(
             usuario, OrigemTransacao.DoCartao(idCartao), [lancamento]);
 
-        result.Should().FailWith("A origem das transações não pertence ao usuário.");
+        result.Should().FailWith(Erros.LoteTransacoes.OrigemNaoPertenceAoUsuario);
     }
 
     [Theory, DomainAutoData]
@@ -134,9 +135,11 @@ public sealed class LoteTransacoesFactoryTests
         LancamentoExtrato primeiro = LancamentoExtrato.Criar(data, hora: null, valor1, descricao, contraparte: null, identidade);
         LancamentoExtrato segundo = LancamentoExtrato.Criar(data, hora: null, valor2, descricao, contraparte: null, identidade);
 
-        Result<IReadOnlyList<Transacao>> result = LoteTransacoesFactory.Criar(usuario, origem, [outro, primeiro, outro, segundo]);
+        Result<IReadOnlyList<Transacao>, Erro> result = LoteTransacoesFactory.Criar(usuario, origem, [outro, primeiro, outro, segundo]);
 
-        result.Should().FailWith("Os lançamentos 2 e 4 do lote têm o mesmo identificador do banco.");
+        Erro erro = result.Should().Fail().Subject;
+        erro.Codigo.Should().Be("LoteTransacoes.IdentificadorRepetido");
+        erro.Descricao.Should().Be("Os lançamentos 2 e 4 do lote têm o mesmo identificador atribuído pelo banco do extrato.");
     }
 
     [Theory, DomainAutoData]
@@ -147,7 +150,7 @@ public sealed class LoteTransacoesFactoryTests
     {
         usuario.AdicionarConta(conta).Should().Succeed();
 
-        Result<IReadOnlyList<Transacao>> result = LoteTransacoesFactory.Criar(usuario, origem, []);
+        Result<IReadOnlyList<Transacao>, Erro> result = LoteTransacoesFactory.Criar(usuario, origem, []);
 
         result.Should().Succeed().Which.Should().BeEmpty();
     }
