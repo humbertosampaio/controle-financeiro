@@ -1,0 +1,19 @@
+﻿EXTRATO DE CONTA CORRENTE - EXEMPLO FICTICIO
+Agência: 1 / Conta: 987654321
+Gerado em 10/03/2026 08:00
+Extrato de 02/03/2026 a 09/03/2026
+
+
+
+
+Data Lançamento,Data Contábil,Título,Descrição,Entrada(R$),Saída(R$),Saldo do Dia(R$)
+02/03/2026,02/03/2026,Pix recebido de FULANO FICTICIO,Divisão do jantar,150.00,0.00,-12.50
+02/03/2026,02/03/2026,"Pix enviado para LOJA FICTICIA, LTDA",,0.00,89.90,-12.50
+03/03/2026,03/03/2026,Pagamento de boleto,Pagamento de boleto,0.00,230.45,-252.95
+03/03/2026,03/03/2026,Tarifa de exemplo,,0.00,5.00,-252.95
+03/03/2026,03/03/2026,Tarifa de exemplo,,0.00,5.00,-252.95
+04/03/2026,04/03/2026,Rendimento de fundo," ABCD11",12.34,0.00,-240.61
+04/03/2026,04/03/2026,Ajuste de exemplo,,0.00,0.00,-240.61
+07/03/2026,09/03/2026,Pix recebido de BELTRANO FICTICIO,Presente,2000.00,0.00,1769.39
+09/03/2026,09/03/2026,"DEVOL RECEBIDA PIX DE LOJA FICTICIA, LTDA",,20.00,0.00,1769.39
+09/03/2026,09/03/2026,DEVOL ENVIADA PIX,,0.00,10.00,1769.39
