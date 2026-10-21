@@ -20,10 +20,12 @@ const espelhadas = [
 
 // Mudança aqui pode quebrar qualquer endpoint: roda a suíte de integração inteira. Domain e
 // Application entram porque as regras dos value objects e os validators compartilhados mudam a
-// resposta dos endpoints (um sufixo de cartão que dava 201 passa a dar 400).
+// resposta dos endpoints (um sufixo de cartão que dava 201 passa a dar 400). A Importacao entra
+// porque o leitor de cada layout decide o que o endpoint de importação grava.
 const afetamTodos = [
   "src/ControleFinanceiro.Domain/",
   "src/ControleFinanceiro.Application/",
+  "src/ControleFinanceiro.Infrastructure.Importacao/",
   "src/ControleFinanceiro.Infrastructure.Persistence/", // inclui as migrations
   "src/ControleFinanceiro.WebApi/", // Program.cs e o que não é de um endpoint só
   "src/ControleFinanceiro.AppHost/Resources/", // imagem do Postgres
