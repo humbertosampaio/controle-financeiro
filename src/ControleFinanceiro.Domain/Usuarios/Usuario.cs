@@ -71,6 +71,25 @@ public sealed class Usuario : AggregateRoot<IdUsuario>
         return Result.Success();
     }
 
+    /// <summary>
+    /// A conta de onde veio um extrato, casada por banco e sufixo. Sem uma, cria a conta com o apelido padrão.
+    /// </summary>
+    public Result<ContaBancaria> ObterOuAdicionarConta(Banco banco, TipoConta tipo, SufixoConta sufixo)
+    {
+        ContaBancaria? existente = _contas.Find(c => c.Banco == banco && c.Sufixo == sufixo);
+        if (existente is not null)
+        {
+            return existente.Tipo == tipo
+                ? existente
+                : Result.Failure<ContaBancaria>(
+                    $"O usuário já tem uma conta {banco.Name} com final {sufixo}, mas do tipo {existente.Tipo.Name}.");
+        }
+
+        ContaBancaria conta = ContaBancaria.Criar(banco, tipo, sufixo);
+        _contas.Add(conta);
+        return conta;
+    }
+
     public Result AdicionarDespesaRecorrente(DespesaRecorrente despesaRecorrente)
     {
         if (_despesasRecorrentes.Contains(despesaRecorrente))
