@@ -34,8 +34,11 @@ const casos = [
   // regra de domínio e validators compartilhados mudam a resposta dos endpoints: tudo
   [["src/ControleFinanceiro.Domain/Shared/ValueObjects/SufixoCartao.cs"], "todos"],
   [["src/ControleFinanceiro.Application/Validation/CustomValidators.cs"], "todos"],
+  // o leitor do layout decide o que a importação grava: tudo
+  [["src/ControleFinanceiro.Infrastructure.Importacao/C6/LeitorExtratoContaC6.cs"], "todos"],
   // nada de integração: testes de domínio, docs, harness
   [["tests/ControleFinanceiro.Domain.Tests/Usuarios/UsuarioTests.cs"], "nenhum"],
+  [["tests/ControleFinanceiro.Infrastructure.Importacao.Tests/C6/LeitorExtratoContaC6Tests.cs"], "nenhum"],
   [["docs/harness.md", "CLAUDE.md", ".githooks/pre-push"], "nenhum"],
   [[], "nenhum"],
   [["", "  "], "nenhum"],
