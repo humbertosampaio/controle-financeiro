@@ -87,7 +87,7 @@ A suíte de integração sobe um Postgres no Docker, então o `pre-push` não a 
 | Arquivo alterado | Testes de integração |
 |---|---|
 | `src/ControleFinanceiro.WebApi/Endpoints/<Area>/<Acao>/` ou `tests/ControleFinanceiro.WebApi.Tests/<Area>/<Acao>/` | só os de `ControleFinanceiro.WebApi.Tests.<Area>.<Acao>` |
-| Domain e Application (regras de value object e validators compartilhados mudam a resposta dos endpoints), Persistence (migrations incluídas), o resto da WebApi, a imagem do Postgres, a infraestrutura dos testes, `Directory.Packages.props` | todos |
+| Domain e Application (regras de value object e validators compartilhados mudam a resposta dos endpoints), Importacao (o leitor de cada layout decide o que a importação grava), Persistence (migrations incluídas), o resto da WebApi, a imagem do Postgres, a infraestrutura dos testes, `Directory.Packages.props` | todos |
 | qualquer outro (testes de unidade, docs, harness) | nenhum |
 
 O `pre-push` compara com o que o remoto já tem ou, numa branch nova, com a `origin/main`. Sem base para comparar, roda todos. Se for preciso rodar integração e o Docker estiver parado, o push falha avisando. O CI roda a suíte inteira em todo PR.
