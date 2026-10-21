@@ -118,6 +118,68 @@ public sealed class UsuarioTests
     }
 
     [Theory, DomainAutoData]
+    public void ObterOuAdicionarConta_Quando_SemContaNoBancoComOSufixo_Deve_AdicionarComOApelidoPadrao(
+        Usuario sut,
+        Banco banco,
+        TipoConta tipo,
+        SufixoConta sufixo)
+    {
+        Result<ContaBancaria> result = sut.ObterOuAdicionarConta(banco, tipo, sufixo);
+
+        ContaBancaria conta = result.Should().Succeed().Subject;
+        conta.Banco.Should().Be(banco);
+        conta.Tipo.Should().Be(tipo);
+        conta.Sufixo.Should().Be(sufixo);
+        conta.Apelido.Value.Should().Be($"{tipo.Name} {banco.Name} final {sufixo}");
+        sut.Contas.Should().ContainSingle().Which.Should().BeSameAs(conta);
+    }
+
+    [Theory, DomainAutoData]
+    public void ObterOuAdicionarConta_Quando_ContaComMesmoBancoSufixoETipo_Deve_RetornarAContaExistente(
+        Usuario sut,
+        [Frozen] Banco banco,
+        [Frozen] TipoConta tipo,
+        [Frozen] SufixoConta sufixo,
+        ContaBancaria existente)
+    {
+        sut.AdicionarConta(existente).Should().Succeed();
+
+        Result<ContaBancaria> result = sut.ObterOuAdicionarConta(banco, tipo, sufixo);
+
+        result.Should().Succeed().Which.Should().BeSameAs(existente);
+        sut.Contas.Should().ContainSingle();
+    }
+
+    [Theory, DomainAutoData]
+    public void ObterOuAdicionarConta_Quando_MesmoSufixoEmOutroBanco_Deve_AdicionarUmaContaNova(
+        Usuario sut,
+        TipoConta tipo,
+        SufixoConta sufixo)
+    {
+        sut.AdicionarConta(ContaBancaria.Criar(Banco.MercadoPago, tipo, sufixo)).Should().Succeed();
+
+        Result<ContaBancaria> result = sut.ObterOuAdicionarConta(Banco.C6, tipo, sufixo);
+
+        result.Should().Succeed().Which.Banco.Should().Be(Banco.C6);
+        sut.Contas.Should().HaveCount(2);
+    }
+
+    [Theory, DomainAutoData]
+    public void ObterOuAdicionarConta_Quando_ContaComMesmoBancoESufixoDeOutroTipo_Deve_RetornarFalha(
+        Usuario sut,
+        Banco banco,
+        SufixoConta sufixo)
+    {
+        sut.AdicionarConta(ContaBancaria.Criar(banco, TipoConta.ContaPagamento, sufixo)).Should().Succeed();
+
+        Result<ContaBancaria> result = sut.ObterOuAdicionarConta(banco, TipoConta.ContaCorrente, sufixo);
+
+        result.Should().FailWith(
+            $"O usuário já tem uma conta {banco.Name} com final {sufixo}, mas do tipo {TipoConta.ContaPagamento.Name}.");
+        sut.Contas.Should().ContainSingle();
+    }
+
+    [Theory, DomainAutoData]
     public void AdicionarDespesaRecorrente_Quando_CartaoNaoPertenceAoUsuario_Deve_RetornarFalha(Usuario sut, Fixture fixture)
     {
         fixture.Inject(FormaPagamento.Credito);
