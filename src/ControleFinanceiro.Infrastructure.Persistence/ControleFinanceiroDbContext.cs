@@ -2,6 +2,7 @@ using ControleFinanceiro.Domain.Cartoes;
 using ControleFinanceiro.Domain.Despesas;
 using ControleFinanceiro.Domain.Shared.ValueObjects;
 using ControleFinanceiro.Domain.Usuarios;
+using ControleFinanceiro.Infrastructure.Persistence.Conventions;
 using ControleFinanceiro.Infrastructure.Persistence.ValueConverters;
 using ControleFinanceiro.Infrastructure.Persistence.ValueConverters.ValueObjects;
 using Microsoft.EntityFrameworkCore;
@@ -34,13 +35,7 @@ public sealed class ControleFinanceiroDbContext : DbContext
             .Properties<TextoObrigatorio>()
             .HaveConversion<TextoObrigatorioConverter>();
 
-        configurationBuilder
-            .Properties<ReaisPositivo>()
-            .HaveConversion<ReaisPositivoConverter>();
-
-        configurationBuilder
-            .Properties<Reais>()
-            .HaveConversion<ReaisConverter>();
+        configurationBuilder.ConfigurarDinheiro();
 
         configurationBuilder
             .Properties<DiaVencimentoCartao>()

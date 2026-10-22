@@ -22,7 +22,7 @@ namespace ControleFinanceiro.Infrastructure.Persistence.Migrations
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
 
-            modelBuilder.Entity("ControleFinanceiro.Domain.Usuarios.Cartao", b =>
+            modelBuilder.Entity("ControleFinanceiro.Domain.Cartoes.Cartao", b =>
                 {
                     b.Property<Guid>("Id")
                         .HasColumnType("uuid")
@@ -38,18 +38,19 @@ namespace ControleFinanceiro.Infrastructure.Persistence.Migrations
                         .HasColumnType("integer")
                         .HasColumnName("dia_vencimento");
 
+                    b.Property<Guid>("IdUsuario")
+                        .HasColumnType("uuid")
+                        .HasColumnName("id_usuario");
+
                     b.Property<string>("Sufixo")
                         .IsRequired()
                         .HasMaxLength(4)
                         .HasColumnType("character varying(4)")
                         .HasColumnName("sufixo");
 
-                    b.Property<Guid>("id_usuario")
-                        .HasColumnType("uuid");
-
                     b.HasKey("Id");
 
-                    b.HasIndex("id_usuario", "Banco", "Sufixo")
+                    b.HasIndex("IdUsuario", "Banco", "Sufixo")
                         .IsUnique();
 
                     b.ToTable("cartoes", null, t =>
@@ -74,7 +75,8 @@ namespace ControleFinanceiro.Infrastructure.Persistence.Migrations
                         .HasColumnName("descricao");
 
                     b.Property<decimal>("Valor")
-                        .HasColumnType("numeric")
+                        .HasPrecision(14, 2)
+                        .HasColumnType("numeric(14,2)")
                         .HasColumnName("valor");
 
                     b.Property<Guid>("id_usuario")
@@ -99,7 +101,8 @@ namespace ControleFinanceiro.Infrastructure.Persistence.Migrations
                         .HasColumnName("nome");
 
                     b.Property<decimal>("RendaBruta")
-                        .HasColumnType("numeric")
+                        .HasPrecision(14, 2)
+                        .HasColumnType("numeric(14,2)")
                         .HasColumnName("renda_bruta");
 
                     b.HasKey("Id");
@@ -107,11 +110,11 @@ namespace ControleFinanceiro.Infrastructure.Persistence.Migrations
                     b.ToTable("usuarios", (string)null);
                 });
 
-            modelBuilder.Entity("ControleFinanceiro.Domain.Usuarios.Cartao", b =>
+            modelBuilder.Entity("ControleFinanceiro.Domain.Cartoes.Cartao", b =>
                 {
                     b.HasOne("ControleFinanceiro.Domain.Usuarios.Usuario", null)
-                        .WithMany("Cartoes")
-                        .HasForeignKey("id_usuario")
+                        .WithMany()
+                        .HasForeignKey("IdUsuario")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
                 });
@@ -127,8 +130,6 @@ namespace ControleFinanceiro.Infrastructure.Persistence.Migrations
 
             modelBuilder.Entity("ControleFinanceiro.Domain.Usuarios.Usuario", b =>
                 {
-                    b.Navigation("Cartoes");
-
                     b.Navigation("DescontosSalariais");
                 });
 #pragma warning restore 612, 618
