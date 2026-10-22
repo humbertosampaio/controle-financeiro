@@ -10,7 +10,7 @@ Os value objects só existem válidos (`SufixoCartao.Criar` falha para algo que 
 
 Value object novo com regra pede customização nova no `DomainFixture`. Sem ela, qualquer teste que peça o tipo, ou uma entidade que o contenha, quebra com a exceção do `Criar`.
 
-Entidade cujo `Criar` devolve `Result<T>` também precisa de ajuda, porque o AutoFixture só usa sozinho um método de fábrica que devolva o próprio tipo. O `DespesaRecorrenteGenerator` é o modelo: um `ISpecimenBuilder` que pede cada argumento ao contexto, chama o `Criar` e devolve o `.Value`. Como os argumentos vêm do contexto, um `[Frozen]` ou um `fixture.Inject` no teste chega até a entidade.
+Entidade cujo `Criar` devolve `Result<T>` também precisa de ajuda, porque o AutoFixture só usa sozinho um método de fábrica que devolva o próprio tipo. O `DespesaRecorrenteGenerator` é o modelo: um `ISpecimenBuilder` que pede cada argumento ao contexto, chama a `DespesaRecorrenteFactory` e devolve o `.Value`. Como os argumentos vêm do contexto, um `[Frozen]` ou um `fixture.Inject` no teste chega até a entidade.
 
 ### Peça o objeto ao AutoFixture, não o monte no teste
 
@@ -51,13 +51,17 @@ Quatro caminhos, do mais geral para o mais local:
    Fica explícito que o caso é "uma requisição válida, exceto a renda". É o caminho dos casos inválidos e das bordas.
 4. **`fixture.Inject` no corpo do teste**: só quando o `[Frozen]` não expressa o caso. Peça `Fixture fixture` como parâmetro e injete antes do `fixture.Create<T>()`. São dois casos:
    - o teste precisa de um valor específico, que o parâmetro não escolhe: `fixture.Inject(FormaPagamento.Credito)`;
-   - o valor depende de algo montado no próprio teste: `fixture.Inject(cartao.Id)`, depois de `usuario.AdicionarCartao(cartao)`.
+   - o valor depende de algo montado no próprio teste, que nenhum parâmetro produz.
+
+   No exemplo, o `[Frozen] IdUsuario` faz o cartão e a despesa recorrente saírem do mesmo usuário, sem montar um `Usuario`. Só a forma de pagamento precisa do `Inject`:
 
    ```csharp
-   usuario.AdicionarCartao(cartao).Should().Succeed();
-   fixture.Inject(FormaPagamento.Credito);
-   fixture.Inject(cartao.Id);
-   usuario.AdicionarDespesaRecorrente(fixture.Create<DespesaRecorrente>()).Should().Succeed();
+   [Theory, DomainAutoData]
+   public void Criar_Quando_FormaPagamentoCredito_Deve_...([Frozen] IdUsuario idUsuario, [Frozen] Cartao cartao, Fixture fixture)
+   {
+       fixture.Inject(FormaPagamento.Credito);
+       DespesaRecorrente despesaRecorrente = fixture.Create<DespesaRecorrente>();
+       ...
    ```
 
 **Não contorne essas limitações.** Nada de atributo próprio que alimente o `[Frozen]` com `MemberData`, nem de parâmetro `[Frozen] T _` (ou `_1`) que só existe para congelar e nunca é lido: a assinatura do teste passa a esconder o que ele depende. Para variar poucos valores da mesma regra, use `[InlineDomainAutoData(...)]`.
