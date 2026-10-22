@@ -1,6 +1,7 @@
+using ControleFinanceiro.Domain.Cartoes;
+using ControleFinanceiro.Domain.Contas;
 using ControleFinanceiro.Domain.Shared.ValueObjects;
 using ControleFinanceiro.Domain.Transacoes;
-using ControleFinanceiro.Domain.Usuarios;
 using ControleFinanceiro.Tests.Shared.AutoFixture.Attributes;
 using CSharpFunctionalExtensions;
 

@@ -1,4 +1,7 @@
-﻿namespace ControleFinanceiro.Domain.Shared.ValueObjects;
+﻿using ControleFinanceiro.Domain.Cartoes;
+using ControleFinanceiro.Domain.Despesas;
+
+namespace ControleFinanceiro.Domain.Shared.ValueObjects;
 
 public sealed class MesReferencia : ComparableValueObject
 {

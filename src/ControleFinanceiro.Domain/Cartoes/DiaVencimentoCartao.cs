@@ -1,4 +1,4 @@
-﻿namespace ControleFinanceiro.Domain.Shared.ValueObjects;
+﻿namespace ControleFinanceiro.Domain.Cartoes;
 
 public sealed class DiaVencimentoCartao : SimpleValueObject<int>
 {

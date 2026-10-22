@@ -1,5 +1,5 @@
+using ControleFinanceiro.Domain.Cartoes;
 using ControleFinanceiro.Domain.Shared.ValueObjects;
-using ControleFinanceiro.Domain.Usuarios;
 using FastEndpoints;
 
 namespace ControleFinanceiro.WebApi.Endpoints.Usuarios.AdicionarCartao;

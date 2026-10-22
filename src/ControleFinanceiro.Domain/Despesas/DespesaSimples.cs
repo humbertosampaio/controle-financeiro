@@ -2,7 +2,7 @@ using ControleFinanceiro.Domain.Beneficiarios;
 using ControleFinanceiro.Domain.Categorias;
 using ControleFinanceiro.Domain.Shared.ValueObjects;
 using ControleFinanceiro.Domain.Usuarios;
-using static ControleFinanceiro.Domain.Shared.ValueObjects.FormaPagamento;
+using static ControleFinanceiro.Domain.Despesas.FormaPagamento;
 
 namespace ControleFinanceiro.Domain.Despesas;
 

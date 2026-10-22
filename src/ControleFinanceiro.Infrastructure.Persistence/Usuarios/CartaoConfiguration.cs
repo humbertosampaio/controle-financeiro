@@ -1,3 +1,4 @@
+using ControleFinanceiro.Domain.Cartoes;
 using ControleFinanceiro.Domain.Usuarios;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;

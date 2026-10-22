@@ -1,9 +1,9 @@
 using AutoFixture.Xunit2;
-using ControleFinanceiro.Domain.Shared.ValueObjects;
+using ControleFinanceiro.Domain.Cartoes;
 using ControleFinanceiro.Tests.Shared.AutoFixture.Attributes;
 using CSharpFunctionalExtensions;
 
-namespace ControleFinanceiro.Domain.Tests.Shared.ValueObjects;
+namespace ControleFinanceiro.Domain.Tests.Cartoes;
 
 public sealed class DiaVencimentoCartaoTests
 {

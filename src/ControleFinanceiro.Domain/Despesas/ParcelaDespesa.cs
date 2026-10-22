@@ -1,4 +1,5 @@
-﻿using ControleFinanceiro.Domain.Shared.ValueObjects;
+﻿using ControleFinanceiro.Domain.Cartoes;
+using ControleFinanceiro.Domain.Shared.ValueObjects;
 
 namespace ControleFinanceiro.Domain.Despesas;
 

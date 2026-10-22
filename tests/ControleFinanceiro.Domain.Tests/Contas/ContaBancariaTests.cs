@@ -1,8 +1,8 @@
+using ControleFinanceiro.Domain.Contas;
 using ControleFinanceiro.Domain.Shared.ValueObjects;
-using ControleFinanceiro.Domain.Usuarios;
 using ControleFinanceiro.Tests.Shared.AutoFixture.Attributes;
 
-namespace ControleFinanceiro.Domain.Tests.Usuarios;
+namespace ControleFinanceiro.Domain.Tests.Contas;
 
 public sealed class ContaBancariaTests
 {

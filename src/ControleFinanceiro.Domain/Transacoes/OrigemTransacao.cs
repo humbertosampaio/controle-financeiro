@@ -1,4 +1,5 @@
-using ControleFinanceiro.Domain.Usuarios;
+using ControleFinanceiro.Domain.Cartoes;
+using ControleFinanceiro.Domain.Contas;
 
 namespace ControleFinanceiro.Domain.Transacoes;
 

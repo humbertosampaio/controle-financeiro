@@ -1,4 +1,4 @@
-namespace ControleFinanceiro.Domain.Shared.ValueObjects;
+namespace ControleFinanceiro.Domain.Cartoes;
 
 /// <summary>
 /// Os 4 últimos dígitos do cartão: o suficiente para reconhecê-lo na fatura, nunca o número completo.

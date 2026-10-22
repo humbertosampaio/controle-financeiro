@@ -1,4 +1,4 @@
-namespace ControleFinanceiro.Domain.Shared.ValueObjects;
+namespace ControleFinanceiro.Domain.Contas;
 
 /// <summary>
 /// Os 4 últimos caracteres do número da conta, com o dígito verificador: o suficiente para distinguir

@@ -1,6 +1,6 @@
 ﻿using Ardalis.SmartEnum;
 
-namespace ControleFinanceiro.Domain.Shared.ValueObjects;
+namespace ControleFinanceiro.Domain.Despesas;
 
 public sealed class StatusPagamento : SmartEnum<StatusPagamento>
 {

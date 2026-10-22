@@ -1,8 +1,8 @@
 using System.Text;
+using ControleFinanceiro.Domain.Contas;
 using ControleFinanceiro.Domain.Importacoes;
 using ControleFinanceiro.Domain.Shared.ValueObjects;
 using ControleFinanceiro.Domain.Transacoes;
-using ControleFinanceiro.Domain.Usuarios;
 using ControleFinanceiro.Infrastructure.Importacao.C6;
 using CSharpFunctionalExtensions;
 

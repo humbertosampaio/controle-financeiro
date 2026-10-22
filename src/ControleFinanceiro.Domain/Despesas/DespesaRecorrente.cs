@@ -1,8 +1,9 @@
 using ControleFinanceiro.Domain.Beneficiarios;
+using ControleFinanceiro.Domain.Cartoes;
 using ControleFinanceiro.Domain.Categorias;
 using ControleFinanceiro.Domain.Shared.ValueObjects;
 
-namespace ControleFinanceiro.Domain.Usuarios;
+namespace ControleFinanceiro.Domain.Despesas;
 
 [ValueObject]
 public readonly partial struct IdDespesaRecorrente

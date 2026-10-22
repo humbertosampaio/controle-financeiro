@@ -1,4 +1,7 @@
 using AutoFixture.Xunit2;
+using ControleFinanceiro.Domain.Cartoes;
+using ControleFinanceiro.Domain.Contas;
+using ControleFinanceiro.Domain.Despesas;
 using ControleFinanceiro.Domain.Shared.ValueObjects;
 using ControleFinanceiro.Domain.Usuarios;
 using ControleFinanceiro.Tests.Shared.AutoFixture.Attributes;

@@ -1,6 +1,6 @@
 using Ardalis.SmartEnum;
 
-namespace ControleFinanceiro.Domain.Usuarios;
+namespace ControleFinanceiro.Domain.Contas;
 
 public sealed class TipoConta : SmartEnum<TipoConta>
 {

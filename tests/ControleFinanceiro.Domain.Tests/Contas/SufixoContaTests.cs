@@ -1,7 +1,7 @@
-using ControleFinanceiro.Domain.Shared.ValueObjects;
+using ControleFinanceiro.Domain.Contas;
 using CSharpFunctionalExtensions;
 
-namespace ControleFinanceiro.Domain.Tests.Shared.ValueObjects;
+namespace ControleFinanceiro.Domain.Tests.Contas;
 
 public sealed class SufixoContaTests
 {

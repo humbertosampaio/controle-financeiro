@@ -1,3 +1,4 @@
+using ControleFinanceiro.Domain.Contas;
 using ControleFinanceiro.Domain.Shared;
 using ControleFinanceiro.Domain.Shared.ValueObjects;
 using ControleFinanceiro.Domain.Transacoes;

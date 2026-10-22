@@ -1,7 +1,7 @@
-using ControleFinanceiro.Domain.Shared.ValueObjects;
+using ControleFinanceiro.Domain.Cartoes;
 using CSharpFunctionalExtensions;
 
-namespace ControleFinanceiro.Domain.Tests.Shared.ValueObjects;
+namespace ControleFinanceiro.Domain.Tests.Cartoes;
 
 public sealed class SufixoCartaoTests
 {

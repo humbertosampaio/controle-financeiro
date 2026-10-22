@@ -1,3 +1,6 @@
+using ControleFinanceiro.Domain.Cartoes;
+using ControleFinanceiro.Domain.Contas;
+using ControleFinanceiro.Domain.Despesas;
 using ControleFinanceiro.Domain.Shared;
 using ControleFinanceiro.Domain.Shared.ValueObjects;
 

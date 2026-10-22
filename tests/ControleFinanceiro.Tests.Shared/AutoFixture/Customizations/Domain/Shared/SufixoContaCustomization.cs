@@ -1,5 +1,5 @@
 using System.Globalization;
-using ControleFinanceiro.Domain.Shared.ValueObjects;
+using ControleFinanceiro.Domain.Contas;
 
 namespace ControleFinanceiro.Tests.Shared.AutoFixture.Customizations.Domain.Shared;
 
