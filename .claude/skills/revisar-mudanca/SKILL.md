@@ -19,6 +19,7 @@ Decida os revisores pelo diff:
 | O diff toca | Agente |
 |---|---|
 | `src/**` | `revisor-dominio` |
+| `src/**` ou `tests/**` | `revisor-convencoes` |
 | sempre (é barato rodar a mais e caro pular) | `revisor-privacidade` |
 | código novo sem teste correspondente | `autor-de-testes` |
 
