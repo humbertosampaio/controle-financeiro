@@ -31,17 +31,18 @@ Os arquivos `.Designer.cs` e `ModelSnapshot.cs` são gerados pelo EF: não leia.
 9. **Migrations.** Sem `DropColumn`, `DropTable`, `RenameColumn` ou mudança de tipo com perda sem decisão registrada na issue. `Down()` coerente com o `Up()`.
 10. **Testes acompanham regra nova.** Regra sem teste do caminho válido e de cada invariante é achado.
 11. **Endpoint tem teste de integração na pasta espelhada.** Endpoint novo ou alterado em `src/ControleFinanceiro.WebApi/Endpoints/<Area>/<Acao>/` sem teste em `tests/ControleFinanceiro.WebApi.Tests/<Area>/<Acao>/` é achado: fora do espelho, o `pre-push` não roda o teste quando o endpoint muda.
-12. **Agregado sempre carregado inteiro** (decisão do dono, #36). Cada navegação de coleção de um agregado é `AutoInclude()` na sua `IEntityTypeConfiguration`, como `Cartoes` e `DescontosSalariais` no `UsuarioConfiguration`. O split query é global (`UseQuerySplittingBehavior` no `AddDbContext`). É achado:
+12. **Agregado sempre carregado inteiro** (decisão do dono, #36). Cada navegação de coleção de um agregado é `AutoInclude()` na sua `IEntityTypeConfiguration`, como `DescontosSalariais` no `UsuarioConfiguration`. O split query é global (`UseQuerySplittingBehavior` no `AddDbContext`). É achado:
     - uma coleção nova num agregado mapeado sem `AutoInclude()`;
     - `IgnoreAutoIncludes()` numa consulta que devolve o agregado para ser alterado;
     - `AsSplitQuery()` ou `AsSingleQuery()` sem justificativa no código.
-13. **Falha única vira erro tipado quando deixa de ser única.** Um método marcado com `// Falha única:` tem uma só falha possível, e o endpoint que o chama mapeia qualquer `IsFailure` para um status só (`Usuario.AdicionarCartao` → 409 em `AdicionarCartaoEndpoint`). Um diff que acrescenta outro `Result.Failure` a esse método é achado ALTO: a nova falha sairia com o status errado. A correção é trocar o `Result` por erro tipado (`UnitResult<E>` do CSharpFunctionalExtensions), mapear cada erro para o seu status e remover os dois marcadores.
+13. **Cada `Erro` tem o seu status no endpoint.** Falha prevista é um tipo derivado do `Erro`, na pasta do agregado, e o endpoint mapeia os tipos para status num `switch` só, com um `default` que lança (`EnviarErroAsync` em `AdicionarCartaoEndpoint`). É achado ALTO uma operação chamada por endpoint passar a devolver um tipo de `Erro` sem `case` nesse `switch`: a falha prevista sairia como 500. Também é achado comparar erro por `Codigo` ou `Descricao` em vez do tipo.
+14. **Diagrama do domínio acompanha o Domain.** Se o diff cria, remove ou renomeia agregado, entidade ou value object em `src/ControleFinanceiro.Domain/`, ou muda uma relação entre eles (composição, referência por id, herança), ou muda um invariante listado em `docs/modelo-de-dominio.md`, e esse arquivo não está no diff, é achado MÉDIO. Mudança interna que não altera estrutura nem invariante (método privado, mensagem de erro, refatoração) não conta. Se o arquivo está no diff, confira que o diagrama bate com o código.
 
 ## Dívidas conhecidas — não reportar
 
 - `Beneficiario.IdUsuario` é `long`, enquanto `IdUsuario` é Vogen sobre `Guid`.
 - `Program.cs` tem `.AddApplication()` comentado: a camada de aplicação ainda não registra nada.
-- Só o agregado `Usuario` está persistido; `Despesa`, `Beneficiario` e `CategoriaDespesa` ainda não têm mapeamento EF.
+- Só os agregados `Usuario` e `Cartao` estão persistidos; `ContaBancaria` (#47), `DespesaRecorrente` (#9), `Despesa`, `Beneficiario` e `CategoriaDespesa` ainda não têm mapeamento EF.
 
 Achado repetido em revisões vira item desta lista **e** uma issue `tipo:tech`.
 
