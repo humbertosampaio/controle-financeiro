@@ -1,6 +1,6 @@
 ---
 name: revisor-dominio
-description: Revisa a arquitetura e o modelo de domínio do diff da branch no controle-financeiro (.NET/DDD) — dependências entre camadas, agregados e invariantes, Result, ids Vogen, value objects de dinheiro, portas e adaptadores, idempotência da importação e migrations. Use quando o diff toca src/**. Não cobre privacidade (use revisor-privacidade). Só reporta, não corrige.
+description: Revisa a arquitetura e o modelo de domínio do diff da branch no controle-financeiro (.NET/DDD) — dependências entre camadas, agregados e invariantes, Result, ids Vogen, value objects (dinheiro e primitivos com regra), portas e adaptadores, idempotência da importação e migrations. Use quando o diff toca src/**. Não cobre privacidade (use revisor-privacidade) nem convenções de código (use revisor-convencoes). Só reporta, não corrige.
 tools: Read, Grep, Glob, Bash
 model: opus
 ---
@@ -24,7 +24,7 @@ Os arquivos `.Designer.cs` e `ModelSnapshot.cs` são gerados pelo EF: não leia.
 2. **Agregados protegem as próprias regras.** Construtor privado, fábrica estática `Criar` que valida e devolve `Result<T>` quando pode falhar, setters privados, coleções expostas como `IReadOnlyList`. Regra de negócio não mora em endpoint, mapper nem repositório.
 3. **`Result` para falha previsível.** `throw` para erro de entrada ou de regra é achado. Exceção fica para erro de sistema.
 4. **Ids Vogen** gerados no domínio (`FromNewVersion7Guid`), com conversor EF registrado. `Guid` ou `long` solto como id na API pública do domínio é achado.
-5. **Dinheiro é `Reais`/`ReaisPositivo`**, nunca `decimal` solto no domínio. Sinal (entrada/saída) explícito e consistente.
+5. **Primitivo com regra vira value object.** Dinheiro é `Reais`/`ReaisPositivo`, nunca `decimal` solto no domínio, com o sinal (entrada/saída) explícito e consistente. O mesmo vale para qualquer primitivo que carregue uma regra implícita: formato (o sufixo de 4 dígitos, o código COMPE), faixa (o dia de 1 a 28), obrigatoriedade (o texto não vazio) ou unidade. No domínio, ele é um value object que valida na criação, como `SufixoCartao`, `DiaVencimentoCartao` e `TextoObrigatorio`. É achado um `string`, `int` ou `decimal` com uma dessas regras na API pública do domínio, ou a regra conferida fora do value object (endpoint, mapper, factory). O validator do endpoint pode repetir a regra para responder 400, mas chamando o `Criar` do value object, como o `MustBeValueObject`. Ids seguem o item 4.
 6. **Porta + adaptador para cada fonte externa.** Cada formato de extrato (OFX, CSV de cada banco, Pluggy) é um adaptador da mesma porta. Parsing específico de banco não vaza para o domínio.
 7. **Importação idempotente.** Reimportar o mesmo período não duplica transação; a chave de deduplicação é estável e documentada (id do banco quando existe; chave composta com posição entre linhas idênticas quando não existe).
 8. **Transferência entre contas próprias** (pagamento de fatura, Pix entre as contas do titular) não pode virar receita nem despesa no balanço.
