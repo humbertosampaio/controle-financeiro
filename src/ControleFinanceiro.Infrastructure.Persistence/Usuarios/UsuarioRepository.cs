@@ -13,7 +13,7 @@ internal sealed class UsuarioRepository : IUsuarioRepository
         _dbSet = dbContext.Usuarios;
     }
 
-    public async Task AddAsync(Usuario usuario, CancellationToken cancellationToken) =>
+    public async Task AdicionarAsync(Usuario usuario, CancellationToken cancellationToken) =>
         await _dbSet.AddAsync(usuario, cancellationToken);
 
     public async Task<Maybe<Usuario>> ObterPorIdAsync(IdUsuario id, CancellationToken cancellationToken) =>

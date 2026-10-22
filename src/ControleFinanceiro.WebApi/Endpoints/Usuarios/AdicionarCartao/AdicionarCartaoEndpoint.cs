@@ -57,7 +57,7 @@ public sealed class AdicionarCartaoEndpoint : Endpoint<AdicionarCartaoRequest, A
             return;
         }
 
-        await _cartaoRepository.AddAsync(cartao, ct);
+        await _cartaoRepository.AdicionarAsync(cartao, ct);
         await _unitOfWork.CommitAsync(ct);
 
         await SendMapped(cartao, StatusCodes.Status201Created, ct);

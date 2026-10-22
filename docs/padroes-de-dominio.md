@@ -35,7 +35,7 @@ Concorrência: a unicidade garantida pela factory tem um índice único no banco
 ## 4. Repositórios
 
 - Um repositório por raiz, com a porta no Domain, na pasta do agregado (`Cartoes/ICartaoRepository.cs`) e o adaptador na Persistence (`Cartoes/CartaoRepository.cs`).
-- O repositório **recebe e devolve o agregado inteiro**: para adicionar (`AddAsync`), para obter e alterar (`ObterPorIdAsync`, seguido do `CommitAsync` do `IUnitOfWork`) e para listar os de um dono (`ListarDoUsuarioAsync`). O agregado vem com todas as coleções (`AutoInclude`).
+- O repositório **recebe e devolve o agregado inteiro**: para adicionar (`AdicionarAsync`), para obter e alterar (`ObterPorIdAsync`, seguido do `CommitAsync` do `IUnitOfWork`) e para listar os de um dono (`ListarDoUsuarioAsync`). O agregado vem com todas as coleções (`AutoInclude`).
 - O repositório de agregado não devolve DTO, projeção, contagem nem existência. Uma consulta que não é "me dê o agregado", como uma contagem ou um relatório, vai para:
   - um **serviço de domínio não puro** com uma porta de consulta própria, quando a resposta alimenta uma regra de domínio;
   - ou um **serviço de aplicação**, na Application, quando a resposta é só para quem chama (tela, MCP, relatório).
