@@ -1,6 +1,8 @@
-﻿namespace ControleFinanceiro.Domain.Cartoes;
+﻿using ControleFinanceiro.Domain.Shared.ValueObjects;
 
-public sealed class DiaVencimentoCartao : SimpleValueObject<int>
+namespace ControleFinanceiro.Domain.Cartoes;
+
+public sealed class DiaVencimentoCartao : DiaValidoEmTodoMes
 {
     private DiaVencimentoCartao(int value) : base(value)
     {
@@ -9,9 +11,9 @@ public sealed class DiaVencimentoCartao : SimpleValueObject<int>
     public static Result<DiaVencimentoCartao> Criar(int dia)
     {
         return Result.SuccessIf(
-            dia is >= 1 and <= 28,
+            EstaNoIntervalo(dia),
             value: new DiaVencimentoCartao(dia),
-            $"O dia de vencimento do cartão deve estar entre 1 e 28. Valor fornecido: {dia}");
+            $"O dia de vencimento do cartão deve estar entre {Minimo} e {Maximo}. Valor fornecido: {dia}");
     }
 
     public static explicit operator DiaVencimentoCartao(int dia) => Criar(dia).Value;

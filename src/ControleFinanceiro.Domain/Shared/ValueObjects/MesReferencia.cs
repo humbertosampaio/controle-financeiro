@@ -1,7 +1,4 @@
-﻿using ControleFinanceiro.Domain.Cartoes;
-using ControleFinanceiro.Domain.Despesas;
-
-namespace ControleFinanceiro.Domain.Shared.ValueObjects;
+﻿namespace ControleFinanceiro.Domain.Shared.ValueObjects;
 
 public sealed class MesReferencia : ComparableValueObject
 {
@@ -45,16 +42,10 @@ public sealed class MesReferencia : ComparableValueObject
     }
 
     /// <summary>
-    /// Cria um <see cref="DateOnly"/> representando o dia específico dentro do mês de referência. 
+    /// Cria um <see cref="DateOnly"/> representando o dia específico dentro do mês de referência.
     /// </summary>
-    /// <param name="dia">O componente dia da data</param>
-    public DateOnly NoDia(DiaVencimentoCartao dia) => new(Ano, Mes, dia);
-
-    /// <summary>
-    /// Cria um <see cref="DateOnly"/> representando o dia específico dentro do mês de referência. 
-    /// </summary>
-    /// <param name="dia">O componente dia da data</param>
-    public DateOnly NoDia(DiaCompraRecorrente dia) => new(Ano, Mes, dia);
+    /// <param name="dia">O componente dia da data, que existe em todo mês</param>
+    public DateOnly NoDia(DiaValidoEmTodoMes dia) => new(Ano, Mes, dia);
 
     public bool Contem(DateOnly data) => data >= Inicio && data <= Fim;
     public bool Contem(DateTimeOffset data) => Contem(data.ToDateOnly());
