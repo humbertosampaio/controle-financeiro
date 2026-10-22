@@ -1,7 +1,9 @@
 using ControleFinanceiro.Domain.Beneficiarios;
 using ControleFinanceiro.Domain.Cartoes;
 using ControleFinanceiro.Domain.Categorias;
+using ControleFinanceiro.Domain.Shared;
 using ControleFinanceiro.Domain.Shared.ValueObjects;
+using ControleFinanceiro.Domain.Usuarios;
 
 namespace ControleFinanceiro.Domain.Despesas;
 
@@ -11,8 +13,9 @@ public readonly partial struct IdDespesaRecorrente
     private static Validation Validate(Guid input) => Id.Validar(input);
 }
 
-public sealed class DespesaRecorrente : Entity<IdDespesaRecorrente>
+public sealed class DespesaRecorrente : AggregateRoot<IdDespesaRecorrente>
 {
+    public IdUsuario IdUsuario { get; private set; }
     public IdBeneficiario IdBeneficiario { get; private set; }
     public TextoObrigatorio Descricao { get; private set; }
     public IdCategoriaDespesa IdCategoria { get; private set; }
@@ -23,6 +26,7 @@ public sealed class DespesaRecorrente : Entity<IdDespesaRecorrente>
 
     private DespesaRecorrente(
         IdDespesaRecorrente id,
+        IdUsuario idUsuario,
         IdBeneficiario idBeneficiario,
         TextoObrigatorio descricao,
         IdCategoriaDespesa idCategoria,
@@ -32,6 +36,7 @@ public sealed class DespesaRecorrente : Entity<IdDespesaRecorrente>
         DiaCompraRecorrente diaCompra)
             : base(id)
     {
+        IdUsuario = idUsuario;
         IdBeneficiario = idBeneficiario;
         Descricao = descricao;
         IdCategoria = idCategoria;
@@ -41,8 +46,13 @@ public sealed class DespesaRecorrente : Entity<IdDespesaRecorrente>
         DiaCompra = diaCompra;
     }
 
+    /// <remarks>
+    /// Interno pois o cartão precisa ser do usuário, e só a <see cref="Services.DespesaRecorrenteFactory"/>,
+    /// que recebe o cartão, confere isso.
+    /// </remarks>
     /// <param name="idCartao">Obrigatório no crédito e proibido nas outras formas de pagamento.</param>
-    public static Result<DespesaRecorrente> Criar(
+    internal static Result<DespesaRecorrente> Criar(
+        IdUsuario idUsuario,
         IdBeneficiario idBeneficiario,
         TextoObrigatorio descricao,
         IdCategoriaDespesa idCategoria,
@@ -61,6 +71,7 @@ public sealed class DespesaRecorrente : Entity<IdDespesaRecorrente>
 
         return new DespesaRecorrente(
             IdDespesaRecorrente.FromNewVersion7Guid(),
+            idUsuario,
             idBeneficiario,
             descricao,
             idCategoria,

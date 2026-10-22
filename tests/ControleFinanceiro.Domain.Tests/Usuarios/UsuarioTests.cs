@@ -1,7 +1,6 @@
 using AutoFixture.Xunit2;
 using ControleFinanceiro.Domain.Cartoes;
 using ControleFinanceiro.Domain.Contas;
-using ControleFinanceiro.Domain.Despesas;
 using ControleFinanceiro.Domain.Shared.ValueObjects;
 using ControleFinanceiro.Domain.Usuarios;
 using ControleFinanceiro.Tests.Shared.AutoFixture.Attributes;
@@ -180,31 +179,5 @@ public sealed class UsuarioTests
         result.Should().FailWith(
             $"O usuário já tem uma conta {banco.Name} com final {sufixo}, mas do tipo {TipoConta.ContaPagamento.Name}.");
         sut.Contas.Should().ContainSingle();
-    }
-
-    [Theory, DomainAutoData]
-    public void AdicionarDespesaRecorrente_Quando_CartaoNaoPertenceAoUsuario_Deve_RetornarFalha(Usuario sut, Fixture fixture)
-    {
-        fixture.Inject(FormaPagamento.Credito);
-        DespesaRecorrente despesaRecorrente = fixture.Create<DespesaRecorrente>();
-
-        Result result = sut.AdicionarDespesaRecorrente(despesaRecorrente);
-
-        result.Should().FailWith("O cartão da despesa recorrente não pertence ao usuário.");
-        sut.DespesasRecorrentes.Should().BeEmpty();
-    }
-
-    [Theory, DomainAutoData]
-    public void AdicionarDespesaRecorrente_Quando_CartaoDoUsuario_Deve_Adicionar(Usuario sut, Cartao cartao, Fixture fixture)
-    {
-        sut.AdicionarCartao(cartao).Should().Succeed();
-        fixture.Inject(FormaPagamento.Credito);
-        fixture.Inject(cartao.Id);
-        DespesaRecorrente despesaRecorrente = fixture.Create<DespesaRecorrente>();
-
-        Result result = sut.AdicionarDespesaRecorrente(despesaRecorrente);
-
-        result.Should().Succeed();
-        sut.DespesasRecorrentes.Should().ContainSingle().Which.Should().Be(despesaRecorrente);
     }
 }

@@ -1,6 +1,5 @@
 using ControleFinanceiro.Domain.Cartoes;
 using ControleFinanceiro.Domain.Contas;
-using ControleFinanceiro.Domain.Despesas;
 using ControleFinanceiro.Domain.Shared;
 using ControleFinanceiro.Domain.Shared.ValueObjects;
 
@@ -21,9 +20,6 @@ public sealed class Usuario : AggregateRoot<IdUsuario>
     public IReadOnlyList<DescontoSalarial> DescontosSalariais => _descontosSalariais;
 
     public Reais RendaLiquida => RendaBruta - _descontosSalariais.Sum(desconto => desconto.Valor);
-
-    private readonly List<DespesaRecorrente> _despesasRecorrentes = [];
-    public IReadOnlyList<DespesaRecorrente> DespesasRecorrentes => _despesasRecorrentes;
 
     private readonly List<Cartao> _cartoes = [];
     public IReadOnlyList<Cartao> Cartoes => _cartoes;
@@ -91,17 +87,5 @@ public sealed class Usuario : AggregateRoot<IdUsuario>
         ContaBancaria conta = ContaBancaria.Criar(Id, banco, tipo, sufixo);
         _contas.Add(conta);
         return conta;
-    }
-
-    public Result AdicionarDespesaRecorrente(DespesaRecorrente despesaRecorrente)
-    {
-        if (_despesasRecorrentes.Contains(despesaRecorrente))
-            return Result.Failure("Despesa recorrente já existe para este usuário.");
-
-        if (despesaRecorrente.IdCartao is IdCartao idCartao && !_cartoes.Exists(c => c.Id == idCartao))
-            return Result.Failure("O cartão da despesa recorrente não pertence ao usuário.");
-
-        _despesasRecorrentes.Add(despesaRecorrente);
-        return Result.Success();
     }
 }
