@@ -56,7 +56,7 @@ public sealed class ImportacaoExtratoTests
     {
         Action conferir = () => sut.PeriodoNaoImportado(deOutraOrigem);
 
-        conferir.Should().Throw<ArgumentException>().WithParameterName("ultima");
+        conferir.Should().ThrowExactly<ArgumentException>().WithParameterName("ultima");
     }
 
     private static ImportacaoExtrato Com(Fixture fixture, ContaBancaria conta, PeriodoExtrato periodo)
