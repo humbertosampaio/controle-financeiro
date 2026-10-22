@@ -18,7 +18,7 @@ Antes de escrever `new` ou chamar um método de fábrica no corpo do teste, veja
 
 - `IdentidadeLancamentoCustomization` registra `(string id) => IdentidadeLancamento.Unica(id).Value`. Assim, o teste pede `IdentidadeLancamento identidade`, em vez de pedir uma `string idExterno` que só serviria para chamar o `Unica`.
 - `OrigemTransacaoCustomization` registra a origem a partir de uma `ContaBancaria`. Com `[Frozen] ContaBancaria conta`, a `OrigemTransacao origem` do mesmo teste aponta para essa conta, sem `OrigemTransacao.DaConta(conta.Id)` no corpo.
-- `[Frozen] Banco banco` e `[Frozen] SufixoConta sufixo` fazem duas `ContaBancaria` pedidas como parâmetro terem o mesmo banco e o mesmo sufixo, em vez de dois `ContaBancaria.Criar(...)`.
+- `[Frozen] Banco banco` e `[Frozen] SufixoConta sufixo` fazem duas `ContaBancaria` pedidas como parâmetro terem o mesmo banco e o mesmo sufixo, em vez de duas chamadas à `ContaBancariaFactory` no corpo do teste.
 
 O teste monta o objeto à mão só quando os valores dele são o assunto do teste: o texto canônico de um hash conhecido, duas contas em bancos **diferentes**, a data e a descrição de um teste de sobreposição.
 
@@ -70,7 +70,7 @@ Valor fixo direto no teste (`(TextoObrigatorio)"INSS"`) só quando o próprio va
 
 ## Nome do teste
 
-`Metodo_Quando_Cenario_Deve_Resultado`, como no `CLAUDE.md`. Quando não há cenário, porque o comportamento vale sempre, o `Quando` sai em vez de ganhar um cenário vazio: `Criar_Deve_IniciarSemCartoes`, e não `Criar_Quando_Chamado_Deve_IniciarSemCartoes`.
+`Metodo_Quando_Cenario_Deve_Resultado`, como no `CLAUDE.md`. Quando não há cenário, porque o comportamento vale sempre, o `Quando` sai em vez de ganhar um cenário vazio: `Criar_Deve_GerarIdVersao7ParaCadaTransacao`, e não `Criar_Quando_Chamado_Deve_GerarIdVersao7ParaCadaTransacao`.
 
 ## Customizações realistas (só na integração)
 
