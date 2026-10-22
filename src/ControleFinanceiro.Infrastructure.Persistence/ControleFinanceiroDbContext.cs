@@ -1,6 +1,9 @@
 using ControleFinanceiro.Domain.Cartoes;
+using ControleFinanceiro.Domain.Contas;
 using ControleFinanceiro.Domain.Despesas;
+using ControleFinanceiro.Domain.Importacoes;
 using ControleFinanceiro.Domain.Shared.ValueObjects;
+using ControleFinanceiro.Domain.Transacoes;
 using ControleFinanceiro.Domain.Usuarios;
 using ControleFinanceiro.Infrastructure.Persistence.Conventions;
 using ControleFinanceiro.Infrastructure.Persistence.ValueConverters;
@@ -22,6 +25,9 @@ public sealed class ControleFinanceiroDbContext : DbContext
 
     public DbSet<Usuario> Usuarios => Set<Usuario>();
     public DbSet<Cartao> Cartoes => Set<Cartao>();
+    public DbSet<ContaBancaria> Contas => Set<ContaBancaria>();
+    public DbSet<Transacao> Transacoes => Set<Transacao>();
+    public DbSet<ImportacaoExtrato> Importacoes => Set<ImportacaoExtrato>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

@@ -39,7 +39,7 @@ Concorrência: a unicidade garantida pela factory tem um índice único no banco
 - O repositório de agregado não devolve DTO, projeção, contagem nem existência. Uma consulta que não é "me dê o agregado", como uma contagem ou um relatório, vai para:
   - um **serviço de domínio não puro** com uma porta de consulta própria, quando a resposta alimenta uma regra de domínio;
   - ou um **serviço de aplicação**, na Application, quando a resposta é só para quem chama (tela, MCP, relatório).
-- Um agregado sem caso de uso não ganha repositório antes da hora: o da `ContaBancaria` chega com a #47, e o da `DespesaRecorrente`, com a #9.
+- Um agregado sem caso de uso não ganha repositório antes da hora: o da `DespesaRecorrente` chega com a #9, junto do cadastro das despesas fixas.
 
 ## 5. Falhas
 

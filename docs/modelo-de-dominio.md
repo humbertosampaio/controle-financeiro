@@ -228,10 +228,11 @@ Estáticos e puros: recebem os agregados e as listas de que precisam, e quem cha
 |---|---|
 | `IUsuarioRepository` | `Usuario` |
 | `ICartaoRepository` | `Cartao` (lista os do usuário) |
+| `IContaRepository` | `ContaBancaria` (lista as do usuário) |
 | `ITransacaoRepository` | `Transacao` (adiciona só as de chave nova e devolve essas mesmas instâncias) |
 | `IImportacaoRepository` | `ImportacaoExtrato` |
 
-O repositório da `ContaBancaria` chega com a persistência da importação (#47); o da `DespesaRecorrente`, com o cadastro das despesas fixas (#9).
+O repositório da `DespesaRecorrente` chega com o cadastro das despesas fixas (#9).
 
 ## Value objects
 
