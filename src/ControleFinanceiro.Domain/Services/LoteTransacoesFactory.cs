@@ -19,7 +19,7 @@ public static class LoteTransacoesFactory
     {
         Banco? banco = BancoDaOrigem(usuario, origem);
         if (banco is null)
-            return Erros.LoteTransacoes.OrigemNaoPertenceAoUsuario;
+            return ErroOrigemNaoPertenceAoUsuario.Instancia;
 
         int[]? posicoesRepetidas = lancamentos
             .Select((lancamento, indice) => (lancamento.Identidade, Posicao: indice + 1))
@@ -29,7 +29,7 @@ public static class LoteTransacoesFactory
             ?.ToArray();
 
         if (posicoesRepetidas is not null)
-            return Erros.LoteTransacoes.IdentificadorRepetido(posicoesRepetidas);
+            return new ErroIdentificadorRepetido(posicoesRepetidas);
 
         IReadOnlyList<ChaveDeduplicacao> chaves = ChaveDeduplicacao.CalcularLote(banco, origem, lancamentos.Select(l => l.Identidade));
 
