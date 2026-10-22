@@ -37,19 +37,6 @@ public sealed class ControleFinanceiroDbContext : DbContext
 
         configurationBuilder.ConfigurarDinheiro();
 
-        configurationBuilder
-            .Properties<DiaVencimentoCartao>()
-            .HaveConversion<DiaVencimentoCartaoConverter>();
-
-        configurationBuilder
-            .Properties<SufixoCartao>()
-            .HaveConversion<SufixoCartaoConverter>()
-            .HaveMaxLength(SufixoCartao.QuantidadeDigitos);
-
-        configurationBuilder
-            .Properties<DiaCompraRecorrente>()
-            .HaveConversion<DiaCompraRecorrenteConverter>();
-
         configurationBuilder.RegisterAllInVogenEfCoreConverters();
 
         configurationBuilder.ConfigureSmartEnum();

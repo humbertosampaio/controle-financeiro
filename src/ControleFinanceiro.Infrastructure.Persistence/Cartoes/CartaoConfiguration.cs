@@ -25,10 +25,13 @@ internal sealed class CartaoConfiguration : IEntityTypeConfiguration<Cartao>
             .HasColumnName("banco");
 
         entity.Property(c => c.Sufixo)
-            .HasColumnName("sufixo");
+            .HasColumnName("sufixo")
+            .HasConversion(sufixo => sufixo.Value, valor => (SufixoCartao)valor)
+            .HasMaxLength(SufixoCartao.QuantidadeDigitos);
 
         entity.Property(c => c.DiaVencimento)
-            .HasColumnName("dia_vencimento");
+            .HasColumnName("dia_vencimento")
+            .HasConversion(dia => dia.Value, valor => (DiaVencimentoCartao)valor);
 
         entity.Property(c => c.IdUsuario)
             .HasColumnName("id_usuario");
