@@ -88,7 +88,7 @@ public sealed class Usuario : AggregateRoot<IdUsuario>
                     $"O usuário já tem uma conta {banco.Name} com final {sufixo}, mas do tipo {existente.Tipo.Name}.");
         }
 
-        ContaBancaria conta = ContaBancaria.Criar(banco, tipo, sufixo);
+        ContaBancaria conta = ContaBancaria.Criar(Id, banco, tipo, sufixo);
         _contas.Add(conta);
         return conta;
     }

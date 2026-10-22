@@ -44,10 +44,12 @@ public sealed class AdicionarCartaoEndpointTests : IAsyncLifetime
         idUsuario.Should().Be(usuario.Id);
         Cartao gravado = usuario.Cartoes.Should().ContainSingle().Subject;
         corpo!.Id.Should().Be(gravado.Id);
+        gravado.IdUsuario.Should().Be(usuario.Id);
         gravado.Banco.Should().BeSameAs(esperado.Banco);
         gravado.Should().BeEquivalentTo(esperado, options => options
             .ComparingByMembers<Cartao>()
-            .Excluding(cartao => cartao.Id));
+            .Excluding(cartao => cartao.Id)
+            .Excluding(cartao => cartao.IdUsuario));
     }
 
     [Theory, ApiAutoData]

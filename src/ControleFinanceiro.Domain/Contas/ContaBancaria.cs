@@ -1,4 +1,6 @@
+using ControleFinanceiro.Domain.Shared;
 using ControleFinanceiro.Domain.Shared.ValueObjects;
+using ControleFinanceiro.Domain.Usuarios;
 
 namespace ControleFinanceiro.Domain.Contas;
 
@@ -12,8 +14,9 @@ public readonly partial struct IdConta
 /// Conta de onde vêm os lançamentos de um extrato. Guarda só o sufixo do número: o número completo, a
 /// agência e o titular não são gravados.
 /// </summary>
-public sealed class ContaBancaria : Entity<IdConta>
+public sealed class ContaBancaria : AggregateRoot<IdConta>
 {
+    public IdUsuario IdUsuario { get; private set; }
     public Banco Banco { get; private set; } = null!;
     public TipoConta Tipo { get; private set; } = null!;
     public SufixoConta Sufixo { get; private set; } = null!;
@@ -23,9 +26,10 @@ public sealed class ContaBancaria : Entity<IdConta>
     {
     }
 
-    private ContaBancaria(IdConta id, Banco banco, TipoConta tipo, SufixoConta sufixo, TextoObrigatorio apelido)
+    private ContaBancaria(IdConta id, IdUsuario idUsuario, Banco banco, TipoConta tipo, SufixoConta sufixo, TextoObrigatorio apelido)
         : base(id)
     {
+        IdUsuario = idUsuario;
         Banco = banco;
         Tipo = tipo;
         Sufixo = sufixo;
@@ -33,9 +37,9 @@ public sealed class ContaBancaria : Entity<IdConta>
     }
 
     /// <param name="apelido">Opcional. Sem ele, a conta se chama "&lt;tipo&gt; &lt;banco&gt; final &lt;sufixo&gt;".</param>
-    public static ContaBancaria Criar(Banco banco, TipoConta tipo, SufixoConta sufixo, TextoObrigatorio? apelido = null)
+    public static ContaBancaria Criar(IdUsuario idUsuario, Banco banco, TipoConta tipo, SufixoConta sufixo, TextoObrigatorio? apelido = null)
     {
         apelido ??= (TextoObrigatorio)$"{tipo.Name} {banco.Name} final {sufixo}";
-        return new ContaBancaria(IdConta.FromNewVersion7Guid(), banco, tipo, sufixo, apelido);
+        return new ContaBancaria(IdConta.FromNewVersion7Guid(), idUsuario, banco, tipo, sufixo, apelido);
     }
 }
