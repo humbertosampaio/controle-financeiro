@@ -17,7 +17,7 @@ public sealed class LancamentoExtratoTests
         TextoObrigatorio descricao,
         IdentidadeLancamento identidade)
     {
-        LancamentoExtrato result = LancamentoExtrato.Criar(data, null, valor, descricao, contraparte, identidade);
+        LancamentoExtrato result = LancamentoExtrato.Criar(data, hora: null, valor, descricao, contraparte, identidade);
 
         result.Contraparte.Should().BeNull();
     }
@@ -30,7 +30,7 @@ public sealed class LancamentoExtratoTests
         string contraparte,
         IdentidadeLancamento identidade)
     {
-        LancamentoExtrato result = LancamentoExtrato.Criar(data, null, valor, descricao, $" {contraparte} ", identidade);
+        LancamentoExtrato result = LancamentoExtrato.Criar(data, hora: null, valor, descricao, $" {contraparte} ", identidade);
 
         result.Contraparte.Should().Be(contraparte);
     }

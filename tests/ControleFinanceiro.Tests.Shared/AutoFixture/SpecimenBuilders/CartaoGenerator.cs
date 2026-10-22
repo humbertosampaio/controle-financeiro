@@ -20,7 +20,7 @@ public sealed class CartaoGenerator : ISpecimenBuilder
         return CartaoFactory
             .Criar(
                 context.Create<IdUsuario>(),
-                [],
+                cartoesDoUsuario: [],
                 context.Create<Banco>(),
                 context.Create<SufixoCartao>(),
                 context.Create<DiaVencimentoCartao>())

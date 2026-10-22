@@ -30,7 +30,7 @@ public sealed class ChaveDeduplicacaoTests
             .ComTexto("  padaria   são  joão ")
             .ComTexto(null);
 
-        ChaveDeduplicacao result = ChaveDeduplicacao.Calcular(Banco.C6, origem, identidade, 1);
+        ChaveDeduplicacao result = ChaveDeduplicacao.Calcular(Banco.C6, origem, identidade, ordinal: 1);
 
         result.Value.Should().Be("76b82abae72afb9f1a6997ce782577f1fad8a1548d003f98093497f5e8094ccd");
     }
@@ -41,7 +41,7 @@ public sealed class ChaveDeduplicacaoTests
         // v1|323|cartao|0192a5b0-0000-7000-8000-000000000002|unica|aB-123|1
         OrigemTransacao origem = OrigemTransacao.DoCartao(IdCartao.From(Guid.Parse("0192a5b0-0000-7000-8000-000000000002")));
 
-        ChaveDeduplicacao result = ChaveDeduplicacao.Calcular(Banco.MercadoPago, origem, IdentidadeLancamento.Unica(" aB-123 ").Value, 1);
+        ChaveDeduplicacao result = ChaveDeduplicacao.Calcular(Banco.MercadoPago, origem, IdentidadeLancamento.Unica(" aB-123 ").Value, ordinal: 1);
 
         result.Value.Should().Be("fb19f7c1e07acfa84ac9a5197b6a09acf4016dc1293e1fe0ead8ef1247a4f168");
     }
@@ -55,9 +55,9 @@ public sealed class ChaveDeduplicacaoTests
         IdentidadeLancamento composta = IdentidadeLancamento.Composta(data);
         IdentidadeLancamento unica = IdentidadeLancamento.Unica(composta.Campos[0]).Value;
 
-        ChaveDeduplicacao result = ChaveDeduplicacao.Calcular(banco, origem, unica, 1);
+        ChaveDeduplicacao result = ChaveDeduplicacao.Calcular(banco, origem, unica, ordinal: 1);
 
-        result.Should().NotBe(ChaveDeduplicacao.Calcular(banco, origem, composta, 1));
+        result.Should().NotBe(ChaveDeduplicacao.Calcular(banco, origem, composta, ordinal: 1));
     }
 
     [Theory, DomainAutoData]
@@ -69,9 +69,9 @@ public sealed class ChaveDeduplicacaoTests
         IdentidadeLancamento separadorNoPrimeiro = IdentidadeLancamento.Composta(data).ComTexto("A|B").ComTexto("C");
         IdentidadeLancamento separadorNoSegundo = IdentidadeLancamento.Composta(data).ComTexto("A").ComTexto("B|C");
 
-        ChaveDeduplicacao result = ChaveDeduplicacao.Calcular(banco, origem, separadorNoPrimeiro, 1);
+        ChaveDeduplicacao result = ChaveDeduplicacao.Calcular(banco, origem, separadorNoPrimeiro, ordinal: 1);
 
-        result.Should().NotBe(ChaveDeduplicacao.Calcular(banco, origem, separadorNoSegundo, 1));
+        result.Should().NotBe(ChaveDeduplicacao.Calcular(banco, origem, separadorNoSegundo, ordinal: 1));
     }
 
     [Theory, DomainAutoData]
@@ -80,17 +80,17 @@ public sealed class ChaveDeduplicacaoTests
         Guid id,
         IdentidadeLancamento identidade)
     {
-        ChaveDeduplicacao result = ChaveDeduplicacao.Calcular(banco, OrigemTransacao.DaConta(IdConta.From(id)), identidade, 1);
+        ChaveDeduplicacao result = ChaveDeduplicacao.Calcular(banco, OrigemTransacao.DaConta(IdConta.From(id)), identidade, ordinal: 1);
 
-        result.Should().NotBe(ChaveDeduplicacao.Calcular(banco, OrigemTransacao.DoCartao(IdCartao.From(id)), identidade, 1));
+        result.Should().NotBe(ChaveDeduplicacao.Calcular(banco, OrigemTransacao.DoCartao(IdCartao.From(id)), identidade, ordinal: 1));
     }
 
     [Theory, DomainAutoData]
     public void Calcular_Quando_BancoDiferente_Deve_RetornarChavesDiferentes(OrigemTransacao origem, IdentidadeLancamento identidade)
     {
-        ChaveDeduplicacao result = ChaveDeduplicacao.Calcular(Banco.C6, origem, identidade, 1);
+        ChaveDeduplicacao result = ChaveDeduplicacao.Calcular(Banco.C6, origem, identidade, ordinal: 1);
 
-        result.Should().NotBe(ChaveDeduplicacao.Calcular(Banco.MercadoPago, origem, identidade, 1));
+        result.Should().NotBe(ChaveDeduplicacao.Calcular(Banco.MercadoPago, origem, identidade, ordinal: 1));
     }
 
     [Theory, DomainAutoData]
@@ -99,9 +99,9 @@ public sealed class ChaveDeduplicacaoTests
         OrigemTransacao origem,
         IdentidadeLancamento identidade)
     {
-        ChaveDeduplicacao result = ChaveDeduplicacao.Calcular(banco, origem, identidade, 1);
+        ChaveDeduplicacao result = ChaveDeduplicacao.Calcular(banco, origem, identidade, ordinal: 1);
 
-        result.Should().NotBe(ChaveDeduplicacao.Calcular(banco, origem, identidade, 2));
+        result.Should().NotBe(ChaveDeduplicacao.Calcular(banco, origem, identidade, ordinal: 2));
     }
 
     [Theory, DomainAutoData]
@@ -110,7 +110,7 @@ public sealed class ChaveDeduplicacaoTests
         OrigemTransacao origem,
         IdentidadeLancamento identidade)
     {
-        Func<ChaveDeduplicacao> act = () => ChaveDeduplicacao.Calcular(banco, origem, identidade, 0);
+        Func<ChaveDeduplicacao> act = () => ChaveDeduplicacao.Calcular(banco, origem, identidade, ordinal: 0);
 
         act.Should().ThrowExactly<ArgumentOutOfRangeException>();
     }
@@ -125,9 +125,9 @@ public sealed class ChaveDeduplicacaoTests
         IReadOnlyList<ChaveDeduplicacao> result = ChaveDeduplicacao.CalcularLote(banco, origem, [identidade, outra, identidade]);
 
         result.Should().Equal(
-            ChaveDeduplicacao.Calcular(banco, origem, identidade, 1),
-            ChaveDeduplicacao.Calcular(banco, origem, outra, 1),
-            ChaveDeduplicacao.Calcular(banco, origem, identidade, 2));
+            ChaveDeduplicacao.Calcular(banco, origem, identidade, ordinal: 1),
+            ChaveDeduplicacao.Calcular(banco, origem, outra, ordinal: 1),
+            ChaveDeduplicacao.Calcular(banco, origem, identidade, ordinal: 2));
     }
 
     [Theory, DomainAutoData]

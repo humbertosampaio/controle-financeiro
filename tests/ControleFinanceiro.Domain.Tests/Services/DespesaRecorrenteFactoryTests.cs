@@ -41,7 +41,7 @@ public sealed class DespesaRecorrenteFactoryTests
         DiaCompraRecorrente diaCompra)
     {
         Result<DespesaRecorrente> result = DespesaRecorrenteFactory.Criar(
-            idUsuario, idBeneficiario, descricao, idCategoria, FormaPagamento.Credito, null, valor, diaCompra);
+            idUsuario, idBeneficiario, descricao, idCategoria, FormaPagamento.Credito, cartao: null, valor, diaCompra);
 
         result.Should().FailWith("Despesa recorrente no crédito precisa de um cartão.");
     }
@@ -98,7 +98,7 @@ public sealed class DespesaRecorrenteFactoryTests
         FormaPagamento formaPagamento = FormaPagamento.FromValue(valorFormaPagamento);
 
         Result<DespesaRecorrente> result = DespesaRecorrenteFactory.Criar(
-            idUsuario, idBeneficiario, descricao, idCategoria, formaPagamento, null, valor, diaCompra);
+            idUsuario, idBeneficiario, descricao, idCategoria, formaPagamento, cartao: null, valor, diaCompra);
 
         DespesaRecorrente despesa = result.Should().Succeed().Subject;
         despesa.IdUsuario.Should().Be(idUsuario);

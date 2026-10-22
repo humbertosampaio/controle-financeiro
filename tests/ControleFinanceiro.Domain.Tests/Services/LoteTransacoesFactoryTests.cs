@@ -134,7 +134,7 @@ public sealed class LoteTransacoesFactoryTests
         [Frozen] IdUsuario idUsuario,
         ContaBancaria conta)
     {
-        Result<IReadOnlyList<Transacao>, Erro> result = LoteTransacoesFactory.Criar(idUsuario, conta, []);
+        Result<IReadOnlyList<Transacao>, Erro> result = LoteTransacoesFactory.Criar(idUsuario, conta, lancamentos: []);
 
         result.Should().Succeed().Which.Should().BeEmpty();
     }

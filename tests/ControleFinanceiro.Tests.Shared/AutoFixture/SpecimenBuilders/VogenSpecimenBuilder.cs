@@ -22,7 +22,7 @@ public sealed class VogenSpecimenBuilder : ISpecimenBuilder
         object primitiveId = context.Resolve(_vogenSpecification.PrimitiveType);
         MethodInfo vogenFromMethod = requestAsType.GetMethod(nameof(IVogen<,>.From), BindingFlags.Public | BindingFlags.Static)!;
 
-        return vogenFromMethod.Invoke(null, [primitiveId])
+        return vogenFromMethod.Invoke(obj: null, [primitiveId])
             ?? new NoSpecimen();
     }
 }

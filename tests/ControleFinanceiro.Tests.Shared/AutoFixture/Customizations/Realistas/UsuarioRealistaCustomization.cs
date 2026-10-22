@@ -31,5 +31,5 @@ public sealed class UsuarioRealistaCustomization : ICustomization
     }
 
     private decimal SortearRenda() =>
-        Math.Round(RendaMinima + (decimal)_random.NextDouble() * (RendaMaxima - RendaMinima), 2);
+        Math.Round(RendaMinima + (decimal)_random.NextDouble() * (RendaMaxima - RendaMinima), decimals: 2);
 }

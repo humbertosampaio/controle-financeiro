@@ -20,7 +20,7 @@ public sealed class GeracaoDespesasDoMesServiceTests
         fixture.Inject(FormaPagamento.Pix);
         List<DespesaRecorrente> recorrentes = fixture.CreateMany<DespesaRecorrente>().ToList();
 
-        Result<IReadOnlyList<Despesa>> result = GeracaoDespesasDoMesService.GerarParaMes(recorrentes, [], mesReferencia);
+        Result<IReadOnlyList<Despesa>> result = GeracaoDespesasDoMesService.GerarParaMes(recorrentes, cartoesDoUsuario: [], mesReferencia);
 
         IReadOnlyList<Despesa> despesas = result.Should().Succeed().Which;
         despesas.Should().HaveSameCount(recorrentes);
@@ -71,7 +71,7 @@ public sealed class GeracaoDespesasDoMesServiceTests
     [Theory, DomainAutoData]
     public void GerarParaMes_Quando_SemDespesasRecorrentes_Deve_RetornarListaVazia(MesReferencia mesReferencia)
     {
-        Result<IReadOnlyList<Despesa>> result = GeracaoDespesasDoMesService.GerarParaMes([], [], mesReferencia);
+        Result<IReadOnlyList<Despesa>> result = GeracaoDespesasDoMesService.GerarParaMes(recorrentes: [], cartoesDoUsuario: [], mesReferencia);
 
         result.Should().Succeed()
             .Which.Should().BeEmpty();
@@ -83,7 +83,7 @@ public sealed class GeracaoDespesasDoMesServiceTests
         [Frozen] DiaCompraRecorrente diaCompra,
         Fixture fixture)
     {
-        MesReferencia mesReferencia = MesReferencia.Criar(03, 2026).Value;
+        MesReferencia mesReferencia = MesReferencia.Criar(mes: 03, ano: 2026).Value;
         DateTimeOffset dataCompraEsperada = new DateOnly(2026, 02, diaCompra.Value).ToLocalDateTimeOffset();
         fixture.Inject(FormaPagamento.Credito);
         DespesaRecorrente despesaRecorrente = fixture.Create<DespesaRecorrente>();
@@ -102,7 +102,7 @@ public sealed class GeracaoDespesasDoMesServiceTests
         [Frozen] Cartao cartao,
         Fixture fixture)
     {
-        MesReferencia mesReferencia = MesReferencia.Criar(03, 2026).Value;
+        MesReferencia mesReferencia = MesReferencia.Criar(mes: 03, ano: 2026).Value;
         DateTimeOffset vencimentoEsperado = new DateOnly(2026, 03, diaVencimento.Value).ToLocalDateTimeOffset();
         fixture.Inject(FormaPagamento.Credito);
         DespesaRecorrente despesaRecorrente = fixture.Create<DespesaRecorrente>();
@@ -163,7 +163,7 @@ public sealed class GeracaoDespesasDoMesServiceTests
         [Frozen] DiaCompraRecorrente diaCompra,
         Fixture fixture)
     {
-        MesReferencia mesReferencia = MesReferencia.Criar(03, 2026).Value;
+        MesReferencia mesReferencia = MesReferencia.Criar(mes: 03, ano: 2026).Value;
         DateTimeOffset dataCompraEsperada = new DateOnly(2026, 03, diaCompra.Value).ToLocalDateTimeOffset();
         fixture.Inject(FormaPagamento.Pix);
         DespesaRecorrente despesaRecorrente = fixture.Create<DespesaRecorrente>();
@@ -181,7 +181,7 @@ public sealed class GeracaoDespesasDoMesServiceTests
         [Frozen] DiaCompraRecorrente diaCompra,
         Fixture fixture)
     {
-        MesReferencia mesReferencia = MesReferencia.Criar(03, 2026).Value;
+        MesReferencia mesReferencia = MesReferencia.Criar(mes: 03, ano: 2026).Value;
         DateTimeOffset dataCompraEsperada = new DateOnly(2026, 03, diaCompra.Value).ToLocalDateTimeOffset();
         fixture.Inject(FormaPagamento.Boleto);
         DespesaRecorrente despesaRecorrente = fixture.Create<DespesaRecorrente>();

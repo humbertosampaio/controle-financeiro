@@ -204,7 +204,7 @@ public sealed class MesReferenciaTests
     private sealed class CustomAutoDataAttribute : DomainAutoDataAttribute
     {
         public CustomAutoDataAttribute()
-            : base(fixture => fixture.Customizations.Insert(0, new DistinctSpecimenBuilder<MesReferencia>(new MesReferenciaGenerator(), janela: 2)))
+            : base(fixture => fixture.Customizations.Insert(index: 0, new DistinctSpecimenBuilder<MesReferencia>(new MesReferenciaGenerator(), janela: 2)))
         {
         }
     }
