@@ -1,11 +1,13 @@
 using AutoFixture.Kernel;
+using ControleFinanceiro.Domain.Contas;
 using ControleFinanceiro.Domain.Importacoes;
-using ControleFinanceiro.Domain.Transacoes;
+using ControleFinanceiro.Domain.Services;
 
 namespace ControleFinanceiro.Tests.Shared.AutoFixture.SpecimenBuilders;
 
 /// <summary>
-/// Monta a <see cref="ImportacaoExtrato"/> com contagens coerentes: as novas nunca passam das lidas.
+/// Monta a <see cref="ImportacaoExtrato"/> pela <see cref="ImportacaoExtratoFactory"/>, a única entrada, a
+/// partir de uma conta. Com <c>[Frozen] ContaBancaria</c> no teste, a importação sai dessa conta.
 /// </summary>
 public sealed class ImportacaoExtratoGenerator : ISpecimenBuilder
 {
@@ -14,13 +16,11 @@ public sealed class ImportacaoExtratoGenerator : ISpecimenBuilder
         if (request is not Type t || t != typeof(ImportacaoExtrato))
             return new NoSpecimen();
 
-        OrigemTransacao origem = context.Create<OrigemTransacao>();
-        FormatoExtrato formato = context.Create<FormatoExtrato>();
-        PeriodoExtrato periodo = context.Create<PeriodoExtrato>();
-        byte novas = context.Create<byte>();
-        byte jaExistentes = context.Create<byte>();
-        DateTimeOffset importadaEm = context.Create<DateTimeOffset>();
-
-        return ImportacaoExtrato.Registrar(origem, formato, periodo, novas + jaExistentes, novas, importadaEm);
+        return ImportacaoExtratoFactory.Registrar(
+            context.Create<ContaBancaria>(),
+            context.Create<FormatoExtrato>(),
+            context.Create<PeriodoExtrato>(),
+            context.Create<byte>(),
+            context.Create<DateTimeOffset>());
     }
 }

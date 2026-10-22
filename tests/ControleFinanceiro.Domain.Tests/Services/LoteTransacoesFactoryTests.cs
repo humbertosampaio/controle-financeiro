@@ -1,6 +1,7 @@
 using AutoFixture.Xunit2;
 using ControleFinanceiro.Domain.Cartoes;
 using ControleFinanceiro.Domain.Contas;
+using ControleFinanceiro.Domain.Importacoes;
 using ControleFinanceiro.Domain.Services;
 using ControleFinanceiro.Domain.Shared;
 using ControleFinanceiro.Domain.Shared.ValueObjects;
@@ -17,11 +18,12 @@ public sealed class LoteTransacoesFactoryTests
     public void Criar_Quando_ContaDoUsuario_Deve_CriarUmaTransacaoPorLancamentoNaOrdem(
         [Frozen] IdUsuario idUsuario,
         [Frozen] ContaBancaria conta,
+        ImportacaoExtrato importacao,
         OrigemTransacao origem,
         LancamentoExtrato primeiro,
         LancamentoExtrato segundo)
     {
-        Result<IReadOnlyList<Transacao>, Erro> result = LoteTransacoesFactory.Criar(idUsuario, conta, [primeiro, segundo]);
+        Result<IReadOnlyList<Transacao>, Erro> result = LoteTransacoesFactory.Criar(idUsuario, conta, importacao, [primeiro, segundo]);
 
         IReadOnlyList<Transacao> transacoes = result.Should().Succeed().Subject;
         transacoes.Select(t => t.Descricao).Should().Equal(primeiro.Descricao, segundo.Descricao);
@@ -33,10 +35,11 @@ public sealed class LoteTransacoesFactoryTests
     [Theory, DomainAutoData]
     public void Criar_Deve_CopiarOsCamposDoLancamentoParaATransacao(
         [Frozen] IdUsuario idUsuario,
-        ContaBancaria conta,
+        [Frozen] ContaBancaria conta,
+        ImportacaoExtrato importacao,
         LancamentoExtrato lancamento)
     {
-        Result<IReadOnlyList<Transacao>, Erro> result = LoteTransacoesFactory.Criar(idUsuario, conta, [lancamento]);
+        Result<IReadOnlyList<Transacao>, Erro> result = LoteTransacoesFactory.Criar(idUsuario, conta, importacao, [lancamento]);
 
         Transacao transacao = result.Should().Succeed().Which.Should().ContainSingle().Subject;
         transacao.Data.Should().Be(lancamento.Data);
@@ -47,27 +50,46 @@ public sealed class LoteTransacoesFactoryTests
     }
 
     [Theory, DomainAutoData]
+    public void Criar_Deve_LigarCadaTransacaoAoUsuarioEAImportacao(
+        [Frozen] IdUsuario idUsuario,
+        [Frozen] ContaBancaria conta,
+        ImportacaoExtrato importacao,
+        LancamentoExtrato primeiro,
+        LancamentoExtrato segundo)
+    {
+        Result<IReadOnlyList<Transacao>, Erro> result = LoteTransacoesFactory.Criar(idUsuario, conta, importacao, [primeiro, segundo]);
+
+        result.Should().Succeed().Which.Should().AllSatisfy(t =>
+        {
+            t.IdUsuario.Should().Be(idUsuario);
+            t.IdImportacao.Should().Be(importacao.Id);
+        });
+    }
+
+    [Theory, DomainAutoData]
     public void Criar_Deve_GerarIdVersao7ParaCadaTransacao(
         [Frozen] IdUsuario idUsuario,
-        ContaBancaria conta,
+        [Frozen] ContaBancaria conta,
+        ImportacaoExtrato importacao,
         LancamentoExtrato lancamento)
     {
-        Result<IReadOnlyList<Transacao>, Erro> result = LoteTransacoesFactory.Criar(idUsuario, conta, [lancamento]);
+        Result<IReadOnlyList<Transacao>, Erro> result = LoteTransacoesFactory.Criar(idUsuario, conta, importacao, [lancamento]);
 
         result.Should().Succeed()
             .Which.Should().ContainSingle()
             .Which.Id.Value.Version.Should().Be(7);
     }
 
-    [Theory, DomainAutoData]
+    [Theory, ImportacaoDoCartaoAutoData]
     public void Criar_Quando_CartaoDoUsuario_Deve_UsarOBancoDoCartaoNaChave(
         [Frozen] IdUsuario idUsuario,
-        Cartao cartao,
+        [Frozen] Cartao cartao,
+        ImportacaoExtrato importacao,
         LancamentoExtrato lancamento)
     {
         OrigemTransacao origem = OrigemTransacao.DoCartao(cartao.Id);
 
-        Result<IReadOnlyList<Transacao>, Erro> result = LoteTransacoesFactory.Criar(idUsuario, cartao, [lancamento]);
+        Result<IReadOnlyList<Transacao>, Erro> result = LoteTransacoesFactory.Criar(idUsuario, cartao, importacao, [lancamento]);
 
         Transacao transacao = result.Should().Succeed().Which.Should().ContainSingle().Subject;
         transacao.Origem.Should().Be(origem);
@@ -77,10 +99,11 @@ public sealed class LoteTransacoesFactoryTests
     [Theory, DomainAutoData]
     public void Criar_Quando_LancamentosIdenticosSemIdExterno_Deve_GerarUmaTransacaoParaCada(
         [Frozen] IdUsuario idUsuario,
-        ContaBancaria conta,
+        [Frozen] ContaBancaria conta,
+        ImportacaoExtrato importacao,
         LancamentoExtrato lancamento)
     {
-        Result<IReadOnlyList<Transacao>, Erro> result = LoteTransacoesFactory.Criar(idUsuario, conta, [lancamento, lancamento]);
+        Result<IReadOnlyList<Transacao>, Erro> result = LoteTransacoesFactory.Criar(idUsuario, conta, importacao, [lancamento, lancamento]);
 
         result.Should().Succeed()
             .Which.Select(t => t.Chave).Should().HaveCount(2).And.OnlyHaveUniqueItems();
@@ -89,29 +112,44 @@ public sealed class LoteTransacoesFactoryTests
     [Theory, DomainAutoData]
     public void Criar_Quando_ContaNaoPertenceAoUsuario_Deve_RetornarFalha(
         IdUsuario idUsuario,
-        ContaBancaria contaDeOutroUsuario,
+        [Frozen] ContaBancaria contaDeOutroUsuario,
+        ImportacaoExtrato importacao,
         LancamentoExtrato lancamento)
     {
-        Result<IReadOnlyList<Transacao>, Erro> result = LoteTransacoesFactory.Criar(idUsuario, contaDeOutroUsuario, [lancamento]);
+        Result<IReadOnlyList<Transacao>, Erro> result = LoteTransacoesFactory.Criar(idUsuario, contaDeOutroUsuario, importacao, [lancamento]);
+
+        result.Should().FailWith(ErroOrigemNaoPertenceAoUsuario.Instancia);
+    }
+
+    [Theory, ImportacaoDoCartaoAutoData]
+    public void Criar_Quando_CartaoNaoPertenceAoUsuario_Deve_RetornarFalha(
+        IdUsuario idUsuario,
+        [Frozen] Cartao cartaoDeOutroUsuario,
+        ImportacaoExtrato importacao,
+        LancamentoExtrato lancamento)
+    {
+        Result<IReadOnlyList<Transacao>, Erro> result = LoteTransacoesFactory.Criar(idUsuario, cartaoDeOutroUsuario, importacao, [lancamento]);
 
         result.Should().FailWith(ErroOrigemNaoPertenceAoUsuario.Instancia);
     }
 
     [Theory, DomainAutoData]
-    public void Criar_Quando_CartaoNaoPertenceAoUsuario_Deve_RetornarFalha(
-        IdUsuario idUsuario,
-        Cartao cartaoDeOutroUsuario,
+    public void Criar_Quando_ImportacaoDeOutraOrigem_Deve_LancarExcecao(
+        [Frozen] IdUsuario idUsuario,
+        ContaBancaria conta,
+        ImportacaoExtrato importacaoDeOutraConta,
         LancamentoExtrato lancamento)
     {
-        Result<IReadOnlyList<Transacao>, Erro> result = LoteTransacoesFactory.Criar(idUsuario, cartaoDeOutroUsuario, [lancamento]);
+        Action criar = () => LoteTransacoesFactory.Criar(idUsuario, conta, importacaoDeOutraConta, [lancamento]);
 
-        result.Should().FailWith(ErroOrigemNaoPertenceAoUsuario.Instancia);
+        criar.Should().ThrowExactly<ArgumentException>().WithParameterName("importacao");
     }
 
     [Theory, DomainAutoData]
     public void Criar_Quando_IdExternoRepetidoNoLote_Deve_RetornarFalha(
         [Frozen] IdUsuario idUsuario,
-        ContaBancaria conta,
+        [Frozen] ContaBancaria conta,
+        ImportacaoExtrato importacao,
         IdentidadeLancamento identidade,
         DateOnly data,
         Reais valor1,
@@ -122,7 +160,7 @@ public sealed class LoteTransacoesFactoryTests
         LancamentoExtrato primeiro = LancamentoExtrato.Criar(data, hora: null, valor1, descricao, contraparte: null, identidade);
         LancamentoExtrato segundo = LancamentoExtrato.Criar(data, hora: null, valor2, descricao, contraparte: null, identidade);
 
-        Result<IReadOnlyList<Transacao>, Erro> result = LoteTransacoesFactory.Criar(idUsuario, conta, [outro, primeiro, outro, segundo]);
+        Result<IReadOnlyList<Transacao>, Erro> result = LoteTransacoesFactory.Criar(idUsuario, conta, importacao, [outro, primeiro, outro, segundo]);
 
         ErroIdentificadorRepetido erro = result.Should().Fail().Which.Should().BeOfType<ErroIdentificadorRepetido>().Subject;
         erro.Posicoes.Should().Equal(2, 4);
@@ -132,10 +170,28 @@ public sealed class LoteTransacoesFactoryTests
     [Theory, DomainAutoData]
     public void Criar_Quando_LoteVazio_Deve_RetornarListaVazia(
         [Frozen] IdUsuario idUsuario,
-        ContaBancaria conta)
+        [Frozen] ContaBancaria conta,
+        ImportacaoExtrato importacao)
     {
-        Result<IReadOnlyList<Transacao>, Erro> result = LoteTransacoesFactory.Criar(idUsuario, conta, lancamentos: []);
+        Result<IReadOnlyList<Transacao>, Erro> result = LoteTransacoesFactory.Criar(idUsuario, conta, importacao, lancamentos: []);
 
         result.Should().Succeed().Which.Should().BeEmpty();
+    }
+
+    /// <summary>
+    /// Monta a <see cref="ImportacaoExtrato"/> a partir de um cartão, e não de uma conta, como faz o generator do
+    /// <see cref="DomainAutoDataAttribute"/>. Com <c>[Frozen] Cartao</c> no teste, a importação sai desse cartão.
+    /// </summary>
+    private sealed class ImportacaoDoCartaoAutoDataAttribute : DomainAutoDataAttribute
+    {
+        public ImportacaoDoCartaoAutoDataAttribute()
+            : base(fixture =>
+            {
+                fixture.Register(
+                    (Cartao cartao, FormatoExtrato formato, PeriodoExtrato periodo, DateTimeOffset importadaEm) =>
+                        ImportacaoExtratoFactory.Registrar(cartao, formato, periodo, fixture.Create<byte>(), importadaEm));
+            })
+        {
+        }
     }
 }

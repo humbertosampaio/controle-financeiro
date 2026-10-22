@@ -1,5 +1,7 @@
+using ControleFinanceiro.Domain.Importacoes;
 using ControleFinanceiro.Domain.Shared;
 using ControleFinanceiro.Domain.Shared.ValueObjects;
+using ControleFinanceiro.Domain.Usuarios;
 
 namespace ControleFinanceiro.Domain.Transacoes;
 
@@ -20,6 +22,14 @@ public readonly partial struct IdTransacao
 /// </remarks>
 public sealed class Transacao : AggregateRoot<IdTransacao>
 {
+    public IdUsuario IdUsuario { get; private set; }
+
+    /// <summary>
+    /// A importação que criou a transação. Uma reimportação não a cria de novo, então ela continua ligada à
+    /// primeira importação que a trouxe.
+    /// </summary>
+    public IdImportacao IdImportacao { get; private set; }
+
     public OrigemTransacao Origem { get; private set; } = null!;
     public DateOnly Data { get; private set; }
     public TimeOnly? Hora { get; private set; }
@@ -38,9 +48,17 @@ public sealed class Transacao : AggregateRoot<IdTransacao>
     {
     }
 
-    private Transacao(IdTransacao id, OrigemTransacao origem, LancamentoExtrato lancamento, ChaveDeduplicacao chave)
-        : base(id)
+    private Transacao(
+        IdTransacao id,
+        IdUsuario idUsuario,
+        IdImportacao idImportacao,
+        OrigemTransacao origem,
+        LancamentoExtrato lancamento,
+        ChaveDeduplicacao chave)
+            : base(id)
     {
+        IdUsuario = idUsuario;
+        IdImportacao = idImportacao;
         Origem = origem;
         Data = lancamento.Data;
         Hora = lancamento.Hora;
@@ -52,8 +70,16 @@ public sealed class Transacao : AggregateRoot<IdTransacao>
 
     /// <remarks>
     /// Interno pois a <paramref name="chave"/> precisa vir de <see cref="ChaveDeduplicacao.CalcularLote"/>, com a mesma origem e o lote do
-    /// lançamento, e só a <see cref="Services.LoteTransacoesFactory"/> garante isso.
+    /// lançamento, o <paramref name="idUsuario"/> precisa ser o dono da origem e a importação precisa ser da mesma origem, e só a
+    /// <see cref="Services.LoteTransacoesFactory"/> garante isso.
     /// </remarks>
-    internal static Transacao Criar(OrigemTransacao origem, LancamentoExtrato lancamento, ChaveDeduplicacao chave) =>
-        new Transacao(IdTransacao.FromNewVersion7Guid(), origem, lancamento, chave);
+    internal static Transacao Criar(
+        IdUsuario idUsuario,
+        IdImportacao idImportacao,
+        OrigemTransacao origem,
+        LancamentoExtrato lancamento,
+        ChaveDeduplicacao chave)
+    {
+        return new Transacao(IdTransacao.FromNewVersion7Guid(), idUsuario, idImportacao, origem, lancamento, chave);
+    }
 }
