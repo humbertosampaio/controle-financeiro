@@ -1,5 +1,4 @@
 using AutoFixture.Xunit2;
-using ControleFinanceiro.Domain.Cartoes;
 using ControleFinanceiro.Domain.Contas;
 using ControleFinanceiro.Domain.Shared.ValueObjects;
 using ControleFinanceiro.Domain.Usuarios;
@@ -11,11 +10,10 @@ namespace ControleFinanceiro.Domain.Tests.Usuarios;
 public sealed class UsuarioTests
 {
     [Theory, DomainAutoData]
-    public void Criar_Deve_IniciarSemCartoesNemContas(TextoObrigatorio nome, ReaisPositivo rendaBruta)
+    public void Criar_Deve_IniciarSemContas(TextoObrigatorio nome, ReaisPositivo rendaBruta)
     {
         Usuario sut = Usuario.Criar(nome, rendaBruta, []);
 
-        sut.Cartoes.Should().BeEmpty();
         sut.Contas.Should().BeEmpty();
     }
 
@@ -40,44 +38,6 @@ public sealed class UsuarioTests
         decimal result = sut.RendaLiquida;
 
         result.Should().Be(850m);
-    }
-
-    [Theory, DomainAutoData]
-    public void AdicionarCartao_Quando_PrimeiroCartao_Deve_AdicionarNaLista(Usuario sut, Cartao cartao)
-    {
-        Result result = sut.AdicionarCartao(cartao);
-
-        result.Should().Succeed();
-        sut.Cartoes.Should().ContainSingle().Which.Should().Be(cartao);
-    }
-
-    [Theory, DomainAutoData]
-    public void AdicionarCartao_Quando_SufixoRepetidoNoMesmoBanco_Deve_RetornarFalha(
-        Usuario sut,
-        SufixoCartao sufixo,
-        DiaVencimentoCartao diaVencimento1,
-        DiaVencimentoCartao diaVencimento2)
-    {
-        sut.AdicionarCartao(Cartao.Criar(sut.Id, Banco.C6, sufixo, diaVencimento1)).Should().Succeed();
-
-        Result result = sut.AdicionarCartao(Cartao.Criar(sut.Id, Banco.C6, sufixo, diaVencimento2));
-
-        result.Should().FailWith($"O usuário já tem um cartão {Banco.C6.Name} com final {sufixo}.");
-        sut.Cartoes.Should().ContainSingle();
-    }
-
-    [Theory, DomainAutoData]
-    public void AdicionarCartao_Quando_MesmoSufixoEmOutroBanco_Deve_Adicionar(
-        Usuario sut,
-        SufixoCartao sufixo,
-        DiaVencimentoCartao diaVencimento)
-    {
-        sut.AdicionarCartao(Cartao.Criar(sut.Id, Banco.C6, sufixo, diaVencimento)).Should().Succeed();
-
-        Result result = sut.AdicionarCartao(Cartao.Criar(sut.Id, Banco.MercadoPago, sufixo, diaVencimento));
-
-        result.Should().Succeed();
-        sut.Cartoes.Should().HaveCount(2);
     }
 
     [Theory, DomainAutoData]

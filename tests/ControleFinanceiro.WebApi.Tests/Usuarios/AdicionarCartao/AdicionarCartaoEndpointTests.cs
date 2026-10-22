@@ -29,7 +29,7 @@ public sealed class AdicionarCartaoEndpointTests : IAsyncLifetime
     public Task DisposeAsync() => Task.CompletedTask;
 
     [Theory, ApiAutoData]
-    public async Task Post_Quando_RequisicaoValida_Deve_GravarOCartaoNoUsuario(
+    public async Task Post_Quando_RequisicaoValida_Deve_GravarOCartaoDoUsuario(
         [Frozen] Cartao esperado,
         CadastrarUsuarioRequest cadastro,
         AdicionarCartaoRequest requisicao)
@@ -40,11 +40,9 @@ public sealed class AdicionarCartaoEndpointTests : IAsyncLifetime
 
         resposta.StatusCode.Should().Be(HttpStatusCode.Created);
         AdicionarCartaoResponse? corpo = await resposta.Content.ReadFromJsonAsync<AdicionarCartaoResponse>();
-        Usuario usuario = await LerUnicoUsuarioAsync();
-        idUsuario.Should().Be(usuario.Id);
-        Cartao gravado = usuario.Cartoes.Should().ContainSingle().Subject;
+        Cartao gravado = (await LerCartoesAsync()).Should().ContainSingle().Subject;
         corpo!.Id.Should().Be(gravado.Id);
-        gravado.IdUsuario.Should().Be(usuario.Id);
+        gravado.IdUsuario.Should().Be(IdUsuario.From(idUsuario));
         gravado.Banco.Should().BeSameAs(esperado.Banco);
         gravado.Should().BeEquivalentTo(esperado, options => options
             .ComparingByMembers<Cartao>()
@@ -63,8 +61,25 @@ public sealed class AdicionarCartaoEndpointTests : IAsyncLifetime
 
         Guid idSegundo = await AdicionarComSucessoAsync(idUsuario, segundo);
 
-        Usuario usuario = await LerUnicoUsuarioAsync();
-        usuario.Cartoes.Select(cartao => (Guid)cartao.Id).Should().BeEquivalentTo([idPrimeiro, idSegundo]);
+        (await LerCartoesAsync()).Select(cartao => (Guid)cartao.Id).Should().BeEquivalentTo([idPrimeiro, idSegundo]);
+    }
+
+    [Theory, ApiAutoData]
+    public async Task Post_Quando_OutroUsuarioTemOMesmoCartao_Deve_Gravar(
+        CadastrarUsuarioRequest cadastro,
+        CadastrarUsuarioRequest outroCadastro,
+        AdicionarCartaoRequest requisicao)
+    {
+        Guid idOutroUsuario = await CadastrarUsuarioAsync(outroCadastro);
+        await AdicionarComSucessoAsync(idOutroUsuario, requisicao);
+        Guid idUsuario = await CadastrarUsuarioAsync(cadastro);
+
+        Guid idCartao = await AdicionarComSucessoAsync(idUsuario, requisicao);
+
+        List<Cartao> cartoes = await LerCartoesAsync();
+        cartoes.Should().HaveCount(2);
+        cartoes.Should().ContainSingle(cartao => cartao.Id == IdCartao.From(idCartao))
+            .Which.IdUsuario.Should().Be(IdUsuario.From(idUsuario));
     }
 
     [Theory, ApiAutoData]
@@ -140,8 +155,8 @@ public sealed class AdicionarCartaoEndpointTests : IAsyncLifetime
     }
 
     private Task<int> ContarCartoesAsync() =>
-        _api.ConsultarAsync(db => db.Set<Cartao>().CountAsync());
+        _api.ConsultarAsync(db => db.Cartoes.CountAsync());
 
-    private Task<Usuario> LerUnicoUsuarioAsync() =>
-        _api.ConsultarAsync(db => db.Usuarios.AsNoTracking().SingleAsync());
+    private Task<List<Cartao>> LerCartoesAsync() =>
+        _api.ConsultarAsync(db => db.Cartoes.AsNoTracking().ToListAsync());
 }

@@ -1,4 +1,5 @@
 using ControleFinanceiro.Domain.Cartoes;
+using ControleFinanceiro.Domain.Usuarios;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
@@ -31,6 +32,11 @@ internal sealed class CartaoConfiguration : IEntityTypeConfiguration<Cartao>
 
         entity.Property(c => c.IdUsuario)
             .HasColumnName("id_usuario");
+
+        entity.HasOne<Usuario>()
+            .WithMany()
+            .HasForeignKey(c => c.IdUsuario)
+            .OnDelete(DeleteBehavior.Cascade);
 
         entity.HasIndex(c => new { c.IdUsuario, c.Banco, c.Sufixo })
             .IsUnique();

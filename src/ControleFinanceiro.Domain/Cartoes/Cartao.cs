@@ -30,7 +30,11 @@ public sealed class Cartao : AggregateRoot<IdCartao>
         DiaVencimento = diaVencimento;
     }
 
-    public static Cartao Criar(IdUsuario idUsuario, Banco banco, SufixoCartao sufixo, DiaVencimentoCartao diaVencimento)
+    /// <remarks>
+    /// Interno pois o usuário não pode ter dois cartões do mesmo banco com o mesmo final, e só a
+    /// <see cref="Services.CartaoFactory"/>, que recebe os cartões do usuário, confere isso.
+    /// </remarks>
+    internal static Cartao Criar(IdUsuario idUsuario, Banco banco, SufixoCartao sufixo, DiaVencimentoCartao diaVencimento)
     {
         return new Cartao(IdCartao.FromNewVersion7Guid(), idUsuario, banco, sufixo, diaVencimento);
     }
