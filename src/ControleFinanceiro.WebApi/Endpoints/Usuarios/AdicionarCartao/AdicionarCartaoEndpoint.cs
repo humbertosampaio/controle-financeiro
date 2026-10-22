@@ -1,4 +1,8 @@
 using ControleFinanceiro.Application.Abstractions;
+using ControleFinanceiro.Domain.Cartoes;
+using ControleFinanceiro.Domain.Services;
+using ControleFinanceiro.Domain.Shared;
+using ControleFinanceiro.Domain.Shared.ValueObjects;
 using ControleFinanceiro.Domain.Usuarios;
 using CSharpFunctionalExtensions;
 using FastEndpoints;
@@ -8,11 +12,16 @@ namespace ControleFinanceiro.WebApi.Endpoints.Usuarios.AdicionarCartao;
 public sealed class AdicionarCartaoEndpoint : Endpoint<AdicionarCartaoRequest, AdicionarCartaoResponse, AdicionarCartaoMapper>
 {
     private readonly IUsuarioRepository _usuarioRepository;
+    private readonly ICartaoRepository _cartaoRepository;
     private readonly IUnitOfWork _unitOfWork;
 
-    public AdicionarCartaoEndpoint(IUsuarioRepository usuarioRepository, IUnitOfWork unitOfWork)
+    public AdicionarCartaoEndpoint(
+        IUsuarioRepository usuarioRepository,
+        ICartaoRepository cartaoRepository,
+        IUnitOfWork unitOfWork)
     {
         _usuarioRepository = usuarioRepository;
+        _cartaoRepository = cartaoRepository;
         _unitOfWork = unitOfWork;
     }
 
@@ -24,26 +33,47 @@ public sealed class AdicionarCartaoEndpoint : Endpoint<AdicionarCartaoRequest, A
 
     public override async Task HandleAsync(AdicionarCartaoRequest req, CancellationToken ct)
     {
-        Maybe<Usuario> encontrado = await _usuarioRepository.ObterPorIdAsync(IdUsuario.From(req.IdUsuario), ct);
-        if (!encontrado.TryGetValue(out Usuario? usuario))
+        IdUsuario idUsuario = IdUsuario.From(req.IdUsuario);
+
+        Maybe<Usuario> usuario = await _usuarioRepository.ObterPorIdAsync(idUsuario, ct);
+        if (usuario.HasNoValue)
         {
             await Send.NotFoundAsync(ct);
             return;
         }
 
-        Cartao cartao = Map.ToEntity(req);
+        IReadOnlyList<Cartao> cartoesDoUsuario = await _cartaoRepository.ListarDoUsuarioAsync(idUsuario, ct);
 
-        // Falha única: Usuario.AdicionarCartao. Toda falha vira 409 no campo sufixo. Se o método ganhar outra falha, troque por erro tipado.
-        Result adicionado = usuario.AdicionarCartao(cartao);
-        if (adicionado.IsFailure)
+        Result<Cartao, Erro> criado = CartaoFactory.Criar(
+            idUsuario,
+            cartoesDoUsuario,
+            Banco.FromValue(req.Banco),
+            (SufixoCartao)req.Sufixo,
+            (DiaVencimentoCartao)req.DiaVencimento);
+
+        if (!criado.TryGetValue(out Cartao? cartao, out Erro? erro))
         {
-            AddError(r => r.Sufixo, adicionado.Error);
-            await Send.ErrorsAsync(StatusCodes.Status409Conflict, ct);
+            await EnviarErroAsync(erro, ct);
             return;
         }
 
+        await _cartaoRepository.AddAsync(cartao, ct);
         await _unitOfWork.CommitAsync(ct);
 
         await SendMapped(cartao, StatusCodes.Status201Created, ct);
+    }
+
+    private async Task EnviarErroAsync(Erro erro, CancellationToken ct)
+    {
+        switch (erro)
+        {
+            case ErroCartaoJaCadastrado:
+                AddError(r => r.Sufixo, erro.Descricao);
+                await Send.ErrorsAsync(StatusCodes.Status409Conflict, ct);
+                break;
+
+            default:
+                throw new InvalidOperationException($"Erro sem status mapeado: {erro}");
+        }
     }
 }

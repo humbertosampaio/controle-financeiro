@@ -5,8 +5,8 @@ using ControleFinanceiro.Domain.Usuarios;
 namespace ControleFinanceiro.Tests.Shared.AutoFixture.Customizations.Realistas;
 
 /// <summary>
-/// Usuário com nome completo em pt-BR e renda bruta entre R$ 1.500,00 e R$ 30.000,00, sem cartões. Os
-/// descontos vêm do fixture, então seguem as outras customizações realistas.
+/// Usuário com nome completo em pt-BR e renda bruta entre R$ 1.500,00 e R$ 30.000,00. Os descontos vêm do
+/// fixture, então seguem as outras customizações realistas.
 /// </summary>
 public sealed class UsuarioRealistaCustomization : ICustomization
 {
@@ -31,5 +31,5 @@ public sealed class UsuarioRealistaCustomization : ICustomization
     }
 
     private decimal SortearRenda() =>
-        Math.Round(RendaMinima + (decimal)_random.NextDouble() * (RendaMaxima - RendaMinima), 2);
+        Math.Round(RendaMinima + (decimal)_random.NextDouble() * (RendaMaxima - RendaMinima), decimals: 2);
 }

@@ -1,3 +1,5 @@
+using ControleFinanceiro.Domain.Cartoes;
+using ControleFinanceiro.Domain.Contas;
 using ControleFinanceiro.Domain.Shared;
 using ControleFinanceiro.Domain.Shared.ValueObjects;
 using ControleFinanceiro.Domain.Transacoes;
@@ -7,18 +9,35 @@ namespace ControleFinanceiro.Domain.Services;
 
 /// <summary>
 /// Transforma os lançamentos lidos de um extrato ou de uma fatura nas transações do lote, cada uma com a
-/// sua chave de deduplicação.
+/// sua chave de deduplicação. A origem e o banco da chave saem da conta ou do cartão.
 /// </summary>
 public static class LoteTransacoesFactory
 {
     public static Result<IReadOnlyList<Transacao>, Erro> Criar(
-        Usuario usuario,
+        IdUsuario idUsuario,
+        ContaBancaria conta,
+        IReadOnlyList<LancamentoExtrato> lancamentos)
+    {
+        return Criar(idUsuario, conta.IdUsuario, conta.Banco, OrigemTransacao.DaConta(conta.Id), lancamentos);
+    }
+
+    public static Result<IReadOnlyList<Transacao>, Erro> Criar(
+        IdUsuario idUsuario,
+        Cartao cartao,
+        IReadOnlyList<LancamentoExtrato> lancamentos)
+    {
+        return Criar(idUsuario, cartao.IdUsuario, cartao.Banco, OrigemTransacao.DoCartao(cartao.Id), lancamentos);
+    }
+
+    private static Result<IReadOnlyList<Transacao>, Erro> Criar(
+        IdUsuario idUsuario,
+        IdUsuario donoDaOrigem,
+        Banco banco,
         OrigemTransacao origem,
         IReadOnlyList<LancamentoExtrato> lancamentos)
     {
-        Banco? banco = BancoDaOrigem(usuario, origem);
-        if (banco is null)
-            return Erros.LoteTransacoes.OrigemNaoPertenceAoUsuario;
+        if (donoDaOrigem != idUsuario)
+            return ErroOrigemNaoPertenceAoUsuario.Instancia;
 
         int[]? posicoesRepetidas = lancamentos
             .Select((lancamento, indice) => (lancamento.Identidade, Posicao: indice + 1))
@@ -28,19 +47,12 @@ public static class LoteTransacoesFactory
             ?.ToArray();
 
         if (posicoesRepetidas is not null)
-            return Erros.LoteTransacoes.IdentificadorRepetido(posicoesRepetidas);
+            return new ErroIdentificadorRepetido(posicoesRepetidas);
 
         IReadOnlyList<ChaveDeduplicacao> chaves = ChaveDeduplicacao.CalcularLote(banco, origem, lancamentos.Select(l => l.Identidade));
 
         return lancamentos
             .Zip(chaves, (lancamento, chave) => Transacao.Criar(origem, lancamento, chave))
             .ToList();
-    }
-
-    private static Banco? BancoDaOrigem(Usuario usuario, OrigemTransacao origem)
-    {
-        return origem.IdConta is IdConta idConta
-            ? usuario.Contas.FirstOrDefault(c => c.Id == idConta)?.Banco
-            : usuario.Cartoes.FirstOrDefault(c => c.Id == origem.IdCartao)?.Banco;
     }
 }

@@ -19,15 +19,6 @@ public sealed class Usuario : AggregateRoot<IdUsuario>
 
     public Reais RendaLiquida => RendaBruta - _descontosSalariais.Sum(desconto => desconto.Valor);
 
-    private readonly List<DespesaRecorrente> _despesasRecorrentes = [];
-    public IReadOnlyList<DespesaRecorrente> DespesasRecorrentes => _despesasRecorrentes;
-
-    private readonly List<Cartao> _cartoes = [];
-    public IReadOnlyList<Cartao> Cartoes => _cartoes;
-
-    private readonly List<ContaBancaria> _contas = [];
-    public IReadOnlyList<ContaBancaria> Contas => _contas;
-
     private Usuario()
     {
     }
@@ -50,55 +41,5 @@ public sealed class Usuario : AggregateRoot<IdUsuario>
         IEnumerable<DescontoSalarial> descontosSalariais)
     {
         return new(IdUsuario.FromNewVersion7Guid(), nome, rendaBruta, descontosSalariais);
-    }
-
-    // Falha única: mapeada para 409 em AdicionarCartaoEndpoint. Nova falha aqui exige erro tipado.
-    public Result AdicionarCartao(Cartao cartao)
-    {
-        if (_cartoes.Exists(c => c.Banco == cartao.Banco && c.Sufixo == cartao.Sufixo))
-            return Result.Failure($"O usuário já tem um cartão {cartao.Banco.Name} com final {cartao.Sufixo}.");
-
-        _cartoes.Add(cartao);
-        return Result.Success();
-    }
-
-    public Result AdicionarConta(ContaBancaria conta)
-    {
-        if (_contas.Exists(c => c.Banco == conta.Banco && c.Sufixo == conta.Sufixo))
-            return Result.Failure($"O usuário já tem uma conta {conta.Banco.Name} com final {conta.Sufixo}.");
-
-        _contas.Add(conta);
-        return Result.Success();
-    }
-
-    /// <summary>
-    /// A conta de onde veio um extrato, casada por banco e sufixo. Sem uma, cria a conta com o apelido padrão.
-    /// </summary>
-    public Result<ContaBancaria> ObterOuAdicionarConta(Banco banco, TipoConta tipo, SufixoConta sufixo)
-    {
-        ContaBancaria? existente = _contas.Find(c => c.Banco == banco && c.Sufixo == sufixo);
-        if (existente is not null)
-        {
-            return existente.Tipo == tipo
-                ? existente
-                : Result.Failure<ContaBancaria>(
-                    $"O usuário já tem uma conta {banco.Name} com final {sufixo}, mas do tipo {existente.Tipo.Name}.");
-        }
-
-        ContaBancaria conta = ContaBancaria.Criar(banco, tipo, sufixo);
-        _contas.Add(conta);
-        return conta;
-    }
-
-    public Result AdicionarDespesaRecorrente(DespesaRecorrente despesaRecorrente)
-    {
-        if (_despesasRecorrentes.Contains(despesaRecorrente))
-            return Result.Failure("Despesa recorrente já existe para este usuário.");
-
-        if (despesaRecorrente.IdCartao is IdCartao idCartao && !_cartoes.Exists(c => c.Id == idCartao))
-            return Result.Failure("O cartão da despesa recorrente não pertence ao usuário.");
-
-        _despesasRecorrentes.Add(despesaRecorrente);
-        return Result.Success();
     }
 }

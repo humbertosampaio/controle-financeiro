@@ -1,4 +1,5 @@
 using ControleFinanceiro.Domain.Beneficiarios;
+using ControleFinanceiro.Domain.Cartoes;
 using ControleFinanceiro.Domain.Categorias;
 using ControleFinanceiro.Domain.Despesas;
 using ControleFinanceiro.Domain.Shared.ValueObjects;
@@ -19,7 +20,7 @@ public sealed class DespesaAdiadaTests
     {
         DateTimeOffset dataCompra = new DateOnly(2026, 02, 05).ToLocalDateTimeOffset();
         DiaVencimentoCartao diaVencimento = (DiaVencimentoCartao)05;
-        MesReferencia mesReferenciaEsperado = MesReferencia.Criar(03, 2026).Value;
+        MesReferencia mesReferenciaEsperado = MesReferencia.Criar(mes: 03, ano: 2026).Value;
         DateTimeOffset dataProjetadaPagamentoEsperada = new DateOnly(2026, 03, 05).ToLocalDateTimeOffset();
 
         DespesaAdiada result = DespesaAdiada.Criar(

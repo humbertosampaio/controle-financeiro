@@ -1,8 +1,8 @@
 using ControleFinanceiro.Application.Importacoes;
+using ControleFinanceiro.Domain.Contas;
 using ControleFinanceiro.Domain.Importacoes;
 using ControleFinanceiro.Domain.Shared.ValueObjects;
 using ControleFinanceiro.Domain.Transacoes;
-using ControleFinanceiro.Domain.Usuarios;
 using CsvHelper;
 using CsvHelper.Configuration;
 using System.Globalization;

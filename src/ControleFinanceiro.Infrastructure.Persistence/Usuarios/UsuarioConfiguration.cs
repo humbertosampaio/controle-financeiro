@@ -29,20 +29,5 @@ internal sealed class UsuarioConfiguration : IEntityTypeConfiguration<Usuario>
             .AutoInclude()
             .HasField("_descontosSalariais")
             .UsePropertyAccessMode(PropertyAccessMode.Field);
-
-        entity.HasMany(u => u.Cartoes)
-            .WithOne()
-            .HasForeignKey("id_usuario")
-            .OnDelete(DeleteBehavior.Cascade);
-
-        entity.Navigation(u => u.Cartoes)
-            .AutoInclude()
-            .HasField("_cartoes")
-            .UsePropertyAccessMode(PropertyAccessMode.Field);
-
-        entity.Ignore(u => u.DespesasRecorrentes);
-
-        // Mapeada na #6, junto da importação, que é quem cria as contas.
-        entity.Ignore(u => u.Contas);
     }
 }

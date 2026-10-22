@@ -1,6 +1,6 @@
 # Testes com AutoFixture
 
-O AutoFixture existe aqui para uma coisa: **dar ao teste um objeto válido sem que ele precise saber os valores de dentro.** Um teste de `AdicionarCartao` precisa de um `Usuario`, mas não liga para o nome nem para a renda. Se o teste montasse o usuário à mão, um `"Maria"` e um `5000m` apareceriam no código como se importassem para o resultado.
+O AutoFixture existe aqui para uma coisa: **dar ao teste um objeto válido sem que ele precise saber os valores de dentro.** Um teste do cadastro de cartão precisa de um `Usuario` cadastrado, mas não liga para o nome nem para a renda. Se o teste montasse o usuário à mão, um `"Maria"` e um `5000m` apareceriam no código como se importassem para o resultado.
 
 Por isso, a regra é: **o que o teste não verifica, o AutoFixture gera; o que ele verifica, o teste declara.**
 
@@ -10,7 +10,7 @@ Os value objects só existem válidos (`SufixoCartao.Criar` falha para algo que 
 
 Value object novo com regra pede customização nova no `DomainFixture`. Sem ela, qualquer teste que peça o tipo, ou uma entidade que o contenha, quebra com a exceção do `Criar`.
 
-Entidade cujo `Criar` devolve `Result<T>` também precisa de ajuda, porque o AutoFixture só usa sozinho um método de fábrica que devolva o próprio tipo. O `DespesaRecorrenteGenerator` é o modelo: um `ISpecimenBuilder` que pede cada argumento ao contexto, chama o `Criar` e devolve o `.Value`. Como os argumentos vêm do contexto, um `[Frozen]` ou um `fixture.Inject` no teste chega até a entidade.
+Entidade cujo `Criar` devolve `Result<T>` também precisa de ajuda, porque o AutoFixture só usa sozinho um método de fábrica que devolva o próprio tipo. O `DespesaRecorrenteGenerator` é o modelo: um `ISpecimenBuilder` que pede cada argumento ao contexto, chama a `DespesaRecorrenteFactory` e devolve o `.Value`. Como os argumentos vêm do contexto, um `[Frozen]` ou um `fixture.Inject` no teste chega até a entidade.
 
 ### Peça o objeto ao AutoFixture, não o monte no teste
 
@@ -18,7 +18,7 @@ Antes de escrever `new` ou chamar um método de fábrica no corpo do teste, veja
 
 - `IdentidadeLancamentoCustomization` registra `(string id) => IdentidadeLancamento.Unica(id).Value`. Assim, o teste pede `IdentidadeLancamento identidade`, em vez de pedir uma `string idExterno` que só serviria para chamar o `Unica`.
 - `OrigemTransacaoCustomization` registra a origem a partir de uma `ContaBancaria`. Com `[Frozen] ContaBancaria conta`, a `OrigemTransacao origem` do mesmo teste aponta para essa conta, sem `OrigemTransacao.DaConta(conta.Id)` no corpo.
-- `[Frozen] Banco banco` e `[Frozen] SufixoConta sufixo` fazem duas `ContaBancaria` pedidas como parâmetro terem o mesmo banco e o mesmo sufixo, em vez de dois `ContaBancaria.Criar(...)`.
+- `[Frozen] Banco banco` e `[Frozen] SufixoConta sufixo` fazem duas `ContaBancaria` pedidas como parâmetro terem o mesmo banco e o mesmo sufixo, em vez de duas chamadas à `ContaBancariaFactory` no corpo do teste.
 
 O teste monta o objeto à mão só quando os valores dele são o assunto do teste: o texto canônico de um hash conhecido, duas contas em bancos **diferentes**, a data e a descrição de um teste de sobreposição.
 
@@ -51,13 +51,17 @@ Quatro caminhos, do mais geral para o mais local:
    Fica explícito que o caso é "uma requisição válida, exceto a renda". É o caminho dos casos inválidos e das bordas.
 4. **`fixture.Inject` no corpo do teste**: só quando o `[Frozen]` não expressa o caso. Peça `Fixture fixture` como parâmetro e injete antes do `fixture.Create<T>()`. São dois casos:
    - o teste precisa de um valor específico, que o parâmetro não escolhe: `fixture.Inject(FormaPagamento.Credito)`;
-   - o valor depende de algo montado no próprio teste: `fixture.Inject(cartao.Id)`, depois de `usuario.AdicionarCartao(cartao)`.
+   - o valor depende de algo montado no próprio teste, que nenhum parâmetro produz.
+
+   No exemplo, o `[Frozen] IdUsuario` faz o cartão e a despesa recorrente saírem do mesmo usuário, sem montar um `Usuario`. Só a forma de pagamento precisa do `Inject`:
 
    ```csharp
-   usuario.AdicionarCartao(cartao).Should().Succeed();
-   fixture.Inject(FormaPagamento.Credito);
-   fixture.Inject(cartao.Id);
-   usuario.AdicionarDespesaRecorrente(fixture.Create<DespesaRecorrente>()).Should().Succeed();
+   [Theory, DomainAutoData]
+   public void Criar_Quando_FormaPagamentoCredito_Deve_...([Frozen] IdUsuario idUsuario, [Frozen] Cartao cartao, Fixture fixture)
+   {
+       fixture.Inject(FormaPagamento.Credito);
+       DespesaRecorrente despesaRecorrente = fixture.Create<DespesaRecorrente>();
+       ...
    ```
 
 **Não contorne essas limitações.** Nada de atributo próprio que alimente o `[Frozen]` com `MemberData`, nem de parâmetro `[Frozen] T _` (ou `_1`) que só existe para congelar e nunca é lido: a assinatura do teste passa a esconder o que ele depende. Para variar poucos valores da mesma regra, use `[InlineDomainAutoData(...)]`.
@@ -66,7 +70,7 @@ Valor fixo direto no teste (`(TextoObrigatorio)"INSS"`) só quando o próprio va
 
 ## Nome do teste
 
-`Metodo_Quando_Cenario_Deve_Resultado`, como no `CLAUDE.md`. Quando não há cenário, porque o comportamento vale sempre, o `Quando` sai em vez de ganhar um cenário vazio: `Criar_Deve_IniciarSemCartoes`, e não `Criar_Quando_Chamado_Deve_IniciarSemCartoes`.
+`Metodo_Quando_Cenario_Deve_Resultado`, como no `CLAUDE.md`. Quando não há cenário, porque o comportamento vale sempre, o `Quando` sai em vez de ganhar um cenário vazio: `Criar_Deve_GerarIdVersao7ParaCadaTransacao`, e não `Criar_Quando_Chamado_Deve_GerarIdVersao7ParaCadaTransacao`.
 
 ## Customizações realistas (só na integração)
 
@@ -104,7 +108,7 @@ O resto vai para a unidade:
 | Regra | Onde |
 |---|---|
 | Borda de value object (limite do dia, trim, sufixo malformado) | `ControleFinanceiro.Domain.Tests`, no teste do value object |
-| Invariante do agregado (sufixo repetido no mesmo banco) | `ControleFinanceiro.Domain.Tests`, no teste do agregado |
+| Invariante do agregado, ou regra de uma factory de domínio (sufixo repetido no mesmo banco) | `ControleFinanceiro.Domain.Tests`, no teste do agregado ou da factory |
 | Regra que o validator acrescenta (código de SmartEnum, id vazio) | `<Acao>ValidatorTests`, na pasta do teste do endpoint, sem `ApiCollection`, com `TestValidate` |
 
 O `AdicionarCartao` é o modelo: cinco casos de integração no `AdicionarCartaoEndpointTests` e as regras do banco e do id no `AdicionarCartaoValidatorTests`.

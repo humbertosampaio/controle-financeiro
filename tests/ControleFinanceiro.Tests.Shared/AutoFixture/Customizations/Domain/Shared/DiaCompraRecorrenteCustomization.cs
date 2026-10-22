@@ -1,4 +1,4 @@
-﻿using ControleFinanceiro.Domain.Shared.ValueObjects;
+﻿using ControleFinanceiro.Domain.Despesas;
 
 namespace ControleFinanceiro.Tests.Shared.AutoFixture.Customizations.Domain.Shared;
 

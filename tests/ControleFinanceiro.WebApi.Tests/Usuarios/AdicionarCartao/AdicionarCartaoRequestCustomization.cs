@@ -1,4 +1,4 @@
-using ControleFinanceiro.Domain.Usuarios;
+using ControleFinanceiro.Domain.Cartoes;
 using ControleFinanceiro.WebApi.Endpoints.Usuarios.AdicionarCartao;
 
 namespace ControleFinanceiro.WebApi.Tests.Usuarios.AdicionarCartao;

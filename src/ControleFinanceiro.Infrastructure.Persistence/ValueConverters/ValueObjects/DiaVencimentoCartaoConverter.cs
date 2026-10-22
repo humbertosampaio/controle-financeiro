@@ -1,4 +1,4 @@
-using ControleFinanceiro.Domain.Shared.ValueObjects;
+using ControleFinanceiro.Domain.Cartoes;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 namespace ControleFinanceiro.Infrastructure.Persistence.ValueConverters.ValueObjects;

@@ -1,4 +1,5 @@
-using ControleFinanceiro.Domain.Usuarios;
+using ControleFinanceiro.Domain.Cartoes;
+using ControleFinanceiro.Domain.Contas;
 
 namespace ControleFinanceiro.Domain.Transacoes;
 
@@ -16,9 +17,9 @@ public sealed class OrigemTransacao : ValueObject
         IdCartao = idCartao;
     }
 
-    public static OrigemTransacao DaConta(IdConta idConta) => new(idConta, null);
+    public static OrigemTransacao DaConta(IdConta idConta) => new(idConta, idCartao: null);
 
-    public static OrigemTransacao DoCartao(IdCartao idCartao) => new(null, idCartao);
+    public static OrigemTransacao DoCartao(IdCartao idCartao) => new(idConta: null, idCartao);
 
     protected override IEnumerable<object?> GetEqualityComponents()
     {

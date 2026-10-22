@@ -56,8 +56,9 @@ Todos respondem em PT-BR e citam `arquivo:linha`. Os revisores só leem.
 |---|---|
 | `planejador` | antes do código, em tarefa não trivial |
 | `autor-de-testes` | código novo sem teste; escreve, não é só leitura |
-| `revisor-dominio` | diff em `src/**`: camadas, agregados, `Result`, Vogen, importação idempotente, migrations |
+| `revisor-dominio` | diff em `src/**`: camadas, agregados, `Result`, Vogen, primitivo com regra em value object, importação idempotente, migrations |
 | `revisor-privacidade` | antes de todo PR: dado real ou secret no repositório, dado demais indo para o modelo |
+| `revisor-convencoes` | diff em `src/**` ou `tests/**`: convenções do `CLAUDE.md` que o build não confere e as do guia de testes |
 
 Os revisores leem o `--stat` antes do diff. Até ~800 linhas, leem tudo; acima disso, vão arquivo por arquivo em ordem de risco e **dizem o que não leram**. Revisão que para no meio sem avisar passa a impressão de que tudo foi revisado.
 

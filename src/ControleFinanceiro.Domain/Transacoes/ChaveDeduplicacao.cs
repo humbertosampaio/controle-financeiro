@@ -1,5 +1,5 @@
+using ControleFinanceiro.Domain.Contas;
 using ControleFinanceiro.Domain.Shared.ValueObjects;
-using ControleFinanceiro.Domain.Usuarios;
 using System.Globalization;
 using System.Security.Cryptography;
 using System.Text;

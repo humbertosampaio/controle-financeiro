@@ -1,5 +1,7 @@
 using ControleFinanceiro.Application.Abstractions;
+using ControleFinanceiro.Domain.Cartoes;
 using ControleFinanceiro.Domain.Usuarios;
+using ControleFinanceiro.Infrastructure.Persistence.Cartoes;
 using ControleFinanceiro.Infrastructure.Persistence.Usuarios;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
@@ -25,12 +27,18 @@ public static class DependencyInjection
 
             return services
                 .AddScoped<IUnitOfWork, EntityFrameworkUnitOfWork>()
-                .AddUsuarios();
+                .AddUsuarios()
+                .AddCartoes();
         }
 
         private IServiceCollection AddUsuarios()
         {
             return services.AddTransient<IUsuarioRepository, UsuarioRepository>();
+        }
+
+        private IServiceCollection AddCartoes()
+        {
+            return services.AddTransient<ICartaoRepository, CartaoRepository>();
         }
     }
 }

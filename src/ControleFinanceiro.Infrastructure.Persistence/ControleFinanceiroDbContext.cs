@@ -1,3 +1,5 @@
+using ControleFinanceiro.Domain.Cartoes;
+using ControleFinanceiro.Domain.Despesas;
 using ControleFinanceiro.Domain.Shared.ValueObjects;
 using ControleFinanceiro.Domain.Usuarios;
 using ControleFinanceiro.Infrastructure.Persistence.ValueConverters;
@@ -18,6 +20,7 @@ public sealed class ControleFinanceiroDbContext : DbContext
     }
 
     public DbSet<Usuario> Usuarios => Set<Usuario>();
+    public DbSet<Cartao> Cartoes => Set<Cartao>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
