@@ -1,4 +1,4 @@
-﻿namespace ControleFinanceiro.Domain.Shared.ValueObjects;
+﻿namespace ControleFinanceiro.Domain.Despesas;
 
 public sealed class DiaCompraRecorrente : SimpleValueObject<int>
 {

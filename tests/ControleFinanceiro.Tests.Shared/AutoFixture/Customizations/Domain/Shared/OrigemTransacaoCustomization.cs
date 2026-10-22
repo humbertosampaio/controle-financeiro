@@ -1,5 +1,5 @@
+using ControleFinanceiro.Domain.Contas;
 using ControleFinanceiro.Domain.Transacoes;
-using ControleFinanceiro.Domain.Usuarios;
 
 namespace ControleFinanceiro.Tests.Shared.AutoFixture.Customizations.Domain.Shared;
 

@@ -1,4 +1,5 @@
 using AutoFixture.Xunit2;
+using ControleFinanceiro.Domain.Cartoes;
 using ControleFinanceiro.Domain.Usuarios;
 using ControleFinanceiro.WebApi.Endpoints.Usuarios.AdicionarCartao;
 using ControleFinanceiro.WebApi.Endpoints.Usuarios.Cadastrar;

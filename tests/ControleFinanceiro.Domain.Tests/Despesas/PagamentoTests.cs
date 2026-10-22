@@ -1,7 +1,8 @@
-﻿using ControleFinanceiro.Domain.Shared.ValueObjects;
+﻿using ControleFinanceiro.Domain.Despesas;
+using ControleFinanceiro.Domain.Shared.ValueObjects;
 using ControleFinanceiro.Tests.Shared.AutoFixture.Attributes;
 
-namespace ControleFinanceiro.Domain.Tests.Shared.ValueObjects;
+namespace ControleFinanceiro.Domain.Tests.Despesas;
 
 public sealed class PagamentoTests
 {

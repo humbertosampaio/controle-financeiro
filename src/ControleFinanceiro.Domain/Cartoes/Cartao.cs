@@ -1,6 +1,6 @@
 using ControleFinanceiro.Domain.Shared.ValueObjects;
 
-namespace ControleFinanceiro.Domain.Usuarios;
+namespace ControleFinanceiro.Domain.Cartoes;
 
 [ValueObject]
 public readonly partial struct IdCartao

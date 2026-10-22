@@ -1,5 +1,6 @@
+using ControleFinanceiro.Domain.Cartoes;
+using ControleFinanceiro.Domain.Contas;
 using ControleFinanceiro.Domain.Transacoes;
-using ControleFinanceiro.Domain.Usuarios;
 using ControleFinanceiro.Tests.Shared.AutoFixture.Attributes;
 
 namespace ControleFinanceiro.Domain.Tests.Transacoes;

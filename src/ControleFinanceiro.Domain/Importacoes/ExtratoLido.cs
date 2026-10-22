@@ -1,6 +1,6 @@
+using ControleFinanceiro.Domain.Contas;
 using ControleFinanceiro.Domain.Shared.ValueObjects;
 using ControleFinanceiro.Domain.Transacoes;
-using ControleFinanceiro.Domain.Usuarios;
 
 namespace ControleFinanceiro.Domain.Importacoes;
 

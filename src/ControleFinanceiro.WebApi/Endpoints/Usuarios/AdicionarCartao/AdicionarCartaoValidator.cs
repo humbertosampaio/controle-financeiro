@@ -1,8 +1,8 @@
 using ControleFinanceiro.Application.Validation;
+using ControleFinanceiro.Domain.Cartoes;
 using ControleFinanceiro.Domain.Shared.ValueObjects;
 using ControleFinanceiro.Domain.Usuarios;
 using FastEndpoints;
-using FluentValidation;
 
 namespace ControleFinanceiro.WebApi.Endpoints.Usuarios.AdicionarCartao;
 

@@ -1,9 +1,9 @@
 using AutoFixture.Xunit2;
-using ControleFinanceiro.Domain.Shared.ValueObjects;
+using ControleFinanceiro.Domain.Despesas;
 using ControleFinanceiro.Tests.Shared.AutoFixture.Attributes;
 using CSharpFunctionalExtensions;
 
-namespace ControleFinanceiro.Domain.Tests.Shared.ValueObjects;
+namespace ControleFinanceiro.Domain.Tests.Despesas;
 
 public sealed class DiaCompraRecorrenteTests
 {

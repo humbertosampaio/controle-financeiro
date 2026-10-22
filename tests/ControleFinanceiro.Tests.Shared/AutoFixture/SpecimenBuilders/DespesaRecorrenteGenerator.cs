@@ -1,8 +1,9 @@
 using AutoFixture.Kernel;
 using ControleFinanceiro.Domain.Beneficiarios;
+using ControleFinanceiro.Domain.Cartoes;
 using ControleFinanceiro.Domain.Categorias;
+using ControleFinanceiro.Domain.Despesas;
 using ControleFinanceiro.Domain.Shared.ValueObjects;
-using ControleFinanceiro.Domain.Usuarios;
 
 namespace ControleFinanceiro.Tests.Shared.AutoFixture.SpecimenBuilders;
 

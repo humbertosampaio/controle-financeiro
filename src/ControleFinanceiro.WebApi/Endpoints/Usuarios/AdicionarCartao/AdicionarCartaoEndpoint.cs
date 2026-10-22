@@ -1,4 +1,5 @@
 using ControleFinanceiro.Application.Abstractions;
+using ControleFinanceiro.Domain.Cartoes;
 using ControleFinanceiro.Domain.Usuarios;
 using CSharpFunctionalExtensions;
 using FastEndpoints;

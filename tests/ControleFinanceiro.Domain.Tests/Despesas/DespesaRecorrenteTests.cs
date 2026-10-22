@@ -1,11 +1,12 @@
 using ControleFinanceiro.Domain.Beneficiarios;
+using ControleFinanceiro.Domain.Cartoes;
 using ControleFinanceiro.Domain.Categorias;
+using ControleFinanceiro.Domain.Despesas;
 using ControleFinanceiro.Domain.Shared.ValueObjects;
-using ControleFinanceiro.Domain.Usuarios;
 using ControleFinanceiro.Tests.Shared.AutoFixture.Attributes;
 using CSharpFunctionalExtensions;
 
-namespace ControleFinanceiro.Domain.Tests.Usuarios;
+namespace ControleFinanceiro.Domain.Tests.Despesas;
 
 public sealed class DespesaRecorrenteTests
 {

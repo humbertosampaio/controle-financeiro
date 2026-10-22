@@ -1,6 +1,7 @@
+using ControleFinanceiro.Domain.Shared.ValueObjects;
 using System.Diagnostics.CodeAnalysis;
 
-namespace ControleFinanceiro.Domain.Shared.ValueObjects;
+namespace ControleFinanceiro.Domain.Despesas;
 
 public sealed class Pagamento : ValueObject
 {
