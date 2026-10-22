@@ -32,7 +32,7 @@ internal sealed class UsuarioConfiguration : IEntityTypeConfiguration<Usuario>
 
         entity.HasMany(u => u.Cartoes)
             .WithOne()
-            .HasForeignKey("id_usuario")
+            .HasForeignKey(c => c.IdUsuario)
             .OnDelete(DeleteBehavior.Cascade);
 
         entity.Navigation(u => u.Cartoes)

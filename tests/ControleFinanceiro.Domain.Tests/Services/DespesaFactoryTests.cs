@@ -40,8 +40,8 @@ public sealed class DespesaFactoryTests
     {
         MesReferencia mesReferencia = MesReferencia.Criar(03, 2026).Value;
         DateTimeOffset vencimentoEsperado = new DateOnly(2026, 03, 10).ToLocalDateTimeOffset();
-        Cartao cartaoDaDespesa = Cartao.Criar(Banco.C6, sufixo, (DiaVencimentoCartao)10);
-        Cartao outroCartao = Cartao.Criar(Banco.MercadoPago, sufixo, (DiaVencimentoCartao)20);
+        Cartao cartaoDaDespesa = Cartao.Criar(usuario.Id, Banco.C6, sufixo, (DiaVencimentoCartao)10);
+        Cartao outroCartao = Cartao.Criar(usuario.Id, Banco.MercadoPago, sufixo, (DiaVencimentoCartao)20);
         usuario.AdicionarCartao(outroCartao).Should().Succeed();
         usuario.AdicionarCartao(cartaoDaDespesa).Should().Succeed();
         fixture.Inject(FormaPagamento.Credito);

@@ -59,9 +59,9 @@ public sealed class UsuarioTests
         DiaVencimentoCartao diaVencimento1,
         DiaVencimentoCartao diaVencimento2)
     {
-        sut.AdicionarCartao(Cartao.Criar(Banco.C6, sufixo, diaVencimento1)).Should().Succeed();
+        sut.AdicionarCartao(Cartao.Criar(sut.Id, Banco.C6, sufixo, diaVencimento1)).Should().Succeed();
 
-        Result result = sut.AdicionarCartao(Cartao.Criar(Banco.C6, sufixo, diaVencimento2));
+        Result result = sut.AdicionarCartao(Cartao.Criar(sut.Id, Banco.C6, sufixo, diaVencimento2));
 
         result.Should().FailWith($"O usuário já tem um cartão {Banco.C6.Name} com final {sufixo}.");
         sut.Cartoes.Should().ContainSingle();
@@ -73,9 +73,9 @@ public sealed class UsuarioTests
         SufixoCartao sufixo,
         DiaVencimentoCartao diaVencimento)
     {
-        sut.AdicionarCartao(Cartao.Criar(Banco.C6, sufixo, diaVencimento)).Should().Succeed();
+        sut.AdicionarCartao(Cartao.Criar(sut.Id, Banco.C6, sufixo, diaVencimento)).Should().Succeed();
 
-        Result result = sut.AdicionarCartao(Cartao.Criar(Banco.MercadoPago, sufixo, diaVencimento));
+        Result result = sut.AdicionarCartao(Cartao.Criar(sut.Id, Banco.MercadoPago, sufixo, diaVencimento));
 
         result.Should().Succeed();
         sut.Cartoes.Should().HaveCount(2);
@@ -112,9 +112,9 @@ public sealed class UsuarioTests
         SufixoConta sufixo,
         TipoConta tipo)
     {
-        sut.AdicionarConta(ContaBancaria.Criar(Banco.C6, tipo, sufixo)).Should().Succeed();
+        sut.AdicionarConta(ContaBancaria.Criar(sut.Id, Banco.C6, tipo, sufixo)).Should().Succeed();
 
-        Result result = sut.AdicionarConta(ContaBancaria.Criar(Banco.MercadoPago, tipo, sufixo));
+        Result result = sut.AdicionarConta(ContaBancaria.Criar(sut.Id, Banco.MercadoPago, tipo, sufixo));
 
         result.Should().Succeed();
         sut.Contas.Should().HaveCount(2);
@@ -159,7 +159,7 @@ public sealed class UsuarioTests
         TipoConta tipo,
         SufixoConta sufixo)
     {
-        sut.AdicionarConta(ContaBancaria.Criar(Banco.MercadoPago, tipo, sufixo)).Should().Succeed();
+        sut.AdicionarConta(ContaBancaria.Criar(sut.Id, Banco.MercadoPago, tipo, sufixo)).Should().Succeed();
 
         Result<ContaBancaria> result = sut.ObterOuAdicionarConta(Banco.C6, tipo, sufixo);
 
@@ -173,7 +173,7 @@ public sealed class UsuarioTests
         Banco banco,
         SufixoConta sufixo)
     {
-        sut.AdicionarConta(ContaBancaria.Criar(banco, TipoConta.ContaPagamento, sufixo)).Should().Succeed();
+        sut.AdicionarConta(ContaBancaria.Criar(sut.Id, banco, TipoConta.ContaPagamento, sufixo)).Should().Succeed();
 
         Result<ContaBancaria> result = sut.ObterOuAdicionarConta(banco, TipoConta.ContaCorrente, sufixo);
 

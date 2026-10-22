@@ -1,9 +1,8 @@
 using ControleFinanceiro.Domain.Cartoes;
-using ControleFinanceiro.Domain.Usuarios;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
-namespace ControleFinanceiro.Infrastructure.Persistence.Usuarios;
+namespace ControleFinanceiro.Infrastructure.Persistence.Cartoes;
 
 internal sealed class CartaoConfiguration : IEntityTypeConfiguration<Cartao>
 {
@@ -30,10 +29,10 @@ internal sealed class CartaoConfiguration : IEntityTypeConfiguration<Cartao>
         entity.Property(c => c.DiaVencimento)
             .HasColumnName("dia_vencimento");
 
-        entity.Property<IdUsuario>("id_usuario")
-            .IsRequired();
+        entity.Property(c => c.IdUsuario)
+            .HasColumnName("id_usuario");
 
-        entity.HasIndex("id_usuario", nameof(Cartao.Banco), nameof(Cartao.Sufixo))
+        entity.HasIndex(c => new { c.IdUsuario, c.Banco, c.Sufixo })
             .IsUnique();
     }
 }

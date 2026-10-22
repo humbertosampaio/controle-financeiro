@@ -1,5 +1,6 @@
 using ControleFinanceiro.Domain.Cartoes;
 using ControleFinanceiro.Domain.Shared.ValueObjects;
+using ControleFinanceiro.Domain.Usuarios;
 using FastEndpoints;
 
 namespace ControleFinanceiro.WebApi.Endpoints.Usuarios.AdicionarCartao;
@@ -9,6 +10,7 @@ public sealed class AdicionarCartaoMapper : Mapper<AdicionarCartaoRequest, Adici
     public override Cartao ToEntity(AdicionarCartaoRequest r)
     {
         return Cartao.Criar(
+            IdUsuario.From(r.IdUsuario),
             Banco.FromValue(r.Banco),
             (SufixoCartao)r.Sufixo,
             (DiaVencimentoCartao)r.DiaVencimento);
