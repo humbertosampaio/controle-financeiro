@@ -25,7 +25,7 @@ public sealed class Pagamento : ValueObject
         Pendente(valor, dataProjetada?.ToLocalDateTimeOffset());
 
     public static Pagamento Pendente(ReaisPositivo valor, DateTimeOffset? dataProjetada = null) =>
-        new(valor, StatusPagamento.Pendente, dataProjetada, null);
+        new(valor, StatusPagamento.Pendente, dataProjetada, dataEfetiva: null);
 
     public static Pagamento Pago(ReaisPositivo valor, DateTimeOffset dataProjetada, DateTimeOffset dataEfetiva) =>
         new(valor, StatusPagamento.Pago, dataProjetada, dataEfetiva);

@@ -73,10 +73,10 @@ public sealed class LeitorExtratoContaC6Tests
         ExtratoLido extrato = await LerFixtureAsync();
 
         extrato.Saldos.Should().Equal(
-            SaldoDiario.Criar(Dia(2), -12.50m),
-            SaldoDiario.Criar(Dia(3), -252.95m),
-            SaldoDiario.Criar(Dia(4), -240.61m),
-            SaldoDiario.Criar(Dia(9), 1769.39m));
+            SaldoDiario.Criar(Dia(2), saldo: -12.50m),
+            SaldoDiario.Criar(Dia(3), saldo: -252.95m),
+            SaldoDiario.Criar(Dia(4), saldo: -240.61m),
+            SaldoDiario.Criar(Dia(9), saldo: 1769.39m));
     }
 
     [Fact]
@@ -90,7 +90,7 @@ public sealed class LeitorExtratoContaC6Tests
     [Fact]
     public async Task LerAsync_Quando_LinhasDoMesmoDiaContabilComSaldosDiferentes_Deve_EntregarOsDoisSaldos()
     {
-        Stream arquivo = FixtureComLinha(14, "03/03/2026,03/03/2026,Tarifa de exemplo,,0.00,5.00,-252.96");
+        Stream arquivo = FixtureComLinha(numero: 14, "03/03/2026,03/03/2026,Tarifa de exemplo,,0.00,5.00,-252.96");
 
         ExtratoLido extrato = (await _leitor.LerAsync(arquivo, CancellationToken.None)).Value;
 
@@ -152,7 +152,7 @@ public sealed class LeitorExtratoContaC6Tests
     [Fact]
     public async Task LerAsync_Quando_EntradaESaidaPreenchidas_Deve_RetornarFalhaComONumeroDaLinha()
     {
-        Stream arquivo = FixtureComLinha(12, "03/03/2026,03/03/2026,Pagamento de boleto,,1.00,230.45,-252.95");
+        Stream arquivo = FixtureComLinha(numero: 12, "03/03/2026,03/03/2026,Pagamento de boleto,,1.00,230.45,-252.95");
 
         Result<ExtratoLido> result = await _leitor.LerAsync(arquivo, CancellationToken.None);
 
@@ -162,7 +162,7 @@ public sealed class LeitorExtratoContaC6Tests
     [Fact]
     public async Task LerAsync_Quando_TituloEmBranco_Deve_RetornarFalhaComONumeroDaLinha()
     {
-        Stream arquivo = FixtureComLinha(15, "04/03/2026,04/03/2026,\" \",ABCD11,12.34,0.00,-240.61");
+        Stream arquivo = FixtureComLinha(numero: 15, "04/03/2026,04/03/2026,\" \",ABCD11,12.34,0.00,-240.61");
 
         Result<ExtratoLido> result = await _leitor.LerAsync(arquivo, CancellationToken.None);
 
@@ -178,7 +178,7 @@ public sealed class LeitorExtratoContaC6Tests
     [InlineData("03/03/2026,03/03/2026,TEXTO\"DO-ARQUIVO,,0.00,5.00,-252.95")]
     public async Task LerAsync_Quando_LinhaForaDoLayout_Deve_RetornarFalhaSoComONumeroDaLinha(string linha)
     {
-        Stream arquivo = FixtureComLinha(13, linha);
+        Stream arquivo = FixtureComLinha(numero: 13, linha);
 
         Result<ExtratoLido> result = await _leitor.LerAsync(arquivo, CancellationToken.None);
 
@@ -208,7 +208,7 @@ public sealed class LeitorExtratoContaC6Tests
     [Fact]
     public async Task LerAsync_Quando_CabecalhoSemConta_Deve_RetornarFalha()
     {
-        Stream arquivo = FixtureComLinha(2, "Agência: 1");
+        Stream arquivo = FixtureComLinha(numero: 2, "Agência: 1");
 
         Result<ExtratoLido> result = await _leitor.LerAsync(arquivo, CancellationToken.None);
 
@@ -220,7 +220,7 @@ public sealed class LeitorExtratoContaC6Tests
     [InlineData("Agência: 1 / Conta: 123", "O número da conta no cabeçalho do arquivo é curto demais.")]
     public async Task LerAsync_Quando_NumeroDaContaForaDoFormato_Deve_RetornarFalha(string linha, string erro)
     {
-        Stream arquivo = FixtureComLinha(2, linha);
+        Stream arquivo = FixtureComLinha(numero: 2, linha);
 
         Result<ExtratoLido> result = await _leitor.LerAsync(arquivo, CancellationToken.None);
 
@@ -230,7 +230,7 @@ public sealed class LeitorExtratoContaC6Tests
     [Fact]
     public async Task LerAsync_Quando_NumeroDaContaComVerificadorX_Deve_LerOSufixoComX()
     {
-        Stream arquivo = FixtureComLinha(2, "Agência: 1 / Conta: 98765432x");
+        Stream arquivo = FixtureComLinha(numero: 2, "Agência: 1 / Conta: 98765432x");
 
         ExtratoLido extrato = (await _leitor.LerAsync(arquivo, CancellationToken.None)).Value;
 
@@ -242,7 +242,7 @@ public sealed class LeitorExtratoContaC6Tests
     [InlineData("Extrato de 09/03/2026 a 02/03/2026", "O início do período do extrato não pode ser depois do fim.")]
     public async Task LerAsync_Quando_PeriodoInvalido_Deve_RetornarFalha(string linha, string erro)
     {
-        Stream arquivo = FixtureComLinha(4, linha);
+        Stream arquivo = FixtureComLinha(numero: 4, linha);
 
         Result<ExtratoLido> result = await _leitor.LerAsync(arquivo, CancellationToken.None);
 
@@ -252,7 +252,7 @@ public sealed class LeitorExtratoContaC6Tests
     [Fact]
     public async Task LerAsync_Quando_CabecalhoSemPeriodo_Deve_RetornarFalha()
     {
-        Stream arquivo = FixtureComLinha(4, "Extrato do mês");
+        Stream arquivo = FixtureComLinha(numero: 4, "Extrato do mês");
 
         Result<ExtratoLido> result = await _leitor.LerAsync(arquivo, CancellationToken.None);
 

@@ -20,7 +20,7 @@ public sealed class ContaBancariaGenerator : ISpecimenBuilder
         return ContaBancariaFactory
             .ObterOuCriar(
                 context.Create<IdUsuario>(),
-                [],
+                contasDoUsuario: [],
                 context.Create<Banco>(),
                 context.Create<TipoConta>(),
                 context.Create<SufixoConta>())

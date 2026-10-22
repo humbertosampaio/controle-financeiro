@@ -18,7 +18,7 @@ public sealed class ContaBancariaFactoryTests
         TipoConta tipo,
         SufixoConta sufixo)
     {
-        Result<ContaBancaria, Erro> result = ContaBancariaFactory.ObterOuCriar(idUsuario, [], banco, tipo, sufixo);
+        Result<ContaBancaria, Erro> result = ContaBancariaFactory.ObterOuCriar(idUsuario, contasDoUsuario: [], banco, tipo, sufixo);
 
         ContaBancaria conta = result.Should().Succeed().Subject;
         conta.IdUsuario.Should().Be(idUsuario);
@@ -31,7 +31,7 @@ public sealed class ContaBancariaFactoryTests
     public void ObterOuCriar_Quando_ContaNova_Deve_NomearPeloTipoBancoESufixo(IdUsuario idUsuario)
     {
         Result<ContaBancaria, Erro> result = ContaBancariaFactory.ObterOuCriar(
-            idUsuario, [], Banco.C6, TipoConta.ContaCorrente, (SufixoConta)"123X");
+            idUsuario, contasDoUsuario: [], Banco.C6, TipoConta.ContaCorrente, (SufixoConta)"123X");
 
         result.Should().Succeed().Which.Apelido.Value.Should().Be("Conta corrente C6 Bank final 123X");
     }

@@ -18,7 +18,7 @@ public sealed class CartaoFactoryTests
         SufixoCartao sufixo,
         DiaVencimentoCartao diaVencimento)
     {
-        Result<Cartao, Erro> result = CartaoFactory.Criar(idUsuario, [], banco, sufixo, diaVencimento);
+        Result<Cartao, Erro> result = CartaoFactory.Criar(idUsuario, cartoesDoUsuario: [], banco, sufixo, diaVencimento);
 
         Cartao cartao = result.Should().Succeed().Subject;
         cartao.IdUsuario.Should().Be(idUsuario);
@@ -64,7 +64,7 @@ public sealed class CartaoFactoryTests
         Cartao cartaoDeOutroUsuario,
         DiaVencimentoCartao diaVencimento)
     {
-        Result<Cartao, Erro> result = CartaoFactory.Criar(idUsuario, [], banco, sufixo, diaVencimento);
+        Result<Cartao, Erro> result = CartaoFactory.Criar(idUsuario, cartoesDoUsuario: [], banco, sufixo, diaVencimento);
 
         Cartao cartao = result.Should().Succeed().Subject;
         cartao.Id.Should().NotBe(cartaoDeOutroUsuario.Id);

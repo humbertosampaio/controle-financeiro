@@ -9,7 +9,7 @@ public sealed class UsuarioTests
     [Theory, DomainAutoData]
     public void RendaLiquida_Quando_SemDescontos_Deve_RetornarRendaBruta(TextoObrigatorio nome, ReaisPositivo rendaBruta)
     {
-        Usuario sut = Usuario.Criar(nome, rendaBruta, []);
+        Usuario sut = Usuario.Criar(nome, rendaBruta, descontosSalariais: []);
 
         decimal result = sut.RendaLiquida;
 
