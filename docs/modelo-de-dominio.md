@@ -113,9 +113,12 @@ classDiagram
     CategoriaDespesa ..> Usuario : IdUsuario (long)
 
     Transacao *-- OrigemTransacao
+    Transacao ..> Usuario : IdUsuario
+    Transacao ..> ImportacaoExtrato : IdImportacao
     OrigemTransacao ..> ContaBancaria : IdConta
     OrigemTransacao ..> Cartao : IdCartao
     ImportacaoExtrato *-- OrigemTransacao
+    ImportacaoExtrato ..> Usuario : IdUsuario
 ```
 
 ### Invariantes que valem saber
@@ -125,9 +128,9 @@ classDiagram
 - **ContaBancaria**: uma por banco + sufixo em cada usuário, com o apelido padrão "&lt;tipo&gt; &lt;banco&gt; final &lt;sufixo&gt;". Só nasce pela `ContaBancariaFactory.ObterOuCriar`, que devolve a conta existente ou uma nova, e falha com `ErroContaDeOutroTipo` se a conta existe com outro tipo.
 - **DespesaRecorrente**: cartão obrigatório no crédito e proibido nas outras formas. Só nasce pela `DespesaRecorrenteFactory`, que confere que o cartão é do próprio usuário.
 - **Despesas**: `DespesaSimples` é paga na compra e não aceita crédito; `DespesaAdiada` é sempre crédito, com pagamento pendente no mês seguinte, no dia de vencimento do cartão; `DespesaParcelada` é sempre crédito, com uma `ParcelaDespesa` pendente por mês.
-- **Transacao**: valor com sinal do ponto de vista do usuário (negativo é saída). Só nasce pela `LoteTransacoesFactory`, que confere que a conta ou o cartão é do usuário e garante a `ChaveDeduplicacao` do lote. A identidade é o `IdTransacao`; a chave só reconhece o lançamento numa reimportação.
+- **Transacao**: valor com sinal do ponto de vista do usuário (negativo é saída). Só nasce pela `LoteTransacoesFactory`, que confere que a conta ou o cartão é do usuário e que a importação é da mesma origem, e garante a `ChaveDeduplicacao` do lote. A identidade é o `IdTransacao`; a chave só reconhece o lançamento numa reimportação. Guarda a importação que a criou: a reimportação não a recria, então ela fica ligada à primeira importação que a trouxe.
 - **OrigemTransacao**: conta ou cartão, nunca os dois.
-- **ImportacaoExtrato**: `Novas` entre 0 e `Lidas`. `PeriodoNaoImportado` aponta o buraco entre a importação anterior da mesma origem e esta.
+- **ImportacaoExtrato**: só nasce pela `ImportacaoExtratoFactory`, que tira o usuário e a origem da própria conta ou do próprio cartão, antes do lote de transações. Quantas eram novas não fica nela: são as transações ligadas a ela. `PeriodoNaoImportado` aponta o buraco entre a importação anterior da mesma origem e esta.
 
 ### Erros
 
@@ -142,7 +145,7 @@ Cada falha prevista que é uma situação de negócio com nome próprio é um ti
 
 ## Importação de um extrato
 
-Objetos de leitura que não são gravados: o adaptador de cada layout produz o `ExtratoLido`, a `ConferenciaSaldo` o valida e a `LoteTransacoesFactory` o transforma em transações.
+Objetos de leitura que não são gravados: o adaptador de cada layout produz o `ExtratoLido`, a `ConferenciaSaldo` o valida, a `ImportacaoExtratoFactory` registra a importação, a `LoteTransacoesFactory` o transforma em transações ligadas a ela e a `ConferenciaSomaPeriodo`, antes da gravação, compara a soma do período com o que já estava gravado mais as novas.
 
 ```mermaid
 classDiagram
@@ -170,9 +173,20 @@ classDiagram
         <<service>>
         Conferir(ExtratoLido)
     }
+    class ConferenciaSomaPeriodo {
+        <<service>>
+        Conferir(ExtratoLido, gravadasNoPeriodo, novas)
+    }
+    class ImportacaoExtratoFactory {
+        <<service>>
+        Registrar(ContaBancaria ou Cartao, formato, periodo, lidas, importadaEm)
+    }
     class LoteTransacoesFactory {
         <<service>>
-        Criar(IdUsuario, ContaBancaria ou Cartao, lancamentos)
+        Criar(IdUsuario, ContaBancaria ou Cartao, ImportacaoExtrato, lancamentos)
+    }
+    class ImportacaoExtrato {
+        <<AggregateRoot>>
     }
     class Transacao {
         <<AggregateRoot>>
@@ -184,6 +198,10 @@ classDiagram
     LancamentoLido *-- LancamentoExtrato
     LancamentoExtrato *-- IdentidadeLancamento
     ConferenciaSaldo ..> ExtratoLido : confere saldos
+    ConferenciaSomaPeriodo ..> ExtratoLido : soma os lançamentos
+    ConferenciaSomaPeriodo ..> Transacao : soma as gravadas e as novas
+    ImportacaoExtratoFactory ..> ImportacaoExtrato : registra
+    LoteTransacoesFactory ..> ImportacaoExtrato : liga as transações
     LoteTransacoesFactory ..> LancamentoExtrato : lê
     LoteTransacoesFactory ..> ChaveDeduplicacao : calcula pelo lote
     LoteTransacoesFactory ..> Transacao : cria
@@ -198,9 +216,11 @@ Estáticos e puros: recebem os agregados e as listas de que precisam, e quem cha
 | `CartaoFactory` | Cria o cartão do usuário, conferindo banco + sufixo entre os cartões dele. |
 | `ContaBancariaFactory` | Acha a conta do extrato entre as do usuário, ou cria uma. |
 | `DespesaRecorrenteFactory` | Cria a despesa recorrente, conferindo que o cartão é do usuário. |
+| `ImportacaoExtratoFactory` | Registra a importação de um arquivo com o usuário e a origem da própria conta ou do próprio cartão. |
 | `GeracaoDespesasDoMesService` | Gera as despesas de um mês a partir das recorrentes: `DespesaSimples` com pagamento imediato, ou `DespesaAdiada` com pagamento no vencimento do cartão. |
-| `LoteTransacoesFactory` | Confere que a origem é do usuário e que nenhum id de banco se repete no lote; calcula as chaves e cria as transações. |
+| `LoteTransacoesFactory` | Confere que a origem é do usuário, que a importação é da mesma origem e que nenhum id de banco se repete no lote; calcula as chaves e cria as transações ligadas à importação. |
 | `ConferenciaSaldo` | Confere que os lançamentos de cada dia contábil levam o saldo do dia anterior ao saldo do dia. |
+| `ConferenciaSomaPeriodo` | Confere, antes de gravar, que as transações do período (as já gravadas e as novas) somam o mesmo que os lançamentos do extrato. A divergência é aviso. |
 
 ## Portas
 
@@ -208,7 +228,7 @@ Estáticos e puros: recebem os agregados e as listas de que precisam, e quem cha
 |---|---|
 | `IUsuarioRepository` | `Usuario` |
 | `ICartaoRepository` | `Cartao` (lista os do usuário) |
-| `ITransacaoRepository` | `Transacao` (adiciona só as de chave nova) |
+| `ITransacaoRepository` | `Transacao` (adiciona só as de chave nova e devolve essas mesmas instâncias) |
 | `IImportacaoRepository` | `ImportacaoExtrato` |
 
 O repositório da `ContaBancaria` chega com a persistência da importação (#47); o da `DespesaRecorrente`, com o cadastro das despesas fixas (#9).
