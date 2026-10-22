@@ -106,7 +106,7 @@ public sealed class LoteTransacoesFactoryTests
     {
         Result<IReadOnlyList<Transacao>, Erro> result = LoteTransacoesFactory.Criar(usuario, origem, [lancamento]);
 
-        result.Should().FailWith(Erros.LoteTransacoes.OrigemNaoPertenceAoUsuario);
+        result.Should().FailWith(ErroOrigemNaoPertenceAoUsuario.Instancia);
     }
 
     [Theory, DomainAutoData]
@@ -118,7 +118,7 @@ public sealed class LoteTransacoesFactoryTests
         Result<IReadOnlyList<Transacao>, Erro> result = LoteTransacoesFactory.Criar(
             usuario, OrigemTransacao.DoCartao(idCartao), [lancamento]);
 
-        result.Should().FailWith(Erros.LoteTransacoes.OrigemNaoPertenceAoUsuario);
+        result.Should().FailWith(ErroOrigemNaoPertenceAoUsuario.Instancia);
     }
 
     [Theory, DomainAutoData]
@@ -139,8 +139,8 @@ public sealed class LoteTransacoesFactoryTests
 
         Result<IReadOnlyList<Transacao>, Erro> result = LoteTransacoesFactory.Criar(usuario, origem, [outro, primeiro, outro, segundo]);
 
-        Erro erro = result.Should().Fail().Subject;
-        erro.Codigo.Should().Be("LoteTransacoes.IdentificadorRepetido");
+        ErroIdentificadorRepetido erro = result.Should().Fail().Which.Should().BeOfType<ErroIdentificadorRepetido>().Subject;
+        erro.Posicoes.Should().Equal(2, 4);
         erro.Descricao.Should().Be("Os lançamentos 2 e 4 do lote têm o mesmo identificador atribuído pelo banco do extrato.");
     }
 
