@@ -20,6 +20,7 @@ public sealed class ControleFinanceiroDbContext : DbContext
     }
 
     public DbSet<Usuario> Usuarios => Set<Usuario>();
+    public DbSet<Cartao> Cartoes => Set<Cartao>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

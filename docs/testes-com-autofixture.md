@@ -1,6 +1,6 @@
 # Testes com AutoFixture
 
-O AutoFixture existe aqui para uma coisa: **dar ao teste um objeto válido sem que ele precise saber os valores de dentro.** Um teste de `AdicionarCartao` precisa de um `Usuario`, mas não liga para o nome nem para a renda. Se o teste montasse o usuário à mão, um `"Maria"` e um `5000m` apareceriam no código como se importassem para o resultado.
+O AutoFixture existe aqui para uma coisa: **dar ao teste um objeto válido sem que ele precise saber os valores de dentro.** Um teste do cadastro de cartão precisa de um `Usuario` cadastrado, mas não liga para o nome nem para a renda. Se o teste montasse o usuário à mão, um `"Maria"` e um `5000m` apareceriam no código como se importassem para o resultado.
 
 Por isso, a regra é: **o que o teste não verifica, o AutoFixture gera; o que ele verifica, o teste declara.**
 
@@ -108,7 +108,7 @@ O resto vai para a unidade:
 | Regra | Onde |
 |---|---|
 | Borda de value object (limite do dia, trim, sufixo malformado) | `ControleFinanceiro.Domain.Tests`, no teste do value object |
-| Invariante do agregado (sufixo repetido no mesmo banco) | `ControleFinanceiro.Domain.Tests`, no teste do agregado |
+| Invariante do agregado, ou regra de uma factory de domínio (sufixo repetido no mesmo banco) | `ControleFinanceiro.Domain.Tests`, no teste do agregado ou da factory |
 | Regra que o validator acrescenta (código de SmartEnum, id vazio) | `<Acao>ValidatorTests`, na pasta do teste do endpoint, sem `ApiCollection`, com `TestValidate` |
 
 O `AdicionarCartao` é o modelo: cinco casos de integração no `AdicionarCartaoEndpointTests` e as regras do banco e do id no `AdicionarCartaoValidatorTests`.

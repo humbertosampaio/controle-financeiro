@@ -1,4 +1,3 @@
-using ControleFinanceiro.Domain.Cartoes;
 using ControleFinanceiro.Domain.Contas;
 using ControleFinanceiro.Domain.Shared;
 using ControleFinanceiro.Domain.Shared.ValueObjects;
@@ -20,9 +19,6 @@ public sealed class Usuario : AggregateRoot<IdUsuario>
     public IReadOnlyList<DescontoSalarial> DescontosSalariais => _descontosSalariais;
 
     public Reais RendaLiquida => RendaBruta - _descontosSalariais.Sum(desconto => desconto.Valor);
-
-    private readonly List<Cartao> _cartoes = [];
-    public IReadOnlyList<Cartao> Cartoes => _cartoes;
 
     private readonly List<ContaBancaria> _contas = [];
     public IReadOnlyList<ContaBancaria> Contas => _contas;
@@ -49,16 +45,6 @@ public sealed class Usuario : AggregateRoot<IdUsuario>
         IEnumerable<DescontoSalarial> descontosSalariais)
     {
         return new(IdUsuario.FromNewVersion7Guid(), nome, rendaBruta, descontosSalariais);
-    }
-
-    // Falha única: mapeada para 409 em AdicionarCartaoEndpoint. Nova falha aqui exige erro tipado.
-    public Result AdicionarCartao(Cartao cartao)
-    {
-        if (_cartoes.Exists(c => c.Banco == cartao.Banco && c.Sufixo == cartao.Sufixo))
-            return Result.Failure($"O usuário já tem um cartão {cartao.Banco.Name} com final {cartao.Sufixo}.");
-
-        _cartoes.Add(cartao);
-        return Result.Success();
     }
 
     public Result AdicionarConta(ContaBancaria conta)
