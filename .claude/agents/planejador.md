@@ -14,8 +14,8 @@ Se a tarefa for trivial (até 2 arquivos, sem classe, endpoint ou migration nova
 ## Antes de escrever o plano
 
 1. Leia o `CLAUDE.md` e a issue inteira (`gh issue view <n> --comments`), não só o título.
-2. Localize a área: domínio, importação, persistência, API, MCP, agente, avaliação ou frontend.
-3. **Ache o análogo mais próximo que já existe e leia.** O plano cita arquivos reais. Exemplos de âncora: `Despesas/Despesa.cs` para agregado, `Shared/ValueObjects/ReaisPositivo.cs` para value object, `Usuarios/UsuarioConfiguration.cs` para mapeamento EF, `Endpoints/Usuarios/Cadastrar/` para endpoint.
+2. Localize a área: domínio, importação, persistência, API, MCP, agente, avaliação ou frontend. Se a tarefa cria ou muda agregado, entidade, value object ou regra de domínio, leia o `docs/padroes-de-dominio.md` e o `docs/modelo-de-dominio.md`.
+3. **Ache o análogo mais próximo que já existe e leia.** O plano cita arquivos reais. Exemplos de âncora: `Despesas/Despesa.cs` para agregado, `Shared/ValueObjects/ReaisPositivo.cs` para value object, `Services/CartaoFactory.cs` para regra que cruza agregados, `Cartoes/CartaoConfiguration.cs` para mapeamento EF, `Endpoints/Usuarios/Cadastrar/` para endpoint.
 4. Se a tarefa envolve um formato de arquivo de banco, leia a fixture fictícia em `tests/**/Fixtures/`. Se precisar olhar `dados/`, descreva só a estrutura, nunca valores.
 
 ## Formato
@@ -33,7 +33,7 @@ Lembretes que costumam faltar:
 - Endpoint FastEndpoints é descoberto sozinho, mas o repositório precisa ser registrado em `DependencyInjection.cs`.
 
 ### 3. Decisões
-Onde cada peça mora e por quê: `Result` para falha previsível, `Reais`/`ReaisPositivo` para dinheiro, porta + adaptador para cada fonte externa (cada formato de extrato é um adaptador da mesma porta), idempotência na importação.
+Onde cada peça mora e por quê, citando a seção do `docs/padroes-de-dominio.md` que cada decisão segue. Quando a tarefa toca o domínio, responda o checklist da seção 9 do guia. Lembre também: `Result` para falha previsível, `Reais`/`ReaisPositivo` para dinheiro, porta + adaptador para cada fonte externa (cada formato de extrato é um adaptador da mesma porta), idempotência na importação.
 
 ### 4. Privacidade
 Que dado sai da máquina, se algum. Se o plano manda transações ao modelo (MCP ou agente), liste os campos exatos e justifique cada um além de descrição, valor e data.
