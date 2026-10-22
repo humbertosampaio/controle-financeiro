@@ -36,10 +36,14 @@ public sealed class ContaBancaria : AggregateRoot<IdConta>
         Apelido = apelido;
     }
 
-    /// <param name="apelido">Opcional. Sem ele, a conta se chama "&lt;tipo&gt; &lt;banco&gt; final &lt;sufixo&gt;".</param>
-    public static ContaBancaria Criar(IdUsuario idUsuario, Banco banco, TipoConta tipo, SufixoConta sufixo, TextoObrigatorio? apelido = null)
+    /// <summary>A conta nasce com o apelido "&lt;tipo&gt; &lt;banco&gt; final &lt;sufixo&gt;".</summary>
+    /// <remarks>
+    /// Interno pois o usuário não pode ter duas contas do mesmo banco com o mesmo final, e só a
+    /// <see cref="Services.ContaBancariaFactory"/>, que recebe as contas do usuário, confere isso.
+    /// </remarks>
+    internal static ContaBancaria Criar(IdUsuario idUsuario, Banco banco, TipoConta tipo, SufixoConta sufixo)
     {
-        apelido ??= (TextoObrigatorio)$"{tipo.Name} {banco.Name} final {sufixo}";
+        TextoObrigatorio apelido = (TextoObrigatorio)$"{tipo.Name} {banco.Name} final {sufixo}";
         return new ContaBancaria(IdConta.FromNewVersion7Guid(), idUsuario, banco, tipo, sufixo, apelido);
     }
 }
