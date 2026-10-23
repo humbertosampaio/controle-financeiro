@@ -181,6 +181,25 @@ public sealed class ChaveDeduplicacaoTests
         result.Should().FailWith("A chave de deduplicação deve ter 64 caracteres hexadecimais minúsculos");
     }
 
+    [Fact]
+    public void OperadorExplicito_Quando_ValorValido_Deve_RetornarInstancia()
+    {
+        string chave = "76b82abae72afb9f1a6997ce782577f1fad8a1548d003f98093497f5e8094ccd";
+
+        ChaveDeduplicacao result = (ChaveDeduplicacao)chave;
+
+        result.Value.Should().Be(chave);
+    }
+
+    [Theory]
+    [MemberData(nameof(ChavesInvalidas))]
+    public void OperadorExplicito_Quando_ValorInvalido_Deve_LancarExcecao(string? chave)
+    {
+        Func<ChaveDeduplicacao> act = () => (ChaveDeduplicacao)chave;
+
+        act.Should().ThrowExactly<ResultFailureException>();
+    }
+
     // A data e a descrição são o assunto do teste: a sobreposição depende delas.
     private static IdentidadeLancamento Identidade(DateOnly data, string descricao) =>
         IdentidadeLancamento.Composta(data).ComTexto(descricao);

@@ -69,7 +69,7 @@ internal sealed class TransacaoConfiguration : IEntityTypeConfiguration<Transaca
 
         entity.Property(t => t.Chave)
             .HasColumnName("chave_deduplicacao")
-            .HasConversion(chave => chave.Value, valor => ChaveDeduplicacao.Criar(valor).Value)
+            .HasConversion(chave => chave.Value, valor => (ChaveDeduplicacao)valor)
             .HasMaxLength(ChaveDeduplicacao.QuantidadeCaracteres)
             .IsFixedLength();
 

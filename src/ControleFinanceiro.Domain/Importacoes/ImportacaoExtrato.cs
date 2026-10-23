@@ -80,10 +80,10 @@ public sealed class ImportacaoExtrato : AggregateRoot<IdImportacao>
         if (ultima.Value.Origem != Origem)
             throw new ArgumentException("A importação anterior é de outra origem.", nameof(ultima));
 
-        DateOnly primeiroDiaNaoImportado = ultima.Value.Periodo.Fim.AddDays(1);
-        if (Periodo.Inicio <= primeiroDiaNaoImportado)
-            return Maybe.None;
-
-        return PeriodoExtrato.Criar(primeiroDiaNaoImportado, Periodo.Inicio.AddDays(-1)).Value;
+        // O período entre as duas só existe quando sobra pelo menos um dia: com os períodos se tocando ou se
+        // sobrepondo, o início fica depois do fim, o Criar falha, e não há período não importado.
+        return PeriodoExtrato
+            .Criar(ultima.Value.Periodo.Fim.AddDays(1), Periodo.Inicio.AddDays(-1))
+            .AsMaybe();
     }
 }
