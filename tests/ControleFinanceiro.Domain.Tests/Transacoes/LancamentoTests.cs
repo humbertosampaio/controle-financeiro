@@ -34,4 +34,20 @@ public sealed class LancamentoTests
 
         result.Contraparte.Should().Be(contraparte);
     }
+
+    [Theory, DomainAutoData]
+    public void Equals_Quando_MesmosCampos_Deve_SerIgual(
+        DateOnly data,
+        TimeOnly hora,
+        Reais valor,
+        TextoObrigatorio descricao,
+        string contraparte,
+        IdentidadeLancamento identidade)
+    {
+        Lancamento lancamento = Lancamento.Criar(data, hora, valor, descricao, contraparte, identidade);
+
+        Lancamento outro = Lancamento.Criar(data, hora, valor, descricao, contraparte, identidade);
+
+        outro.Should().Be(lancamento);
+    }
 }

@@ -5,7 +5,11 @@ namespace ControleFinanceiro.Domain.Transacoes;
 /// <summary>
 /// Uma linha do extrato ou da fatura, como o adaptador do layout a leu, antes de virar transação.
 /// </summary>
-public sealed class Lancamento
+/// <remarks>
+/// Duas linhas com os mesmos campos são iguais como valor. Quem as distingue é a posição no lote, na
+/// <see cref="ChaveDeduplicacao"/>, e não o objeto.
+/// </remarks>
+public sealed class Lancamento : ValueObject
 {
     public DateOnly Data { get; }
 
@@ -49,5 +53,15 @@ public sealed class Lancamento
     {
         string? contraparteAparada = string.IsNullOrWhiteSpace(contraparte) ? null : contraparte.Trim();
         return new Lancamento(data, hora, valor, descricao, contraparteAparada, identidade);
+    }
+
+    protected override IEnumerable<object?> GetEqualityComponents()
+    {
+        yield return Data;
+        yield return Hora;
+        yield return Valor;
+        yield return Descricao;
+        yield return Contraparte;
+        yield return Identidade;
     }
 }

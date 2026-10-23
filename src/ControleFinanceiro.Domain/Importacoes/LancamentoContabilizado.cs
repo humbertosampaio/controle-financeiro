@@ -6,7 +6,7 @@ namespace ControleFinanceiro.Domain.Importacoes;
 /// Um lançamento do extrato com o dia contábil em que ele entrou no saldo. A data contábil só serve para a
 /// <see cref="ConferenciaSaldo"/> e não é gravada na transação, que usa a data do lançamento.
 /// </summary>
-public sealed class LancamentoContabilizado
+public sealed class LancamentoContabilizado : ValueObject
 {
     public Lancamento Lancamento { get; }
     public DateOnly DataContabil { get; }
@@ -18,4 +18,10 @@ public sealed class LancamentoContabilizado
     }
 
     public static LancamentoContabilizado Criar(Lancamento lancamento, DateOnly dataContabil) => new(lancamento, dataContabil);
+
+    protected override IEnumerable<object?> GetEqualityComponents()
+    {
+        yield return Lancamento;
+        yield return DataContabil;
+    }
 }
