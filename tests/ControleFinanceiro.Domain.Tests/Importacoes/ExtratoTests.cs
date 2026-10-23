@@ -7,10 +7,10 @@ using System.Globalization;
 
 namespace ControleFinanceiro.Domain.Tests.Importacoes;
 
-public sealed class ConferenciaSaldoTests
+public sealed class ExtratoTests
 {
     [Theory, DomainAutoData]
-    public void Conferir_Quando_SaldosFecham_Deve_RetornarSucesso(
+    public void Criar_Quando_SaldosFecham_Deve_RetornarSucesso(
         Extrato arquivo,
         DateOnly dia,
         Reais saldoBase,
@@ -19,19 +19,18 @@ public sealed class ConferenciaSaldoTests
         Lancamento terceiro)
     {
         DateOnly diaSeguinte = dia.AddDays(3);
-        Extrato extrato = Montar(
+
+        Result<Extrato> result = Criar(
             arquivo,
             Periodo(dia, diaSeguinte),
             [LancamentoContabilizado.Criar(primeiro, dia), LancamentoContabilizado.Criar(segundo, diaSeguinte), LancamentoContabilizado.Criar(terceiro, diaSeguinte)],
             [SaldoDiario.Criar(dia, saldoBase), SaldoDiario.Criar(diaSeguinte, saldoBase + segundo.Valor + terceiro.Valor)]);
 
-        Result result = ConferenciaSaldo.Conferir(extrato);
-
         result.Should().Succeed();
     }
 
     [Theory, DomainAutoData]
-    public void Conferir_Quando_SaldoDeUmDiaNaoFecha_Deve_RetornarFalhaComAData(
+    public void Criar_Quando_SaldoDeUmDiaNaoFecha_Deve_RetornarFalhaComAData(
         Extrato arquivo,
         DateOnly dia,
         Reais saldoBase,
@@ -39,19 +38,18 @@ public sealed class ConferenciaSaldoTests
         Lancamento segundo)
     {
         DateOnly diaSeguinte = dia.AddDays(1);
-        Extrato extrato = Montar(
+
+        Result<Extrato> result = Criar(
             arquivo,
             Periodo(dia, diaSeguinte),
             [LancamentoContabilizado.Criar(primeiro, dia), LancamentoContabilizado.Criar(segundo, diaSeguinte)],
             [SaldoDiario.Criar(dia, saldoBase), SaldoDiario.Criar(diaSeguinte, saldoBase + segundo.Valor + 0.01m)]);
 
-        Result result = ConferenciaSaldo.Conferir(extrato);
-
         result.Should().FailWith($"O saldo do dia {Formatar(diaSeguinte)} não fecha com os lançamentos do extrato.");
     }
 
     [Theory, DomainAutoData]
-    public void Conferir_Quando_LancamentoComDataContabilNoDiaSeguinte_Deve_FecharOSaldoPelaDataContabil(
+    public void Criar_Quando_LancamentoComDataContabilNoDiaSeguinte_Deve_FecharOSaldoPelaDataContabil(
         Extrato arquivo,
         DateOnly sabado,
         Reais saldoBase,
@@ -62,37 +60,34 @@ public sealed class ConferenciaSaldoTests
         DateOnly segunda = sabado.AddDays(2);
         Lancamento pix = Lancamento.Criar(
             sabado, pixDeSabado.Hora, pixDeSabado.Valor, pixDeSabado.Descricao, pixDeSabado.Contraparte, pixDeSabado.Identidade);
-        Extrato extrato = Montar(
+
+        Result<Extrato> result = Criar(
             arquivo,
             Periodo(sexta, segunda),
             [LancamentoContabilizado.Criar(anterior, sexta), LancamentoContabilizado.Criar(pix, segunda)],
             [SaldoDiario.Criar(sexta, saldoBase), SaldoDiario.Criar(segunda, saldoBase + pix.Valor)]);
 
-        Result result = ConferenciaSaldo.Conferir(extrato);
-
         result.Should().Succeed();
     }
 
     [Theory, DomainAutoData]
-    public void Conferir_Quando_UmDiaContabilSo_Deve_RetornarSucesso(
+    public void Criar_Quando_UmDiaContabilSo_Deve_RetornarSucesso(
         Extrato arquivo,
         DateOnly dia,
         Reais saldo,
         Lancamento lancamento)
     {
-        Extrato extrato = Montar(
+        Result<Extrato> result = Criar(
             arquivo,
             Periodo(dia, dia),
             [LancamentoContabilizado.Criar(lancamento, dia)],
             [SaldoDiario.Criar(dia, saldo)]);
 
-        Result result = ConferenciaSaldo.Conferir(extrato);
-
         result.Should().Succeed();
     }
 
     [Theory, DomainAutoData]
-    public void Conferir_Quando_DiaContabilDepoisDoFimNaoFecha_Deve_IgnorarODia(
+    public void Criar_Quando_DiaContabilDepoisDoFimNaoFecha_Deve_IgnorarODia(
         Extrato arquivo,
         DateOnly fim,
         Reais saldoBase,
@@ -100,19 +95,18 @@ public sealed class ConferenciaSaldoTests
         Lancamento depoisDoFim)
     {
         DateOnly diaUtilSeguinte = fim.AddDays(2);
-        Extrato extrato = Montar(
+
+        Result<Extrato> result = Criar(
             arquivo,
             Periodo(fim, fim),
             [LancamentoContabilizado.Criar(noFim, fim), LancamentoContabilizado.Criar(depoisDoFim, diaUtilSeguinte)],
             [SaldoDiario.Criar(fim, saldoBase), SaldoDiario.Criar(diaUtilSeguinte, saldoBase + depoisDoFim.Valor + 0.01m)]);
 
-        Result result = ConferenciaSaldo.Conferir(extrato);
-
         result.Should().Succeed();
     }
 
     [Theory, DomainAutoData]
-    public void Conferir_Quando_DiaSemSaldo_Deve_RetornarFalhaComAData(
+    public void Criar_Quando_DiaSemSaldo_Deve_RetornarFalhaComAData(
         Extrato arquivo,
         DateOnly dia,
         Reais saldoBase,
@@ -120,19 +114,18 @@ public sealed class ConferenciaSaldoTests
         Lancamento segundo)
     {
         DateOnly diaSeguinte = dia.AddDays(1);
-        Extrato extrato = Montar(
+
+        Result<Extrato> result = Criar(
             arquivo,
             Periodo(dia, diaSeguinte),
             [LancamentoContabilizado.Criar(primeiro, dia), LancamentoContabilizado.Criar(segundo, diaSeguinte)],
             [SaldoDiario.Criar(dia, saldoBase)]);
 
-        Result result = ConferenciaSaldo.Conferir(extrato);
-
         result.Should().FailWith($"O extrato não traz o saldo do dia {Formatar(diaSeguinte)}.");
     }
 
     [Theory, DomainAutoData]
-    public void Conferir_Quando_PrimeiroDiaSemSaldo_Deve_RetornarFalhaComAData(
+    public void Criar_Quando_PrimeiroDiaSemSaldo_Deve_RetornarFalhaComAData(
         Extrato arquivo,
         DateOnly dia,
         Reais saldo,
@@ -140,19 +133,18 @@ public sealed class ConferenciaSaldoTests
         Lancamento segundo)
     {
         DateOnly diaSeguinte = dia.AddDays(1);
-        Extrato extrato = Montar(
+
+        Result<Extrato> result = Criar(
             arquivo,
             Periodo(dia, diaSeguinte),
             [LancamentoContabilizado.Criar(primeiro, dia), LancamentoContabilizado.Criar(segundo, diaSeguinte)],
             [SaldoDiario.Criar(diaSeguinte, saldo)]);
 
-        Result result = ConferenciaSaldo.Conferir(extrato);
-
         result.Should().FailWith($"O extrato não traz o saldo do dia {Formatar(dia)}.");
     }
 
     [Theory, DomainAutoData]
-    public void Conferir_Quando_DiasComMaisDeUmSaldo_Deve_RetornarFalhaComTodasAsDatas(
+    public void Criar_Quando_DiasComMaisDeUmSaldo_Deve_RetornarFalhaComTodasAsDatas(
         Extrato arquivo,
         DateOnly dia,
         Reais saldo,
@@ -161,7 +153,8 @@ public sealed class ConferenciaSaldoTests
     {
         DateOnly diaSemRepeticao = dia.AddDays(1);
         DateOnly outroDia = dia.AddDays(2);
-        Extrato extrato = Montar(
+
+        Result<Extrato> result = Criar(
             arquivo,
             Periodo(dia, outroDia),
             [LancamentoContabilizado.Criar(lancamento, dia)],
@@ -173,12 +166,19 @@ public sealed class ConferenciaSaldoTests
                 SaldoDiario.Criar(dia, outroSaldo),
             ]);
 
-        Result result = ConferenciaSaldo.Conferir(extrato);
-
         result.Should().FailWith($"O extrato traz mais de um saldo nestes dias: {Formatar(dia)}, {Formatar(outroDia)}.");
     }
 
-    private static Extrato Montar(
+    [Theory, DomainAutoData]
+    public void Equals_Quando_MesmosCampos_Deve_SerIgual(Extrato extrato)
+    {
+        Extrato outro = Extrato.Criar(
+            extrato.Banco, extrato.TipoConta, extrato.SufixoConta, extrato.Periodo, extrato.LancamentosContabilizados, extrato.Saldos).Value;
+
+        outro.Should().Be(extrato);
+    }
+
+    private static Result<Extrato> Criar(
         Extrato arquivo,
         PeriodoExtrato periodo,
         IEnumerable<LancamentoContabilizado> lancamentos,

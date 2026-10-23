@@ -28,6 +28,7 @@ public class DomainFixture : Fixture
             .Customize(new IdentidadeLancamentoCustomization())
             .Customize(new OrigemTransacaoCustomization())
             .Customize(new PeriodoExtratoCustomization())
+            .Customize(new ExtratoCustomization())
             .Customize(new ImportacaoExtratoCustomization())
             .Customize(new DiaCompraRecorrenteCustomization())
             .Customize(new TextoObrigatorioCustomization());

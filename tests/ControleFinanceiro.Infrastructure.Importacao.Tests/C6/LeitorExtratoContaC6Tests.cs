@@ -80,21 +80,13 @@ public sealed class LeitorExtratoContaC6Tests
     }
 
     [Fact]
-    public async Task LerAsync_Deve_EntregarSaldosQueFechamComOsLancamentos()
-    {
-        Extrato extrato = await LerFixtureAsync();
-
-        ConferenciaSaldo.Conferir(extrato).Should().Succeed();
-    }
-
-    [Fact]
-    public async Task LerAsync_Quando_LinhasDoMesmoDiaContabilComSaldosDiferentes_Deve_EntregarOsDoisSaldos()
+    public async Task LerAsync_Quando_LinhasDoMesmoDiaContabilComSaldosDiferentes_Deve_RetornarFalhaComODia()
     {
         Stream arquivo = FixtureComLinha(numero: 14, "03/03/2026,03/03/2026,Tarifa de exemplo,,0.00,5.00,-252.96");
 
-        Extrato extrato = (await _leitor.LerAsync(arquivo, CancellationToken.None)).Value;
+        Result<Extrato> result = await _leitor.LerAsync(arquivo, CancellationToken.None);
 
-        extrato.Saldos.Where(s => s.DataContabil == Dia(3)).Should().HaveCount(2);
+        result.Should().FailWith("O extrato traz mais de um saldo nestes dias: 03/03/2026.");
     }
 
     [Fact]

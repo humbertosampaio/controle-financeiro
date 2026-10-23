@@ -108,7 +108,7 @@ public sealed partial class LeitorExtratoContaC6 : ILeitorExtrato
         }
 
         // Um saldo por dia contábil: o C6 repete o saldo em toda linha do dia. Se as linhas de um dia
-        // trouxerem saldos diferentes, os dois ficam, e a conferência de saldo aponta o dia.
+        // trouxerem saldos diferentes, os dois ficam, e o extrato não nasce, com a falha apontando o dia.
         return Extrato.Criar(Banco.C6, TipoConta.ContaCorrente, sufixo.Value, periodo.Value, lancamentos, saldos.Distinct());
     }
 

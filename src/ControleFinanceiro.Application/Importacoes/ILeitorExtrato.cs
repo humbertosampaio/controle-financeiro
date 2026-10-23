@@ -12,8 +12,9 @@ public interface ILeitorExtrato
     FormatoExtrato Formato { get; }
 
     /// <summary>
-    /// Lê o arquivo inteiro. Falha quando ele não está no layout do <see cref="Formato"/>; a mensagem cita
-    /// no máximo o número da linha, e nunca o conteúdo do arquivo.
+    /// Lê o arquivo inteiro. Falha quando ele não está no layout do <see cref="Formato"/> ou quando os saldos
+    /// não fecham com os lançamentos (<see cref="Extrato.Criar"/>); a mensagem cita no máximo o número da
+    /// linha ou as datas, e nunca o conteúdo do arquivo.
     /// </summary>
     Task<Result<Extrato>> LerAsync(Stream arquivo, CancellationToken cancellationToken);
 }

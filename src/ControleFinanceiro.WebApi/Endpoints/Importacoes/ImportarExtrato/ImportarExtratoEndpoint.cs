@@ -13,7 +13,7 @@ using Microsoft.AspNetCore.Mvc;
 namespace ControleFinanceiro.WebApi.Endpoints.Importacoes.ImportarExtrato;
 
 /// <summary>
-/// Lê o arquivo, confere os saldos, obtém ou cria a conta e grava só as transações novas, junto com a conta
+/// Lê o arquivo, obtém ou cria a conta e grava só as transações novas, junto com a conta
 /// nova e o registro da importação, num commit só. Nada é gravado quando a resposta é de erro.
 /// </summary>
 public sealed class ImportarExtratoEndpoint : Endpoint<ImportarExtratoRequest, ImportarExtratoResponse>
@@ -69,7 +69,6 @@ public sealed class ImportarExtratoEndpoint : Endpoint<ImportarExtratoRequest, I
         await _usuarioRepository.ObterPorIdAsync(idUsuario, ct)
             .ToResult(Falha.UsuarioNaoEncontrado)
             .Bind(_ => LerAsync(formato, req.Arquivo!, ct))
-            .Bind(ConferirSaldo)
             .Bind(extrato => ImportarAsync(idUsuario, formato, extrato, ct))
             .Match(
                 resposta => Send.OkAsync(resposta, ct),
@@ -83,13 +82,6 @@ public sealed class ImportarExtratoEndpoint : Endpoint<ImportarExtratoRequest, I
 
         return await leitor
             .LerAsync(conteudo, ct)
-            .MapError(Falha.ArquivoInvalido);
-    }
-
-    private static Result<Extrato, Falha> ConferirSaldo(Extrato extrato)
-    {
-        return ConferenciaSaldo.Conferir(extrato)
-            .Map(() => extrato)
             .MapError(Falha.ArquivoInvalido);
     }
 
@@ -198,8 +190,8 @@ public sealed class ImportarExtratoEndpoint : Endpoint<ImportarExtratoRequest, I
     }
 
     /// <summary>
-    /// O que interrompe a importação, num tipo só para a cadeia: o usuário inexistente, o arquivo que o leitor ou a
-    /// conferência de saldo recusou (mensagem em texto) e os erros tipados do domínio.
+    /// O que interrompe a importação, num tipo só para a cadeia: o usuário inexistente, o arquivo que o leitor recusou,
+    /// inclusive pelo saldo que não fecha (mensagem em texto), e os erros tipados do domínio.
     /// </summary>
     private abstract record Falha
     {

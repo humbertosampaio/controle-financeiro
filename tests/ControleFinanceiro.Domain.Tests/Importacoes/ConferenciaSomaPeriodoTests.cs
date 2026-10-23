@@ -70,7 +70,7 @@ public sealed class ConferenciaSomaPeriodoTests
             arquivo.SufixoConta,
             periodo,
             [.. arquivo.LancamentosContabilizados, LancamentoContabilizado.Criar(foraDoPeriodo, depoisDoFim)],
-            saldos: []);
+            saldos: []).Value;
 
         Result result = ConferenciaSomaPeriodo.Conferir(extrato, gravadasNoPeriodo: [], Lote(conta, importacao, extrato.Lancamentos));
 
@@ -103,7 +103,7 @@ public sealed class ConferenciaSomaPeriodoTests
                     Enumerable.Range(start: 0, count: 3)
                         .Select(_ => NoInicio(periodo, fixture.Create<Reais>(), fixture.Create<TextoObrigatorio>()))
                         .Select(l => LancamentoContabilizado.Criar(l, l.Data)),
-                    saldos: []));
+                    saldos: []).Value);
             })
         {
         }
