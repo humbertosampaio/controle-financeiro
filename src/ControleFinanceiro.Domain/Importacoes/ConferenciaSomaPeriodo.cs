@@ -18,7 +18,7 @@ public static class ConferenciaSomaPeriodo
 {
     /// <param name="gravadasNoPeriodo">As transações da origem já gravadas, com a data no período do extrato.</param>
     /// <param name="novas">As transações do extrato que ainda não estavam gravadas.</param>
-    public static Result Conferir(ExtratoLido extrato, IEnumerable<Transacao> gravadasNoPeriodo, IEnumerable<Transacao> novas)
+    public static Result Conferir(Extrato extrato, IEnumerable<Transacao> gravadasNoPeriodo, IEnumerable<Transacao> novas)
     {
         Reais somaDoExtrato = extrato.Lancamentos.Sum(l => l.Valor);
         Reais somaGravada = gravadasNoPeriodo

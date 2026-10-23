@@ -33,17 +33,18 @@ O build já quebra em parte das regras (IDE0021 em construtor, `TreatWarningsAsE
 
 1. **Block body em método multilinha.** Método, operador ou função local com corpo de mais de uma linha, inclusive uma instrução única quebrada em várias linhas, usa block body. O `=>` só quando a expressão cabe numa linha. Lambdas ficam de fora.
 2. **Argumento literal nomeado.** Coleção vazia, `null`, booleano ou número passado direto numa chamada leva o nome do parâmetro (`contasDoUsuario: []`, `cartao: null`). As exceções estão no `CLAUDE.md`: confira cada achado contra elas antes de reportar.
-3. **Nomes.** PT-BR em domínio, identificadores, mensagens e comentários, com os termos técnicos consagrados em inglês. Nome de teste no formato `Metodo_Quando_Cenario_Deve_Resultado`, e sem o `Quando` quando não há cenário.
-4. **Testes com AutoFixture**, conforme o guia:
+3. **Cadeia plana de `Result` (diretriz).** O `CLAUDE.md` pede que se *prefira* a cadeia plana de métodos na orquestração de etapas que devolvem `Result` ou `Maybe`, mas deixa a legibilidade decidir. Sugira a forma plana (achado BAIXO) só quando ela deixaria o trecho claramente mais legível, por exemplo `Bind`s aninhados em vários níveis ou um record criado só para levar estado. Não aponte um `Bind` aninhado curto, um `if (result.IsFailure)` ou um laço comum que já se lê bem, nem o aninhamento de um nível no método que monta a tupla. Query syntax (`from ... select`) entra na mesma sugestão, porque o dono prefere os métodos.
+4. **Nomes.** PT-BR em domínio, identificadores, mensagens e comentários, com os termos técnicos consagrados em inglês. Nome de teste no formato `Metodo_Quando_Cenario_Deve_Resultado`, e sem o `Quando` quando não há cenário.
+5. **Testes com AutoFixture**, conforme o guia:
    - o que o teste não verifica vem do AutoFixture; objeto montado no corpo do teste quando poderia vir como parâmetro é achado;
    - `[Frozen]` em vez de `fixture.Inject` sempre que der, e o parâmetro congelado é lido pelo teste;
    - sem `[Frozen] T _` que só existe para congelar;
    - o atributo mais simples que dê conta (`[AutoData]` ou `[InlineData]` quando nenhuma customização do domínio é usada);
    - um comportamento por teste, sem relógio real;
    - método `internal` testado pela entrada pública, sem `InternalsVisibleTo`.
-5. **Endpoint novo ou alterado tem teste de integração na pasta espelhada**, com `[ApiAutoData]` e lendo de volta do banco.
-6. **Comentários.** Comentário que repete o código, ou que ficou desatualizado pelo próprio diff, é achado BAIXO.
-7. **Preferências de estilo do dono**, que não estão no `CLAUDE.md` e são achado BAIXO:
+6. **Endpoint novo ou alterado tem teste de integração na pasta espelhada**, com `[ApiAutoData]` e lendo de volta do banco.
+7. **Comentários.** Comentário que repete o código, ou que ficou desatualizado pelo próprio diff, é achado BAIXO.
+8. **Preferências de estilo do dono**, que não estão no `CLAUDE.md` e são achado BAIXO:
    - dentro da própria classe, o campo privado (`_descontosSalariais.Sum(...)`), não a propriedade exposta;
    - para desembrulhar nullable, `x is IdCartao idCartao`, não `x is { } idCartao`;
    - o `Maybe<T>` tem conversão implícita de `T?`: devolva o valor direto, sem `Maybe.From`;

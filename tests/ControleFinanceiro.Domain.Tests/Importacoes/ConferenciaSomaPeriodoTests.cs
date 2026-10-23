@@ -14,7 +14,7 @@ public sealed class ConferenciaSomaPeriodoTests
 {
     [Theory, LancamentosNoPeriodoAutoData]
     public void Conferir_Quando_PrimeiraImportacao_Deve_RetornarSucesso(
-        ExtratoLido extrato,
+        Extrato extrato,
         [Frozen] ContaBancaria conta,
         ImportacaoExtrato importacao)
     {
@@ -25,7 +25,7 @@ public sealed class ConferenciaSomaPeriodoTests
 
     [Theory, LancamentosNoPeriodoAutoData]
     public void Conferir_Quando_ParteDoPeriodoJaGravada_Deve_SomarAsGravadasEAsNovas(
-        ExtratoLido extrato,
+        Extrato extrato,
         [Frozen] ContaBancaria conta,
         ImportacaoExtrato importacao)
     {
@@ -39,10 +39,10 @@ public sealed class ConferenciaSomaPeriodoTests
     [Theory, LancamentosNoPeriodoAutoData]
     public void Conferir_Quando_GravadaQueOExtratoNaoTraz_Deve_RetornarFalhaComOPeriodo(
         [Frozen] PeriodoExtrato periodo,
-        ExtratoLido extrato,
+        Extrato extrato,
         [Frozen] ContaBancaria conta,
         ImportacaoExtrato importacao,
-        LancamentoExtrato naoReconhecido)
+        Lancamento naoReconhecido)
     {
         IReadOnlyList<Transacao> gravadas = Lote(conta, importacao, [.. extrato.Lancamentos, naoReconhecido]);
 
@@ -55,29 +55,29 @@ public sealed class ConferenciaSomaPeriodoTests
     [Theory, LancamentosNoPeriodoAutoData]
     public void Conferir_Quando_ExtratoTrazLancamentoForaDoPeriodo_Deve_RetornarFalha(
         [Frozen] PeriodoExtrato periodo,
-        ExtratoLido arquivo,
+        Extrato arquivo,
         [Frozen] ContaBancaria conta,
         ImportacaoExtrato importacao,
         Reais valor,
         TextoObrigatorio descricao)
     {
         DateOnly depoisDoFim = periodo.Fim.AddDays(1);
-        LancamentoExtrato foraDoPeriodo = LancamentoExtrato.Criar(
+        Lancamento foraDoPeriodo = Lancamento.Criar(
             depoisDoFim, hora: null, valor, descricao, contraparte: null, IdentidadeLancamento.Composta(depoisDoFim).ComValor(valor).ComTexto(descricao));
-        ExtratoLido extrato = ExtratoLido.Criar(
+        Extrato extrato = Extrato.Criar(
             arquivo.Banco,
             arquivo.TipoConta,
             arquivo.SufixoConta,
             periodo,
-            [.. arquivo.LancamentosLidos, LancamentoLido.Criar(foraDoPeriodo, depoisDoFim)],
-            saldos: []);
+            [.. arquivo.LancamentosContabilizados, LancamentoContabilizado.Criar(foraDoPeriodo, depoisDoFim)],
+            saldos: []).Value;
 
         Result result = ConferenciaSomaPeriodo.Conferir(extrato, gravadasNoPeriodo: [], Lote(conta, importacao, extrato.Lancamentos));
 
         result.Should().Fail();
     }
 
-    private static IReadOnlyList<Transacao> Lote(ContaBancaria conta, ImportacaoExtrato importacao, IReadOnlyList<LancamentoExtrato> lancamentos)
+    private static IReadOnlyList<Transacao> Lote(ContaBancaria conta, ImportacaoExtrato importacao, IReadOnlyList<Lancamento> lancamentos)
     {
         return LoteTransacoesFactory.Criar(conta.IdUsuario, conta, importacao, lancamentos).Value;
     }
@@ -95,23 +95,23 @@ public sealed class ConferenciaSomaPeriodoTests
             {
                 fixture.Register((PeriodoExtrato periodo, Reais valor, TextoObrigatorio descricao) => NoInicio(periodo, valor, descricao));
 
-                fixture.Register((Banco banco, TipoConta tipo, SufixoConta sufixo, PeriodoExtrato periodo) => ExtratoLido.Criar(
+                fixture.Register((Banco banco, TipoConta tipo, SufixoConta sufixo, PeriodoExtrato periodo) => Extrato.Criar(
                     banco,
                     tipo,
                     sufixo,
                     periodo,
                     Enumerable.Range(start: 0, count: 3)
                         .Select(_ => NoInicio(periodo, fixture.Create<Reais>(), fixture.Create<TextoObrigatorio>()))
-                        .Select(l => LancamentoLido.Criar(l, l.Data)),
-                    saldos: []));
+                        .Select(l => LancamentoContabilizado.Criar(l, l.Data)),
+                    saldos: []).Value);
             })
         {
         }
 
-        private static LancamentoExtrato NoInicio(PeriodoExtrato periodo, Reais valor, TextoObrigatorio descricao)
+        private static Lancamento NoInicio(PeriodoExtrato periodo, Reais valor, TextoObrigatorio descricao)
         {
             IdentidadeLancamento identidade = IdentidadeLancamento.Composta(periodo.Inicio).ComValor(valor).ComTexto(descricao);
-            return LancamentoExtrato.Criar(periodo.Inicio, hora: null, valor, descricao, contraparte: null, identidade);
+            return Lancamento.Criar(periodo.Inicio, hora: null, valor, descricao, contraparte: null, identidade);
         }
     }
 }

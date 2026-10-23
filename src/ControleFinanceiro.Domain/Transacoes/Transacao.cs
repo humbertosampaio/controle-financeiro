@@ -53,7 +53,7 @@ public sealed class Transacao : AggregateRoot<IdTransacao>
         IdUsuario idUsuario,
         IdImportacao idImportacao,
         OrigemTransacao origem,
-        LancamentoExtrato lancamento,
+        Lancamento lancamento,
         ChaveDeduplicacao chave)
             : base(id)
     {
@@ -77,7 +77,7 @@ public sealed class Transacao : AggregateRoot<IdTransacao>
         IdUsuario idUsuario,
         IdImportacao idImportacao,
         OrigemTransacao origem,
-        LancamentoExtrato lancamento,
+        Lancamento lancamento,
         ChaveDeduplicacao chave)
     {
         return new Transacao(IdTransacao.FromNewVersion7Guid(), idUsuario, idImportacao, origem, lancamento, chave);

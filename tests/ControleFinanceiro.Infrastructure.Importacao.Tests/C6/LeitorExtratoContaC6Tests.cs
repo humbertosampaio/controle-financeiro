@@ -24,7 +24,7 @@ public sealed class LeitorExtratoContaC6Tests
     [Fact]
     public async Task LerAsync_Deve_LerOBancoOTipoEOSufixoDaConta()
     {
-        ExtratoLido extrato = await LerFixtureAsync();
+        Extrato extrato = await LerFixtureAsync();
 
         extrato.Banco.Should().Be(Banco.C6);
         extrato.TipoConta.Should().Be(TipoConta.ContaCorrente);
@@ -34,7 +34,7 @@ public sealed class LeitorExtratoContaC6Tests
     [Fact]
     public async Task LerAsync_Deve_LerOPeriodoDoCabecalho()
     {
-        ExtratoLido extrato = await LerFixtureAsync();
+        Extrato extrato = await LerFixtureAsync();
 
         extrato.Periodo.Should().Be(PeriodoExtrato.Criar(new DateOnly(2026, 3, 2), new DateOnly(2026, 3, 9)).Value);
     }
@@ -42,7 +42,7 @@ public sealed class LeitorExtratoContaC6Tests
     [Fact]
     public async Task LerAsync_Deve_LerOsLancamentosNaOrdemDoArquivoPelaDataDeLancamento()
     {
-        ExtratoLido extrato = await LerFixtureAsync();
+        Extrato extrato = await LerFixtureAsync();
 
         extrato.Lancamentos.Select(l => l.Data).Should().Equal(
             Dia(2), Dia(2), Dia(3), Dia(3), Dia(3), Dia(4), Dia(4), Dia(7), Dia(9), Dia(9));
@@ -51,18 +51,18 @@ public sealed class LeitorExtratoContaC6Tests
     [Fact]
     public async Task LerAsync_Deve_LerAEntradaComoPositivaEASaidaComoNegativa()
     {
-        ExtratoLido extrato = await LerFixtureAsync();
+        Extrato extrato = await LerFixtureAsync();
 
         extrato.Lancamentos.Select(l => l.Valor.Value).Should().Equal(
             150.00m, -89.90m, -230.45m, -5.00m, -5.00m, 12.34m, 0m, 2000.00m, 20.00m, -10.00m);
     }
 
     [Fact]
-    public async Task LerAsync_Quando_DataContabilDiferenteDaDeLancamento_Deve_GuardarAContabilSoNoLancamentoLido()
+    public async Task LerAsync_Quando_DataContabilDiferenteDaDeLancamento_Deve_GuardarAContabilSoNoLancamentoContabilizado()
     {
-        ExtratoLido extrato = await LerFixtureAsync();
+        Extrato extrato = await LerFixtureAsync();
 
-        LancamentoLido pixDeSabado = extrato.LancamentosLidos[7];
+        LancamentoContabilizado pixDeSabado = extrato.LancamentosContabilizados[7];
         pixDeSabado.Lancamento.Data.Should().Be(Dia(7));
         pixDeSabado.DataContabil.Should().Be(Dia(9));
     }
@@ -70,7 +70,7 @@ public sealed class LeitorExtratoContaC6Tests
     [Fact]
     public async Task LerAsync_Deve_EntregarUmSaldoPorDiaContabil()
     {
-        ExtratoLido extrato = await LerFixtureAsync();
+        Extrato extrato = await LerFixtureAsync();
 
         extrato.Saldos.Should().Equal(
             SaldoDiario.Criar(Dia(2), saldo: -12.50m),
@@ -80,27 +80,19 @@ public sealed class LeitorExtratoContaC6Tests
     }
 
     [Fact]
-    public async Task LerAsync_Deve_EntregarSaldosQueFechamComOsLancamentos()
-    {
-        ExtratoLido extrato = await LerFixtureAsync();
-
-        ConferenciaSaldo.Conferir(extrato).Should().Succeed();
-    }
-
-    [Fact]
-    public async Task LerAsync_Quando_LinhasDoMesmoDiaContabilComSaldosDiferentes_Deve_EntregarOsDoisSaldos()
+    public async Task LerAsync_Quando_LinhasDoMesmoDiaContabilComSaldosDiferentes_Deve_RetornarFalhaComODia()
     {
         Stream arquivo = FixtureComLinha(numero: 14, "03/03/2026,03/03/2026,Tarifa de exemplo,,0.00,5.00,-252.96");
 
-        ExtratoLido extrato = (await _leitor.LerAsync(arquivo, CancellationToken.None)).Value;
+        Result<Extrato> result = await _leitor.LerAsync(arquivo, CancellationToken.None);
 
-        extrato.Saldos.Where(s => s.DataContabil == Dia(3)).Should().HaveCount(2);
+        result.Should().FailWith("O extrato traz mais de um saldo nestes dias: 03/03/2026.");
     }
 
     [Fact]
     public async Task LerAsync_Deve_TravarAIdentidadeNasColunasCruasDoArquivo()
     {
-        ExtratoLido extrato = await LerFixtureAsync();
+        Extrato extrato = await LerFixtureAsync();
 
         extrato.Lancamentos[0].Identidade.Campos.Should().Equal(
             "2026-03-02", "150.00", "PIX RECEBIDO DE FULANO FICTICIO", "DIVISÃO DO JANTAR");
@@ -111,10 +103,10 @@ public sealed class LeitorExtratoContaC6Tests
     [Fact]
     public async Task LerAsync_Quando_DuasLinhasIdenticas_Deve_LerDoisLancamentosComAMesmaIdentidade()
     {
-        ExtratoLido extrato = await LerFixtureAsync();
+        Extrato extrato = await LerFixtureAsync();
 
-        LancamentoExtrato primeira = extrato.Lancamentos[3];
-        LancamentoExtrato segunda = extrato.Lancamentos[4];
+        Lancamento primeira = extrato.Lancamentos[3];
+        Lancamento segunda = extrato.Lancamentos[4];
         primeira.Should().NotBeSameAs(segunda);
         primeira.Identidade.Should().Be(segunda.Identidade);
     }
@@ -129,9 +121,9 @@ public sealed class LeitorExtratoContaC6Tests
     [InlineData(9, "DEVOL ENVIADA PIX", null)]
     public async Task LerAsync_Deve_TirarDaDescricaoONomeDoPixEPorNaContraparte(int posicao, string descricao, string? contraparte)
     {
-        ExtratoLido extrato = await LerFixtureAsync();
+        Extrato extrato = await LerFixtureAsync();
 
-        LancamentoExtrato lancamento = extrato.Lancamentos[posicao];
+        Lancamento lancamento = extrato.Lancamentos[posicao];
         lancamento.Descricao.Value.Should().Be(descricao);
         lancamento.Contraparte.Should().Be(contraparte);
     }
@@ -143,7 +135,7 @@ public sealed class LeitorExtratoContaC6Tests
             LinhaDoPrimeiroLancamento,
             "02/03/2026,02/03/2026,Pix recebido de FULANO FICTICIO,PIX RECEBIDO DE FULANO FICTICIO,150.00,0.00,-12.50");
 
-        ExtratoLido extrato = (await _leitor.LerAsync(arquivo, CancellationToken.None)).Value;
+        Extrato extrato = (await _leitor.LerAsync(arquivo, CancellationToken.None)).Value;
 
         extrato.Lancamentos[0].Descricao.Value.Should().Be("Pix recebido de");
         extrato.Lancamentos[0].Contraparte.Should().Be("FULANO FICTICIO");
@@ -154,7 +146,7 @@ public sealed class LeitorExtratoContaC6Tests
     {
         Stream arquivo = FixtureComLinha(numero: 12, "03/03/2026,03/03/2026,Pagamento de boleto,,1.00,230.45,-252.95");
 
-        Result<ExtratoLido> result = await _leitor.LerAsync(arquivo, CancellationToken.None);
+        Result<Extrato> result = await _leitor.LerAsync(arquivo, CancellationToken.None);
 
         result.Should().FailWith("A linha 12 do arquivo tem entrada e saída no mesmo lançamento.");
     }
@@ -164,7 +156,7 @@ public sealed class LeitorExtratoContaC6Tests
     {
         Stream arquivo = FixtureComLinha(numero: 15, "04/03/2026,04/03/2026,\" \",ABCD11,12.34,0.00,-240.61");
 
-        Result<ExtratoLido> result = await _leitor.LerAsync(arquivo, CancellationToken.None);
+        Result<Extrato> result = await _leitor.LerAsync(arquivo, CancellationToken.None);
 
         result.Should().FailWith("A linha 15 do arquivo não tem título.");
     }
@@ -180,7 +172,7 @@ public sealed class LeitorExtratoContaC6Tests
     {
         Stream arquivo = FixtureComLinha(numero: 13, linha);
 
-        Result<ExtratoLido> result = await _leitor.LerAsync(arquivo, CancellationToken.None);
+        Result<Extrato> result = await _leitor.LerAsync(arquivo, CancellationToken.None);
 
         result.Should().FailWith("A linha 13 do arquivo não está no layout do extrato da conta do C6.");
     }
@@ -190,7 +182,7 @@ public sealed class LeitorExtratoContaC6Tests
     {
         Stream arquivo = FixtureComLinha(LinhaDasColunas, "Data,Descrição,Valor");
 
-        Result<ExtratoLido> result = await _leitor.LerAsync(arquivo, CancellationToken.None);
+        Result<Extrato> result = await _leitor.LerAsync(arquivo, CancellationToken.None);
 
         result.Should().FailWith("A linha 9 do arquivo não traz as colunas do extrato da conta do C6.");
     }
@@ -200,7 +192,7 @@ public sealed class LeitorExtratoContaC6Tests
     {
         Stream arquivo = Arquivo(LinhasDaFixture().Take(LinhaDasColunas - 2));
 
-        Result<ExtratoLido> result = await _leitor.LerAsync(arquivo, CancellationToken.None);
+        Result<Extrato> result = await _leitor.LerAsync(arquivo, CancellationToken.None);
 
         result.Should().FailWith("O arquivo termina antes das colunas do extrato da conta do C6.");
     }
@@ -210,7 +202,7 @@ public sealed class LeitorExtratoContaC6Tests
     {
         Stream arquivo = FixtureComLinha(numero: 2, "Agência: 1");
 
-        Result<ExtratoLido> result = await _leitor.LerAsync(arquivo, CancellationToken.None);
+        Result<Extrato> result = await _leitor.LerAsync(arquivo, CancellationToken.None);
 
         result.Should().FailWith("O cabeçalho do arquivo não traz a conta do extrato.");
     }
@@ -222,7 +214,7 @@ public sealed class LeitorExtratoContaC6Tests
     {
         Stream arquivo = FixtureComLinha(numero: 2, linha);
 
-        Result<ExtratoLido> result = await _leitor.LerAsync(arquivo, CancellationToken.None);
+        Result<Extrato> result = await _leitor.LerAsync(arquivo, CancellationToken.None);
 
         result.Should().FailWith(erro);
     }
@@ -232,7 +224,7 @@ public sealed class LeitorExtratoContaC6Tests
     {
         Stream arquivo = FixtureComLinha(numero: 2, "Agência: 1 / Conta: 98765432x");
 
-        ExtratoLido extrato = (await _leitor.LerAsync(arquivo, CancellationToken.None)).Value;
+        Extrato extrato = (await _leitor.LerAsync(arquivo, CancellationToken.None)).Value;
 
         extrato.SufixoConta.Should().Be((SufixoConta)"432X");
     }
@@ -244,7 +236,7 @@ public sealed class LeitorExtratoContaC6Tests
     {
         Stream arquivo = FixtureComLinha(numero: 4, linha);
 
-        Result<ExtratoLido> result = await _leitor.LerAsync(arquivo, CancellationToken.None);
+        Result<Extrato> result = await _leitor.LerAsync(arquivo, CancellationToken.None);
 
         result.Should().FailWith(erro);
     }
@@ -254,7 +246,7 @@ public sealed class LeitorExtratoContaC6Tests
     {
         Stream arquivo = FixtureComLinha(numero: 4, "Extrato do mês");
 
-        Result<ExtratoLido> result = await _leitor.LerAsync(arquivo, CancellationToken.None);
+        Result<Extrato> result = await _leitor.LerAsync(arquivo, CancellationToken.None);
 
         result.Should().FailWith("O cabeçalho do arquivo não traz o período do extrato.");
     }
@@ -264,16 +256,16 @@ public sealed class LeitorExtratoContaC6Tests
     {
         Stream arquivo = Arquivo(LinhasDaFixture().Take(LinhaDoPrimeiroLancamento - 1));
 
-        ExtratoLido extrato = (await _leitor.LerAsync(arquivo, CancellationToken.None)).Value;
+        Extrato extrato = (await _leitor.LerAsync(arquivo, CancellationToken.None)).Value;
 
         extrato.Lancamentos.Should().BeEmpty();
         extrato.Saldos.Should().BeEmpty();
     }
 
-    private async Task<ExtratoLido> LerFixtureAsync()
+    private async Task<Extrato> LerFixtureAsync()
     {
         await using FileStream arquivo = File.OpenRead(_caminhoFixture);
-        Result<ExtratoLido> result = await _leitor.LerAsync(arquivo, CancellationToken.None);
+        Result<Extrato> result = await _leitor.LerAsync(arquivo, CancellationToken.None);
         return result.Should().Succeed().Which;
     }
 
