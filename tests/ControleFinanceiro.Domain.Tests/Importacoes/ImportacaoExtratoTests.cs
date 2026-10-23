@@ -1,5 +1,5 @@
+using ControleFinanceiro.Domain.Contas;
 using ControleFinanceiro.Domain.Importacoes;
-using ControleFinanceiro.Domain.Transacoes;
 using ControleFinanceiro.Tests.Shared.AutoFixture.Attributes;
 using CSharpFunctionalExtensions;
 
@@ -7,55 +7,6 @@ namespace ControleFinanceiro.Domain.Tests.Importacoes;
 
 public sealed class ImportacaoExtratoTests
 {
-    [Theory, DomainAutoData]
-    public void Registrar_Deve_GuardarOsDadosDaImportacao(
-        OrigemTransacao origem,
-        FormatoExtrato formato,
-        PeriodoExtrato periodo,
-        byte novas,
-        byte jaExistentes,
-        DateTimeOffset importadaEm)
-    {
-        ImportacaoExtrato result = ImportacaoExtrato.Registrar(origem, formato, periodo, novas + jaExistentes, novas, importadaEm);
-
-        result.Origem.Should().Be(origem);
-        result.Formato.Should().Be(formato);
-        result.Periodo.Should().Be(periodo);
-        result.ImportadaEm.Should().Be(importadaEm);
-        result.Lidas.Should().Be(novas + jaExistentes);
-        result.Novas.Should().Be(novas);
-        result.JaExistentes.Should().Be(jaExistentes);
-    }
-
-    [Theory]
-    [InlineDomainAutoData(1, -1)]
-    [InlineDomainAutoData(1, 2)]
-    public void Registrar_Quando_NovasForaDeZeroAteLidas_Deve_LancarExcecao(
-        int lidas,
-        int novas,
-        OrigemTransacao origem,
-        FormatoExtrato formato,
-        PeriodoExtrato periodo,
-        DateTimeOffset importadaEm)
-    {
-        Action registrar = () => ImportacaoExtrato.Registrar(origem, formato, periodo, lidas, novas, importadaEm);
-
-        registrar.Should().Throw<ArgumentOutOfRangeException>().WithParameterName("novas");
-    }
-
-    [Theory, DomainAutoData]
-    public void Registrar_Deve_GerarIdVersao7(
-        OrigemTransacao origem,
-        FormatoExtrato formato,
-        PeriodoExtrato periodo,
-        byte lidas,
-        DateTimeOffset importadaEm)
-    {
-        ImportacaoExtrato result = ImportacaoExtrato.Registrar(origem, formato, periodo, lidas, lidas, importadaEm);
-
-        result.Id.Value.Version.Should().Be(7);
-    }
-
     [Theory, DomainAutoData]
     public void PeriodoNaoImportado_Quando_PrimeiraImportacao_Deve_RetornarNada(ImportacaoExtrato sut)
     {
@@ -70,11 +21,13 @@ public sealed class ImportacaoExtratoTests
     [InlineDomainAutoData(-5)]
     public void PeriodoNaoImportado_Quando_PeriodoContiguoOuSobreposto_Deve_RetornarNada(
         int diasDoFimAnteriorAoInicio,
-        ImportacaoExtrato ultima,
+        ContaBancaria conta,
+        PeriodoExtrato periodoAnterior,
         Fixture fixture)
     {
+        ImportacaoExtrato ultima = Com(fixture, conta, periodoAnterior);
         DateOnly inicio = ultima.Periodo.Fim.AddDays(diasDoFimAnteriorAoInicio);
-        ImportacaoExtrato sut = Com(fixture, ultima.Origem, PeriodoExtrato.Criar(inicio, inicio.AddDays(30)).Value);
+        ImportacaoExtrato sut = Com(fixture, conta, PeriodoExtrato.Criar(inicio, inicio.AddDays(30)).Value);
 
         Maybe<PeriodoExtrato> result = sut.PeriodoNaoImportado(ultima);
 
@@ -83,11 +36,13 @@ public sealed class ImportacaoExtratoTests
 
     [Theory, DomainAutoData]
     public void PeriodoNaoImportado_Quando_DiasEntreAsImportacoes_Deve_RetornarOsDiasFaltantes(
-        ImportacaoExtrato ultima,
+        ContaBancaria conta,
+        PeriodoExtrato periodoAnterior,
         Fixture fixture)
     {
+        ImportacaoExtrato ultima = Com(fixture, conta, periodoAnterior);
         DateOnly inicio = ultima.Periodo.Fim.AddDays(4);
-        ImportacaoExtrato sut = Com(fixture, ultima.Origem, PeriodoExtrato.Criar(inicio, inicio.AddDays(30)).Value);
+        ImportacaoExtrato sut = Com(fixture, conta, PeriodoExtrato.Criar(inicio, inicio.AddDays(30)).Value);
 
         Maybe<PeriodoExtrato> result = sut.PeriodoNaoImportado(ultima);
 
@@ -101,12 +56,12 @@ public sealed class ImportacaoExtratoTests
     {
         Action conferir = () => sut.PeriodoNaoImportado(deOutraOrigem);
 
-        conferir.Should().Throw<ArgumentException>().WithParameterName("ultima");
+        conferir.Should().ThrowExactly<ArgumentException>().WithParameterName("ultima");
     }
 
-    private static ImportacaoExtrato Com(Fixture fixture, OrigemTransacao origem, PeriodoExtrato periodo)
+    private static ImportacaoExtrato Com(Fixture fixture, ContaBancaria conta, PeriodoExtrato periodo)
     {
-        fixture.Inject(origem);
+        fixture.Inject(conta);
         fixture.Inject(periodo);
         return fixture.Create<ImportacaoExtrato>();
     }

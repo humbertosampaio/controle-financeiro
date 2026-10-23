@@ -26,7 +26,7 @@ public sealed partial class CadastrarUsuarioEndpoint : Endpoint<CadastrarUsuario
     {
         Usuario usuario = Map.ToEntity(req);
 
-        await _usuarioRepository.AddAsync(usuario, ct);
+        await _usuarioRepository.AdicionarAsync(usuario, ct);
         await _unitOfWork.CommitAsync(ct);
 
         await SendMapped(usuario, StatusCodes.Status201Created, ct);

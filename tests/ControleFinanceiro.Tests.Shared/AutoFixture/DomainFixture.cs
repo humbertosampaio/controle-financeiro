@@ -30,8 +30,7 @@ public class DomainFixture : Fixture
             .Customize(new PeriodoExtratoCustomization())
             .Customize(new ImportacaoExtratoCustomization())
             .Customize(new DiaCompraRecorrenteCustomization())
-            .Customize(new TextoObrigatorioCustomization())
-            .Customize(new EntityIdCustomization());
+            .Customize(new TextoObrigatorioCustomization());
     }
 
     public static DomainFixture Create() => new();

@@ -46,6 +46,8 @@ public sealed class ChaveDeduplicacao : SimpleValueObject<string>
             .Map(c => new ChaveDeduplicacao(c));
     }
 
+    public static explicit operator ChaveDeduplicacao(string? chave) => Criar(chave).Value;
+
     /// <summary>
     /// Calcula as chaves do lote, na ordem das identidades, numerando as identidades iguais.
     /// </summary>

@@ -9,7 +9,7 @@ Discordar de um padrão é motivo para conversar, não para contorná-lo no cód
 - A raiz é a única entrada do agregado. Entidade interna (`DescontoSalarial` no `Usuario`, `ParcelaDespesa` na `DespesaParcelada`) só é criada, alterada e lida pela raiz.
 - Entre agregados, a referência é **pelo id da raiz**. Nenhum agregado guarda outra raiz, nem uma entidade de outro agregado, nem uma coleção delas. A `DespesaRecorrente` guarda o `IdCartao`, não o `Cartao`; a `OrigemTransacao` guarda o `IdConta` ou o `IdCartao`.
 - Um conceito que outro agregado precisa referenciar de fora é uma raiz, não uma entidade interna. Foi o motivo da #50: o `Cartao` e a `ContaBancaria` eram internos do `Usuario`, mas a `Transacao` e a `ImportacaoExtrato` já chegavam a eles de fora.
-- Todo agregado que pertence a um usuário tem `IdUsuario` (`Cartao`, `ContaBancaria`, `DespesaRecorrente`, `Despesa`).
+- Todo agregado que pertence a um usuário tem `IdUsuario` (`Cartao`, `ContaBancaria`, `DespesaRecorrente`, `Despesa`, `Transacao`, `ImportacaoExtrato`), mesmo quando o dono já é alcançável por outro id, como a origem da transação.
 
 ## 2. Um agregado por transação
 
@@ -17,15 +17,17 @@ Um caso de uso altera um agregado só e grava com um `CommitAsync`. Ele pode ler
 
 Precisar alterar dois agregados no mesmo caso de uso é sinal de que o efeito sobre o segundo é um evento de domínio (seção 6), ou de que a fronteira está errada. Pare e discuta no plano antes de escrever código.
 
+**Exceção: criar vários agregados novos nascidos do mesmo fato.** Um caso de uso que só cria agregados, sem alterar nenhum que já existe, pode gravá-los num `CommitAsync` só. É a importação de um extrato: a conta nova (quando o arquivo é o primeiro dela), as transações e a `ImportacaoExtrato` nascem do mesmo arquivo e são gravadas juntas, para o arquivo entrar inteiro ou não entrar. Criar não disputa estado com outra requisição; a unicidade fica com o índice único (seção 3).
+
 ## 3. Regras que cruzam agregados
 
 Uma regra que depende de mais de um agregado, como "um cartão por banco e final em cada usuário", não mora em nenhum dos agregados nem no endpoint. Ela mora numa **factory ou serviço de domínio estático e puro**, em `Domain/Services/`:
 
-- Recebe os agregados e as listas de que precisa e devolve `Result`. É síncrona, não recebe porta e se testa sem mock. Exemplos: `CartaoFactory`, `ContaBancariaFactory`, `DespesaRecorrenteFactory` e `LoteTransacoesFactory`.
+- Recebe os agregados e as listas de que precisa e devolve `Result`. É síncrona, não recebe porta e se testa sem mock. Exemplos: `CartaoFactory`, `ContaBancariaFactory`, `DespesaRecorrenteFactory`, `ImportacaoExtratoFactory` e `LoteTransacoesFactory`.
 - Quem chama (o caso de uso, hoje o endpoint) carrega os dados pelos repositórios e passa à factory.
 - Uma lista que traz item de outro usuário é bug de quem chama, não falha prevista: lança `ArgumentException`. O mesmo vale para um argumento que contradiz o estado já conferido, como o cartão errado no `GeracaoDespesasDoMesService.GerarComPagamentoAdiado`.
-- Quando só a factory consegue garantir a regra, o `Criar` do agregado é `internal`, e ela é a única entrada. Os testes passam pela factory, sem `InternalsVisibleTo`, e o AutoFixture ganha um generator que a chama (`CartaoGenerator`). Exemplos: `Cartao.Criar`, `ContaBancaria.Criar`, `DespesaRecorrente.Criar` e `Transacao.Criar`.
-- **Um agregado não recebe outro agregado nos próprios métodos.** A regra que precisa dos dois vai para a factory, que passa ao agregado só o id. A `DespesaRecorrente.Criar` recebe o `IdCartao`; a `DespesaRecorrenteFactory` recebe o `Cartao` e confere que ele é do usuário.
+- Quando só a factory consegue garantir a regra, o `Criar` do agregado é `internal`, e ela é a única entrada. Os testes passam pela factory, sem `InternalsVisibleTo`, e o AutoFixture ganha um generator que a chama (`CartaoGenerator`). Exemplos: `Cartao.Criar`, `ContaBancaria.Criar`, `DespesaRecorrente.Criar`, `ImportacaoExtrato.Registrar` e `Transacao.Criar`.
+- **Um agregado não recebe agregado de outro tipo nos próprios métodos.** A regra que precisa dos dois vai para a factory, que passa ao agregado só o id. A `DespesaRecorrente.Criar` recebe o `IdCartao`; a `DespesaRecorrenteFactory` recebe o `Cartao` e confere que ele é do usuário. Receber uma instância do mesmo tipo é aceito, como a `ImportacaoExtrato.PeriodoNaoImportado`, que lê a importação anterior da mesma origem.
 - Um parâmetro que às vezes é ignorado esconde a regra: prefira uma sobrecarga por caso, com o nome do caso (`GerarComPagamentoImediato` e `GerarComPagamentoAdiado`).
 
 Concorrência: a unicidade garantida pela factory tem um índice único no banco como rede. Duas requisições ao mesmo tempo dão 500 na segunda, e isso é aceito até haver motivo para tratar.
@@ -33,11 +35,11 @@ Concorrência: a unicidade garantida pela factory tem um índice único no banco
 ## 4. Repositórios
 
 - Um repositório por raiz, com a porta no Domain, na pasta do agregado (`Cartoes/ICartaoRepository.cs`) e o adaptador na Persistence (`Cartoes/CartaoRepository.cs`).
-- O repositório **recebe e devolve o agregado inteiro**: para adicionar (`AddAsync`), para obter e alterar (`ObterPorIdAsync`, seguido do `CommitAsync` do `IUnitOfWork`) e para listar os de um dono (`ListarDoUsuarioAsync`). O agregado vem com todas as coleções (`AutoInclude`).
+- O repositório **recebe e devolve o agregado inteiro**: para adicionar (`AdicionarAsync`), para obter e alterar (`ObterPorIdAsync`, seguido do `CommitAsync` do `IUnitOfWork`) e para listar os de um dono (`ListarDoUsuarioAsync`). O agregado vem com todas as coleções (`AutoInclude`).
 - O repositório de agregado não devolve DTO, projeção, contagem nem existência. Uma consulta que não é "me dê o agregado", como uma contagem ou um relatório, vai para:
   - um **serviço de domínio não puro** com uma porta de consulta própria, quando a resposta alimenta uma regra de domínio;
   - ou um **serviço de aplicação**, na Application, quando a resposta é só para quem chama (tela, MCP, relatório).
-- Um agregado sem caso de uso não ganha repositório antes da hora: o da `ContaBancaria` chega com a #47, e o da `DespesaRecorrente`, com a #9.
+- Um agregado sem caso de uso não ganha repositório antes da hora: o da `DespesaRecorrente` chega com a #9, junto do cadastro das despesas fixas.
 
 ## 5. Falhas
 

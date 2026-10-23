@@ -1,7 +1,13 @@
 using ControleFinanceiro.Application.Abstractions;
 using ControleFinanceiro.Domain.Cartoes;
+using ControleFinanceiro.Domain.Contas;
+using ControleFinanceiro.Domain.Importacoes;
+using ControleFinanceiro.Domain.Transacoes;
 using ControleFinanceiro.Domain.Usuarios;
 using ControleFinanceiro.Infrastructure.Persistence.Cartoes;
+using ControleFinanceiro.Infrastructure.Persistence.Contas;
+using ControleFinanceiro.Infrastructure.Persistence.Importacoes;
+using ControleFinanceiro.Infrastructure.Persistence.Transacoes;
 using ControleFinanceiro.Infrastructure.Persistence.Usuarios;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
@@ -28,7 +34,10 @@ public static class DependencyInjection
             return services
                 .AddScoped<IUnitOfWork, EntityFrameworkUnitOfWork>()
                 .AddUsuarios()
-                .AddCartoes();
+                .AddCartoes()
+                .AddContas()
+                .AddTransacoes()
+                .AddImportacoes();
         }
 
         private IServiceCollection AddUsuarios()
@@ -39,6 +48,21 @@ public static class DependencyInjection
         private IServiceCollection AddCartoes()
         {
             return services.AddTransient<ICartaoRepository, CartaoRepository>();
+        }
+
+        private IServiceCollection AddContas()
+        {
+            return services.AddTransient<IContaRepository, ContaRepository>();
+        }
+
+        private IServiceCollection AddTransacoes()
+        {
+            return services.AddTransient<ITransacaoRepository, TransacaoRepository>();
+        }
+
+        private IServiceCollection AddImportacoes()
+        {
+            return services.AddTransient<IImportacaoRepository, ImportacaoRepository>();
         }
     }
 }

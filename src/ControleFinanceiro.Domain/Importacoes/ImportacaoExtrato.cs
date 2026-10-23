@@ -1,6 +1,7 @@
 using ControleFinanceiro.Domain.Shared;
 using ControleFinanceiro.Domain.Shared.ValueObjects;
 using ControleFinanceiro.Domain.Transacoes;
+using ControleFinanceiro.Domain.Usuarios;
 
 namespace ControleFinanceiro.Domain.Importacoes;
 
@@ -11,17 +12,20 @@ public readonly partial struct IdImportacao
 }
 
 /// <summary>
-/// O registro de um arquivo importado: de qual origem, em qual formato, que período cobria e quantas
-/// transações eram novas. É por ele que a importação seguinte descobre se ficou um buraco entre as duas.
+/// O registro de um arquivo importado: de qual origem, em qual formato, que período cobria e quantos
+/// lançamentos trazia. É por ele que a importação seguinte descobre se ficou um buraco entre as duas.
 /// </summary>
+/// <remarks>
+/// Cada transação guarda o <see cref="IdImportacao"/> da importação que a criou. Quantas eram novas não fica
+/// aqui: são as transações ligadas a ela.
+/// </remarks>
 public sealed class ImportacaoExtrato : AggregateRoot<IdImportacao>
 {
+    public IdUsuario IdUsuario { get; private set; }
     public OrigemTransacao Origem { get; private set; } = null!;
     public FormatoExtrato Formato { get; private set; } = null!;
     public PeriodoExtrato Periodo { get; private set; } = null!;
     public int Lidas { get; private set; }
-    public int Novas { get; private set; }
-    public int JaExistentes { get; private set; }
     public DateTimeOffset ImportadaEm { get; private set; }
 
     private ImportacaoExtrato()
@@ -30,36 +34,37 @@ public sealed class ImportacaoExtrato : AggregateRoot<IdImportacao>
 
     private ImportacaoExtrato(
         IdImportacao id,
+        IdUsuario idUsuario,
         OrigemTransacao origem,
         FormatoExtrato formato,
         PeriodoExtrato periodo,
         int lidas,
-        int novas,
         DateTimeOffset importadaEm)
             : base(id)
     {
+        IdUsuario = idUsuario;
         Origem = origem;
         Formato = formato;
         Periodo = periodo;
         Lidas = lidas;
-        Novas = novas;
-        JaExistentes = lidas - novas;
         ImportadaEm = importadaEm;
     }
 
     /// <param name="lidas">Quantos lançamentos o arquivo trazia.</param>
-    /// <param name="novas">Quantas transações foram adicionadas; as demais já estavam no banco de dados.</param>
-    public static ImportacaoExtrato Registrar(
+    /// <remarks>
+    /// Interno pois o <paramref name="idUsuario"/> precisa ser o dono da <paramref name="origem"/>, e só a
+    /// <see cref="Services.ImportacaoExtratoFactory"/>, que recebe a conta ou o cartão, garante isso.
+    /// </remarks>
+    internal static ImportacaoExtrato Registrar(
+        IdUsuario idUsuario,
         OrigemTransacao origem,
         FormatoExtrato formato,
         PeriodoExtrato periodo,
         int lidas,
-        int novas,
         DateTimeOffset importadaEm)
     {
-        ArgumentOutOfRangeException.ThrowIfNegative(novas);
-        ArgumentOutOfRangeException.ThrowIfGreaterThan(novas, lidas);
-        return new(IdImportacao.FromNewVersion7Guid(), origem, formato, periodo, lidas, novas, importadaEm);
+        ArgumentOutOfRangeException.ThrowIfNegative(lidas);
+        return new(IdImportacao.FromNewVersion7Guid(), idUsuario, origem, formato, periodo, lidas, importadaEm);
     }
 
     /// <summary>
@@ -75,10 +80,10 @@ public sealed class ImportacaoExtrato : AggregateRoot<IdImportacao>
         if (ultima.Value.Origem != Origem)
             throw new ArgumentException("A importação anterior é de outra origem.", nameof(ultima));
 
-        DateOnly primeiroDiaNaoImportado = ultima.Value.Periodo.Fim.AddDays(1);
-        if (Periodo.Inicio <= primeiroDiaNaoImportado)
-            return Maybe.None;
-
-        return PeriodoExtrato.Criar(primeiroDiaNaoImportado, Periodo.Inicio.AddDays(-1)).Value;
+        // O período entre as duas só existe quando sobra pelo menos um dia: com os períodos se tocando ou se
+        // sobrepondo, o início fica depois do fim, o Criar falha, e não há período não importado.
+        return PeriodoExtrato
+            .Criar(ultima.Value.Periodo.Fim.AddDays(1), Periodo.Inicio.AddDays(-1))
+            .AsMaybe();
     }
 }

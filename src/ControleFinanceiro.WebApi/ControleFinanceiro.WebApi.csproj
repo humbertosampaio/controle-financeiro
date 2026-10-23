@@ -25,6 +25,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\ControleFinanceiro.Application\ControleFinanceiro.Application.csproj" />
+    <ProjectReference Include="..\ControleFinanceiro.Infrastructure.Importacao\ControleFinanceiro.Infrastructure.Importacao.csproj" />
     <ProjectReference Include="..\ControleFinanceiro.Infrastructure.Persistence\ControleFinanceiro.Infrastructure.Persistence.csproj" />
     <ProjectReference Include="..\ControleFinanceiro.ServiceDefaults\ControleFinanceiro.ServiceDefaults.csproj" />
   </ItemGroup>

@@ -80,6 +80,16 @@ public sealed class ApiComPostgresFixture : IAsyncLifetime
         return await consulta(dbContext);
     }
 
+    /// <summary>
+    /// Todos os serviços do tipo <typeparamref name="T"/> registrados no container da API, resolvidos num escopo
+    /// novo: confere a composição do <c>Program.cs</c>, e não a de um método de registro isolado.
+    /// </summary>
+    public IReadOnlyList<T> ObterServicos<T>()
+    {
+        using IServiceScope escopo = Factory.Services.CreateScope();
+        return escopo.ServiceProvider.GetServices<T>().ToList();
+    }
+
     public async Task DisposeAsync()
     {
         Client?.Dispose();

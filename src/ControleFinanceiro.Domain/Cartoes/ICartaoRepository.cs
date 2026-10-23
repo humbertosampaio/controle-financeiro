@@ -6,5 +6,5 @@ public interface ICartaoRepository
 {
     Task<IReadOnlyList<Cartao>> ListarDoUsuarioAsync(IdUsuario idUsuario, CancellationToken cancellationToken);
 
-    Task AddAsync(Cartao cartao, CancellationToken cancellationToken);
+    Task AdicionarAsync(Cartao cartao, CancellationToken cancellationToken);
 }

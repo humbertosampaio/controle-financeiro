@@ -22,9 +22,9 @@ public static class GeracaoDespesasDoMesService
             .Select(recorrente => Gerar(recorrente, cartoesDoUsuario, mesReferencia))
             .ToArray();
 
-        return Result
-            .Combine(resultados)
-            .Map<IReadOnlyList<Despesa>>(() => resultados.Select(r => r.Value).ToArray());
+        return resultados
+            .Combine()
+            .Map(IReadOnlyList<Despesa> (despesas) => despesas.ToArray());
     }
 
     private static Result<Despesa> Gerar(

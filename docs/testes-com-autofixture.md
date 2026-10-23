@@ -34,22 +34,23 @@ Não use `InternalsVisibleTo`. Um método `internal` está fechado porque só um
 
 ## Quando o teste precisa de um valor específico
 
-Quatro caminhos, do mais geral para o mais local:
+Cinco caminhos, do mais geral para o mais local:
 
 1. **Customização**: a regra vale para todo teste. É o caso do `DiaVencimentoCartaoCustomization`, que traz qualquer inteiro para 1–28. Use quando o valor gerado por padrão seria inválido.
-2. **Anotação no parâmetro**: o teste restringe só a si mesmo.
+2. **AutoData privado da classe**: a regra vale para vários testes de uma classe só. A classe declara um atributo `private sealed` que herda do `DomainAutoDataAttribute` e recebe a configuração no construtor, como o `ImportacaoDoCartaoAutoDataAttribute` da `LoteTransacoesFactoryTests`, que monta a importação a partir do cartão, e não da conta. Prefira esse atributo a um método auxiliar que pede valores ao `Fixture` para montar o objeto no corpo do teste.
+3. **Anotação no parâmetro**: o teste restringe só a si mesmo.
    - `[Range(1, 12)] int mes`, como em `MesReferenciaTests`, quando qualquer valor de uma faixa serve.
    - `[Frozen] Usuario esperado` congela a instância: todo objeto que o fixture montar depois e dependa de um `Usuario` recebe esse mesmo. É assim que o teste do cadastro sabe o que esperar no banco.
 
    **O `[Frozen]` é o jeito padrão de fixar um valor**, e o parâmetro congelado é lido pelo teste, no arrange ou no assert. Em `DespesaFactoryTests`, `[Frozen] DiaCompraRecorrente diaCompra` faz a despesa recorrente que o fixture montar comprar nesse dia, e a data esperada sai de `diaCompra.Value`.
-3. **Mutação do objeto devolvido**: o teste parte de um objeto válido e muda só o que importa, com `with` nos records.
+4. **Mutação do objeto devolvido**: o teste parte de um objeto válido e muda só o que importa, com `with` nos records.
 
    ```csharp
    requisicao with { RendaBruta = -0.01m }
    ```
 
    Fica explícito que o caso é "uma requisição válida, exceto a renda". É o caminho dos casos inválidos e das bordas.
-4. **`fixture.Inject` no corpo do teste**: só quando o `[Frozen]` não expressa o caso. Peça `Fixture fixture` como parâmetro e injete antes do `fixture.Create<T>()`. São dois casos:
+5. **`fixture.Inject` no corpo do teste**: só quando o `[Frozen]` não expressa o caso. Peça `Fixture fixture` como parâmetro e injete antes do `fixture.Create<T>()`. São dois casos:
    - o teste precisa de um valor específico, que o parâmetro não escolhe: `fixture.Inject(FormaPagamento.Credito)`;
    - o valor depende de algo montado no próprio teste, que nenhum parâmetro produz.
 
@@ -67,6 +68,10 @@ Quatro caminhos, do mais geral para o mais local:
 **Não contorne essas limitações.** Nada de atributo próprio que alimente o `[Frozen]` com `MemberData`, nem de parâmetro `[Frozen] T _` (ou `_1`) que só existe para congelar e nunca é lido: a assinatura do teste passa a esconder o que ele depende. Para variar poucos valores da mesma regra, use `[InlineDomainAutoData(...)]`.
 
 Valor fixo direto no teste (`(TextoObrigatorio)"INSS"`) só quando o próprio valor é o assunto, como num teste de soma com o resultado calculado à mão.
+
+## Exceção esperada
+
+Use `ThrowExactly<T>()`, e não `Throw<T>()`, que também passa com uma exceção derivada de `T`: `registrar.Should().ThrowExactly<ArgumentOutOfRangeException>().WithParameterName("lidas")`.
 
 ## Nome do teste
 

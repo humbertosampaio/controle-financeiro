@@ -38,7 +38,7 @@ public static class ConferenciaSaldo
         Dictionary<DateOnly, Reais> saldos = extrato.Saldos.ToDictionary(s => s.DataContabil, s => s.Saldo);
         Dictionary<DateOnly, Reais> somas = extrato.LancamentosLidos
             .GroupBy(l => l.DataContabil)
-            .ToDictionary(g => g.Key, g => g.Aggregate(new Reais(0m), (soma, l) => soma + l.Lancamento.Valor));
+            .ToDictionary(g => g.Key, g => (Reais)g.Sum(l => l.Lancamento.Valor));
 
         List<DateOnly> dias = saldos.Keys.Union(somas.Keys).Order().ToList();
 
