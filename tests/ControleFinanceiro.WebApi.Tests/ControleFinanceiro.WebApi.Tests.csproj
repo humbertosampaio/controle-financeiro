@@ -32,6 +32,11 @@
     <None Include="..\..\src\ControleFinanceiro.AppHost\Resources\postgres.Dockerfile" Link="Infraestrutura\postgres.Dockerfile" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 
+  <!-- O extrato fictício do C6 é o mesmo dos testes do leitor: o endpoint é testado com o arquivo que o leitor já conhece. -->
+  <ItemGroup>
+    <None Include="..\ControleFinanceiro.Infrastructure.Importacao.Tests\Fixtures\C6\extrato-conta.csv" Link="Importacoes\ImportarExtrato\Fixtures\extrato-conta.csv" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
   <ItemGroup>
     <Using Include="AutoFixture" />
     <Using Include="Xunit" />
