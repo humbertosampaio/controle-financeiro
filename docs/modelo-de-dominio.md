@@ -145,15 +145,26 @@ Cada falha prevista que é uma situação de negócio com nome próprio é um ti
 
 ## Importação de um extrato
 
-Objetos de leitura que não são gravados: o adaptador de cada layout produz o `ExtratoLido`, a `ConferenciaSaldo` o valida, a `ImportacaoExtratoFactory` registra a importação, a `LoteTransacoesFactory` o transforma em transações ligadas a ela e a `ConferenciaSomaPeriodo`, antes da gravação, compara a soma do período com o que já estava gravado mais as novas.
+O extrato e os seus lançamentos são value objects: não têm identidade nem são gravados, mas são linguagem do negócio. O adaptador de cada layout produz o `Extrato`, a `ImportacaoExtratoFactory` registra a importação, a `LoteTransacoesFactory` transforma os lançamentos em transações ligadas a ela e a `ConferenciaSomaPeriodo`, antes da gravação, compara a soma do período com o que já estava gravado mais as novas.
+
+- **Extrato**: só nasce com os saldos fechando. O `Criar` falha quando um dia contábil traz mais de um saldo, quando falta o saldo de um dia ou quando os lançamentos de um dia não levam o saldo do dia anterior ao saldo do dia. Agrupa pela data contábil; o primeiro dia só serve de base, e os dias contábeis depois do fim do período ficam de fora. As mensagens citam só as datas.
+- **Lancamento**: a linha de extrato ou de fatura que vira transação. Duas linhas com os mesmos campos são iguais como valor; quem as distingue é a posição no lote, na `ChaveDeduplicacao`.
+- **LancamentoContabilizado**: o lançamento com o dia contábil em que entrou no saldo. A data contábil só serve à conferência de saldo do `Extrato` e não é gravada.
 
 ```mermaid
 classDiagram
     direction LR
 
-    class ExtratoLido
-    class LancamentoLido
-    class LancamentoExtrato
+    class Extrato {
+        <<ValueObject>>
+        Criar()
+    }
+    class LancamentoContabilizado {
+        <<ValueObject>>
+    }
+    class Lancamento {
+        <<ValueObject>>
+    }
     class IdentidadeLancamento {
         <<ValueObject>>
         Unica()
@@ -169,13 +180,9 @@ classDiagram
         <<ValueObject>>
         CalcularLote()
     }
-    class ConferenciaSaldo {
-        <<service>>
-        Conferir(ExtratoLido)
-    }
     class ConferenciaSomaPeriodo {
         <<service>>
-        Conferir(ExtratoLido, gravadasNoPeriodo, novas)
+        Conferir(Extrato, gravadasNoPeriodo, novas)
     }
     class ImportacaoExtratoFactory {
         <<service>>
@@ -192,17 +199,16 @@ classDiagram
         <<AggregateRoot>>
     }
 
-    ExtratoLido "1" *-- "*" LancamentoLido
-    ExtratoLido "1" *-- "*" SaldoDiario
-    ExtratoLido *-- PeriodoExtrato
-    LancamentoLido *-- LancamentoExtrato
-    LancamentoExtrato *-- IdentidadeLancamento
-    ConferenciaSaldo ..> ExtratoLido : confere saldos
-    ConferenciaSomaPeriodo ..> ExtratoLido : soma os lançamentos
+    Extrato "1" *-- "*" LancamentoContabilizado
+    Extrato "1" *-- "*" SaldoDiario
+    Extrato *-- PeriodoExtrato
+    LancamentoContabilizado *-- Lancamento
+    Lancamento *-- IdentidadeLancamento
+    ConferenciaSomaPeriodo ..> Extrato : soma os lançamentos
     ConferenciaSomaPeriodo ..> Transacao : soma as gravadas e as novas
     ImportacaoExtratoFactory ..> ImportacaoExtrato : registra
     LoteTransacoesFactory ..> ImportacaoExtrato : liga as transações
-    LoteTransacoesFactory ..> LancamentoExtrato : lê
+    LoteTransacoesFactory ..> Lancamento : lê
     LoteTransacoesFactory ..> ChaveDeduplicacao : calcula pelo lote
     LoteTransacoesFactory ..> Transacao : cria
 ```
@@ -219,7 +225,6 @@ Estáticos e puros: recebem os agregados e as listas de que precisam, e quem cha
 | `ImportacaoExtratoFactory` | Registra a importação de um arquivo com o usuário e a origem da própria conta ou do próprio cartão. |
 | `GeracaoDespesasDoMesService` | Gera as despesas de um mês a partir das recorrentes: `DespesaSimples` com pagamento imediato, ou `DespesaAdiada` com pagamento no vencimento do cartão. |
 | `LoteTransacoesFactory` | Confere que a origem é do usuário, que a importação é da mesma origem e que nenhum id de banco se repete no lote; calcula as chaves e cria as transações ligadas à importação. |
-| `ConferenciaSaldo` | Confere que os lançamentos de cada dia contábil levam o saldo do dia anterior ao saldo do dia. |
 | `ConferenciaSomaPeriodo` | Confere, antes de gravar, que as transações do período (as já gravadas e as novas) somam o mesmo que os lançamentos do extrato. A divergência é aviso. |
 
 ## Portas
@@ -241,7 +246,7 @@ Cada value object mora na pasta do agregado dono, mesmo quando outro agregado o 
 - `Cartoes`: `SufixoCartao`, `DiaVencimentoCartao`.
 - `Contas`: `SufixoConta` e o SmartEnum `TipoConta`.
 - `Despesas`: `DiaCompraRecorrente`, `Pagamento` (valor, `StatusPagamento`, datas projetada e efetiva) e os SmartEnums `FormaPagamento` e `StatusPagamento`.
-- `Importacoes`: `PeriodoExtrato`, `SaldoDiario` e o SmartEnum `FormatoExtrato`.
-- `Transacoes`: `OrigemTransacao`, `IdentidadeLancamento`, `ChaveDeduplicacao`.
+- `Importacoes`: `Extrato`, `LancamentoContabilizado`, `PeriodoExtrato`, `SaldoDiario` e o SmartEnum `FormatoExtrato`.
+- `Transacoes`: `OrigemTransacao`, `Lancamento`, `IdentidadeLancamento`, `ChaveDeduplicacao`.
 
 Em `Shared/ValueObjects` ficam só os conceitos sem dono: `Reais` (com sinal) e `ReaisPositivo` para dinheiro; `TextoObrigatorio`; `MesReferencia`, o calendário do balanço; `DiaValidoEmTodoMes`, a base dos dias de 1 a 28 que o `MesReferencia` aceita; e o SmartEnum `Banco` (código COMPE).
