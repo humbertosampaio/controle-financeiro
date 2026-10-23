@@ -21,7 +21,7 @@ public static class LoteTransacoesFactory
         IdUsuario idUsuario,
         ContaBancaria conta,
         ImportacaoExtrato importacao,
-        IReadOnlyList<LancamentoExtrato> lancamentos)
+        IReadOnlyList<Lancamento> lancamentos)
     {
         return Criar(idUsuario, conta.IdUsuario, conta.Banco, OrigemTransacao.DaConta(conta.Id), importacao, lancamentos);
     }
@@ -32,7 +32,7 @@ public static class LoteTransacoesFactory
         IdUsuario idUsuario,
         Cartao cartao,
         ImportacaoExtrato importacao,
-        IReadOnlyList<LancamentoExtrato> lancamentos)
+        IReadOnlyList<Lancamento> lancamentos)
     {
         return Criar(idUsuario, cartao.IdUsuario, cartao.Banco, OrigemTransacao.DoCartao(cartao.Id), importacao, lancamentos);
     }
@@ -43,7 +43,7 @@ public static class LoteTransacoesFactory
         Banco banco,
         OrigemTransacao origem,
         ImportacaoExtrato importacao,
-        IReadOnlyList<LancamentoExtrato> lancamentos)
+        IReadOnlyList<Lancamento> lancamentos)
     {
         if (donoDaOrigem != idUsuario)
             return ErroOrigemNaoPertenceAoUsuario.Instancia;

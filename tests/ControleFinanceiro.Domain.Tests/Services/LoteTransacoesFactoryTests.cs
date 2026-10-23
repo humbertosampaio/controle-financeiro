@@ -20,8 +20,8 @@ public sealed class LoteTransacoesFactoryTests
         [Frozen] ContaBancaria conta,
         ImportacaoExtrato importacao,
         OrigemTransacao origem,
-        LancamentoExtrato primeiro,
-        LancamentoExtrato segundo)
+        Lancamento primeiro,
+        Lancamento segundo)
     {
         Result<IReadOnlyList<Transacao>, Erro> result = LoteTransacoesFactory.Criar(idUsuario, conta, importacao, [primeiro, segundo]);
 
@@ -37,7 +37,7 @@ public sealed class LoteTransacoesFactoryTests
         [Frozen] IdUsuario idUsuario,
         [Frozen] ContaBancaria conta,
         ImportacaoExtrato importacao,
-        LancamentoExtrato lancamento)
+        Lancamento lancamento)
     {
         Result<IReadOnlyList<Transacao>, Erro> result = LoteTransacoesFactory.Criar(idUsuario, conta, importacao, [lancamento]);
 
@@ -54,8 +54,8 @@ public sealed class LoteTransacoesFactoryTests
         [Frozen] IdUsuario idUsuario,
         [Frozen] ContaBancaria conta,
         ImportacaoExtrato importacao,
-        LancamentoExtrato primeiro,
-        LancamentoExtrato segundo)
+        Lancamento primeiro,
+        Lancamento segundo)
     {
         Result<IReadOnlyList<Transacao>, Erro> result = LoteTransacoesFactory.Criar(idUsuario, conta, importacao, [primeiro, segundo]);
 
@@ -71,7 +71,7 @@ public sealed class LoteTransacoesFactoryTests
         [Frozen] IdUsuario idUsuario,
         [Frozen] ContaBancaria conta,
         ImportacaoExtrato importacao,
-        LancamentoExtrato lancamento)
+        Lancamento lancamento)
     {
         Result<IReadOnlyList<Transacao>, Erro> result = LoteTransacoesFactory.Criar(idUsuario, conta, importacao, [lancamento]);
 
@@ -85,7 +85,7 @@ public sealed class LoteTransacoesFactoryTests
         [Frozen] IdUsuario idUsuario,
         [Frozen] Cartao cartao,
         ImportacaoExtrato importacao,
-        LancamentoExtrato lancamento)
+        Lancamento lancamento)
     {
         OrigemTransacao origem = OrigemTransacao.DoCartao(cartao.Id);
 
@@ -101,7 +101,7 @@ public sealed class LoteTransacoesFactoryTests
         [Frozen] IdUsuario idUsuario,
         [Frozen] ContaBancaria conta,
         ImportacaoExtrato importacao,
-        LancamentoExtrato lancamento)
+        Lancamento lancamento)
     {
         Result<IReadOnlyList<Transacao>, Erro> result = LoteTransacoesFactory.Criar(idUsuario, conta, importacao, [lancamento, lancamento]);
 
@@ -114,7 +114,7 @@ public sealed class LoteTransacoesFactoryTests
         IdUsuario idUsuario,
         [Frozen] ContaBancaria contaDeOutroUsuario,
         ImportacaoExtrato importacao,
-        LancamentoExtrato lancamento)
+        Lancamento lancamento)
     {
         Result<IReadOnlyList<Transacao>, Erro> result = LoteTransacoesFactory.Criar(idUsuario, contaDeOutroUsuario, importacao, [lancamento]);
 
@@ -126,7 +126,7 @@ public sealed class LoteTransacoesFactoryTests
         IdUsuario idUsuario,
         [Frozen] Cartao cartaoDeOutroUsuario,
         ImportacaoExtrato importacao,
-        LancamentoExtrato lancamento)
+        Lancamento lancamento)
     {
         Result<IReadOnlyList<Transacao>, Erro> result = LoteTransacoesFactory.Criar(idUsuario, cartaoDeOutroUsuario, importacao, [lancamento]);
 
@@ -138,7 +138,7 @@ public sealed class LoteTransacoesFactoryTests
         [Frozen] IdUsuario idUsuario,
         ContaBancaria conta,
         ImportacaoExtrato importacaoDeOutraConta,
-        LancamentoExtrato lancamento)
+        Lancamento lancamento)
     {
         Action criar = () => LoteTransacoesFactory.Criar(idUsuario, conta, importacaoDeOutraConta, [lancamento]);
 
@@ -155,10 +155,10 @@ public sealed class LoteTransacoesFactoryTests
         Reais valor1,
         Reais valor2,
         TextoObrigatorio descricao,
-        LancamentoExtrato outro)
+        Lancamento outro)
     {
-        LancamentoExtrato primeiro = LancamentoExtrato.Criar(data, hora: null, valor1, descricao, contraparte: null, identidade);
-        LancamentoExtrato segundo = LancamentoExtrato.Criar(data, hora: null, valor2, descricao, contraparte: null, identidade);
+        Lancamento primeiro = Lancamento.Criar(data, hora: null, valor1, descricao, contraparte: null, identidade);
+        Lancamento segundo = Lancamento.Criar(data, hora: null, valor2, descricao, contraparte: null, identidade);
 
         Result<IReadOnlyList<Transacao>, Erro> result = LoteTransacoesFactory.Criar(idUsuario, conta, importacao, [outro, primeiro, outro, segundo]);
 

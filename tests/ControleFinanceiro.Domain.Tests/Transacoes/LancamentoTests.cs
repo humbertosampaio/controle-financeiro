@@ -4,7 +4,7 @@ using ControleFinanceiro.Tests.Shared.AutoFixture.Attributes;
 
 namespace ControleFinanceiro.Domain.Tests.Transacoes;
 
-public sealed class LancamentoExtratoTests
+public sealed class LancamentoTests
 {
     [Theory]
     [InlineDomainAutoData(null)]
@@ -17,7 +17,7 @@ public sealed class LancamentoExtratoTests
         TextoObrigatorio descricao,
         IdentidadeLancamento identidade)
     {
-        LancamentoExtrato result = LancamentoExtrato.Criar(data, hora: null, valor, descricao, contraparte, identidade);
+        Lancamento result = Lancamento.Criar(data, hora: null, valor, descricao, contraparte, identidade);
 
         result.Contraparte.Should().BeNull();
     }
@@ -30,7 +30,7 @@ public sealed class LancamentoExtratoTests
         string contraparte,
         IdentidadeLancamento identidade)
     {
-        LancamentoExtrato result = LancamentoExtrato.Criar(data, hora: null, valor, descricao, $" {contraparte} ", identidade);
+        Lancamento result = Lancamento.Criar(data, hora: null, valor, descricao, $" {contraparte} ", identidade);
 
         result.Contraparte.Should().Be(contraparte);
     }

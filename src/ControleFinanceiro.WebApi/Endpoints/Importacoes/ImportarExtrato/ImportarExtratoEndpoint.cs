@@ -76,7 +76,7 @@ public sealed class ImportarExtratoEndpoint : Endpoint<ImportarExtratoRequest, I
                 falha => EnviarFalhaAsync(falha, ct));
     }
 
-    private async Task<Result<ExtratoLido, Falha>> LerAsync(FormatoExtrato formato, IFormFile arquivo, CancellationToken ct)
+    private async Task<Result<Extrato, Falha>> LerAsync(FormatoExtrato formato, IFormFile arquivo, CancellationToken ct)
     {
         ILeitorExtrato leitor = _leitores.Single(l => l.Formato == formato);
         await using Stream conteudo = arquivo.OpenReadStream();
@@ -86,7 +86,7 @@ public sealed class ImportarExtratoEndpoint : Endpoint<ImportarExtratoRequest, I
             .MapError(Falha.ArquivoInvalido);
     }
 
-    private static Result<ExtratoLido, Falha> ConferirSaldo(ExtratoLido extrato)
+    private static Result<Extrato, Falha> ConferirSaldo(Extrato extrato)
     {
         return ConferenciaSaldo.Conferir(extrato)
             .Map(() => extrato)
@@ -100,7 +100,7 @@ public sealed class ImportarExtratoEndpoint : Endpoint<ImportarExtratoRequest, I
     private async Task<Result<ImportarExtratoResponse, Falha>> ImportarAsync(
         IdUsuario idUsuario,
         FormatoExtrato formato,
-        ExtratoLido extrato,
+        Extrato extrato,
         CancellationToken ct)
     {
         IReadOnlyList<ContaBancaria> contasDoUsuario = await _contaRepository.ListarDoUsuarioAsync(idUsuario, ct);
@@ -114,7 +114,7 @@ public sealed class ImportarExtratoEndpoint : Endpoint<ImportarExtratoRequest, I
                     conta,
                     formato,
                     extrato.Periodo,
-                    extrato.LancamentosLidos.Count,
+                    extrato.LancamentosContabilizados.Count,
                     _timeProvider.GetUtcNow());
 
                 return LoteTransacoesFactory
@@ -125,7 +125,7 @@ public sealed class ImportarExtratoEndpoint : Endpoint<ImportarExtratoRequest, I
     }
 
     private async Task<ImportarExtratoResponse> GravarAsync(
-        ExtratoLido extrato,
+        Extrato extrato,
         IReadOnlyList<ContaBancaria> contasDoUsuario,
         ContaBancaria conta,
         ImportacaoExtrato importacao,

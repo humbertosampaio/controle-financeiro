@@ -15,5 +15,5 @@ public interface ILeitorExtrato
     /// Lê o arquivo inteiro. Falha quando ele não está no layout do <see cref="Formato"/>; a mensagem cita
     /// no máximo o número da linha, e nunca o conteúdo do arquivo.
     /// </summary>
-    Task<Result<ExtratoLido>> LerAsync(Stream arquivo, CancellationToken cancellationToken);
+    Task<Result<Extrato>> LerAsync(Stream arquivo, CancellationToken cancellationToken);
 }

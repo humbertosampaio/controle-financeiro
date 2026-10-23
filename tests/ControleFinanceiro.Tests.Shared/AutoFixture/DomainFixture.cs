@@ -24,7 +24,7 @@ public class DomainFixture : Fixture
             .Customize(new CartaoCustomization())
             .Customize(new ContaBancariaCustomization())
             .Customize(new DespesaRecorrenteCustomization())
-            .Customize(new LancamentoExtratoCustomization())
+            .Customize(new LancamentoCustomization())
             .Customize(new IdentidadeLancamentoCustomization())
             .Customize(new OrigemTransacaoCustomization())
             .Customize(new PeriodoExtratoCustomization())

@@ -40,7 +40,7 @@ public sealed partial class LeitorExtratoContaC6 : ILeitorExtrato
 
     public FormatoExtrato Formato => FormatoExtrato.C6ContaCsv;
 
-    public async Task<Result<ExtratoLido>> LerAsync(Stream arquivo, CancellationToken cancellationToken)
+    public async Task<Result<Extrato>> LerAsync(Stream arquivo, CancellationToken cancellationToken)
     {
         using StreamReader leitor = new(arquivo, Encoding.UTF8, detectEncodingFromByteOrderMarks: true, leaveOpen: true);
 
@@ -49,18 +49,18 @@ public sealed partial class LeitorExtratoContaC6 : ILeitorExtrato
         {
             string? linha = await leitor.ReadLineAsync(cancellationToken);
             if (linha is null)
-                return Result.Failure<ExtratoLido>("O arquivo termina antes das colunas do extrato da conta do C6.");
+                return Result.Failure<Extrato>("O arquivo termina antes das colunas do extrato da conta do C6.");
 
             linhasAntesDasColunas.Add(linha);
         }
 
         Result<SufixoConta> sufixo = LerSufixoConta(linhasAntesDasColunas);
         if (sufixo.IsFailure)
-            return Result.Failure<ExtratoLido>(sufixo.Error);
+            return Result.Failure<Extrato>(sufixo.Error);
 
         Result<PeriodoExtrato> periodo = LerPeriodo(linhasAntesDasColunas);
         if (periodo.IsFailure)
-            return Result.Failure<ExtratoLido>(periodo.Error);
+            return Result.Failure<Extrato>(periodo.Error);
 
         using CsvReader csv = new(leitor, _configuracao);
         csv.Context.RegisterClassMap<LinhaExtratoC6Map>();
@@ -68,18 +68,18 @@ public sealed partial class LeitorExtratoContaC6 : ILeitorExtrato
         try
         {
             if (!await csv.ReadAsync())
-                return Result.Failure<ExtratoLido>("O arquivo termina antes das colunas do extrato da conta do C6.");
+                return Result.Failure<Extrato>("O arquivo termina antes das colunas do extrato da conta do C6.");
 
             csv.ReadHeader();
             csv.ValidateHeader<LinhaExtratoC6>();
         }
         catch (CsvHelperException)
         {
-            return Result.Failure<ExtratoLido>(
+            return Result.Failure<Extrato>(
                 $"A linha {LinhasAntesDasColunas + 1} do arquivo não traz as colunas do extrato da conta do C6.");
         }
 
-        List<LancamentoLido> lancamentos = [];
+        List<LancamentoContabilizado> lancamentos = [];
         List<SaldoDiario> saldos = [];
 
         while (true)
@@ -96,12 +96,12 @@ public sealed partial class LeitorExtratoContaC6 : ILeitorExtrato
             }
             catch (CsvHelperException)
             {
-                return Result.Failure<ExtratoLido>($"A linha {NumeroDaLinha(csv)} do arquivo não está no layout do extrato da conta do C6.");
+                return Result.Failure<Extrato>($"A linha {NumeroDaLinha(csv)} do arquivo não está no layout do extrato da conta do C6.");
             }
 
-            Result<LancamentoLido> lancamento = Converter(linha);
+            Result<LancamentoContabilizado> lancamento = Converter(linha);
             if (lancamento.IsFailure)
-                return Result.Failure<ExtratoLido>($"A linha {NumeroDaLinha(csv)} do arquivo {lancamento.Error}");
+                return Result.Failure<Extrato>($"A linha {NumeroDaLinha(csv)} do arquivo {lancamento.Error}");
 
             lancamentos.Add(lancamento.Value);
             saldos.Add(SaldoDiario.Criar(linha.DataContabil, linha.SaldoDoDia));
@@ -109,7 +109,7 @@ public sealed partial class LeitorExtratoContaC6 : ILeitorExtrato
 
         // Um saldo por dia contábil: o C6 repete o saldo em toda linha do dia. Se as linhas de um dia
         // trouxerem saldos diferentes, os dois ficam, e a conferência de saldo aponta o dia.
-        return ExtratoLido.Criar(Banco.C6, TipoConta.ContaCorrente, sufixo.Value, periodo.Value, lancamentos, saldos.Distinct());
+        return Extrato.Criar(Banco.C6, TipoConta.ContaCorrente, sufixo.Value, periodo.Value, lancamentos, saldos.Distinct());
     }
 
     private static Result<SufixoConta> LerSufixoConta(IEnumerable<string> linhas)
@@ -155,13 +155,13 @@ public sealed partial class LeitorExtratoContaC6 : ILeitorExtrato
 
     /// <param name="linha">A linha já lida, com as colunas cruas.</param>
     /// <returns>Na falha, o fim da frase que começa com "A linha N do arquivo".</returns>
-    private static Result<LancamentoLido> Converter(LinhaExtratoC6 linha)
+    private static Result<LancamentoContabilizado> Converter(LinhaExtratoC6 linha)
     {
         if (linha.Entrada != 0m && linha.Saida != 0m)
-            return Result.Failure<LancamentoLido>("tem entrada e saída no mesmo lançamento.");
+            return Result.Failure<LancamentoContabilizado>("tem entrada e saída no mesmo lançamento.");
 
         if (string.IsNullOrWhiteSpace(linha.Titulo))
-            return Result.Failure<LancamentoLido>("não tem título.");
+            return Result.Failure<LancamentoContabilizado>("não tem título.");
 
         Reais valor = linha.Entrada - linha.Saida;
         (TextoObrigatorio descricao, string? contraparte) = DescricaoEContraparte(linha.Titulo, linha.Descricao);
@@ -172,10 +172,10 @@ public sealed partial class LeitorExtratoContaC6 : ILeitorExtrato
             .ComTexto(linha.Titulo)
             .ComTexto(linha.Descricao);
 
-        LancamentoExtrato lancamento = LancamentoExtrato.Criar(
+        Lancamento lancamento = Lancamento.Criar(
             linha.DataLancamento, hora: null, valor, descricao, contraparte, identidade);
 
-        return LancamentoLido.Criar(lancamento, linha.DataContabil);
+        return LancamentoContabilizado.Criar(lancamento, linha.DataContabil);
     }
 
     /// <summary>

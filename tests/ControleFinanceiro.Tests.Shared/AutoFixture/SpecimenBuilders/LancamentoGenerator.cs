@@ -5,14 +5,14 @@ using ControleFinanceiro.Domain.Transacoes;
 namespace ControleFinanceiro.Tests.Shared.AutoFixture.SpecimenBuilders;
 
 /// <summary>
-/// Monta o <see cref="LancamentoExtrato"/> com a identidade composta pelos próprios campos, como num layout
+/// Monta o <see cref="Lancamento"/> com a identidade composta pelos próprios campos, como num layout
 /// sem id externo: dois lançamentos com os mesmos campos têm a mesma identidade.
 /// </summary>
-public sealed class LancamentoExtratoGenerator : ISpecimenBuilder
+public sealed class LancamentoGenerator : ISpecimenBuilder
 {
     public object Create(object request, ISpecimenContext context)
     {
-        if (request is not Type t || t != typeof(LancamentoExtrato))
+        if (request is not Type t || t != typeof(Lancamento))
             return new NoSpecimen();
 
         DateOnly data = context.Create<DateOnly>();
@@ -27,6 +27,6 @@ public sealed class LancamentoExtratoGenerator : ISpecimenBuilder
             .ComTexto(descricao)
             .ComTexto(contraparte);
 
-        return LancamentoExtrato.Criar(data, hora, valor, descricao, contraparte, identidade);
+        return Lancamento.Criar(data, hora, valor, descricao, contraparte, identidade);
     }
 }

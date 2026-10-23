@@ -9,42 +9,42 @@ namespace ControleFinanceiro.Domain.Importacoes;
 /// o saldo de cada dia contábil. Da conta, só o banco, o tipo e o sufixo: o número completo, a agência e o
 /// titular não saem do leitor.
 /// </summary>
-public sealed class ExtratoLido
+public sealed class Extrato
 {
     public Banco Banco { get; }
     public TipoConta TipoConta { get; }
     public SufixoConta SufixoConta { get; }
     public PeriodoExtrato Periodo { get; }
-    public IReadOnlyList<LancamentoLido> LancamentosLidos { get; }
+    public IReadOnlyList<LancamentoContabilizado> LancamentosContabilizados { get; }
     public IReadOnlyList<SaldoDiario> Saldos { get; }
 
     /// <summary>Os lançamentos na ordem do arquivo, como a <see cref="Services.LoteTransacoesFactory"/> os recebe.</summary>
-    public IReadOnlyList<LancamentoExtrato> Lancamentos => LancamentosLidos.Select(l => l.Lancamento).ToList();
+    public IReadOnlyList<Lancamento> Lancamentos => LancamentosContabilizados.Select(l => l.Lancamento).ToList();
 
-    private ExtratoLido(
+    private Extrato(
         Banco banco,
         TipoConta tipoConta,
         SufixoConta sufixoConta,
         PeriodoExtrato periodo,
-        IReadOnlyList<LancamentoLido> lancamentosLidos,
+        IReadOnlyList<LancamentoContabilizado> lancamentosContabilizados,
         IReadOnlyList<SaldoDiario> saldos)
     {
         Banco = banco;
         TipoConta = tipoConta;
         SufixoConta = sufixoConta;
         Periodo = periodo;
-        LancamentosLidos = lancamentosLidos;
+        LancamentosContabilizados = lancamentosContabilizados;
         Saldos = saldos;
     }
 
-    public static ExtratoLido Criar(
+    public static Extrato Criar(
         Banco banco,
         TipoConta tipoConta,
         SufixoConta sufixoConta,
         PeriodoExtrato periodo,
-        IEnumerable<LancamentoLido> lancamentosLidos,
+        IEnumerable<LancamentoContabilizado> lancamentosContabilizados,
         IEnumerable<SaldoDiario> saldos)
     {
-        return new(banco, tipoConta, sufixoConta, periodo, lancamentosLidos.ToList(), saldos.ToList());
+        return new(banco, tipoConta, sufixoConta, periodo, lancamentosContabilizados.ToList(), saldos.ToList());
     }
 }

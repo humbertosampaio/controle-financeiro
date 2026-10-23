@@ -20,7 +20,7 @@ namespace ControleFinanceiro.Domain.Importacoes;
 /// </remarks>
 public static class ConferenciaSaldo
 {
-    public static Result Conferir(ExtratoLido extrato)
+    public static Result Conferir(Extrato extrato)
     {
         List<DateOnly> diasComSaldoRepetido = extrato.Saldos
             .GroupBy(s => s.DataContabil)
@@ -36,7 +36,7 @@ public static class ConferenciaSaldo
         }
 
         Dictionary<DateOnly, Reais> saldos = extrato.Saldos.ToDictionary(s => s.DataContabil, s => s.Saldo);
-        Dictionary<DateOnly, Reais> somas = extrato.LancamentosLidos
+        Dictionary<DateOnly, Reais> somas = extrato.LancamentosContabilizados
             .GroupBy(l => l.DataContabil)
             .ToDictionary(g => g.Key, g => (Reais)g.Sum(l => l.Lancamento.Valor));
 
