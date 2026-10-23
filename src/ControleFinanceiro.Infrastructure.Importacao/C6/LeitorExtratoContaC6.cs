@@ -8,6 +8,9 @@ using CsvHelper.Configuration;
 using System.Globalization;
 using System.Text;
 using System.Text.RegularExpressions;
+using ContaEPeriodo = (ControleFinanceiro.Domain.Contas.SufixoConta Sufixo, ControleFinanceiro.Domain.Importacoes.PeriodoExtrato Periodo);
+using DatasDoPeriodo = (System.DateOnly Inicio, System.DateOnly Fim);
+using LancamentoComSaldo = (ControleFinanceiro.Domain.Importacoes.LancamentoContabilizado Lancamento, ControleFinanceiro.Domain.Importacoes.SaldoDiario Saldo);
 
 namespace ControleFinanceiro.Infrastructure.Importacao.C6;
 
@@ -40,129 +43,180 @@ public sealed partial class LeitorExtratoContaC6 : ILeitorExtrato
 
     public FormatoExtrato Formato => FormatoExtrato.C6ContaCsv;
 
+    /// <summary>
+    /// Lê o cabeçalho, tira dele a conta e o período, e depois lê os lançamentos e monta o extrato.
+    /// </summary>
     public async Task<Result<Extrato>> LerAsync(Stream arquivo, CancellationToken cancellationToken)
     {
         using StreamReader leitor = new(arquivo, Encoding.UTF8, detectEncodingFromByteOrderMarks: true, leaveOpen: true);
 
-        List<string> linhasAntesDasColunas = [];
+        return await LerCabecalhoAsync(leitor, cancellationToken)
+            .Bind(LerContaEPeriodo)
+            .Bind(contaEPeriodo => LerExtratoAsync(leitor, contaEPeriodo.Sufixo, contaEPeriodo.Periodo, cancellationToken));
+    }
+
+    private static async Task<Result<IReadOnlyList<string>>> LerCabecalhoAsync(StreamReader leitor, CancellationToken cancellationToken)
+    {
+        List<string> linhas = [];
         for (int i = 0; i < LinhasAntesDasColunas; i++)
         {
             string? linha = await leitor.ReadLineAsync(cancellationToken);
             if (linha is null)
-                return Result.Failure<Extrato>("O arquivo termina antes das colunas do extrato da conta do C6.");
+                return Result.Failure<IReadOnlyList<string>>("O arquivo termina antes das colunas do extrato da conta do C6.");
 
-            linhasAntesDasColunas.Add(linha);
+            linhas.Add(linha);
         }
 
-        Result<SufixoConta> sufixo = LerSufixoConta(linhasAntesDasColunas);
-        if (sufixo.IsFailure)
-            return Result.Failure<Extrato>(sufixo.Error);
+        return linhas;
+    }
 
-        Result<PeriodoExtrato> periodo = LerPeriodo(linhasAntesDasColunas);
-        if (periodo.IsFailure)
-            return Result.Failure<Extrato>(periodo.Error);
+    private static Result<ContaEPeriodo> LerContaEPeriodo(IReadOnlyList<string> cabecalho)
+    {
+        return LerSufixoConta(cabecalho)
+            .Bind(sufixo => LerPeriodo(cabecalho).Map(periodo => (sufixo, periodo)));
+    }
 
+    private static Result<SufixoConta> LerSufixoConta(IEnumerable<string> cabecalho)
+    {
+        return cabecalho
+            .Select(l => NumeroConta().Match(l))
+            .TryFirst(m => m.Success)
+            .Map(m => m.Groups["numero"].Value)
+            .ToResult("O cabeçalho do arquivo não traz a conta do extrato.")
+            // O C6 escreve o número com o dígito verificador colado. Em outro formato (o dígito separado por
+            // hífen, por exemplo), os 4 últimos caracteres não seriam o sufixo: melhor falhar que associar outra conta.
+            .Ensure(numero => NumeroContaComDigitoColado().IsMatch(numero), "O número da conta no cabeçalho do arquivo não está no formato do C6.")
+            .Ensure(numero => numero.Length >= SufixoConta.QuantidadeCaracteres, "O número da conta no cabeçalho do arquivo é curto demais.")
+            .Bind(numero => SufixoConta.Criar(numero[^SufixoConta.QuantidadeCaracteres..]));
+    }
+
+    private static Result<PeriodoExtrato> LerPeriodo(IEnumerable<string> cabecalho)
+    {
+        return cabecalho
+            .Select(l => Periodo().Match(l))
+            .TryFirst(m => m.Success)
+            .ToResult("O cabeçalho do arquivo não traz o período do extrato.")
+            .Bind(LerDatasDoPeriodo)
+            .Bind(datas => PeriodoExtrato.Criar(datas.Inicio, datas.Fim));
+    }
+
+    private static Result<DatasDoPeriodo> LerDatasDoPeriodo(Match periodo)
+    {
+        return LerDataDoPeriodo(periodo.Groups["inicio"].Value)
+            .Bind(inicio => LerDataDoPeriodo(periodo.Groups["fim"].Value).Map(fim => (inicio, fim)));
+    }
+
+    private static Result<DateOnly> LerDataDoPeriodo(string texto)
+    {
+        return Result.SuccessIf(
+            DateOnly.TryParseExact(texto, LinhaExtratoC6Map.FormatoData, CultureInfo.InvariantCulture, DateTimeStyles.None, out DateOnly data),
+            data,
+            "O período no cabeçalho do arquivo não tem datas válidas.");
+    }
+
+    private static async Task<Result<Extrato>> LerExtratoAsync(
+        StreamReader leitor,
+        SufixoConta sufixo,
+        PeriodoExtrato periodo,
+        CancellationToken cancellationToken)
+    {
+        // Um saldo por dia contábil: o C6 repete o saldo em toda linha do dia. Se as linhas de um dia trouxerem
+        // saldos diferentes, os dois ficam, e o extrato não nasce, com a falha apontando o dia.
+        return await LerLancamentosAsync(leitor, cancellationToken)
+            .Bind(lidos => Extrato.Criar(
+                Banco.C6,
+                TipoConta.ContaCorrente,
+                sufixo,
+                periodo,
+                lidos.Select(l => l.Lancamento),
+                lidos.Select(l => l.Saldo).Distinct()));
+    }
+
+    /// <summary>
+    /// Lê as colunas e depois cada lançamento, com o saldo do dia contábil dele. Para na primeira linha que
+    /// não está no layout.
+    /// </summary>
+    /// <remarks>O CSV fecha o <paramref name="leitor"/> ao terminar.</remarks>
+    private static async Task<Result<IReadOnlyList<LancamentoComSaldo>>> LerLancamentosAsync(
+        StreamReader leitor,
+        CancellationToken cancellationToken)
+    {
         using CsvReader csv = new(leitor, _configuracao);
         csv.Context.RegisterClassMap<LinhaExtratoC6Map>();
 
+        return await LerColunasAsync(csv)
+            .Bind(() => LerLinhasAsync(csv, cancellationToken));
+    }
+
+    private static async Task<Result> LerColunasAsync(CsvReader csv)
+    {
         try
         {
             if (!await csv.ReadAsync())
-                return Result.Failure<Extrato>("O arquivo termina antes das colunas do extrato da conta do C6.");
+                return Result.Failure("O arquivo termina antes das colunas do extrato da conta do C6.");
 
             csv.ReadHeader();
             csv.ValidateHeader<LinhaExtratoC6>();
+            return Result.Success();
         }
         catch (CsvHelperException)
         {
-            return Result.Failure<Extrato>(
-                $"A linha {LinhasAntesDasColunas + 1} do arquivo não traz as colunas do extrato da conta do C6.");
+            return Result.Failure($"A linha {LinhasAntesDasColunas + 1} do arquivo não traz as colunas do extrato da conta do C6.");
         }
+    }
 
-        List<LancamentoContabilizado> lancamentos = [];
-        List<SaldoDiario> saldos = [];
+    private static async Task<Result<IReadOnlyList<LancamentoComSaldo>>> LerLinhasAsync(
+        CsvReader csv,
+        CancellationToken cancellationToken)
+    {
+        List<LancamentoComSaldo> lidos = [];
 
         while (true)
         {
             cancellationToken.ThrowIfCancellationRequested();
 
-            LinhaExtratoC6 linha;
-            try
-            {
-                if (!await csv.ReadAsync())
-                    break;
+            Result<Maybe<LinhaExtratoC6>> proxima = await LerProximaLinhaAsync(csv);
+            if (proxima.IsFailure)
+                return Result.Failure<IReadOnlyList<LancamentoComSaldo>>(proxima.Error);
 
-                linha = csv.GetRecord<LinhaExtratoC6>();
-            }
-            catch (CsvHelperException)
-            {
-                return Result.Failure<Extrato>($"A linha {NumeroDaLinha(csv)} do arquivo não está no layout do extrato da conta do C6.");
-            }
+            if (proxima.Value.HasNoValue)
+                return lidos;
 
+            LinhaExtratoC6 linha = proxima.Value.Value;
             Result<LancamentoContabilizado> lancamento = Converter(linha);
             if (lancamento.IsFailure)
-                return Result.Failure<Extrato>($"A linha {NumeroDaLinha(csv)} do arquivo {lancamento.Error}");
+                return Result.Failure<IReadOnlyList<LancamentoComSaldo>>($"A linha {NumeroDaLinha(csv)} do arquivo {lancamento.Error}");
 
-            lancamentos.Add(lancamento.Value);
-            saldos.Add(SaldoDiario.Criar(linha.DataContabil, linha.SaldoDoDia));
+            lidos.Add((lancamento.Value, SaldoDiario.Criar(linha.DataContabil, linha.SaldoDoDia)));
         }
-
-        // Um saldo por dia contábil: o C6 repete o saldo em toda linha do dia. Se as linhas de um dia
-        // trouxerem saldos diferentes, os dois ficam, e o extrato não nasce, com a falha apontando o dia.
-        return Extrato.Criar(Banco.C6, TipoConta.ContaCorrente, sufixo.Value, periodo.Value, lancamentos, saldos.Distinct());
     }
 
-    private static Result<SufixoConta> LerSufixoConta(IEnumerable<string> linhas)
+    /// <returns>Vazio no fim do arquivo.</returns>
+    private static async Task<Result<Maybe<LinhaExtratoC6>>> LerProximaLinhaAsync(CsvReader csv)
     {
-        string? numeroConta = linhas
-            .Select(l => NumeroConta().Match(l))
-            .Where(m => m.Success)
-            .Select(m => m.Groups["numero"].Value)
-            .FirstOrDefault();
-
-        if (numeroConta is null)
-            return Result.Failure<SufixoConta>("O cabeçalho do arquivo não traz a conta do extrato.");
-
-        // O C6 escreve o número com o dígito verificador colado. Em outro formato (o dígito separado por
-        // hífen, por exemplo), os 4 últimos caracteres não seriam o sufixo: melhor falhar que associar outra conta.
-        if (!NumeroContaComDigitoColado().IsMatch(numeroConta))
-            return Result.Failure<SufixoConta>("O número da conta no cabeçalho do arquivo não está no formato do C6.");
-
-        return numeroConta.Length < SufixoConta.QuantidadeCaracteres
-            ? Result.Failure<SufixoConta>("O número da conta no cabeçalho do arquivo é curto demais.")
-            : SufixoConta.Criar(numeroConta[^SufixoConta.QuantidadeCaracteres..]);
-    }
-
-    private static Result<PeriodoExtrato> LerPeriodo(IEnumerable<string> linhas)
-    {
-        Match? periodo = linhas
-            .Select(l => Periodo().Match(l))
-            .FirstOrDefault(m => m.Success);
-
-        if (periodo is null)
-            return Result.Failure<PeriodoExtrato>("O cabeçalho do arquivo não traz o período do extrato.");
-
-        if (!LerData(periodo.Groups["inicio"].Value, out DateOnly inicio) || !LerData(periodo.Groups["fim"].Value, out DateOnly fim))
-            return Result.Failure<PeriodoExtrato>("O período no cabeçalho do arquivo não tem datas válidas.");
-
-        return PeriodoExtrato.Criar(inicio, fim);
-    }
-
-    private static bool LerData(string texto, out DateOnly data)
-    {
-        return DateOnly.TryParseExact(texto, LinhaExtratoC6Map.FormatoData, CultureInfo.InvariantCulture, DateTimeStyles.None, out data);
+        try
+        {
+            return await csv.ReadAsync() ? csv.GetRecord<LinhaExtratoC6>() : Maybe<LinhaExtratoC6>.None;
+        }
+        catch (CsvHelperException)
+        {
+            return Result.Failure<Maybe<LinhaExtratoC6>>($"A linha {NumeroDaLinha(csv)} do arquivo não está no layout do extrato da conta do C6.");
+        }
     }
 
     /// <param name="linha">A linha já lida, com as colunas cruas.</param>
     /// <returns>Na falha, o fim da frase que começa com "A linha N do arquivo".</returns>
     private static Result<LancamentoContabilizado> Converter(LinhaExtratoC6 linha)
     {
-        if (linha.Entrada != 0m && linha.Saida != 0m)
-            return Result.Failure<LancamentoContabilizado>("tem entrada e saída no mesmo lançamento.");
+        return Result
+            .FailureIf(linha.Entrada != 0m && linha.Saida != 0m, "tem entrada e saída no mesmo lançamento.")
+            .Ensure(() => !string.IsNullOrWhiteSpace(linha.Titulo), "não tem título.")
+            .Map(() => Contabilizar(linha));
+    }
 
-        if (string.IsNullOrWhiteSpace(linha.Titulo))
-            return Result.Failure<LancamentoContabilizado>("não tem título.");
-
+    /// <param name="linha">Com título e com só uma das colunas de valor preenchida.</param>
+    private static LancamentoContabilizado Contabilizar(LinhaExtratoC6 linha)
+    {
         Reais valor = linha.Entrada - linha.Saida;
         (TextoObrigatorio descricao, string? contraparte) = DescricaoEContraparte(linha.Titulo, linha.Descricao);
 
