@@ -24,6 +24,15 @@ public sealed class Lancamento : ValueObject
     /// <summary>Aparada; nula quando o layout não traz ou traz em branco.</summary>
     public string? Contraparte { get; }
 
+    /// <summary>Preenchida quando o layout traz a parcela; nula na compra à vista e nos layouts sem parcela.</summary>
+    public Parcela? Parcela { get; }
+
+    /// <summary>
+    /// A categoria que o banco deu à compra, aparada; nula quando o layout não traz ou traz em branco. Não entra
+    /// na <see cref="Identidade"/>.
+    /// </summary>
+    public string? CategoriaBanco { get; }
+
     /// <summary>Os campos que o layout declara para reconhecer o lançamento numa reimportação.</summary>
     public IdentidadeLancamento Identidade { get; }
 
@@ -33,6 +42,8 @@ public sealed class Lancamento : ValueObject
         Reais valor,
         TextoObrigatorio descricao,
         string? contraparte,
+        Parcela? parcela,
+        string? categoriaBanco,
         IdentidadeLancamento identidade)
     {
         Data = data;
@@ -40,6 +51,8 @@ public sealed class Lancamento : ValueObject
         Valor = valor;
         Descricao = descricao;
         Contraparte = contraparte;
+        Parcela = parcela;
+        CategoriaBanco = categoriaBanco;
         Identidade = identidade;
     }
 
@@ -49,11 +62,14 @@ public sealed class Lancamento : ValueObject
         Reais valor,
         TextoObrigatorio descricao,
         string? contraparte,
+        Parcela? parcela,
+        string? categoriaBanco,
         IdentidadeLancamento identidade)
     {
-        string? contraparteAparada = string.IsNullOrWhiteSpace(contraparte) ? null : contraparte.Trim();
-        return new Lancamento(data, hora, valor, descricao, contraparteAparada, identidade);
+        return new Lancamento(data, hora, valor, descricao, Aparar(contraparte), parcela, Aparar(categoriaBanco), identidade);
     }
+
+    private static string? Aparar(string? texto) => string.IsNullOrWhiteSpace(texto) ? null : texto.Trim();
 
     protected override IEnumerable<object?> GetEqualityComponents()
     {
@@ -62,6 +78,8 @@ public sealed class Lancamento : ValueObject
         yield return Valor;
         yield return Descricao;
         yield return Contraparte;
+        yield return Parcela;
+        yield return CategoriaBanco;
         yield return Identidade;
     }
 }

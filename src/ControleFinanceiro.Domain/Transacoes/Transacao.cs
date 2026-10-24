@@ -42,6 +42,13 @@ public sealed class Transacao : AggregateRoot<IdTransacao>
 
     public TextoObrigatorio Descricao { get; private set; } = null!;
     public string? Contraparte { get; private set; }
+
+    /// <summary>Preenchida quando o banco informou a parcela; nula na compra à vista e no extrato.</summary>
+    public Parcela? Parcela { get; private set; }
+
+    /// <summary>A categoria que o banco deu à compra, quando o layout traz.</summary>
+    public string? CategoriaBanco { get; private set; }
+
     public ChaveDeduplicacao Chave { get; private set; } = null!;
 
     private Transacao()
@@ -65,6 +72,8 @@ public sealed class Transacao : AggregateRoot<IdTransacao>
         Valor = lancamento.Valor;
         Descricao = lancamento.Descricao;
         Contraparte = lancamento.Contraparte;
+        Parcela = lancamento.Parcela;
+        CategoriaBanco = lancamento.CategoriaBanco;
         Chave = chave;
     }
 

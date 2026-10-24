@@ -23,6 +23,8 @@ public sealed class PeriodoArquivo : ValueObject
             "O início do período não pode ser depois do fim.");
     }
 
+    public static explicit operator PeriodoArquivo((DateOnly Inicio, DateOnly Fim) periodo) => Criar(periodo.Inicio, periodo.Fim).Value;
+
     public bool Contem(DateOnly data) => data >= Inicio && data <= Fim;
 
     protected override IEnumerable<object?> GetEqualityComponents()

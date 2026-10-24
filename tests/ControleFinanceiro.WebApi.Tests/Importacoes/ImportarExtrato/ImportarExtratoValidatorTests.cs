@@ -1,3 +1,4 @@
+using ControleFinanceiro.Domain.Importacoes;
 using ControleFinanceiro.WebApi.Endpoints.Importacoes.ImportarExtrato;
 using ControleFinanceiro.WebApi.Tests.AutoFixture;
 using FluentValidation.TestHelper;
@@ -36,6 +37,15 @@ public sealed class ImportarExtratoValidatorTests
     public void Validate_Quando_LayoutDesconhecido_Deve_RetornarErroNoLayout(string layout, ImportarExtratoRequest requisicao)
     {
         TestValidationResult<ImportarExtratoRequest> resultado = _sut.TestValidate(requisicao with { Layout = layout });
+
+        resultado.ShouldHaveValidationErrorFor(r => r.Layout);
+    }
+
+    [Theory, ApiAutoData]
+    public void Validate_Quando_LayoutDeFatura_Deve_RetornarErroNoLayout(ImportarExtratoRequest requisicao)
+    {
+        TestValidationResult<ImportarExtratoRequest> resultado = _sut.TestValidate(
+            requisicao with { Layout = LayoutArquivoImportacao.C6CartaoCsv.Value });
 
         resultado.ShouldHaveValidationErrorFor(r => r.Layout);
     }

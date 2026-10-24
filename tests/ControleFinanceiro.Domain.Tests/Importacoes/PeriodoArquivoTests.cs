@@ -29,6 +29,23 @@ public sealed class PeriodoArquivoTests
     }
 
     [Theory, DomainAutoData]
+    public void OperadorExplicito_Quando_FimNoInicioOuDepois_Deve_RetornarInstancia(DateOnly inicio)
+    {
+        PeriodoArquivo result = (PeriodoArquivo)(inicio, inicio.AddDays(1));
+
+        result.Inicio.Should().Be(inicio);
+        result.Fim.Should().Be(inicio.AddDays(1));
+    }
+
+    [Theory, DomainAutoData]
+    public void OperadorExplicito_Quando_FimAntesDoInicio_Deve_LancarExcecao(DateOnly inicio)
+    {
+        Func<PeriodoArquivo> act = () => (PeriodoArquivo)(inicio, inicio.AddDays(-1));
+
+        act.Should().ThrowExactly<ResultFailureException>();
+    }
+
+    [Theory, DomainAutoData]
     public void Contem_Quando_DataNasBordas_Deve_RetornarTrue(PeriodoArquivo sut)
     {
         sut.Contem(sut.Inicio).Should().BeTrue();

@@ -47,6 +47,8 @@ public sealed class LoteTransacoesFactoryTests
         transacao.Valor.Should().Be(lancamento.Valor);
         transacao.Descricao.Should().Be(lancamento.Descricao);
         transacao.Contraparte.Should().Be(lancamento.Contraparte);
+        transacao.Parcela.Should().Be(lancamento.Parcela);
+        transacao.CategoriaBanco.Should().Be(lancamento.CategoriaBanco);
     }
 
     [Theory, DomainAutoData]
@@ -157,8 +159,8 @@ public sealed class LoteTransacoesFactoryTests
         TextoObrigatorio descricao,
         Lancamento outro)
     {
-        Lancamento primeiro = Lancamento.Criar(data, hora: null, valor1, descricao, contraparte: null, identidade);
-        Lancamento segundo = Lancamento.Criar(data, hora: null, valor2, descricao, contraparte: null, identidade);
+        Lancamento primeiro = Lancamento.Criar(data, hora: null, valor1, descricao, contraparte: null, parcela: null, categoriaBanco: null, identidade);
+        Lancamento segundo = Lancamento.Criar(data, hora: null, valor2, descricao, contraparte: null, parcela: null, categoriaBanco: null, identidade);
 
         Result<IReadOnlyList<Transacao>, Erro> result = LoteTransacoesFactory.Criar(idUsuario, conta, importacao, [outro, primeiro, outro, segundo]);
 

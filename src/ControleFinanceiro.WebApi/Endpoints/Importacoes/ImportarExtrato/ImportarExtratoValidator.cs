@@ -17,15 +17,14 @@ public sealed class ImportarExtratoValidator : Validator<ImportarExtratoRequest>
             .MustBeId(IdUsuario.TryFrom);
 
         RuleFor(x => x.Layout)
-            .MustBeSmartEnum(LayoutArquivoImportacao.List);
+            .MustBeSmartEnum(LayoutArquivoImportacao.Extratos);
 
         RuleFor(x => x.Arquivo)
             .NotNull()
             .WithMessage("O arquivo do extrato é obrigatório.");
 
-        RuleFor(x => x.Arquivo!.Length)
-            .LessThanOrEqualTo(TamanhoMaximoArquivo)
-            .OverridePropertyName(nameof(ImportarExtratoRequest.Arquivo))
+        RuleFor(x => x.Arquivo)
+            .Must(arquivo => arquivo!.Length <= TamanhoMaximoArquivo)
             .WithMessage($"O arquivo do extrato deve ter no máximo {TamanhoMaximoArquivo / (1024 * 1024)} MB.")
             .When(x => x.Arquivo is not null);
     }

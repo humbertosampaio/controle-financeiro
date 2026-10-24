@@ -15,6 +15,11 @@ internal sealed class TransacaoConfiguration : IEntityTypeConfiguration<Transaca
         {
             tabela.HasCheckConstraint("CK_transacoes_origem", "num_nonnulls(id_conta, id_cartao) = 1");
             tabela.HasCheckConstraint("CK_transacoes_chave_deduplicacao", "chave_deduplicacao ~ '^[0-9a-f]{64}$'");
+            // O num_nulls = 0 na segunda parte não é redundante: a CHECK passa quando a expressão dá NULL, e uma parcela
+            // com só uma das colunas preenchida daria NULL sem ele.
+            tabela.HasCheckConstraint(
+                "CK_transacoes_parcela",
+                "num_nulls(parcela_numero, parcela_total) = 2 OR (num_nulls(parcela_numero, parcela_total) = 0 AND parcela_total >= 2 AND parcela_numero BETWEEN 1 AND parcela_total)");
         });
 
         entity.HasKey(t => t.Id);
@@ -66,6 +71,19 @@ internal sealed class TransacaoConfiguration : IEntityTypeConfiguration<Transaca
 
         entity.Property(t => t.Contraparte)
             .HasColumnName("contraparte");
+
+        // Complex type opcional: a compra à vista não tem parcela, e as duas colunas ficam nulas.
+        entity.ComplexProperty(t => t.Parcela, parcela =>
+        {
+            parcela.Property(p => p.Numero)
+                .HasColumnName("parcela_numero");
+
+            parcela.Property(p => p.Total)
+                .HasColumnName("parcela_total");
+        });
+
+        entity.Property(t => t.CategoriaBanco)
+            .HasColumnName("categoria_banco");
 
         entity.Property(t => t.Chave)
             .HasColumnName("chave_deduplicacao")

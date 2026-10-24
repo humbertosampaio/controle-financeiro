@@ -10,7 +10,7 @@ public static class CustomValidators
 {
     extension<T, TProperty>(IRuleBuilder<T, TProperty> ruleBuilder)
     {
-        public IRuleBuilder<T, TProperty> MustBeEntity<TEntity, TEntityId>(
+        public IRuleBuilderOptionsConditions<T, TProperty> MustBeEntity<TEntity, TEntityId>(
             Func<TProperty, Result<TEntity>> factoryMethod)
             where TEntity : Entity<TEntityId>
             where TEntityId : IComparable<TEntityId>
@@ -21,7 +21,7 @@ public static class CustomValidators
             });
         }
 
-        public IRuleBuilder<T, TProperty> MustBeValueObject<TValueObject>(
+        public IRuleBuilderOptionsConditions<T, TProperty> MustBeValueObject<TValueObject>(
             Func<TProperty, Result<TValueObject>> factoryMethod)
             where TValueObject : ValueObject
         {
@@ -34,7 +34,7 @@ public static class CustomValidators
 
     extension<T, TProperty>(IRuleBuilder<T, TProperty> ruleBuilder)
     {
-        public IRuleBuilder<T, TProperty> MustBeId<TId>(
+        public IRuleBuilderOptionsConditions<T, TProperty> MustBeId<TId>(
             Func<TProperty, ValueObjectOrError<TId>> tryFrom)
         {
             return ruleBuilder.Custom((property, context) =>
@@ -49,7 +49,7 @@ public static class CustomValidators
     extension<T, TValue>(IRuleBuilder<T, TValue> ruleBuilder)
         where TValue : IEquatable<TValue>, IComparable<TValue>
     {
-        public IRuleBuilder<T, TValue> MustBeSmartEnum<TEnum>(IEnumerable<TEnum> conhecidos)
+        public IRuleBuilderOptionsConditions<T, TValue> MustBeSmartEnum<TEnum>(IEnumerable<TEnum> conhecidos)
             where TEnum : SmartEnum<TEnum, TValue>
         {
             return ruleBuilder.Custom((property, context) =>
@@ -62,7 +62,7 @@ public static class CustomValidators
 
     extension<T>(IRuleBuilder<T, string?> ruleBuilder)
     {
-        public IRuleBuilder<T, string?> MustBeTextoObrigatorio()
+        public IRuleBuilderOptionsConditions<T, string?> MustBeTextoObrigatorio()
         {
             return ruleBuilder
                 .MustBeValueObject(property => TextoObrigatorio.Criar(property));
