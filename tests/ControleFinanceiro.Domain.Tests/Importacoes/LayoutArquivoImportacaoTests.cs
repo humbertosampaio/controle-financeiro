@@ -5,9 +5,11 @@ namespace ControleFinanceiro.Domain.Tests.Importacoes;
 public sealed class LayoutArquivoImportacaoTests
 {
     [Fact]
-    public void ExtratosEFaturas_Deve_TrazerCadaLayoutEmUmaListaSo()
+    public void Listas_Deve_TrazerCadaLayoutEmUmaListaSo()
     {
-        LayoutArquivoImportacao.Extratos.Concat(LayoutArquivoImportacao.Faturas)
+        LayoutArquivoImportacao.Extratos
+            .Concat(LayoutArquivoImportacao.ExtratosContaInformada)
+            .Concat(LayoutArquivoImportacao.Faturas)
             .Should().BeEquivalentTo(LayoutArquivoImportacao.List);
     }
 }
