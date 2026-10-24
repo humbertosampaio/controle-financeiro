@@ -83,4 +83,82 @@ public sealed class CartaoFactoryTests
 
         act.Should().ThrowExactly<ArgumentException>();
     }
+
+    [Theory, DomainAutoData]
+    public void ObterOuCriar_Quando_CartaoDoFinalNoMesmoBanco_Deve_RetornarOCartaoExistenteSemMudarOVencimento(
+        [Frozen] IdUsuario idUsuario,
+        [Frozen] Banco banco,
+        [Frozen] SufixoCartao sufixo,
+        Cartao existente,
+        DiaVencimentoCartao diaUnico)
+    {
+        DiaVencimentoCartao vencimentoOriginal = existente.DiaVencimento;
+        VencimentosCartoesNovos vencimentos = VencimentosCartoesNovos.Criar(
+            diaUnico, new Dictionary<SufixoCartao, DiaVencimentoCartao> { [sufixo] = diaUnico }).Value;
+
+        IReadOnlyList<Cartao> result = CartaoFactory.ObterOuCriar(idUsuario, [existente], banco, [sufixo], vencimentos);
+
+        result.Should().ContainSingle().Which.Should().BeSameAs(existente);
+        existente.DiaVencimento.Should().Be(vencimentoOriginal);
+    }
+
+    [Theory, DomainAutoData]
+    public void ObterOuCriar_Quando_FinalSemCartao_Deve_CriarOCartaoComOVencimentoDoFinal(
+        IdUsuario idUsuario,
+        Banco banco,
+        SufixoCartao sufixo,
+        [Frozen] DiaVencimentoCartao diaVencimento,
+        VencimentosCartoesNovos vencimentos)
+    {
+        IReadOnlyList<Cartao> result = CartaoFactory.ObterOuCriar(idUsuario, cartoesDoUsuario: [], banco, [sufixo], vencimentos);
+
+        Cartao cartao = result.Should().ContainSingle().Subject;
+        cartao.IdUsuario.Should().Be(idUsuario);
+        cartao.Banco.Should().Be(banco);
+        cartao.Sufixo.Should().Be(sufixo);
+        cartao.DiaVencimento.Should().Be(diaVencimento);
+    }
+
+    [Theory, DomainAutoData]
+    public void ObterOuCriar_Quando_MesmoFinalEmOutroBanco_Deve_CriarUmCartaoNovo(
+        [Frozen] IdUsuario idUsuario,
+        [Frozen] SufixoCartao sufixo,
+        Cartao existente,
+        VencimentosCartoesNovos vencimentos)
+    {
+        Banco outroBanco = Banco.List.First(b => b != existente.Banco);
+
+        IReadOnlyList<Cartao> result = CartaoFactory.ObterOuCriar(idUsuario, [existente], outroBanco, [sufixo], vencimentos);
+
+        Cartao cartao = result.Should().ContainSingle().Subject;
+        cartao.Should().NotBe(existente);
+        cartao.Banco.Should().Be(outroBanco);
+    }
+
+    [Theory, DomainAutoData]
+    public void ObterOuCriar_Quando_FinalRepetido_Deve_DevolverUmCartaoPorFinalNaOrdemDosFinais(
+        IdUsuario idUsuario,
+        Banco banco,
+        SufixoCartao primeiro,
+        SufixoCartao segundo,
+        VencimentosCartoesNovos vencimentos)
+    {
+        IReadOnlyList<Cartao> result = CartaoFactory.ObterOuCriar(
+            idUsuario, cartoesDoUsuario: [], banco, [primeiro, segundo, primeiro], vencimentos);
+
+        result.Select(c => c.Sufixo).Should().Equal(primeiro, segundo);
+    }
+
+    [Theory, DomainAutoData]
+    public void ObterOuCriar_Quando_ListaComCartaoDeOutroUsuario_Deve_LancarExcecao(
+        IdUsuario idUsuario,
+        Cartao cartaoDeOutroUsuario,
+        Banco banco,
+        SufixoCartao sufixo,
+        VencimentosCartoesNovos vencimentos)
+    {
+        Action act = () => CartaoFactory.ObterOuCriar(idUsuario, [cartaoDeOutroUsuario], banco, [sufixo], vencimentos);
+
+        act.Should().ThrowExactly<ArgumentException>();
+    }
 }
