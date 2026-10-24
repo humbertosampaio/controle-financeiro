@@ -227,7 +227,7 @@ public sealed partial class LeitorExtratoContaC6 : ILeitorExtrato
             .ComTexto(linha.Descricao);
 
         Lancamento lancamento = Lancamento.Criar(
-            linha.DataLancamento, hora: null, valor, descricao, contraparte, identidade);
+            linha.DataLancamento, hora: null, valor, descricao, contraparte, parcela: null, categoriaBanco: null, identidade);
 
         return LancamentoContabilizado.Criar(lancamento, linha.DataContabil);
     }

@@ -63,7 +63,7 @@ public sealed class ConferenciaSomaPeriodoTests
     {
         DateOnly depoisDoFim = periodo.Fim.AddDays(1);
         Lancamento foraDoPeriodo = Lancamento.Criar(
-            depoisDoFim, hora: null, valor, descricao, contraparte: null, IdentidadeLancamento.Composta(depoisDoFim).ComValor(valor).ComTexto(descricao));
+            depoisDoFim, hora: null, valor, descricao, contraparte: null, parcela: null, categoriaBanco: null, IdentidadeLancamento.Composta(depoisDoFim).ComValor(valor).ComTexto(descricao));
         Extrato extrato = Extrato.Criar(
             arquivo.Banco,
             arquivo.TipoConta,
@@ -111,7 +111,7 @@ public sealed class ConferenciaSomaPeriodoTests
         private static Lancamento NoInicio(PeriodoArquivo periodo, Reais valor, TextoObrigatorio descricao)
         {
             IdentidadeLancamento identidade = IdentidadeLancamento.Composta(periodo.Inicio).ComValor(valor).ComTexto(descricao);
-            return Lancamento.Criar(periodo.Inicio, hora: null, valor, descricao, contraparte: null, identidade);
+            return Lancamento.Criar(periodo.Inicio, hora: null, valor, descricao, contraparte: null, parcela: null, categoriaBanco: null, identidade);
         }
     }
 }

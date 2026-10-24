@@ -81,6 +81,32 @@ public sealed class IdentidadeLancamentoTests
     }
 
     [Fact]
+    public void ComParcela_Deve_FormatarComoNumeroBarraTotal()
+    {
+        IdentidadeLancamento result = IdentidadeLancamento.Composta(_dia).ComParcela((Parcela)(3, 10));
+
+        result.Campos[^1].Should().Be("3/10");
+    }
+
+    [Theory, DomainAutoData]
+    public void ComParcela_Quando_SemParcela_Deve_AdicionarCampoVazio(DateOnly data)
+    {
+        IdentidadeLancamento result = IdentidadeLancamento.Composta(data).ComParcela(null);
+
+        result.Campos[^1].Should().BeEmpty();
+    }
+
+    [Theory, DomainAutoData]
+    public void Equals_Quando_ParcelasDiferentes_Deve_SerDiferente(DateOnly data, Reais valor)
+    {
+        IdentidadeLancamento terceira = IdentidadeLancamento.Composta(data).ComValor(valor).ComParcela((Parcela)(3, 10));
+
+        IdentidadeLancamento quarta = IdentidadeLancamento.Composta(data).ComValor(valor).ComParcela((Parcela)(4, 10));
+
+        quarta.Should().NotBe(terceira);
+    }
+
+    [Fact]
     public void Unica_Deve_ManterOIdComoOBancoEscreveuSoAparado()
     {
         Result<IdentidadeLancamento> result = IdentidadeLancamento.Unica(" aB-123 ");

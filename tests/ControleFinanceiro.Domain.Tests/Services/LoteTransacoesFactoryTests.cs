@@ -157,8 +157,8 @@ public sealed class LoteTransacoesFactoryTests
         TextoObrigatorio descricao,
         Lancamento outro)
     {
-        Lancamento primeiro = Lancamento.Criar(data, hora: null, valor1, descricao, contraparte: null, identidade);
-        Lancamento segundo = Lancamento.Criar(data, hora: null, valor2, descricao, contraparte: null, identidade);
+        Lancamento primeiro = Lancamento.Criar(data, hora: null, valor1, descricao, contraparte: null, parcela: null, categoriaBanco: null, identidade);
+        Lancamento segundo = Lancamento.Criar(data, hora: null, valor2, descricao, contraparte: null, parcela: null, categoriaBanco: null, identidade);
 
         Result<IReadOnlyList<Transacao>, Erro> result = LoteTransacoesFactory.Criar(idUsuario, conta, importacao, [outro, primeiro, outro, segundo]);
 

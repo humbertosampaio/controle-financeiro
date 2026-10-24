@@ -79,6 +79,16 @@ public sealed partial class IdentidadeLancamento : ValueObject
         return Com(campo);
     }
 
+    /// <summary>Parcela como <c>n/m</c>; vazia quando o lançamento não tem parcela.</summary>
+    public IdentidadeLancamento ComParcela(Parcela? parcela)
+    {
+        string campo = parcela is null
+            ? string.Empty
+            : string.Create(CultureInfo.InvariantCulture, $"{parcela.Numero}/{parcela.Total}");
+
+        return Com(campo);
+    }
+
     private IdentidadeLancamento Com(string campo)
     {
         if (EhUnica)
