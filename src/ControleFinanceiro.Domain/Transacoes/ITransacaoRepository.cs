@@ -13,5 +13,5 @@ public interface ITransacaoRepository
     /// <summary>
     /// As transações da origem gravadas no banco de dados com a data dentro do período.
     /// </summary>
-    Task<IReadOnlyList<Transacao>> ListarNoPeriodoAsync(OrigemTransacao origem, PeriodoExtrato periodo, CancellationToken cancellationToken);
+    Task<IReadOnlyList<Transacao>> ListarNoPeriodoAsync(OrigemTransacao origem, PeriodoArquivo periodo, CancellationToken cancellationToken);
 }

@@ -6,20 +6,20 @@ using ControleFinanceiro.Domain.Services;
 namespace ControleFinanceiro.Tests.Shared.AutoFixture.SpecimenBuilders;
 
 /// <summary>
-/// Monta a <see cref="ImportacaoExtrato"/> pela <see cref="ImportacaoExtratoFactory"/>, a única entrada, a
+/// Monta a <see cref="ImportacaoArquivo"/> pela <see cref="ImportacaoArquivoFactory"/>, a única entrada, a
 /// partir de uma conta. Com <c>[Frozen] ContaBancaria</c> no teste, a importação sai dessa conta.
 /// </summary>
-public sealed class ImportacaoExtratoGenerator : ISpecimenBuilder
+public sealed class ImportacaoArquivoGenerator : ISpecimenBuilder
 {
     public object Create(object request, ISpecimenContext context)
     {
-        if (request is not Type t || t != typeof(ImportacaoExtrato))
+        if (request is not Type t || t != typeof(ImportacaoArquivo))
             return new NoSpecimen();
 
-        return ImportacaoExtratoFactory.Registrar(
+        return ImportacaoArquivoFactory.Registrar(
             context.Create<ContaBancaria>(),
-            context.Create<FormatoExtrato>(),
-            context.Create<PeriodoExtrato>(),
+            context.Create<LayoutArquivoImportacao>(),
+            context.Create<PeriodoArquivo>(),
             context.Create<byte>(),
             context.Create<DateTimeOffset>());
     }

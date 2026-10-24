@@ -56,10 +56,10 @@ public sealed class ImportarExtratoEndpointTests : IAsyncLifetime
         conta.Tipo.Should().BeSameAs(TipoConta.ContaCorrente);
         conta.Sufixo.Value.Should().Be(ExtratoContaC6.SufixoConta);
 
-        ImportacaoExtrato importacao = (await LerImportacoesAsync()).Should().ContainSingle().Subject;
+        ImportacaoArquivo importacao = (await LerImportacoesAsync()).Should().ContainSingle().Subject;
         ((Guid)importacao.Id).Should().Be(corpo.IdImportacao);
         importacao.Origem.Should().Be(OrigemTransacao.DaConta(conta.Id));
-        importacao.Formato.Should().BeSameAs(FormatoExtrato.C6ContaCsv);
+        importacao.Layout.Should().BeSameAs(LayoutArquivoImportacao.C6ContaCsv);
 
         List<Transacao> transacoes = await LerTransacoesAsync();
         transacoes.Should().HaveCount(ExtratoContaC6.QuantidadeLancamentos);
@@ -211,12 +211,12 @@ public sealed class ImportarExtratoEndpointTests : IAsyncLifetime
     [Fact]
     public async Task Post_Quando_RequisicaoInvalida_Deve_RetornarErroEmCadaCampo()
     {
-        using MultipartFormDataContent formulario = new() { { new StringContent("formato-desconhecido"), "formato" } };
+        using MultipartFormDataContent formulario = new() { { new StringContent("layout-desconhecido"), "layout" } };
 
         using HttpResponseMessage resposta = await _api.Client.PostAsync(Rota(Guid.Empty), formulario);
 
         resposta.StatusCode.Should().Be(HttpStatusCode.BadRequest);
-        (await CamposComErroAsync(resposta)).Should().BeEquivalentTo("idUsuario", "formato", "arquivo");
+        (await CamposComErroAsync(resposta)).Should().BeEquivalentTo("idUsuario", "layout", "arquivo");
         await DeveEstarSemImportacaoAsync();
     }
 
@@ -235,7 +235,7 @@ public sealed class ImportarExtratoEndpointTests : IAsyncLifetime
 
         using MultipartFormDataContent formulario = new()
         {
-            { new StringContent(FormatoExtrato.C6ContaCsv.Value), "formato" },
+            { new StringContent(LayoutArquivoImportacao.C6ContaCsv.Value), "layout" },
             { conteudo, "arquivo", "extrato.csv" },
         };
 
@@ -275,6 +275,6 @@ public sealed class ImportarExtratoEndpointTests : IAsyncLifetime
     private Task<List<Transacao>> LerTransacoesAsync() =>
         _api.ConsultarAsync(db => db.Transacoes.AsNoTracking().ToListAsync());
 
-    private Task<List<ImportacaoExtrato>> LerImportacoesAsync() =>
+    private Task<List<ImportacaoArquivo>> LerImportacoesAsync() =>
         _api.ConsultarAsync(db => db.Importacoes.AsNoTracking().ToListAsync());
 }

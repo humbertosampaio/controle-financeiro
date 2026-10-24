@@ -7,21 +7,21 @@ using ControleFinanceiro.Tests.Shared.AutoFixture.Attributes;
 
 namespace ControleFinanceiro.Domain.Tests.Services;
 
-public sealed class ImportacaoExtratoFactoryTests
+public sealed class ImportacaoArquivoFactoryTests
 {
     [Theory, DomainAutoData]
     public void Registrar_Quando_Conta_Deve_GuardarOsDadosDaImportacaoComOUsuarioEAOrigemDaConta(
         ContaBancaria conta,
-        FormatoExtrato formato,
-        PeriodoExtrato periodo,
+        LayoutArquivoImportacao layout,
+        PeriodoArquivo periodo,
         byte lidas,
         DateTimeOffset importadaEm)
     {
-        ImportacaoExtrato result = ImportacaoExtratoFactory.Registrar(conta, formato, periodo, lidas, importadaEm);
+        ImportacaoArquivo result = ImportacaoArquivoFactory.Registrar(conta, layout, periodo, lidas, importadaEm);
 
         result.IdUsuario.Should().Be(conta.IdUsuario);
         result.Origem.Should().Be(OrigemTransacao.DaConta(conta.Id));
-        result.Formato.Should().Be(formato);
+        result.Layout.Should().Be(layout);
         result.Periodo.Should().Be(periodo);
         result.Lidas.Should().Be(lidas);
         result.ImportadaEm.Should().Be(importadaEm);
@@ -30,12 +30,12 @@ public sealed class ImportacaoExtratoFactoryTests
     [Theory, DomainAutoData]
     public void Registrar_Quando_Cartao_Deve_GuardarOUsuarioEAOrigemDoCartao(
         Cartao cartao,
-        FormatoExtrato formato,
-        PeriodoExtrato periodo,
+        LayoutArquivoImportacao layout,
+        PeriodoArquivo periodo,
         byte lidas,
         DateTimeOffset importadaEm)
     {
-        ImportacaoExtrato result = ImportacaoExtratoFactory.Registrar(cartao, formato, periodo, lidas, importadaEm);
+        ImportacaoArquivo result = ImportacaoArquivoFactory.Registrar(cartao, layout, periodo, lidas, importadaEm);
 
         result.IdUsuario.Should().Be(cartao.IdUsuario);
         result.Origem.Should().Be(OrigemTransacao.DoCartao(cartao.Id));
@@ -44,11 +44,11 @@ public sealed class ImportacaoExtratoFactoryTests
     [Theory, DomainAutoData]
     public void Registrar_Quando_LidasNegativas_Deve_LancarExcecao(
         ContaBancaria conta,
-        FormatoExtrato formato,
-        PeriodoExtrato periodo,
+        LayoutArquivoImportacao layout,
+        PeriodoArquivo periodo,
         DateTimeOffset importadaEm)
     {
-        Action registrar = () => ImportacaoExtratoFactory.Registrar(conta, formato, periodo, lidas: -1, importadaEm);
+        Action registrar = () => ImportacaoArquivoFactory.Registrar(conta, layout, periodo, lidas: -1, importadaEm);
 
         registrar.Should().ThrowExactly<ArgumentOutOfRangeException>().WithParameterName("lidas");
     }
@@ -56,12 +56,12 @@ public sealed class ImportacaoExtratoFactoryTests
     [Theory, DomainAutoData]
     public void Registrar_Deve_GerarIdVersao7(
         ContaBancaria conta,
-        FormatoExtrato formato,
-        PeriodoExtrato periodo,
+        LayoutArquivoImportacao layout,
+        PeriodoArquivo periodo,
         byte lidas,
         DateTimeOffset importadaEm)
     {
-        ImportacaoExtrato result = ImportacaoExtratoFactory.Registrar(conta, formato, periodo, lidas, importadaEm);
+        ImportacaoArquivo result = ImportacaoArquivoFactory.Registrar(conta, layout, periodo, lidas, importadaEm);
 
         result.Id.Value.Version.Should().Be(7);
     }

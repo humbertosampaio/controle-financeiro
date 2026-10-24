@@ -1,26 +1,26 @@
 namespace ControleFinanceiro.Domain.Importacoes;
 
 /// <summary>
-/// Os dias que o extrato cobre, como o cabeçalho do arquivo declara, com o início e o fim inclusos. O fim
-/// pode ser o dia da exportação, ainda incompleto.
+/// Os dias que um arquivo importado cobre, com o início e o fim inclusos. No extrato, é o período que o
+/// cabeçalho declara, e o fim pode ser o dia da exportação, ainda incompleto.
 /// </summary>
-public sealed class PeriodoExtrato : ValueObject
+public sealed class PeriodoArquivo : ValueObject
 {
     public DateOnly Inicio { get; }
     public DateOnly Fim { get; }
 
-    private PeriodoExtrato(DateOnly inicio, DateOnly fim)
+    private PeriodoArquivo(DateOnly inicio, DateOnly fim)
     {
         Inicio = inicio;
         Fim = fim;
     }
 
-    public static Result<PeriodoExtrato> Criar(DateOnly inicio, DateOnly fim)
+    public static Result<PeriodoArquivo> Criar(DateOnly inicio, DateOnly fim)
     {
         return Result.SuccessIf(
             inicio <= fim,
-            new PeriodoExtrato(inicio, fim),
-            "O início do período do extrato não pode ser depois do fim.");
+            new PeriodoArquivo(inicio, fim),
+            "O início do período não pode ser depois do fim.");
     }
 
     public bool Contem(DateOnly data) => data >= Inicio && data <= Fim;

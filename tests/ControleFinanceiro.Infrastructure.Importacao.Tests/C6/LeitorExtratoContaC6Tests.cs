@@ -36,7 +36,7 @@ public sealed class LeitorExtratoContaC6Tests
     {
         Extrato extrato = await LerFixtureAsync();
 
-        extrato.Periodo.Should().Be(PeriodoExtrato.Criar(new DateOnly(2026, 3, 2), new DateOnly(2026, 3, 9)).Value);
+        extrato.Periodo.Should().Be(PeriodoArquivo.Criar(new DateOnly(2026, 3, 2), new DateOnly(2026, 3, 9)).Value);
     }
 
     [Fact]
@@ -231,7 +231,7 @@ public sealed class LeitorExtratoContaC6Tests
 
     [Theory]
     [InlineData("Extrato de 31/02/2026 a 09/03/2026", "O período no cabeçalho do arquivo não tem datas válidas.")]
-    [InlineData("Extrato de 09/03/2026 a 02/03/2026", "O início do período do extrato não pode ser depois do fim.")]
+    [InlineData("Extrato de 09/03/2026 a 02/03/2026", "O início do período não pode ser depois do fim.")]
     public async Task LerAsync_Quando_PeriodoInvalido_Deve_RetornarFalha(string linha, string erro)
     {
         Stream arquivo = FixtureComLinha(numero: 4, linha);

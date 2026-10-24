@@ -35,7 +35,7 @@ internal sealed class TransacaoConfiguration : IEntityTypeConfiguration<Transaca
 
         // NoAction, e não Restrict: no Postgres, o Restrict confere na hora e quebraria a exclusão em cascata do usuário,
         // que apaga as importações e as transações no mesmo comando.
-        entity.HasOne<ImportacaoExtrato>()
+        entity.HasOne<ImportacaoArquivo>()
             .WithMany()
             .HasForeignKey(t => t.IdImportacao)
             .OnDelete(DeleteBehavior.NoAction);

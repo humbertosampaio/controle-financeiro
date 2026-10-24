@@ -16,8 +16,8 @@ public sealed class ImportarExtratoValidator : Validator<ImportarExtratoRequest>
         RuleFor(x => x.IdUsuario)
             .MustBeId(IdUsuario.TryFrom);
 
-        RuleFor(x => x.Formato)
-            .MustBeSmartEnum(FormatoExtrato.List);
+        RuleFor(x => x.Layout)
+            .MustBeSmartEnum(LayoutArquivoImportacao.List);
 
         RuleFor(x => x.Arquivo)
             .NotNull()

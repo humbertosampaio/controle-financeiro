@@ -16,7 +16,7 @@ public sealed class ConferenciaSomaPeriodoTests
     public void Conferir_Quando_PrimeiraImportacao_Deve_RetornarSucesso(
         Extrato extrato,
         [Frozen] ContaBancaria conta,
-        ImportacaoExtrato importacao)
+        ImportacaoArquivo importacao)
     {
         Result result = ConferenciaSomaPeriodo.Conferir(extrato, gravadasNoPeriodo: [], Lote(conta, importacao, extrato.Lancamentos));
 
@@ -27,7 +27,7 @@ public sealed class ConferenciaSomaPeriodoTests
     public void Conferir_Quando_ParteDoPeriodoJaGravada_Deve_SomarAsGravadasEAsNovas(
         Extrato extrato,
         [Frozen] ContaBancaria conta,
-        ImportacaoExtrato importacao)
+        ImportacaoArquivo importacao)
     {
         IReadOnlyList<Transacao> lote = Lote(conta, importacao, extrato.Lancamentos);
 
@@ -38,10 +38,10 @@ public sealed class ConferenciaSomaPeriodoTests
 
     [Theory, LancamentosNoPeriodoAutoData]
     public void Conferir_Quando_GravadaQueOExtratoNaoTraz_Deve_RetornarFalhaComOPeriodo(
-        [Frozen] PeriodoExtrato periodo,
+        [Frozen] PeriodoArquivo periodo,
         Extrato extrato,
         [Frozen] ContaBancaria conta,
-        ImportacaoExtrato importacao,
+        ImportacaoArquivo importacao,
         Lancamento naoReconhecido)
     {
         IReadOnlyList<Transacao> gravadas = Lote(conta, importacao, [.. extrato.Lancamentos, naoReconhecido]);
@@ -54,10 +54,10 @@ public sealed class ConferenciaSomaPeriodoTests
 
     [Theory, LancamentosNoPeriodoAutoData]
     public void Conferir_Quando_ExtratoTrazLancamentoForaDoPeriodo_Deve_RetornarFalha(
-        [Frozen] PeriodoExtrato periodo,
+        [Frozen] PeriodoArquivo periodo,
         Extrato arquivo,
         [Frozen] ContaBancaria conta,
-        ImportacaoExtrato importacao,
+        ImportacaoArquivo importacao,
         Reais valor,
         TextoObrigatorio descricao)
     {
@@ -77,7 +77,7 @@ public sealed class ConferenciaSomaPeriodoTests
         result.Should().Fail();
     }
 
-    private static IReadOnlyList<Transacao> Lote(ContaBancaria conta, ImportacaoExtrato importacao, IReadOnlyList<Lancamento> lancamentos)
+    private static IReadOnlyList<Transacao> Lote(ContaBancaria conta, ImportacaoArquivo importacao, IReadOnlyList<Lancamento> lancamentos)
     {
         return LoteTransacoesFactory.Criar(conta.IdUsuario, conta, importacao, lancamentos).Value;
     }
@@ -86,16 +86,16 @@ public sealed class ConferenciaSomaPeriodoTests
 
     /// <summary>
     /// O extrato traz três lançamentos no primeiro dia do próprio período, e todo lançamento pedido à parte cai
-    /// no primeiro dia de um período. Com <c>[Frozen] PeriodoExtrato</c> no teste, os dois ficam no mesmo período.
+    /// no primeiro dia de um período. Com <c>[Frozen] PeriodoArquivo</c> no teste, os dois ficam no mesmo período.
     /// </summary>
     private sealed class LancamentosNoPeriodoAutoDataAttribute : DomainAutoDataAttribute
     {
         public LancamentosNoPeriodoAutoDataAttribute()
             : base(fixture =>
             {
-                fixture.Register((PeriodoExtrato periodo, Reais valor, TextoObrigatorio descricao) => NoInicio(periodo, valor, descricao));
+                fixture.Register((PeriodoArquivo periodo, Reais valor, TextoObrigatorio descricao) => NoInicio(periodo, valor, descricao));
 
-                fixture.Register((Banco banco, TipoConta tipo, SufixoConta sufixo, PeriodoExtrato periodo) => Extrato.Criar(
+                fixture.Register((Banco banco, TipoConta tipo, SufixoConta sufixo, PeriodoArquivo periodo) => Extrato.Criar(
                     banco,
                     tipo,
                     sufixo,
@@ -108,7 +108,7 @@ public sealed class ConferenciaSomaPeriodoTests
         {
         }
 
-        private static Lancamento NoInicio(PeriodoExtrato periodo, Reais valor, TextoObrigatorio descricao)
+        private static Lancamento NoInicio(PeriodoArquivo periodo, Reais valor, TextoObrigatorio descricao)
         {
             IdentidadeLancamento identidade = IdentidadeLancamento.Composta(periodo.Inicio).ComValor(valor).ComTexto(descricao);
             return Lancamento.Criar(periodo.Inicio, hora: null, valor, descricao, contraparte: null, identidade);

@@ -12,39 +12,39 @@ public readonly partial struct IdImportacao
 }
 
 /// <summary>
-/// O registro de um arquivo importado: de qual origem, em qual formato, que período cobria e quantos
+/// O registro de um arquivo importado: de qual origem, em qual layout, que período cobria e quantos
 /// lançamentos trazia. É por ele que a importação seguinte descobre se ficou um buraco entre as duas.
 /// </summary>
 /// <remarks>
 /// Cada transação guarda o <see cref="IdImportacao"/> da importação que a criou. Quantas eram novas não fica
 /// aqui: são as transações ligadas a ela.
 /// </remarks>
-public sealed class ImportacaoExtrato : AggregateRoot<IdImportacao>
+public sealed class ImportacaoArquivo : AggregateRoot<IdImportacao>
 {
     public IdUsuario IdUsuario { get; private set; }
     public OrigemTransacao Origem { get; private set; } = null!;
-    public FormatoExtrato Formato { get; private set; } = null!;
-    public PeriodoExtrato Periodo { get; private set; } = null!;
+    public LayoutArquivoImportacao Layout { get; private set; } = null!;
+    public PeriodoArquivo Periodo { get; private set; } = null!;
     public int Lidas { get; private set; }
     public DateTimeOffset ImportadaEm { get; private set; }
 
-    private ImportacaoExtrato()
+    private ImportacaoArquivo()
     {
     }
 
-    private ImportacaoExtrato(
+    private ImportacaoArquivo(
         IdImportacao id,
         IdUsuario idUsuario,
         OrigemTransacao origem,
-        FormatoExtrato formato,
-        PeriodoExtrato periodo,
+        LayoutArquivoImportacao layout,
+        PeriodoArquivo periodo,
         int lidas,
         DateTimeOffset importadaEm)
             : base(id)
     {
         IdUsuario = idUsuario;
         Origem = origem;
-        Formato = formato;
+        Layout = layout;
         Periodo = periodo;
         Lidas = lidas;
         ImportadaEm = importadaEm;
@@ -53,18 +53,18 @@ public sealed class ImportacaoExtrato : AggregateRoot<IdImportacao>
     /// <param name="lidas">Quantos lançamentos o arquivo trazia.</param>
     /// <remarks>
     /// Interno pois o <paramref name="idUsuario"/> precisa ser o dono da <paramref name="origem"/>, e só a
-    /// <see cref="Services.ImportacaoExtratoFactory"/>, que recebe a conta ou o cartão, garante isso.
+    /// <see cref="Services.ImportacaoArquivoFactory"/>, que recebe a conta ou o cartão, garante isso.
     /// </remarks>
-    internal static ImportacaoExtrato Registrar(
+    internal static ImportacaoArquivo Registrar(
         IdUsuario idUsuario,
         OrigemTransacao origem,
-        FormatoExtrato formato,
-        PeriodoExtrato periodo,
+        LayoutArquivoImportacao layout,
+        PeriodoArquivo periodo,
         int lidas,
         DateTimeOffset importadaEm)
     {
         ArgumentOutOfRangeException.ThrowIfNegative(lidas);
-        return new(IdImportacao.FromNewVersion7Guid(), idUsuario, origem, formato, periodo, lidas, importadaEm);
+        return new(IdImportacao.FromNewVersion7Guid(), idUsuario, origem, layout, periodo, lidas, importadaEm);
     }
 
     /// <summary>
@@ -72,7 +72,7 @@ public sealed class ImportacaoExtrato : AggregateRoot<IdImportacao>
     /// arquivo cobriu. Nada quando é a primeira importação ou quando os períodos se tocam ou se sobrepõem.
     /// </summary>
     /// <param name="ultima">A importação mais recente da mesma origem, antes desta.</param>
-    public Maybe<PeriodoExtrato> PeriodoNaoImportado(Maybe<ImportacaoExtrato> ultima)
+    public Maybe<PeriodoArquivo> PeriodoNaoImportado(Maybe<ImportacaoArquivo> ultima)
     {
         if (ultima.HasNoValue)
             return Maybe.None;
@@ -82,7 +82,7 @@ public sealed class ImportacaoExtrato : AggregateRoot<IdImportacao>
 
         // O período entre as duas só existe quando sobra pelo menos um dia: com os períodos se tocando ou se
         // sobrepondo, o início fica depois do fim, o Criar falha, e não há período não importado.
-        return PeriodoExtrato
+        return PeriodoArquivo
             .Criar(ultima.Value.Periodo.Fim.AddDays(1), Periodo.Inicio.AddDays(-1))
             .AsMaybe();
     }

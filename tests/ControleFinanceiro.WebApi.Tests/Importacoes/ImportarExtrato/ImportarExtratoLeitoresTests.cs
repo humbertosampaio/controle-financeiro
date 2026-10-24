@@ -5,7 +5,7 @@ using ControleFinanceiro.WebApi.Tests.Infraestrutura;
 namespace ControleFinanceiro.WebApi.Tests.Importacoes.ImportarExtrato;
 
 /// <summary>
-/// O endpoint escolhe o leitor pelo formato, e o validator aceita qualquer formato conhecido. Um formato sem leitor
+/// O endpoint escolhe o leitor pelo layout, e o validator aceita qualquer layout conhecido. Um layout sem leitor
 /// no container da API passaria pelo validator e daria 500.
 /// </summary>
 [Collection(ApiCollection.Nome)]
@@ -19,10 +19,10 @@ public sealed class ImportarExtratoLeitoresTests
     }
 
     [Fact]
-    public void Api_Deve_RegistrarUmLeitorParaCadaFormato()
+    public void Api_Deve_RegistrarUmLeitorParaCadaLayout()
     {
         IReadOnlyList<ILeitorExtrato> leitores = _api.ObterServicos<ILeitorExtrato>();
 
-        leitores.Select(l => l.Formato).Should().BeEquivalentTo(FormatoExtrato.List);
+        leitores.Select(l => l.Layout).Should().BeEquivalentTo(LayoutArquivoImportacao.List);
     }
 }

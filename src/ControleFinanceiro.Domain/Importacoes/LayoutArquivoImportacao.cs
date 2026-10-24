@@ -8,11 +8,11 @@ namespace ControleFinanceiro.Domain.Importacoes;
 /// informa ao importar e o que fica gravado na importação.
 /// </summary>
 [ExcludeFromCodeCoverage(Justification = "Só declara constantes; a busca por código é do SmartEnum.")]
-public sealed class FormatoExtrato : SmartEnum<FormatoExtrato, string>
+public sealed class LayoutArquivoImportacao : SmartEnum<LayoutArquivoImportacao, string>
 {
-    public static readonly FormatoExtrato C6ContaCsv = new("c6-conta-csv", "Extrato CSV da conta do C6");
+    public static readonly LayoutArquivoImportacao C6ContaCsv = new("c6-conta-csv", "Extrato CSV da conta do C6");
 
-    private FormatoExtrato(string codigo, string name) : base(name, codigo)
+    private LayoutArquivoImportacao(string codigo, string name) : base(name, codigo)
     {
     }
 }

@@ -41,7 +41,7 @@ internal sealed class TransacaoRepository : ITransacaoRepository
 
     public async Task<IReadOnlyList<Transacao>> ListarNoPeriodoAsync(
         OrigemTransacao origem,
-        PeriodoExtrato periodo,
+        PeriodoArquivo periodo,
         CancellationToken cancellationToken)
     {
         return await DaOrigem(origem)

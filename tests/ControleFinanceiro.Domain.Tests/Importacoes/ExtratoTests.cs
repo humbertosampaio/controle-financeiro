@@ -180,14 +180,14 @@ public sealed class ExtratoTests
 
     private static Result<Extrato> Criar(
         Extrato arquivo,
-        PeriodoExtrato periodo,
+        PeriodoArquivo periodo,
         IEnumerable<LancamentoContabilizado> lancamentos,
         IEnumerable<SaldoDiario> saldos)
     {
         return Extrato.Criar(arquivo.Banco, arquivo.TipoConta, arquivo.SufixoConta, periodo, lancamentos, saldos);
     }
 
-    private static PeriodoExtrato Periodo(DateOnly inicio, DateOnly fim) => PeriodoExtrato.Criar(inicio, fim).Value;
+    private static PeriodoArquivo Periodo(DateOnly inicio, DateOnly fim) => PeriodoArquivo.Criar(inicio, fim).Value;
 
     private static string Formatar(DateOnly data) => data.ToString("dd/MM/yyyy", CultureInfo.InvariantCulture);
 }

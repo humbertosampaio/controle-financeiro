@@ -8,7 +8,7 @@ using CsvHelper.Configuration;
 using System.Globalization;
 using System.Text;
 using System.Text.RegularExpressions;
-using ContaEPeriodo = (ControleFinanceiro.Domain.Contas.SufixoConta Sufixo, ControleFinanceiro.Domain.Importacoes.PeriodoExtrato Periodo);
+using ContaEPeriodo = (ControleFinanceiro.Domain.Contas.SufixoConta Sufixo, ControleFinanceiro.Domain.Importacoes.PeriodoArquivo Periodo);
 using DatasDoPeriodo = (System.DateOnly Inicio, System.DateOnly Fim);
 using LancamentoComSaldo = (ControleFinanceiro.Domain.Importacoes.LancamentoContabilizado Lancamento, ControleFinanceiro.Domain.Importacoes.SaldoDiario Saldo);
 
@@ -41,7 +41,7 @@ public sealed partial class LeitorExtratoContaC6 : ILeitorExtrato
         DetectColumnCountChanges = true,
     };
 
-    public FormatoExtrato Formato => FormatoExtrato.C6ContaCsv;
+    public LayoutArquivoImportacao Layout => LayoutArquivoImportacao.C6ContaCsv;
 
     /// <summary>
     /// Lê o cabeçalho, tira dele a conta e o período, e depois lê os lançamentos e monta o extrato.
@@ -90,14 +90,14 @@ public sealed partial class LeitorExtratoContaC6 : ILeitorExtrato
             .Bind(numero => SufixoConta.Criar(numero[^SufixoConta.QuantidadeCaracteres..]));
     }
 
-    private static Result<PeriodoExtrato> LerPeriodo(IEnumerable<string> cabecalho)
+    private static Result<PeriodoArquivo> LerPeriodo(IEnumerable<string> cabecalho)
     {
         return cabecalho
             .Select(l => Periodo().Match(l))
             .TryFirst(m => m.Success)
             .ToResult("O cabeçalho do arquivo não traz o período do extrato.")
             .Bind(LerDatasDoPeriodo)
-            .Bind(datas => PeriodoExtrato.Criar(datas.Inicio, datas.Fim));
+            .Bind(datas => PeriodoArquivo.Criar(datas.Inicio, datas.Fim));
     }
 
     private static Result<DatasDoPeriodo> LerDatasDoPeriodo(Match periodo)
@@ -117,7 +117,7 @@ public sealed partial class LeitorExtratoContaC6 : ILeitorExtrato
     private static async Task<Result<Extrato>> LerExtratoAsync(
         StreamReader leitor,
         SufixoConta sufixo,
-        PeriodoExtrato periodo,
+        PeriodoArquivo periodo,
         CancellationToken cancellationToken)
     {
         // Um saldo por dia contábil: o C6 repete o saldo em toda linha do dia. Se as linhas de um dia trouxerem

@@ -27,7 +27,7 @@ public sealed class ControleFinanceiroDbContext : DbContext
     public DbSet<Cartao> Cartoes => Set<Cartao>();
     public DbSet<ContaBancaria> Contas => Set<ContaBancaria>();
     public DbSet<Transacao> Transacoes => Set<Transacao>();
-    public DbSet<ImportacaoExtrato> Importacoes => Set<ImportacaoExtrato>();
+    public DbSet<ImportacaoArquivo> Importacoes => Set<ImportacaoArquivo>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
