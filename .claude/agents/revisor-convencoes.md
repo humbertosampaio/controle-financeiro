@@ -48,7 +48,8 @@ O build já quebra em parte das regras (IDE0021 em construtor, `TreatWarningsAsE
    - dentro da própria classe, o campo privado (`_descontosSalariais.Sum(...)`), não a propriedade exposta;
    - para desembrulhar nullable, `x is IdCartao idCartao`, não `x is { } idCartao`;
    - o `Maybe<T>` tem conversão implícita de `T?`: devolva o valor direto, sem `Maybe.From`;
-   - em interpolação, `{sufixo}` direto, sem `.Value`: o `SimpleValueObject` já devolve o valor no `ToString()`.
+   - em interpolação, `{sufixo}` direto, sem `.Value`: o `SimpleValueObject` já devolve o valor no `ToString()`;
+   - value object se compara, ordena e agrupa inteiro (`OrderBy(p => p.Key)`, `c.Sufixo == sufixo`), sem abrir as propriedades de dentro sem necessidade (`p.Key.Value`): quem decide o que entra na comparação é o `GetEqualityComponents`, e o `SimpleValueObject` já compara pelo `Value`.
 
    Se uma delas passar a escapar com frequência, ela sobe para as Convenções do `CLAUDE.md`.
 
