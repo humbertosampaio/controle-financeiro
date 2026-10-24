@@ -41,7 +41,7 @@ public sealed partial class LeitorExtratoContaC6 : ILeitorExtrato
         DetectColumnCountChanges = true,
     };
 
-    public FormatoExtrato Formato => FormatoExtrato.C6ContaCsv;
+    public LayoutArquivoImportacao Layout => LayoutArquivoImportacao.C6ContaCsv;
 
     /// <summary>
     /// Lê o cabeçalho, tira dele a conta e o período, e depois lê os lançamentos e monta o extrato.

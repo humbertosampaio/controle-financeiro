@@ -13,10 +13,10 @@ internal sealed class ImportarExtratoRequestCustomization : ICustomization
 {
     public void Customize(IFixture fixture)
     {
-        fixture.Register((Guid idUsuario, FormatoExtrato formato) => new ImportarExtratoRequest
+        fixture.Register((Guid idUsuario, LayoutArquivoImportacao layout) => new ImportarExtratoRequest
         {
             IdUsuario = idUsuario,
-            Formato = formato.Value,
+            Layout = layout.Value,
             Arquivo = new FormFile(Stream.Null, baseStreamOffset: 0, length: 1, name: "arquivo", fileName: "extrato.csv"),
         });
     }

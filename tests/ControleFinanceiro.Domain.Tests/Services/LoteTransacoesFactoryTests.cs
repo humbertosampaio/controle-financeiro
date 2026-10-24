@@ -188,8 +188,8 @@ public sealed class LoteTransacoesFactoryTests
             : base(fixture =>
             {
                 fixture.Register(
-                    (Cartao cartao, FormatoExtrato formato, PeriodoExtrato periodo, DateTimeOffset importadaEm) =>
-                        ImportacaoExtratoFactory.Registrar(cartao, formato, periodo, fixture.Create<byte>(), importadaEm));
+                    (Cartao cartao, LayoutArquivoImportacao layout, PeriodoExtrato periodo, DateTimeOffset importadaEm) =>
+                        ImportacaoExtratoFactory.Registrar(cartao, layout, periodo, fixture.Create<byte>(), importadaEm));
             })
         {
         }

@@ -12,7 +12,7 @@ public readonly partial struct IdImportacao
 }
 
 /// <summary>
-/// O registro de um arquivo importado: de qual origem, em qual formato, que período cobria e quantos
+/// O registro de um arquivo importado: de qual origem, em qual layout, que período cobria e quantos
 /// lançamentos trazia. É por ele que a importação seguinte descobre se ficou um buraco entre as duas.
 /// </summary>
 /// <remarks>
@@ -23,7 +23,7 @@ public sealed class ImportacaoExtrato : AggregateRoot<IdImportacao>
 {
     public IdUsuario IdUsuario { get; private set; }
     public OrigemTransacao Origem { get; private set; } = null!;
-    public FormatoExtrato Formato { get; private set; } = null!;
+    public LayoutArquivoImportacao Layout { get; private set; } = null!;
     public PeriodoExtrato Periodo { get; private set; } = null!;
     public int Lidas { get; private set; }
     public DateTimeOffset ImportadaEm { get; private set; }
@@ -36,7 +36,7 @@ public sealed class ImportacaoExtrato : AggregateRoot<IdImportacao>
         IdImportacao id,
         IdUsuario idUsuario,
         OrigemTransacao origem,
-        FormatoExtrato formato,
+        LayoutArquivoImportacao layout,
         PeriodoExtrato periodo,
         int lidas,
         DateTimeOffset importadaEm)
@@ -44,7 +44,7 @@ public sealed class ImportacaoExtrato : AggregateRoot<IdImportacao>
     {
         IdUsuario = idUsuario;
         Origem = origem;
-        Formato = formato;
+        Layout = layout;
         Periodo = periodo;
         Lidas = lidas;
         ImportadaEm = importadaEm;
@@ -58,13 +58,13 @@ public sealed class ImportacaoExtrato : AggregateRoot<IdImportacao>
     internal static ImportacaoExtrato Registrar(
         IdUsuario idUsuario,
         OrigemTransacao origem,
-        FormatoExtrato formato,
+        LayoutArquivoImportacao layout,
         PeriodoExtrato periodo,
         int lidas,
         DateTimeOffset importadaEm)
     {
         ArgumentOutOfRangeException.ThrowIfNegative(lidas);
-        return new(IdImportacao.FromNewVersion7Guid(), idUsuario, origem, formato, periodo, lidas, importadaEm);
+        return new(IdImportacao.FromNewVersion7Guid(), idUsuario, origem, layout, periodo, lidas, importadaEm);
     }
 
     /// <summary>

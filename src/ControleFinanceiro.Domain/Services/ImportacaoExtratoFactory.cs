@@ -14,22 +14,22 @@ public static class ImportacaoExtratoFactory
     /// <param name="lidas">Quantos lançamentos o arquivo trazia.</param>
     public static ImportacaoExtrato Registrar(
         ContaBancaria conta,
-        FormatoExtrato formato,
+        LayoutArquivoImportacao layout,
         PeriodoExtrato periodo,
         int lidas,
         DateTimeOffset importadaEm)
     {
-        return ImportacaoExtrato.Registrar(conta.IdUsuario, OrigemTransacao.DaConta(conta.Id), formato, periodo, lidas, importadaEm);
+        return ImportacaoExtrato.Registrar(conta.IdUsuario, OrigemTransacao.DaConta(conta.Id), layout, periodo, lidas, importadaEm);
     }
 
     /// <param name="lidas">Quantos lançamentos o arquivo trazia.</param>
     public static ImportacaoExtrato Registrar(
         Cartao cartao,
-        FormatoExtrato formato,
+        LayoutArquivoImportacao layout,
         PeriodoExtrato periodo,
         int lidas,
         DateTimeOffset importadaEm)
     {
-        return ImportacaoExtrato.Registrar(cartao.IdUsuario, OrigemTransacao.DoCartao(cartao.Id), formato, periodo, lidas, importadaEm);
+        return ImportacaoExtrato.Registrar(cartao.IdUsuario, OrigemTransacao.DoCartao(cartao.Id), layout, periodo, lidas, importadaEm);
     }
 }

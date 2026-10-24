@@ -5,14 +5,14 @@ namespace ControleFinanceiro.Application.Importacoes;
 
 /// <summary>
 /// Porta de leitura de um arquivo de extrato ou fatura. Cada layout é um adaptador, escolhido pelo
-/// <see cref="Formato"/> que o usuário informa ao importar.
+/// <see cref="Layout"/> que o usuário informa ao importar.
 /// </summary>
 public interface ILeitorExtrato
 {
-    FormatoExtrato Formato { get; }
+    LayoutArquivoImportacao Layout { get; }
 
     /// <summary>
-    /// Lê o arquivo inteiro. Falha quando ele não está no layout do <see cref="Formato"/> ou quando os saldos
+    /// Lê o arquivo inteiro. Falha quando ele não está no layout do <see cref="Layout"/> ou quando os saldos
     /// não fecham com os lançamentos (<see cref="Extrato.Criar"/>); a mensagem cita no máximo o número da
     /// linha ou as datas, e nunca o conteúdo do arquivo.
     /// </summary>

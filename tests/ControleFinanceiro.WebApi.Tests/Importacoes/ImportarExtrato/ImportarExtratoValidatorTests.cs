@@ -33,11 +33,11 @@ public sealed class ImportarExtratoValidatorTests
     [InlineApiAutoData("")]
     [InlineApiAutoData("c6-conta")]
     [InlineApiAutoData("C6-CONTA-CSV")]
-    public void Validate_Quando_FormatoDesconhecido_Deve_RetornarErroNoFormato(string formato, ImportarExtratoRequest requisicao)
+    public void Validate_Quando_LayoutDesconhecido_Deve_RetornarErroNoLayout(string layout, ImportarExtratoRequest requisicao)
     {
-        TestValidationResult<ImportarExtratoRequest> resultado = _sut.TestValidate(requisicao with { Formato = formato });
+        TestValidationResult<ImportarExtratoRequest> resultado = _sut.TestValidate(requisicao with { Layout = layout });
 
-        resultado.ShouldHaveValidationErrorFor(r => r.Formato);
+        resultado.ShouldHaveValidationErrorFor(r => r.Layout);
     }
 
     [Theory, ApiAutoData]

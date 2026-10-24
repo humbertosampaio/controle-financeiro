@@ -114,11 +114,6 @@ namespace ControleFinanceiro.Infrastructure.Persistence.Migrations
                         .HasColumnType("uuid")
                         .HasColumnName("id");
 
-                    b.Property<string>("Formato")
-                        .IsRequired()
-                        .HasColumnType("text")
-                        .HasColumnName("formato");
-
                     b.Property<Guid>("IdUsuario")
                         .HasColumnType("uuid")
                         .HasColumnName("id_usuario");
@@ -126,6 +121,11 @@ namespace ControleFinanceiro.Infrastructure.Persistence.Migrations
                     b.Property<DateTimeOffset>("ImportadaEm")
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("importada_em");
+
+                    b.Property<string>("Layout")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("layout");
 
                     b.Property<int>("Lidas")
                         .HasColumnType("integer")

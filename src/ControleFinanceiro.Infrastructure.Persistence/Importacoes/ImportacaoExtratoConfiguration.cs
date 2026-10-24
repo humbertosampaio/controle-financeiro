@@ -41,8 +41,8 @@ internal sealed class ImportacaoExtratoConfiguration : IEntityTypeConfiguration<
                 .HasColumnName("id_cartao");
         });
 
-        entity.Property(i => i.Formato)
-            .HasColumnName("formato");
+        entity.Property(i => i.Layout)
+            .HasColumnName("layout");
 
         entity.ComplexProperty(i => i.Periodo, periodo =>
         {

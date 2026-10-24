@@ -186,7 +186,7 @@ classDiagram
     }
     class ImportacaoExtratoFactory {
         <<service>>
-        Registrar(ContaBancaria ou Cartao, formato, periodo, lidas, importadaEm)
+        Registrar(ContaBancaria ou Cartao, layout, periodo, lidas, importadaEm)
     }
     class LoteTransacoesFactory {
         <<service>>
@@ -246,7 +246,7 @@ Cada value object mora na pasta do agregado dono, mesmo quando outro agregado o 
 - `Cartoes`: `SufixoCartao`, `DiaVencimentoCartao`.
 - `Contas`: `SufixoConta` e o SmartEnum `TipoConta`.
 - `Despesas`: `DiaCompraRecorrente`, `Pagamento` (valor, `StatusPagamento`, datas projetada e efetiva) e os SmartEnums `FormaPagamento` e `StatusPagamento`.
-- `Importacoes`: `Extrato`, `LancamentoContabilizado`, `PeriodoExtrato`, `SaldoDiario` e o SmartEnum `FormatoExtrato`.
+- `Importacoes`: `Extrato`, `LancamentoContabilizado`, `PeriodoExtrato`, `SaldoDiario` e o SmartEnum `LayoutArquivoImportacao`.
 - `Transacoes`: `OrigemTransacao`, `Lancamento`, `IdentidadeLancamento`, `ChaveDeduplicacao`.
 
 Em `Shared/ValueObjects` ficam só os conceitos sem dono: `Reais` (com sinal) e `ReaisPositivo` para dinheiro; `TextoObrigatorio`; `MesReferencia`, o calendário do balanço; `DiaValidoEmTodoMes`, a base dos dias de 1 a 28 que o `MesReferencia` aceita; e o SmartEnum `Banco` (código COMPE).

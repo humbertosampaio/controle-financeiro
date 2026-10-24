@@ -64,20 +64,20 @@ public sealed class ImportarExtratoEndpoint : Endpoint<ImportarExtratoRequest, I
     public override async Task HandleAsync(ImportarExtratoRequest req, CancellationToken ct)
     {
         IdUsuario idUsuario = IdUsuario.From(req.IdUsuario);
-        FormatoExtrato formato = FormatoExtrato.FromValue(req.Formato);
+        LayoutArquivoImportacao layout = LayoutArquivoImportacao.FromValue(req.Layout);
 
         await _usuarioRepository.ObterPorIdAsync(idUsuario, ct)
             .ToResult(Falha.UsuarioNaoEncontrado)
-            .Bind(_ => LerAsync(formato, req.Arquivo!, ct))
-            .Bind(extrato => ImportarAsync(idUsuario, formato, extrato, ct))
+            .Bind(_ => LerAsync(layout, req.Arquivo!, ct))
+            .Bind(extrato => ImportarAsync(idUsuario, layout, extrato, ct))
             .Match(
                 resposta => Send.OkAsync(resposta, ct),
                 falha => EnviarFalhaAsync(falha, ct));
     }
 
-    private async Task<Result<Extrato, Falha>> LerAsync(FormatoExtrato formato, IFormFile arquivo, CancellationToken ct)
+    private async Task<Result<Extrato, Falha>> LerAsync(LayoutArquivoImportacao layout, IFormFile arquivo, CancellationToken ct)
     {
-        ILeitorExtrato leitor = _leitores.Single(l => l.Formato == formato);
+        ILeitorExtrato leitor = _leitores.Single(l => l.Layout == layout);
         await using Stream conteudo = arquivo.OpenReadStream();
 
         return await leitor
@@ -91,7 +91,7 @@ public sealed class ImportarExtratoEndpoint : Endpoint<ImportarExtratoRequest, I
     /// </summary>
     private async Task<Result<ImportarExtratoResponse, Falha>> ImportarAsync(
         IdUsuario idUsuario,
-        FormatoExtrato formato,
+        LayoutArquivoImportacao layout,
         Extrato extrato,
         CancellationToken ct)
     {
@@ -104,7 +104,7 @@ public sealed class ImportarExtratoEndpoint : Endpoint<ImportarExtratoRequest, I
             {
                 ImportacaoExtrato importacao = ImportacaoExtratoFactory.Registrar(
                     conta,
-                    formato,
+                    layout,
                     extrato.Periodo,
                     extrato.LancamentosContabilizados.Count,
                     _timeProvider.GetUtcNow());
