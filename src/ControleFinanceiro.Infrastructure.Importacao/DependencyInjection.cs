@@ -8,10 +8,15 @@ public static class DependencyInjection
 {
     extension(IServiceCollection services)
     {
-        /// <summary>Registra um <see cref="ILeitorExtrato"/> por layout; a importação escolhe pelo layout.</summary>
+        /// <summary>
+        /// Registra um <see cref="ILeitorExtrato"/> ou um <see cref="ILeitorFatura"/> por layout; a importação escolhe
+        /// pelo layout.
+        /// </summary>
         public IServiceCollection AddImportacao()
         {
-            return services.AddTransient<ILeitorExtrato, LeitorExtratoContaC6>();
+            return services
+                .AddTransient<ILeitorExtrato, LeitorExtratoContaC6>()
+                .AddTransient<ILeitorFatura, LeitorFaturaCartaoC6>();
         }
     }
 }
