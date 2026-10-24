@@ -2,8 +2,8 @@ using ControleFinanceiro.Tests.Shared.AutoFixture.SpecimenBuilders;
 
 namespace ControleFinanceiro.Tests.Shared.AutoFixture.Customizations.Domain.Shared;
 
-internal sealed class ImportacaoExtratoCustomization : ICustomization
+internal sealed class ImportacaoArquivoCustomization : ICustomization
 {
     public void Customize(IFixture fixture) =>
-        fixture.Customizations.Add(new ImportacaoExtratoGenerator());
+        fixture.Customizations.Add(new ImportacaoArquivoGenerator());
 }

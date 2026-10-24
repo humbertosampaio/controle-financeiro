@@ -19,7 +19,7 @@ public readonly partial struct IdImportacao
 /// Cada transação guarda o <see cref="IdImportacao"/> da importação que a criou. Quantas eram novas não fica
 /// aqui: são as transações ligadas a ela.
 /// </remarks>
-public sealed class ImportacaoExtrato : AggregateRoot<IdImportacao>
+public sealed class ImportacaoArquivo : AggregateRoot<IdImportacao>
 {
     public IdUsuario IdUsuario { get; private set; }
     public OrigemTransacao Origem { get; private set; } = null!;
@@ -28,11 +28,11 @@ public sealed class ImportacaoExtrato : AggregateRoot<IdImportacao>
     public int Lidas { get; private set; }
     public DateTimeOffset ImportadaEm { get; private set; }
 
-    private ImportacaoExtrato()
+    private ImportacaoArquivo()
     {
     }
 
-    private ImportacaoExtrato(
+    private ImportacaoArquivo(
         IdImportacao id,
         IdUsuario idUsuario,
         OrigemTransacao origem,
@@ -53,9 +53,9 @@ public sealed class ImportacaoExtrato : AggregateRoot<IdImportacao>
     /// <param name="lidas">Quantos lançamentos o arquivo trazia.</param>
     /// <remarks>
     /// Interno pois o <paramref name="idUsuario"/> precisa ser o dono da <paramref name="origem"/>, e só a
-    /// <see cref="Services.ImportacaoExtratoFactory"/>, que recebe a conta ou o cartão, garante isso.
+    /// <see cref="Services.ImportacaoArquivoFactory"/>, que recebe a conta ou o cartão, garante isso.
     /// </remarks>
-    internal static ImportacaoExtrato Registrar(
+    internal static ImportacaoArquivo Registrar(
         IdUsuario idUsuario,
         OrigemTransacao origem,
         LayoutArquivoImportacao layout,
@@ -72,7 +72,7 @@ public sealed class ImportacaoExtrato : AggregateRoot<IdImportacao>
     /// arquivo cobriu. Nada quando é a primeira importação ou quando os períodos se tocam ou se sobrepõem.
     /// </summary>
     /// <param name="ultima">A importação mais recente da mesma origem, antes desta.</param>
-    public Maybe<PeriodoArquivo> PeriodoNaoImportado(Maybe<ImportacaoExtrato> ultima)
+    public Maybe<PeriodoArquivo> PeriodoNaoImportado(Maybe<ImportacaoArquivo> ultima)
     {
         if (ultima.HasNoValue)
             return Maybe.None;

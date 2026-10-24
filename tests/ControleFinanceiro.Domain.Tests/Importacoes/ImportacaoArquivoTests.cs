@@ -5,10 +5,10 @@ using CSharpFunctionalExtensions;
 
 namespace ControleFinanceiro.Domain.Tests.Importacoes;
 
-public sealed class ImportacaoExtratoTests
+public sealed class ImportacaoArquivoTests
 {
     [Theory, DomainAutoData]
-    public void PeriodoNaoImportado_Quando_PrimeiraImportacao_Deve_RetornarNada(ImportacaoExtrato sut)
+    public void PeriodoNaoImportado_Quando_PrimeiraImportacao_Deve_RetornarNada(ImportacaoArquivo sut)
     {
         Maybe<PeriodoArquivo> result = sut.PeriodoNaoImportado(Maybe.None);
 
@@ -25,9 +25,9 @@ public sealed class ImportacaoExtratoTests
         PeriodoArquivo periodoAnterior,
         Fixture fixture)
     {
-        ImportacaoExtrato ultima = Com(fixture, conta, periodoAnterior);
+        ImportacaoArquivo ultima = Com(fixture, conta, periodoAnterior);
         DateOnly inicio = ultima.Periodo.Fim.AddDays(diasDoFimAnteriorAoInicio);
-        ImportacaoExtrato sut = Com(fixture, conta, PeriodoArquivo.Criar(inicio, inicio.AddDays(30)).Value);
+        ImportacaoArquivo sut = Com(fixture, conta, PeriodoArquivo.Criar(inicio, inicio.AddDays(30)).Value);
 
         Maybe<PeriodoArquivo> result = sut.PeriodoNaoImportado(ultima);
 
@@ -40,9 +40,9 @@ public sealed class ImportacaoExtratoTests
         PeriodoArquivo periodoAnterior,
         Fixture fixture)
     {
-        ImportacaoExtrato ultima = Com(fixture, conta, periodoAnterior);
+        ImportacaoArquivo ultima = Com(fixture, conta, periodoAnterior);
         DateOnly inicio = ultima.Periodo.Fim.AddDays(4);
-        ImportacaoExtrato sut = Com(fixture, conta, PeriodoArquivo.Criar(inicio, inicio.AddDays(30)).Value);
+        ImportacaoArquivo sut = Com(fixture, conta, PeriodoArquivo.Criar(inicio, inicio.AddDays(30)).Value);
 
         Maybe<PeriodoArquivo> result = sut.PeriodoNaoImportado(ultima);
 
@@ -51,18 +51,18 @@ public sealed class ImportacaoExtratoTests
 
     [Theory, DomainAutoData]
     public void PeriodoNaoImportado_Quando_UltimaDeOutraOrigem_Deve_LancarExcecao(
-        ImportacaoExtrato sut,
-        ImportacaoExtrato deOutraOrigem)
+        ImportacaoArquivo sut,
+        ImportacaoArquivo deOutraOrigem)
     {
         Action conferir = () => sut.PeriodoNaoImportado(deOutraOrigem);
 
         conferir.Should().ThrowExactly<ArgumentException>().WithParameterName("ultima");
     }
 
-    private static ImportacaoExtrato Com(Fixture fixture, ContaBancaria conta, PeriodoArquivo periodo)
+    private static ImportacaoArquivo Com(Fixture fixture, ContaBancaria conta, PeriodoArquivo periodo)
     {
         fixture.Inject(conta);
         fixture.Inject(periodo);
-        return fixture.Create<ImportacaoExtrato>();
+        return fixture.Create<ImportacaoArquivo>();
     }
 }

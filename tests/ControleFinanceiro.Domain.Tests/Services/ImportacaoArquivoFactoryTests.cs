@@ -7,7 +7,7 @@ using ControleFinanceiro.Tests.Shared.AutoFixture.Attributes;
 
 namespace ControleFinanceiro.Domain.Tests.Services;
 
-public sealed class ImportacaoExtratoFactoryTests
+public sealed class ImportacaoArquivoFactoryTests
 {
     [Theory, DomainAutoData]
     public void Registrar_Quando_Conta_Deve_GuardarOsDadosDaImportacaoComOUsuarioEAOrigemDaConta(
@@ -17,7 +17,7 @@ public sealed class ImportacaoExtratoFactoryTests
         byte lidas,
         DateTimeOffset importadaEm)
     {
-        ImportacaoExtrato result = ImportacaoExtratoFactory.Registrar(conta, layout, periodo, lidas, importadaEm);
+        ImportacaoArquivo result = ImportacaoArquivoFactory.Registrar(conta, layout, periodo, lidas, importadaEm);
 
         result.IdUsuario.Should().Be(conta.IdUsuario);
         result.Origem.Should().Be(OrigemTransacao.DaConta(conta.Id));
@@ -35,7 +35,7 @@ public sealed class ImportacaoExtratoFactoryTests
         byte lidas,
         DateTimeOffset importadaEm)
     {
-        ImportacaoExtrato result = ImportacaoExtratoFactory.Registrar(cartao, layout, periodo, lidas, importadaEm);
+        ImportacaoArquivo result = ImportacaoArquivoFactory.Registrar(cartao, layout, periodo, lidas, importadaEm);
 
         result.IdUsuario.Should().Be(cartao.IdUsuario);
         result.Origem.Should().Be(OrigemTransacao.DoCartao(cartao.Id));
@@ -48,7 +48,7 @@ public sealed class ImportacaoExtratoFactoryTests
         PeriodoArquivo periodo,
         DateTimeOffset importadaEm)
     {
-        Action registrar = () => ImportacaoExtratoFactory.Registrar(conta, layout, periodo, lidas: -1, importadaEm);
+        Action registrar = () => ImportacaoArquivoFactory.Registrar(conta, layout, periodo, lidas: -1, importadaEm);
 
         registrar.Should().ThrowExactly<ArgumentOutOfRangeException>().WithParameterName("lidas");
     }
@@ -61,7 +61,7 @@ public sealed class ImportacaoExtratoFactoryTests
         byte lidas,
         DateTimeOffset importadaEm)
     {
-        ImportacaoExtrato result = ImportacaoExtratoFactory.Registrar(conta, layout, periodo, lidas, importadaEm);
+        ImportacaoArquivo result = ImportacaoArquivoFactory.Registrar(conta, layout, periodo, lidas, importadaEm);
 
         result.Id.Value.Version.Should().Be(7);
     }

@@ -5,9 +5,9 @@ using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace ControleFinanceiro.Infrastructure.Persistence.Importacoes;
 
-internal sealed class ImportacaoExtratoConfiguration : IEntityTypeConfiguration<ImportacaoExtrato>
+internal sealed class ImportacaoArquivoConfiguration : IEntityTypeConfiguration<ImportacaoArquivo>
 {
-    public void Configure(EntityTypeBuilder<ImportacaoExtrato> entity)
+    public void Configure(EntityTypeBuilder<ImportacaoArquivo> entity)
     {
         // Os CHECK repetem no esquema o que o domínio já garante; a API é a única porta de entrada dos dados.
         entity.ToTable("importacoes", tabela =>

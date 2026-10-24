@@ -20,7 +20,7 @@ public static class LoteTransacoesFactory
     public static Result<IReadOnlyList<Transacao>, Erro> Criar(
         IdUsuario idUsuario,
         ContaBancaria conta,
-        ImportacaoExtrato importacao,
+        ImportacaoArquivo importacao,
         IReadOnlyList<Lancamento> lancamentos)
     {
         return Criar(idUsuario, conta.IdUsuario, conta.Banco, OrigemTransacao.DaConta(conta.Id), importacao, lancamentos);
@@ -31,7 +31,7 @@ public static class LoteTransacoesFactory
     public static Result<IReadOnlyList<Transacao>, Erro> Criar(
         IdUsuario idUsuario,
         Cartao cartao,
-        ImportacaoExtrato importacao,
+        ImportacaoArquivo importacao,
         IReadOnlyList<Lancamento> lancamentos)
     {
         return Criar(idUsuario, cartao.IdUsuario, cartao.Banco, OrigemTransacao.DoCartao(cartao.Id), importacao, lancamentos);
@@ -42,7 +42,7 @@ public static class LoteTransacoesFactory
         IdUsuario donoDaOrigem,
         Banco banco,
         OrigemTransacao origem,
-        ImportacaoExtrato importacao,
+        ImportacaoArquivo importacao,
         IReadOnlyList<Lancamento> lancamentos)
     {
         if (donoDaOrigem != idUsuario)

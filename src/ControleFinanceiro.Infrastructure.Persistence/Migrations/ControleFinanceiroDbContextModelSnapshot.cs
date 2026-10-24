@@ -108,7 +108,7 @@ namespace ControleFinanceiro.Infrastructure.Persistence.Migrations
                         });
                 });
 
-            modelBuilder.Entity("ControleFinanceiro.Domain.Importacoes.ImportacaoExtrato", b =>
+            modelBuilder.Entity("ControleFinanceiro.Domain.Importacoes.ImportacaoArquivo", b =>
                 {
                     b.Property<Guid>("Id")
                         .HasColumnType("uuid")
@@ -131,7 +131,7 @@ namespace ControleFinanceiro.Infrastructure.Persistence.Migrations
                         .HasColumnType("integer")
                         .HasColumnName("lidas");
 
-                    b.ComplexProperty(typeof(Dictionary<string, object>), "Origem", "ControleFinanceiro.Domain.Importacoes.ImportacaoExtrato.Origem#OrigemTransacao", b1 =>
+                    b.ComplexProperty(typeof(Dictionary<string, object>), "Origem", "ControleFinanceiro.Domain.Importacoes.ImportacaoArquivo.Origem#OrigemTransacao", b1 =>
                         {
                             b1.IsRequired();
 
@@ -144,7 +144,7 @@ namespace ControleFinanceiro.Infrastructure.Persistence.Migrations
                                 .HasColumnName("id_conta");
                         });
 
-                    b.ComplexProperty(typeof(Dictionary<string, object>), "Periodo", "ControleFinanceiro.Domain.Importacoes.ImportacaoExtrato.Periodo#PeriodoArquivo", b1 =>
+                    b.ComplexProperty(typeof(Dictionary<string, object>), "Periodo", "ControleFinanceiro.Domain.Importacoes.ImportacaoArquivo.Periodo#PeriodoArquivo", b1 =>
                         {
                             b1.IsRequired();
 
@@ -309,7 +309,7 @@ namespace ControleFinanceiro.Infrastructure.Persistence.Migrations
                         .IsRequired();
                 });
 
-            modelBuilder.Entity("ControleFinanceiro.Domain.Importacoes.ImportacaoExtrato", b =>
+            modelBuilder.Entity("ControleFinanceiro.Domain.Importacoes.ImportacaoArquivo", b =>
                 {
                     b.HasOne("ControleFinanceiro.Domain.Usuarios.Usuario", null)
                         .WithMany()
@@ -320,7 +320,7 @@ namespace ControleFinanceiro.Infrastructure.Persistence.Migrations
 
             modelBuilder.Entity("ControleFinanceiro.Domain.Transacoes.Transacao", b =>
                 {
-                    b.HasOne("ControleFinanceiro.Domain.Importacoes.ImportacaoExtrato", null)
+                    b.HasOne("ControleFinanceiro.Domain.Importacoes.ImportacaoArquivo", null)
                         .WithMany()
                         .HasForeignKey("IdImportacao")
                         .OnDelete(DeleteBehavior.NoAction)

@@ -102,7 +102,7 @@ public sealed class ImportarExtratoEndpoint : Endpoint<ImportarExtratoRequest, I
             .MapError(Falha.DeDominio)
             .Bind(conta =>
             {
-                ImportacaoExtrato importacao = ImportacaoExtratoFactory.Registrar(
+                ImportacaoArquivo importacao = ImportacaoArquivoFactory.Registrar(
                     conta,
                     layout,
                     extrato.Periodo,
@@ -120,13 +120,13 @@ public sealed class ImportarExtratoEndpoint : Endpoint<ImportarExtratoRequest, I
         Extrato extrato,
         IReadOnlyList<ContaBancaria> contasDoUsuario,
         ContaBancaria conta,
-        ImportacaoExtrato importacao,
+        ImportacaoArquivo importacao,
         IReadOnlyList<Transacao> transacoes,
         CancellationToken ct)
     {
         OrigemTransacao origem = importacao.Origem;
 
-        Maybe<ImportacaoExtrato> importacaoAnterior = await _importacaoRepository.ObterMaisRecenteAsync(origem, ct);
+        Maybe<ImportacaoArquivo> importacaoAnterior = await _importacaoRepository.ObterMaisRecenteAsync(origem, ct);
 
         // Lidas antes de adicionar as novas: a consulta só traz o que já estava gravado.
         IReadOnlyList<Transacao> transacoesExistentesNoPeriodo = await _transacaoRepository.ListarNoPeriodoAsync(origem, extrato.Periodo, ct);

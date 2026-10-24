@@ -56,7 +56,7 @@ public sealed class ImportarExtratoEndpointTests : IAsyncLifetime
         conta.Tipo.Should().BeSameAs(TipoConta.ContaCorrente);
         conta.Sufixo.Value.Should().Be(ExtratoContaC6.SufixoConta);
 
-        ImportacaoExtrato importacao = (await LerImportacoesAsync()).Should().ContainSingle().Subject;
+        ImportacaoArquivo importacao = (await LerImportacoesAsync()).Should().ContainSingle().Subject;
         ((Guid)importacao.Id).Should().Be(corpo.IdImportacao);
         importacao.Origem.Should().Be(OrigemTransacao.DaConta(conta.Id));
         importacao.Layout.Should().BeSameAs(LayoutArquivoImportacao.C6ContaCsv);
@@ -275,6 +275,6 @@ public sealed class ImportarExtratoEndpointTests : IAsyncLifetime
     private Task<List<Transacao>> LerTransacoesAsync() =>
         _api.ConsultarAsync(db => db.Transacoes.AsNoTracking().ToListAsync());
 
-    private Task<List<ImportacaoExtrato>> LerImportacoesAsync() =>
+    private Task<List<ImportacaoArquivo>> LerImportacoesAsync() =>
         _api.ConsultarAsync(db => db.Importacoes.AsNoTracking().ToListAsync());
 }

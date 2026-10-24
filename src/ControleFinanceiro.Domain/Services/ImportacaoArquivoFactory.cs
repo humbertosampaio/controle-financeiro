@@ -9,27 +9,27 @@ namespace ControleFinanceiro.Domain.Services;
 /// Registra a importação de um arquivo da conta ou do cartão. O usuário e a origem saem da própria conta ou
 /// do próprio cartão, para a importação nunca ficar com o dono de um e a origem de outro.
 /// </summary>
-public static class ImportacaoExtratoFactory
+public static class ImportacaoArquivoFactory
 {
     /// <param name="lidas">Quantos lançamentos o arquivo trazia.</param>
-    public static ImportacaoExtrato Registrar(
+    public static ImportacaoArquivo Registrar(
         ContaBancaria conta,
         LayoutArquivoImportacao layout,
         PeriodoArquivo periodo,
         int lidas,
         DateTimeOffset importadaEm)
     {
-        return ImportacaoExtrato.Registrar(conta.IdUsuario, OrigemTransacao.DaConta(conta.Id), layout, periodo, lidas, importadaEm);
+        return ImportacaoArquivo.Registrar(conta.IdUsuario, OrigemTransacao.DaConta(conta.Id), layout, periodo, lidas, importadaEm);
     }
 
     /// <param name="lidas">Quantos lançamentos o arquivo trazia.</param>
-    public static ImportacaoExtrato Registrar(
+    public static ImportacaoArquivo Registrar(
         Cartao cartao,
         LayoutArquivoImportacao layout,
         PeriodoArquivo periodo,
         int lidas,
         DateTimeOffset importadaEm)
     {
-        return ImportacaoExtrato.Registrar(cartao.IdUsuario, OrigemTransacao.DoCartao(cartao.Id), layout, periodo, lidas, importadaEm);
+        return ImportacaoArquivo.Registrar(cartao.IdUsuario, OrigemTransacao.DoCartao(cartao.Id), layout, periodo, lidas, importadaEm);
     }
 }

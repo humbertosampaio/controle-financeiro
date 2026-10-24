@@ -18,7 +18,7 @@ public sealed class LoteTransacoesFactoryTests
     public void Criar_Quando_ContaDoUsuario_Deve_CriarUmaTransacaoPorLancamentoNaOrdem(
         [Frozen] IdUsuario idUsuario,
         [Frozen] ContaBancaria conta,
-        ImportacaoExtrato importacao,
+        ImportacaoArquivo importacao,
         OrigemTransacao origem,
         Lancamento primeiro,
         Lancamento segundo)
@@ -36,7 +36,7 @@ public sealed class LoteTransacoesFactoryTests
     public void Criar_Deve_CopiarOsCamposDoLancamentoParaATransacao(
         [Frozen] IdUsuario idUsuario,
         [Frozen] ContaBancaria conta,
-        ImportacaoExtrato importacao,
+        ImportacaoArquivo importacao,
         Lancamento lancamento)
     {
         Result<IReadOnlyList<Transacao>, Erro> result = LoteTransacoesFactory.Criar(idUsuario, conta, importacao, [lancamento]);
@@ -53,7 +53,7 @@ public sealed class LoteTransacoesFactoryTests
     public void Criar_Deve_LigarCadaTransacaoAoUsuarioEAImportacao(
         [Frozen] IdUsuario idUsuario,
         [Frozen] ContaBancaria conta,
-        ImportacaoExtrato importacao,
+        ImportacaoArquivo importacao,
         Lancamento primeiro,
         Lancamento segundo)
     {
@@ -70,7 +70,7 @@ public sealed class LoteTransacoesFactoryTests
     public void Criar_Deve_GerarIdVersao7ParaCadaTransacao(
         [Frozen] IdUsuario idUsuario,
         [Frozen] ContaBancaria conta,
-        ImportacaoExtrato importacao,
+        ImportacaoArquivo importacao,
         Lancamento lancamento)
     {
         Result<IReadOnlyList<Transacao>, Erro> result = LoteTransacoesFactory.Criar(idUsuario, conta, importacao, [lancamento]);
@@ -84,7 +84,7 @@ public sealed class LoteTransacoesFactoryTests
     public void Criar_Quando_CartaoDoUsuario_Deve_UsarOBancoDoCartaoNaChave(
         [Frozen] IdUsuario idUsuario,
         [Frozen] Cartao cartao,
-        ImportacaoExtrato importacao,
+        ImportacaoArquivo importacao,
         Lancamento lancamento)
     {
         OrigemTransacao origem = OrigemTransacao.DoCartao(cartao.Id);
@@ -100,7 +100,7 @@ public sealed class LoteTransacoesFactoryTests
     public void Criar_Quando_LancamentosIdenticosSemIdExterno_Deve_GerarUmaTransacaoParaCada(
         [Frozen] IdUsuario idUsuario,
         [Frozen] ContaBancaria conta,
-        ImportacaoExtrato importacao,
+        ImportacaoArquivo importacao,
         Lancamento lancamento)
     {
         Result<IReadOnlyList<Transacao>, Erro> result = LoteTransacoesFactory.Criar(idUsuario, conta, importacao, [lancamento, lancamento]);
@@ -113,7 +113,7 @@ public sealed class LoteTransacoesFactoryTests
     public void Criar_Quando_ContaNaoPertenceAoUsuario_Deve_RetornarFalha(
         IdUsuario idUsuario,
         [Frozen] ContaBancaria contaDeOutroUsuario,
-        ImportacaoExtrato importacao,
+        ImportacaoArquivo importacao,
         Lancamento lancamento)
     {
         Result<IReadOnlyList<Transacao>, Erro> result = LoteTransacoesFactory.Criar(idUsuario, contaDeOutroUsuario, importacao, [lancamento]);
@@ -125,7 +125,7 @@ public sealed class LoteTransacoesFactoryTests
     public void Criar_Quando_CartaoNaoPertenceAoUsuario_Deve_RetornarFalha(
         IdUsuario idUsuario,
         [Frozen] Cartao cartaoDeOutroUsuario,
-        ImportacaoExtrato importacao,
+        ImportacaoArquivo importacao,
         Lancamento lancamento)
     {
         Result<IReadOnlyList<Transacao>, Erro> result = LoteTransacoesFactory.Criar(idUsuario, cartaoDeOutroUsuario, importacao, [lancamento]);
@@ -137,7 +137,7 @@ public sealed class LoteTransacoesFactoryTests
     public void Criar_Quando_ImportacaoDeOutraOrigem_Deve_LancarExcecao(
         [Frozen] IdUsuario idUsuario,
         ContaBancaria conta,
-        ImportacaoExtrato importacaoDeOutraConta,
+        ImportacaoArquivo importacaoDeOutraConta,
         Lancamento lancamento)
     {
         Action criar = () => LoteTransacoesFactory.Criar(idUsuario, conta, importacaoDeOutraConta, [lancamento]);
@@ -149,7 +149,7 @@ public sealed class LoteTransacoesFactoryTests
     public void Criar_Quando_IdExternoRepetidoNoLote_Deve_RetornarFalha(
         [Frozen] IdUsuario idUsuario,
         [Frozen] ContaBancaria conta,
-        ImportacaoExtrato importacao,
+        ImportacaoArquivo importacao,
         IdentidadeLancamento identidade,
         DateOnly data,
         Reais valor1,
@@ -171,7 +171,7 @@ public sealed class LoteTransacoesFactoryTests
     public void Criar_Quando_LoteVazio_Deve_RetornarListaVazia(
         [Frozen] IdUsuario idUsuario,
         [Frozen] ContaBancaria conta,
-        ImportacaoExtrato importacao)
+        ImportacaoArquivo importacao)
     {
         Result<IReadOnlyList<Transacao>, Erro> result = LoteTransacoesFactory.Criar(idUsuario, conta, importacao, lancamentos: []);
 
@@ -179,7 +179,7 @@ public sealed class LoteTransacoesFactoryTests
     }
 
     /// <summary>
-    /// Monta a <see cref="ImportacaoExtrato"/> a partir de um cartão, e não de uma conta, como faz o generator do
+    /// Monta a <see cref="ImportacaoArquivo"/> a partir de um cartão, e não de uma conta, como faz o generator do
     /// <see cref="DomainAutoDataAttribute"/>. Com <c>[Frozen] Cartao</c> no teste, a importação sai desse cartão.
     /// </summary>
     private sealed class ImportacaoDoCartaoAutoDataAttribute : DomainAutoDataAttribute
@@ -189,7 +189,7 @@ public sealed class LoteTransacoesFactoryTests
             {
                 fixture.Register(
                     (Cartao cartao, LayoutArquivoImportacao layout, PeriodoArquivo periodo, DateTimeOffset importadaEm) =>
-                        ImportacaoExtratoFactory.Registrar(cartao, layout, periodo, fixture.Create<byte>(), importadaEm));
+                        ImportacaoArquivoFactory.Registrar(cartao, layout, periodo, fixture.Create<byte>(), importadaEm));
             })
         {
         }
