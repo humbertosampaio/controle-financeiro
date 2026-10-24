@@ -47,6 +47,8 @@ public sealed class LoteTransacoesFactoryTests
         transacao.Valor.Should().Be(lancamento.Valor);
         transacao.Descricao.Should().Be(lancamento.Descricao);
         transacao.Contraparte.Should().Be(lancamento.Contraparte);
+        transacao.Parcela.Should().Be(lancamento.Parcela);
+        transacao.CategoriaBanco.Should().Be(lancamento.CategoriaBanco);
     }
 
     [Theory, DomainAutoData]

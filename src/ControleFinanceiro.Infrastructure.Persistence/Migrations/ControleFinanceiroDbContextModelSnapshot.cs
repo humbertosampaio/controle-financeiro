@@ -177,6 +177,10 @@ namespace ControleFinanceiro.Infrastructure.Persistence.Migrations
                         .HasColumnType("uuid")
                         .HasColumnName("id");
 
+                    b.Property<string>("CategoriaBanco")
+                        .HasColumnType("text")
+                        .HasColumnName("categoria_banco");
+
                     b.Property<string>("Chave")
                         .IsRequired()
                         .HasMaxLength(64)
@@ -227,6 +231,17 @@ namespace ControleFinanceiro.Infrastructure.Persistence.Migrations
                                 .HasColumnName("id_conta");
                         });
 
+                    b.ComplexProperty(typeof(Dictionary<string, object>), "Parcela", "ControleFinanceiro.Domain.Transacoes.Transacao.Parcela#Parcela", b1 =>
+                        {
+                            b1.Property<int>("Numero")
+                                .HasColumnType("integer")
+                                .HasColumnName("parcela_numero");
+
+                            b1.Property<int>("Total")
+                                .HasColumnType("integer")
+                                .HasColumnName("parcela_total");
+                        });
+
                     b.HasKey("Id");
 
                     b.HasIndex("Chave")
@@ -241,6 +256,8 @@ namespace ControleFinanceiro.Infrastructure.Persistence.Migrations
                             t.HasCheckConstraint("CK_transacoes_chave_deduplicacao", "chave_deduplicacao ~ '^[0-9a-f]{64}$'");
 
                             t.HasCheckConstraint("CK_transacoes_origem", "num_nonnulls(id_conta, id_cartao) = 1");
+
+                            t.HasCheckConstraint("CK_transacoes_parcela", "num_nulls(parcela_numero, parcela_total) = 2 OR (num_nulls(parcela_numero, parcela_total) = 0 AND parcela_total >= 2 AND parcela_numero BETWEEN 1 AND parcela_total)");
                         });
                 });
 
