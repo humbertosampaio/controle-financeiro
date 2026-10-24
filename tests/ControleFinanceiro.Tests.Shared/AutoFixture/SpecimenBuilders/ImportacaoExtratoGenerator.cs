@@ -19,7 +19,7 @@ public sealed class ImportacaoExtratoGenerator : ISpecimenBuilder
         return ImportacaoExtratoFactory.Registrar(
             context.Create<ContaBancaria>(),
             context.Create<LayoutArquivoImportacao>(),
-            context.Create<PeriodoExtrato>(),
+            context.Create<PeriodoArquivo>(),
             context.Create<byte>(),
             context.Create<DateTimeOffset>());
     }

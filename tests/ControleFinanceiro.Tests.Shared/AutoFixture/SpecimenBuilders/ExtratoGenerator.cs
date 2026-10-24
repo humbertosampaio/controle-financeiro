@@ -9,7 +9,7 @@ namespace ControleFinanceiro.Tests.Shared.AutoFixture.SpecimenBuilders;
 /// <summary>
 /// Monta o <see cref="Extrato"/> pelo <c>Criar</c>, que devolve <c>Result</c>. Todos os lançamentos entram
 /// no saldo do primeiro dia do período, que é o único saldo do extrato: com um dia contábil só, não há saldo
-/// a fechar, e o extrato é sempre válido. Com <c>[Frozen] PeriodoExtrato</c> no teste, o extrato usa esse
+/// a fechar, e o extrato é sempre válido. Com <c>[Frozen] PeriodoArquivo</c> no teste, o extrato usa esse
 /// período.
 /// </summary>
 public sealed class ExtratoGenerator : ISpecimenBuilder
@@ -19,7 +19,7 @@ public sealed class ExtratoGenerator : ISpecimenBuilder
         if (request is not Type t || t != typeof(Extrato))
             return new NoSpecimen();
 
-        PeriodoExtrato periodo = context.Create<PeriodoExtrato>();
+        PeriodoArquivo periodo = context.Create<PeriodoArquivo>();
 
         return Extrato
             .Criar(

@@ -138,7 +138,7 @@ public sealed class ImportarExtratoEndpoint : Endpoint<ImportarExtratoRequest, I
         IReadOnlyList<Transacao> novas = await _transacaoRepository.AdicionarNovasAsync(transacoes, ct);
 
         Result somaDoPeriodo = ConferenciaSomaPeriodo.Conferir(extrato, transacoesExistentesNoPeriodo, novas);
-        Maybe<PeriodoExtrato> periodoNaoImportado = importacao.PeriodoNaoImportado(importacaoAnterior);
+        Maybe<PeriodoArquivo> periodoNaoImportado = importacao.PeriodoNaoImportado(importacaoAnterior);
 
         await _unitOfWork.CommitAsync(ct);
 

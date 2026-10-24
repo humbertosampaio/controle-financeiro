@@ -24,7 +24,7 @@ public sealed class ImportacaoExtrato : AggregateRoot<IdImportacao>
     public IdUsuario IdUsuario { get; private set; }
     public OrigemTransacao Origem { get; private set; } = null!;
     public LayoutArquivoImportacao Layout { get; private set; } = null!;
-    public PeriodoExtrato Periodo { get; private set; } = null!;
+    public PeriodoArquivo Periodo { get; private set; } = null!;
     public int Lidas { get; private set; }
     public DateTimeOffset ImportadaEm { get; private set; }
 
@@ -37,7 +37,7 @@ public sealed class ImportacaoExtrato : AggregateRoot<IdImportacao>
         IdUsuario idUsuario,
         OrigemTransacao origem,
         LayoutArquivoImportacao layout,
-        PeriodoExtrato periodo,
+        PeriodoArquivo periodo,
         int lidas,
         DateTimeOffset importadaEm)
             : base(id)
@@ -59,7 +59,7 @@ public sealed class ImportacaoExtrato : AggregateRoot<IdImportacao>
         IdUsuario idUsuario,
         OrigemTransacao origem,
         LayoutArquivoImportacao layout,
-        PeriodoExtrato periodo,
+        PeriodoArquivo periodo,
         int lidas,
         DateTimeOffset importadaEm)
     {
@@ -72,7 +72,7 @@ public sealed class ImportacaoExtrato : AggregateRoot<IdImportacao>
     /// arquivo cobriu. Nada quando é a primeira importação ou quando os períodos se tocam ou se sobrepõem.
     /// </summary>
     /// <param name="ultima">A importação mais recente da mesma origem, antes desta.</param>
-    public Maybe<PeriodoExtrato> PeriodoNaoImportado(Maybe<ImportacaoExtrato> ultima)
+    public Maybe<PeriodoArquivo> PeriodoNaoImportado(Maybe<ImportacaoExtrato> ultima)
     {
         if (ultima.HasNoValue)
             return Maybe.None;
@@ -82,7 +82,7 @@ public sealed class ImportacaoExtrato : AggregateRoot<IdImportacao>
 
         // O período entre as duas só existe quando sobra pelo menos um dia: com os períodos se tocando ou se
         // sobrepondo, o início fica depois do fim, o Criar falha, e não há período não importado.
-        return PeriodoExtrato
+        return PeriodoArquivo
             .Criar(ultima.Value.Periodo.Fim.AddDays(1), Periodo.Inicio.AddDays(-1))
             .AsMaybe();
     }

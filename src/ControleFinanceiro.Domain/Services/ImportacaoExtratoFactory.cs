@@ -15,7 +15,7 @@ public static class ImportacaoExtratoFactory
     public static ImportacaoExtrato Registrar(
         ContaBancaria conta,
         LayoutArquivoImportacao layout,
-        PeriodoExtrato periodo,
+        PeriodoArquivo periodo,
         int lidas,
         DateTimeOffset importadaEm)
     {
@@ -26,7 +26,7 @@ public static class ImportacaoExtratoFactory
     public static ImportacaoExtrato Registrar(
         Cartao cartao,
         LayoutArquivoImportacao layout,
-        PeriodoExtrato periodo,
+        PeriodoArquivo periodo,
         int lidas,
         DateTimeOffset importadaEm)
     {

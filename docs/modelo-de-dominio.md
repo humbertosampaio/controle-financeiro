@@ -173,7 +173,7 @@ classDiagram
     class SaldoDiario {
         <<ValueObject>>
     }
-    class PeriodoExtrato {
+    class PeriodoArquivo {
         <<ValueObject>>
     }
     class ChaveDeduplicacao {
@@ -201,7 +201,7 @@ classDiagram
 
     Extrato "1" *-- "*" LancamentoContabilizado
     Extrato "1" *-- "*" SaldoDiario
-    Extrato *-- PeriodoExtrato
+    Extrato *-- PeriodoArquivo
     LancamentoContabilizado *-- Lancamento
     Lancamento *-- IdentidadeLancamento
     ConferenciaSomaPeriodo ..> Extrato : soma os lançamentos
@@ -246,7 +246,7 @@ Cada value object mora na pasta do agregado dono, mesmo quando outro agregado o 
 - `Cartoes`: `SufixoCartao`, `DiaVencimentoCartao`.
 - `Contas`: `SufixoConta` e o SmartEnum `TipoConta`.
 - `Despesas`: `DiaCompraRecorrente`, `Pagamento` (valor, `StatusPagamento`, datas projetada e efetiva) e os SmartEnums `FormaPagamento` e `StatusPagamento`.
-- `Importacoes`: `Extrato`, `LancamentoContabilizado`, `PeriodoExtrato`, `SaldoDiario` e o SmartEnum `LayoutArquivoImportacao`.
+- `Importacoes`: `Extrato`, `LancamentoContabilizado`, `PeriodoArquivo`, `SaldoDiario` e o SmartEnum `LayoutArquivoImportacao`.
 - `Transacoes`: `OrigemTransacao`, `Lancamento`, `IdentidadeLancamento`, `ChaveDeduplicacao`.
 
 Em `Shared/ValueObjects` ficam só os conceitos sem dono: `Reais` (com sinal) e `ReaisPositivo` para dinheiro; `TextoObrigatorio`; `MesReferencia`, o calendário do balanço; `DiaValidoEmTodoMes`, a base dos dias de 1 a 28 que o `MesReferencia` aceita; e o SmartEnum `Banco` (código COMPE).

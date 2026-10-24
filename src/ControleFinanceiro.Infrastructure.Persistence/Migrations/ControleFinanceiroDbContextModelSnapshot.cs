@@ -144,7 +144,7 @@ namespace ControleFinanceiro.Infrastructure.Persistence.Migrations
                                 .HasColumnName("id_conta");
                         });
 
-                    b.ComplexProperty(typeof(Dictionary<string, object>), "Periodo", "ControleFinanceiro.Domain.Importacoes.ImportacaoExtrato.Periodo#PeriodoExtrato", b1 =>
+                    b.ComplexProperty(typeof(Dictionary<string, object>), "Periodo", "ControleFinanceiro.Domain.Importacoes.ImportacaoExtrato.Periodo#PeriodoArquivo", b1 =>
                         {
                             b1.IsRequired();
 
