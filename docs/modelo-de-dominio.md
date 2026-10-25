@@ -274,7 +274,7 @@ Estáticos e puros: recebem os agregados e as listas de que precisam, e quem cha
 | Porta | Agregado |
 |---|---|
 | `IUsuarioRepository` | `Usuario` |
-| `ICartaoRepository` | `Cartao` (lista os do usuário) |
+| `ICartaoRepository` | `Cartao` (lista os do usuário, obtém um do usuário) |
 | `IContaRepository` | `ContaBancaria` (lista as do usuário) |
 | `ITransacaoRepository` | `Transacao` (adiciona só as de chave nova e devolve essas mesmas instâncias) |
 | `IImportacaoRepository` | `ImportacaoArquivo` |
