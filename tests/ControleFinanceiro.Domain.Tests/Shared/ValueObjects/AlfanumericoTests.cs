@@ -24,4 +24,12 @@ public sealed class AlfanumericoTests
 
         result.Value.Should().BeEmpty();
     }
+
+    [Fact]
+    public void OperadorExplicito_Deve_ManterSoAsLetrasEOsDigitosComoOCriar()
+    {
+        Alfanumerico result = (Alfanumerico)"12.abc.345/01DE-35";
+
+        result.Should().Be(Alfanumerico.Criar("12abc34501DE35"));
+    }
 }

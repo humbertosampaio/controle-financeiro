@@ -46,6 +46,9 @@ public sealed class Transacao : AggregateRoot<IdTransacao>
     /// <summary>Preenchida quando o banco informou a parcela; nula na compra à vista e no extrato.</summary>
     public Parcela? Parcela { get; private set; }
 
+    /// <summary>Verdadeiro quando a transação é uma parcela de uma compra parcelada.</summary>
+    public bool EhParcelada => Parcela is not null;
+
     /// <summary>A categoria que o banco deu à compra, quando o layout traz.</summary>
     public string? CategoriaBanco { get; private set; }
 

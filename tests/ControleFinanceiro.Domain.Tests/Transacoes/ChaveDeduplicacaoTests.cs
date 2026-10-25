@@ -61,6 +61,19 @@ public sealed class ChaveDeduplicacaoTests
     }
 
     [Theory, DomainAutoData]
+    public void Calcular_Quando_UnicaECompostaComOMesmoIdentificador_Deve_RetornarChavesDiferentes(
+        Banco banco,
+        OrigemTransacao origem,
+        IdentidadeLancamento unica)
+    {
+        IdentidadeLancamento composta = IdentidadeLancamento.Composta(unica.Campos[0]).Value;
+
+        ChaveDeduplicacao result = ChaveDeduplicacao.Calcular(banco, origem, composta, ordinal: 1);
+
+        result.Should().NotBe(ChaveDeduplicacao.Calcular(banco, origem, unica, ordinal: 1));
+    }
+
+    [Theory, DomainAutoData]
     public void Calcular_Quando_SeparadorDentroDeUmCampo_Deve_RetornarChavesDiferentes(
         Banco banco,
         OrigemTransacao origem,

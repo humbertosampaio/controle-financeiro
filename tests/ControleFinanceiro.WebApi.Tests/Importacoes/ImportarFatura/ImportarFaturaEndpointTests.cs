@@ -10,9 +10,7 @@ using ControleFinanceiro.WebApi.Tests.AutoFixture;
 using ControleFinanceiro.WebApi.Tests.Importacoes.ImportarExtrato;
 using ControleFinanceiro.WebApi.Tests.Infraestrutura;
 using Microsoft.EntityFrameworkCore;
-using System.Globalization;
 using System.Net;
-using System.Net.Http.Headers;
 using System.Net.Http.Json;
 
 namespace ControleFinanceiro.WebApi.Tests.Importacoes.ImportarFatura;
@@ -89,7 +87,7 @@ public sealed class ImportarFaturaEndpointTests : IAsyncLifetime
         await ImportarComSucessoAsync(idUsuario, FaturaCartaoC6.Completo());
 
         List<Transacao> transacoes = await _api.LerTodosAsync(db => db.Transacoes);
-        Transacao parcelada = transacoes.Should().ContainSingle(t => t.Parcela != null).Subject;
+        Transacao parcelada = transacoes.Should().ContainSingle(t => t.EhParcelada).Subject;
         parcelada.Parcela.Should().Be((Parcela)(3, 10));
         parcelada.Data.Should().Be(FaturaCartaoC6.PrimeiraCompraFisico);
         parcelada.CategoriaBanco.Should().Be("Eletrônicos");
@@ -184,7 +182,7 @@ public sealed class ImportarFaturaEndpointTests : IAsyncLifetime
         corpo.Cartoes[1].Novas.Should().Be(0);
         List<Transacao> transacoes = await _api.LerTodosAsync(db => db.Transacoes);
         transacoes.Should().HaveCount(FaturaCartaoC6.QuantidadeLancamentos + 1);
-        transacoes.Where(t => t.Parcela != null).Select(t => t.Parcela).Should().BeEquivalentTo([(Parcela)(3, 10), (Parcela)(4, 10)]);
+        transacoes.Where(t => t.EhParcelada).Select(t => t.Parcela).Should().BeEquivalentTo([(Parcela)(3, 10), (Parcela)(4, 10)]);
     }
 
     [Theory, ApiAutoData]
@@ -196,7 +194,7 @@ public sealed class ImportarFaturaEndpointTests : IAsyncLifetime
 
         resposta.StatusCode.Should().Be(HttpStatusCode.UnprocessableEntity);
         (await resposta.CamposComErroAsync()).Should().Equal("arquivo");
-        await DeveEstarSemImportacaoAsync();
+        await _api.DeveEstarSemImportacaoAsync();
     }
 
     [Theory, ApiAutoData]
@@ -205,7 +203,7 @@ public sealed class ImportarFaturaEndpointTests : IAsyncLifetime
         using HttpResponseMessage resposta = await ImportarAsync(idUsuario, FaturaCartaoC6.Completo());
 
         resposta.StatusCode.Should().Be(HttpStatusCode.NotFound);
-        await DeveEstarSemImportacaoAsync();
+        await _api.DeveEstarSemImportacaoAsync();
     }
 
     // A leitura do formulário para no limite da rota, antes do validator: o erro é geral, e não no campo do arquivo.
@@ -218,7 +216,7 @@ public sealed class ImportarFaturaEndpointTests : IAsyncLifetime
 
         resposta.StatusCode.Should().Be(HttpStatusCode.BadRequest);
         (await resposta.CamposComErroAsync()).Should().Equal("generalErrors");
-        await DeveEstarSemImportacaoAsync();
+        await _api.DeveEstarSemImportacaoAsync();
     }
 
     [Fact]
@@ -231,11 +229,11 @@ public sealed class ImportarFaturaEndpointTests : IAsyncLifetime
             { new StringContent("""{"123":0}"""), "vencimentos" },
         };
 
-        using HttpResponseMessage resposta = await _api.Client.PostAsync(Rota(Guid.Empty), formulario);
+        using HttpResponseMessage resposta = await _api.Client.PostAsync(ImportacaoFaturaExtensions.RotaFatura(Guid.Empty), formulario);
 
         resposta.StatusCode.Should().Be(HttpStatusCode.BadRequest);
         (await resposta.CamposComErroAsync()).Should().BeEquivalentTo("idUsuario", "layout", "arquivo", "diaVencimento", "vencimentos");
-        await DeveEstarSemImportacaoAsync();
+        await _api.DeveEstarSemImportacaoAsync();
     }
 
     private async Task<Guid> AdicionarCartaoAsync(Guid idUsuario, AdicionarCartaoRequest cartao)
@@ -246,43 +244,17 @@ public sealed class ImportarFaturaEndpointTests : IAsyncLifetime
         return corpo!.Id;
     }
 
-    private async Task<HttpResponseMessage> ImportarAsync(Guid idUsuario, byte[] arquivo, int? diaVencimento = null, string? vencimentos = null)
+    private Task<HttpResponseMessage> ImportarAsync(Guid idUsuario, byte[] arquivo)
     {
-        using ByteArrayContent conteudo = new(arquivo);
-        conteudo.Headers.ContentType = new MediaTypeHeaderValue("text/csv");
-
-        using MultipartFormDataContent formulario = new()
-        {
-            { new StringContent(LayoutArquivoImportacao.C6CartaoCsv.Value), "layout" },
-            { conteudo, "arquivo", "fatura.csv" },
-        };
-
-        if (diaVencimento is int dia)
-            formulario.Add(new StringContent(dia.ToString(CultureInfo.InvariantCulture)), "diaVencimento");
-
-        if (vencimentos is not null)
-            formulario.Add(new StringContent(vencimentos), "vencimentos");
-
-        return await _api.Client.PostAsync(Rota(idUsuario), formulario);
+        return _api.ImportarFaturaAsync(idUsuario, LayoutArquivoImportacao.C6CartaoCsv, arquivo);
     }
 
-    private async Task<ImportarFaturaResponse> ImportarComSucessoAsync(
+    private Task<ImportarFaturaResponse> ImportarComSucessoAsync(
         Guid idUsuario,
         byte[] arquivo,
         int? diaVencimento = null,
         string? vencimentos = null)
     {
-        using HttpResponseMessage resposta = await ImportarAsync(idUsuario, arquivo, diaVencimento, vencimentos);
-        resposta.StatusCode.Should().Be(HttpStatusCode.OK, await resposta.Content.ReadAsStringAsync());
-        return (await resposta.Content.ReadFromJsonAsync<ImportarFaturaResponse>())!;
-    }
-
-    private static Uri Rota(Guid idUsuario) => new($"/api/usuarios/{idUsuario}/importacoes/faturas", UriKind.Relative);
-
-    private async Task DeveEstarSemImportacaoAsync()
-    {
-        (await _api.ConsultarAsync(db => db.Cartoes.CountAsync())).Should().Be(0);
-        (await _api.ConsultarAsync(db => db.Transacoes.CountAsync())).Should().Be(0);
-        (await _api.ConsultarAsync(db => db.Importacoes.CountAsync())).Should().Be(0);
+        return _api.ImportarFaturaComSucessoAsync(idUsuario, LayoutArquivoImportacao.C6CartaoCsv, arquivo, diaVencimento, vencimentos);
     }
 }

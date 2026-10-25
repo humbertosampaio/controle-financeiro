@@ -100,50 +100,6 @@ public sealed class LeitorExtratoContaMercadoPagoTests
     }
 
     [Fact]
-    public async Task LerAsync_Quando_OnzeDigitosQueNaoSaoCpf_Deve_ManterOsDigitosNaContraparte()
-    {
-        Stream arquivo = _fixture.ComLinha(
-            LinhaSegundoLancamento,
-            "03-03-2026;Pix enviado FULANO FICTICIO 12345678900;1000000002;-120,00;1.130,35");
-
-        Extrato extrato = (await _leitor.LerAsync(arquivo, _sufixo, CancellationToken.None)).Value;
-
-        extrato.Lancamentos[1].Contraparte.Should().Be("FULANO FICTICIO 12345678900");
-    }
-
-    [Theory]
-    [InlineData("Pix enviado FULANO FICTICIO12345678909", "FULANO FICTICIO")]
-    [InlineData("Pix enviado FULANO FICTICIO 123 456 789 09", "FULANO FICTICIO")]
-    [InlineData("Pix enviado FULANO FICTICIO ***.456.789-**", "FULANO FICTICIO")]
-    [InlineData("Pix enviado LOJA FICTICIA 11.222.333/0001-81", "LOJA FICTICIA")]
-    [InlineData("Pix enviado LOJA FICTICIA 11222333000181", "LOJA FICTICIA")]
-    [InlineData("Pix enviado LOJA FICTICIA 12.ABC.345/01DE-35", "LOJA FICTICIA")]
-    [InlineData("Pix enviado LOJA FICTICIA11222333000181", "LOJA FICTICIA")]
-    [InlineData("Pix enviado LOJA FICTICIA 11 222 333 0001 81", "LOJA FICTICIA")]
-    [InlineData("Pix enviado LOJA FICTICIA 12abc34501de35", "LOJA FICTICIA")]
-    [InlineData("Pix enviado FULANO FICTICIO ***456789**", "FULANO FICTICIO")]
-    public async Task LerAsync_Quando_DocumentoEmOutroFormato_Deve_TirarODocumentoDaContraparte(string descricao, string contraparte)
-    {
-        Stream arquivo = _fixture.ComLinha(LinhaSegundoLancamento, $"03-03-2026;{descricao};1000000002;-120,00;1.130,35");
-
-        Extrato extrato = (await _leitor.LerAsync(arquivo, _sufixo, CancellationToken.None)).Value;
-
-        extrato.Lancamentos[1].Contraparte.Should().Be(contraparte);
-    }
-
-    [Fact]
-    public async Task LerAsync_Quando_CatorzeCaracteresQueNaoSaoCnpj_Deve_ManterOsCaracteresNaContraparte()
-    {
-        Stream arquivo = _fixture.ComLinha(
-            LinhaSegundoLancamento,
-            "03-03-2026;Pix enviado LOJA FICTICIA 11222333000182;1000000002;-120,00;1.130,35");
-
-        Extrato extrato = (await _leitor.LerAsync(arquivo, _sufixo, CancellationToken.None)).Value;
-
-        extrato.Lancamentos[1].Contraparte.Should().Be("LOJA FICTICIA 11222333000182");
-    }
-
-    [Fact]
     public async Task LerAsync_Deve_EntregarOSaldoDeCadaDiaComAVesperaVindaDoSaldoInicial()
     {
         Extrato extrato = await LerFixtureAsync();

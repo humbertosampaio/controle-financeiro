@@ -1,0 +1,8 @@
+"mes_referencia";"vencimento";"fechamento";"data_compra";"data_lancamento";"tipo_lancamento";"descricao_fatura";"vendedor";"produtos";"numero_pedido";"numero_transacao";"cartao_final";"parcela_atual";"parcelas_totais";"moeda";"valor_compra_original";"valor_cobrado_fatura";"valor_creditado_fatura";"status"
+"04/2026";"10/04/2026";"03/04/2026";"15/11/2025";"";"compra_parcelada";"LOJA FICTICIA ELETRO";"";"Fone Ficticio | Cabo Ficticio";"2000000000000001";"100000000001";"1234";"3";"10";"BRL";"1000,00";"100,00";"";"Cobrada"
+"04/2026";"10/04/2026";"03/04/2026";"05/03/2026";"";"compra_a_vista";"PADARIA FICTICIA";"FULANO FICTICIO 123.456.789-09";"Pao Ficticio";"2000000000000002";"100000000002";"1234";"";"";"BRL";"25,90";"25,90";"";"Cobrada"
+"04/2026";"10/04/2026";"03/04/2026";"08/03/2026";"";"compra_a_vista";"MERCADO FICTICIO";"MERCADO FICTICIO LTDA 11.222.333/0001-81";"Arroz Ficticio | Embalagem do fornecedor 12.ABC.345/01DE-35";"";"100000000003";"1234";"";"";"BRL";"1234,56";"1234,56";"";"Cobrada; conferida no app"
+"04/2026";"10/04/2026";"03/04/2026";"12/03/2026";"";"compra_a_vista";"LIVRARIA ""FICTICIA""";"";"Livro ""Ficticio""";"2000000000000004";"100000000004";"1234";"";"";"BRL";"49,90";"49,90";"";"Cobrada"
+"04/2026";"10/04/2026";"03/04/2026";"20/03/2026";"";"compra_a_vista";"CAFE FICTICIO";"";"Cafe Ficticio";"2000000000000005";"100000000005";"1234";"";"";"BRL";"9,50";"9,50";"";"Cobrada"
+"04/2026";"10/04/2026";"03/04/2026";"20/03/2026";"";"compra_a_vista";"CAFE FICTICIO";"";"Cafe Ficticio";"2000000000000005";"100000000006";"1234";"";"";"BRL";"9,50";"9,50";"";"Cobrada"
+"04/2026";"10/04/2026";"03/04/2026";"";"10/04/2026";"pagamento_debito_automatico_pos_fechamento";"Fatura de abril";"";"";"";"100000000007_1";"";"";"";"BRL";"";"";"1429,36";"Pago"

@@ -12,6 +12,11 @@ namespace ControleFinanceiro.Domain.Transacoes;
 /// </summary>
 /// <remarks>
 /// <para>
+/// A identidade é única quando o banco dá ao lançamento um identificador que basta sozinho. Senão, ela é
+/// composta: começa pela data, quando o banco não dá identificador, ou por um identificador do banco que não
+/// basta sozinho, como o número que se repete em todas as parcelas da mesma compra.
+/// </para>
+/// <para>
 /// Mudar a formatação de um campo muda as chaves já gravadas: exige uma versão nova da
 /// <see cref="ChaveDeduplicacao"/>.
 /// </para>
@@ -58,6 +63,18 @@ public sealed partial class IdentidadeLancamento : ValueObject
     public static IdentidadeLancamento Composta(DateOnly data)
     {
         return new([data.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture)], ehUnica: false);
+    }
+
+    /// <summary>
+    /// Identidade montada campo a campo, para layouts em que o identificador do banco não basta sozinho, como o
+    /// número que se repete nas parcelas da mesma compra. Começa pelo identificador como o banco o escreveu, só
+    /// aparado. Falha quando a linha traz o identificador em branco.
+    /// </summary>
+    public static Result<IdentidadeLancamento> Composta(string? identificador)
+    {
+        return string.IsNullOrWhiteSpace(identificador)
+            ? Result.Failure<IdentidadeLancamento>("O identificador do lançamento no banco está em branco.")
+            : new IdentidadeLancamento([identificador.Trim()], ehUnica: false);
     }
 
     /// <summary>Hora no formato <c>HH:mm:ss</c>; vazia quando o lançamento não traz.</summary>
