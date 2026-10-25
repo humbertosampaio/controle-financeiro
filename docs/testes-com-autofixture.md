@@ -42,7 +42,7 @@ Cinco caminhos, do mais geral para o mais local:
    - `[Range(1, 12)] int mes`, como em `MesReferenciaTests`, quando qualquer valor de uma faixa serve.
    - `[Frozen] Usuario esperado` congela a instância: todo objeto que o fixture montar depois e dependa de um `Usuario` recebe esse mesmo. É assim que o teste do cadastro sabe o que esperar no banco.
 
-   **O `[Frozen]` é o jeito padrão de fixar um valor**, e o parâmetro congelado é lido pelo teste, no arrange ou no assert. Em `DespesaFactoryTests`, `[Frozen] DiaCompraRecorrente diaCompra` faz a despesa recorrente que o fixture montar comprar nesse dia, e a data esperada sai de `diaCompra.Value`.
+   **O `[Frozen]` é o jeito padrão de fixar um valor**, e o parâmetro congelado é lido pelo teste, no arrange ou no assert. Em `GeracaoDespesasDoMesServiceTests`, `[Frozen] DiaOcorrenciaRecorrente diaOcorrencia` faz a despesa recorrente que o fixture montar ocorrer nesse dia, e a data esperada sai de `diaOcorrencia.Value`.
 4. **Mutação do objeto devolvido**: o teste parte de um objeto válido e muda só o que importa, com `with` nos records.
 
    ```csharp

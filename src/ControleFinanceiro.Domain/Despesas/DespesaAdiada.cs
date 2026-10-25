@@ -14,7 +14,7 @@ public sealed class DespesaAdiada : DespesaInteira
         IdBeneficiario idBeneficiario,
         TextoObrigatorio descricao,
         IdCategoriaDespesa idCategoria,
-        DateTimeOffset dataCompra,
+        DateTimeOffset dataOcorrencia,
         FormaPagamento formaPagamento,
         MesReferencia mesReferencia,
         Pagamento pagamento)
@@ -24,7 +24,7 @@ public sealed class DespesaAdiada : DespesaInteira
             idBeneficiario,
             descricao,
             idCategoria,
-            dataCompra,
+            dataOcorrencia,
             formaPagamento,
             mesReferencia,
             pagamento)
@@ -36,12 +36,12 @@ public sealed class DespesaAdiada : DespesaInteira
         IdBeneficiario idBeneficiario,
         TextoObrigatorio descricao,
         IdCategoriaDespesa idCategoria,
-        DateTimeOffset dataCompra,
+        DateTimeOffset dataOcorrencia,
         ReaisPositivo valor,
         DiaVencimentoCartao diaVencimento)
     {
-        MesReferencia mesReferenciaCompra = dataCompra;
-        MesReferencia mesReferenciaPagamento = mesReferenciaCompra.Posterior();
+        MesReferencia mesReferenciaOcorrencia = dataOcorrencia;
+        MesReferencia mesReferenciaPagamento = mesReferenciaOcorrencia.Posterior();
         Pagamento pagamento = Pagamento.Pendente(valor, dataProjetada: mesReferenciaPagamento.NoDia(diaVencimento));
 
         return new DespesaAdiada(
@@ -50,7 +50,7 @@ public sealed class DespesaAdiada : DespesaInteira
             idBeneficiario,
             descricao,
             idCategoria,
-            dataCompra,
+            dataOcorrencia,
             FormaPagamento.Credito,
             mesReferenciaPagamento,
             pagamento);

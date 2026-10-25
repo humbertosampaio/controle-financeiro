@@ -14,7 +14,7 @@ public sealed class DespesaSimples : DespesaInteira
         IdBeneficiario idBeneficiario,
         TextoObrigatorio descricao,
         IdCategoriaDespesa idCategoria,
-        DateTimeOffset dataCompra,
+        DateTimeOffset dataOcorrencia,
         FormaPagamento formaPagamento,
         MesReferencia mesReferencia,
         Pagamento pagamento)
@@ -24,7 +24,7 @@ public sealed class DespesaSimples : DespesaInteira
             idBeneficiario,
             descricao,
             idCategoria,
-            dataCompra,
+            dataOcorrencia,
             formaPagamento,
             mesReferencia,
             pagamento)
@@ -36,23 +36,23 @@ public sealed class DespesaSimples : DespesaInteira
         IdBeneficiario idBeneficiario,
         TextoObrigatorio descricao,
         IdCategoriaDespesa idCategoria,
-        DateTimeOffset dataCompra,
+        DateTimeOffset dataOcorrencia,
         FormaPagamento formaPagamento,
         ReaisPositivo valor)
     {
         if (formaPagamento == Credito)
             return Result.Failure<DespesaSimples>($"{Credito} não é uma forma de pagamento válida para despesa simples");
 
-        Pagamento pagamento = Pagamento.Pago(valor, dataCompra, dataCompra);
+        Pagamento pagamento = Pagamento.Pago(valor, dataOcorrencia, dataOcorrencia);
         return new DespesaSimples(
             IdDespesa.FromNewVersion7Guid(),
             idUsuario,
             idBeneficiario,
             descricao,
             idCategoria,
-            dataCompra,
+            dataOcorrencia,
             formaPagamento,
-            mesReferencia: dataCompra,
+            mesReferencia: dataOcorrencia,
             pagamento);
     }
 }
