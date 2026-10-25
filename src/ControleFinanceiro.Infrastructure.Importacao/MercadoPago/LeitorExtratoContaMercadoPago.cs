@@ -206,7 +206,7 @@ public sealed partial class LeitorExtratoContaMercadoPago : ILeitorExtratoContaI
     /// <returns>Na falha, o fim da frase que começa com "A linha N do arquivo".</returns>
     private static Result<LancamentoContabilizado> Converter(LinhaExtratoMercadoPago linha)
     {
-        string descricao = TirarDocumentos(linha.Descricao);
+        string descricao = (TextoSemDocumentos)linha.Descricao;
 
         return Result
             .FailureIf(descricao.Length == 0, "não tem descrição.")
@@ -244,44 +244,7 @@ public sealed partial class LeitorExtratoContaMercadoPago : ILeitorExtratoContaI
             : ((TextoObrigatorio)descricao[..prefixo.Length], descricao[prefixo.Length..]);
     }
 
-    /// <summary>
-    /// Tira cada CNPJ e cada CPF válidos, com ou sem máscara, e cada CPF mascarado com <c>*</c>, junto com os espaços
-    /// antes deles, e apara o que sobra. O CPF e o CNPJ só de dígitos saem mesmo colados a letras; o CNPJ com letras,
-    /// só separado delas.
-    /// </summary>
-    private static string TirarDocumentos(string texto)
-    {
-        string semCnpjNumerico = CandidatoCnpjNumerico().Replace(texto, candidato => TirarSe(candidato, numero => Cnpj.Criar(numero).IsSuccess));
-        string semCnpj = CandidatoCnpj().Replace(semCnpjNumerico, candidato => TirarSe(candidato, numero => Cnpj.Criar(numero).IsSuccess));
-        string semCpf = CandidatoCpf().Replace(semCnpj, candidato => TirarSe(candidato, numero => Cpf.Criar(numero).IsSuccess));
-
-        return CandidatoCpfMascarado()
-            .Replace(semCpf, candidato => TirarSe(candidato, numero => numero.Contains('*')))
-            .Trim();
-    }
-
-    /// <returns>Vazio quando o documento do <paramref name="candidato"/> é tirado; senão, o candidato como veio.</returns>
-    private static string TirarSe(Match candidato, Func<string, bool> tirar)
-    {
-        return tirar(candidato.Groups["documento"].Value) ? string.Empty : candidato.Value;
-    }
-
     private static long NumeroLinha(CsvReader csv) => LinhasAntesColunas + csv.Parser.RawRow;
-
-    // [0-9], e não \d, que aceita dígitos de outros alfabetos. Os separadores entre os grupos são opcionais.
-    [GeneratedRegex(@"\s*(?<![0-9])(?<documento>[0-9]{3}[. ]?[0-9]{3}[. ]?[0-9]{3}[-. ]?[0-9]{2})(?![0-9])")]
-    private static partial Regex CandidatoCpf();
-
-    [GeneratedRegex(@"\s*(?<![0-9*])(?<documento>[0-9*]{3}\.?[0-9*]{3}\.?[0-9*]{3}-?[0-9*]{2})(?![0-9*])")]
-    private static partial Regex CandidatoCpfMascarado();
-
-    [GeneratedRegex(@"\s*(?<![0-9])(?<documento>[0-9]{2}[. ]?[0-9]{3}[. ]?[0-9]{3}[/ ]?[0-9]{4}[- ]?[0-9]{2})(?![0-9])")]
-    private static partial Regex CandidatoCnpjNumerico();
-
-    // As 12 primeiras posições do CNPJ podem ter letras; os verificadores são sempre dígitos. Sem espaço entre os grupos:
-    // com letras, ele faria trechos de nomes virarem candidatos.
-    [GeneratedRegex(@"\s*(?<![0-9A-Za-z])(?<documento>[0-9A-Za-z]{2}\.?[0-9A-Za-z]{3}\.?[0-9A-Za-z]{3}/?[0-9A-Za-z]{4}-?[0-9]{2})(?![0-9A-Za-z])")]
-    private static partial Regex CandidatoCnpj();
 
     private sealed class LinhaExtratoMercadoPago
     {
