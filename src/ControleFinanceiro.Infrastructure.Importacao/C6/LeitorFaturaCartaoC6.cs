@@ -166,8 +166,8 @@ public sealed partial class LeitorFaturaCartaoC6 : ILeitorFatura
     private static LancamentoFatura Lancar(LinhaFaturaC6 linha, SufixoEParcela sufixoEParcela)
     {
         // A fatura traz a compra positiva e o pagamento ou estorno negativo; a transação é do ponto de vista do
-        // usuário. O 0m - evita um -0 no valor zero.
-        Reais valor = 0m - linha.Valor;
+        // usuário.
+        Reais valor = -linha.Valor;
 
         // A identidade usa a descrição crua, para que mudar o tratamento da descrição não mude as chaves. O final não
         // entra: o id do cartão já está na chave. A parcela entra, para a 3/10 e a 4/10 de faturas diferentes não

@@ -27,6 +27,17 @@ public sealed class ReaisTests
     }
 
     [Theory]
+    [InlineData(0.00)]
+    [InlineData(0.004)]
+    public void Construtor_Quando_ZeroNegativo_Deve_GuardarOZeroSemSinal(decimal valor)
+    {
+        Reais sut = new(-valor);
+
+        sut.Value.Should().Be(0m);
+        decimal.IsNegative(sut.Value).Should().BeFalse();
+    }
+
+    [Theory]
     [InlineData(0, "R$ 0,00")]
     [InlineData(10, "R$ 10,00")]
     [InlineData(15.3, "R$ 15,30")]
