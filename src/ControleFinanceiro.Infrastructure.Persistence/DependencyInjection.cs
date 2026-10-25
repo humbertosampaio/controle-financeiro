@@ -1,9 +1,11 @@
 using ControleFinanceiro.Application.Abstractions;
+using ControleFinanceiro.Domain.Beneficiarios;
 using ControleFinanceiro.Domain.Cartoes;
 using ControleFinanceiro.Domain.Contas;
 using ControleFinanceiro.Domain.Importacoes;
 using ControleFinanceiro.Domain.Transacoes;
 using ControleFinanceiro.Domain.Usuarios;
+using ControleFinanceiro.Infrastructure.Persistence.Beneficiarios;
 using ControleFinanceiro.Infrastructure.Persistence.Cartoes;
 using ControleFinanceiro.Infrastructure.Persistence.Contas;
 using ControleFinanceiro.Infrastructure.Persistence.Importacoes;
@@ -38,7 +40,8 @@ public static class DependencyInjection
                 .AddTransient<ICartaoRepository, CartaoRepository>()
                 .AddTransient<IContaRepository, ContaRepository>()
                 .AddTransient<ITransacaoRepository, TransacaoRepository>()
-                .AddTransient<IImportacaoRepository, ImportacaoRepository>();
+                .AddTransient<IImportacaoRepository, ImportacaoRepository>()
+                .AddTransient<IBeneficiarioRepository, BeneficiarioRepository>();
         }
     }
 }
