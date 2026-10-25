@@ -36,7 +36,7 @@
   <ItemGroup>
     <None Include="..\ControleFinanceiro.Infrastructure.Importacao.Tests\Fixtures\C6\extrato-conta.csv" Link="Importacoes\ImportarExtrato\Fixtures\extrato-conta.csv" CopyToOutputDirectory="PreserveNewest" />
     <None Include="..\ControleFinanceiro.Infrastructure.Importacao.Tests\Fixtures\C6\fatura-cartao.csv" Link="Importacoes\ImportarFatura\Fixtures\fatura-cartao.csv" CopyToOutputDirectory="PreserveNewest" />
-    <None Include="..\ControleFinanceiro.Infrastructure.Importacao.Tests\Fixtures\MercadoPago\extrato-conta.csv" Link="Importacoes\ImportarExtratoMercadoPago\Fixtures\extrato-conta.csv" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="..\ControleFinanceiro.Infrastructure.Importacao.Tests\Fixtures\MercadoPago\extrato-conta.csv" Link="Importacoes\ImportarExtrato\Fixtures\extrato-conta-mercado-pago.csv" CopyToOutputDirectory="PreserveNewest" />
     <None Include="..\ControleFinanceiro.Infrastructure.Importacao.Tests\Fixtures\MercadoPago\fatura-cartao.csv" Link="Importacoes\ImportarFatura\Fixtures\fatura-cartao-mercado-pago.csv" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 

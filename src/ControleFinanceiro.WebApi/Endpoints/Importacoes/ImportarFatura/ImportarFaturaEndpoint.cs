@@ -56,7 +56,7 @@ public sealed class ImportarFaturaEndpoint : Endpoint<ImportarFaturaRequest, Imp
 
     public override void Configure()
     {
-        Post("usuarios/{idUsuario}/importacoes/faturas");
+        Post("usuarios/{idUsuario}/importacoes/faturas/{layout}");
         AllowFileUploads();
         AllowAnonymous();
 

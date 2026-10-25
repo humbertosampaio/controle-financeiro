@@ -1,5 +1,4 @@
 using ControleFinanceiro.Application.Abstractions;
-using ControleFinanceiro.Application.Importacoes;
 using ControleFinanceiro.Domain.Contas;
 using ControleFinanceiro.Domain.Importacoes;
 using ControleFinanceiro.Domain.Shared;
@@ -12,8 +11,8 @@ using Microsoft.AspNetCore.Mvc;
 namespace ControleFinanceiro.WebApi.Endpoints.Importacoes.ImportarExtrato;
 
 /// <summary>
-/// Lê o arquivo de um layout que traz a conta e o importa pelo <see cref="ImportacaoExtratoService"/>. Nada é gravado
-/// quando a resposta é de erro.
+/// Lê o extrato no layout da rota e o importa pelo <see cref="ImportacaoExtratoService"/>. O layout cujo arquivo não
+/// traz a conta é lido com o sufixo que o usuário informou. Nada é gravado quando a resposta é de erro.
 /// </summary>
 public sealed class ImportarExtratoEndpoint : Endpoint<ImportarExtratoRequest, ImportarExtratoResponse>
 {
@@ -25,24 +24,24 @@ public sealed class ImportarExtratoEndpoint : Endpoint<ImportarExtratoRequest, I
 
     private readonly IUsuarioAtual _usuarioAtual;
     private readonly IUsuarioRepository _usuarioRepository;
-    private readonly IEnumerable<ILeitorExtrato> _leitores;
+    private readonly LeituraExtratoService _leituraExtrato;
     private readonly ImportacaoExtratoService _importacaoExtrato;
 
     public ImportarExtratoEndpoint(
         IUsuarioAtual usuarioAtual,
         IUsuarioRepository usuarioRepository,
-        IEnumerable<ILeitorExtrato> leitores,
+        LeituraExtratoService leituraExtrato,
         ImportacaoExtratoService importacaoExtrato)
     {
         _usuarioAtual = usuarioAtual;
         _usuarioRepository = usuarioRepository;
-        _leitores = leitores;
+        _leituraExtrato = leituraExtrato;
         _importacaoExtrato = importacaoExtrato;
     }
 
     public override void Configure()
     {
-        Post("usuarios/{idUsuario}/importacoes");
+        Post("usuarios/{idUsuario}/importacoes/extratos/{layout}");
         AllowFileUploads();
         AllowAnonymous();
 
@@ -58,26 +57,26 @@ public sealed class ImportarExtratoEndpoint : Endpoint<ImportarExtratoRequest, I
 
         await _usuarioRepository.ObterPorIdAsync(idUsuario, ct)
             .ToResult(Falha.UsuarioNaoEncontrado)
-            .Bind(_ => LerAsync(layout, req.Arquivo!, ct))
+            .Bind(_ => LerAsync(layout, req, ct))
             .Bind(extrato => _importacaoExtrato
                 .ImportarAsync(idUsuario, layout, extrato, ct)
                 .MapError(Falha.DeDominio))
             .Match(
                 resposta => Send.OkAsync(resposta, ct),
-                falha => EnviarFalhaAsync(falha, ct));
+                falha => EnviarFalhaAsync(layout, falha, ct));
     }
 
-    private async Task<Result<Extrato, Falha>> LerAsync(LayoutArquivoImportacao layout, IFormFile arquivo, CancellationToken ct)
+    /// <param name="req">Já validada: traz o sufixo quando o layout pede.</param>
+    private async Task<Result<Extrato, Falha>> LerAsync(LayoutArquivoImportacao layout, ImportarExtratoRequest req, CancellationToken ct)
     {
-        ILeitorExtrato leitor = _leitores.Single(l => l.Layout == layout);
-        await using Stream conteudo = arquivo.OpenReadStream();
+        await using Stream conteudo = req.Arquivo!.OpenReadStream();
 
-        return await leitor
-            .LerAsync(conteudo, ct)
+        return await _leituraExtrato
+            .LerAsync(layout, conteudo, req.SufixoConta, ct)
             .MapError(Falha.ArquivoInvalido);
     }
 
-    private async Task EnviarFalhaAsync(Falha falha, CancellationToken ct)
+    private async Task EnviarFalhaAsync(LayoutArquivoImportacao layout, Falha falha, CancellationToken ct)
     {
         switch (falha)
         {
@@ -87,6 +86,12 @@ public sealed class ImportarExtratoEndpoint : Endpoint<ImportarExtratoRequest, I
 
             case Falha.Arquivo(string mensagem):
                 await EnviarArquivoInvalidoAsync(mensagem, ct);
+                break;
+
+            // A conta vem do sufixo quando o usuário o informou, e do arquivo nos outros layouts.
+            case Falha.Dominio(ErroContaDeOutroTipo erro) when LayoutArquivoImportacao.ExtratosContaInformada.Contains(layout):
+                AddError(r => r.SufixoConta, erro.Descricao);
+                await Send.ErrorsAsync(StatusCodes.Status409Conflict, ct);
                 break;
 
             case Falha.Dominio(ErroContaDeOutroTipo erro):
