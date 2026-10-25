@@ -48,7 +48,6 @@ Os arquivos `.Designer.cs` e `ModelSnapshot.cs` são gerados pelo EF: não leia.
 
 ## Dívidas conhecidas — não reportar
 
-- `Beneficiario.IdUsuario` é `long`, enquanto `IdUsuario` é Vogen sobre `Guid`.
 - `Program.cs` tem `.AddApplication()` comentado: a camada de aplicação ainda não registra nada.
 - Só os agregados `Usuario` e `Cartao` estão persistidos; `ContaBancaria` (#47), `DespesaRecorrente` (#9), `Despesa`, `Beneficiario` e `CategoriaDespesa` ainda não têm mapeamento EF.
 
