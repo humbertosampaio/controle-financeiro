@@ -37,6 +37,8 @@ Não use `InternalsVisibleTo`. Um método `internal` está fechado porque só um
 Cinco caminhos, do mais geral para o mais local:
 
 1. **Customização**: a regra vale para todo teste. É o caso do `DiaVencimentoCartaoCustomization`, que traz qualquer inteiro para 1–28. Use quando o valor gerado por padrão seria inválido.
+
+   Value object de faixa curta (os dias de 1 a 28, o `MesReferencia`) também não se repete: a customização envolve o gerador num `DistinctSpecimenBuilder`, que sorteia de novo enquanto o valor estiver entre os últimos gerados no mesmo teste. Com isso, dois valores pedidos no mesmo teste, ou o de uma entidade do fixture e outro pedido à parte, saem sempre diferentes, como já acontece com um `int` ou uma `string`. O teste que precisa de um dia diferente do vencimento do cartão pede `Cartao cartao, DiaVencimentoCartao outroDia`, em vez de derivar o dia com a regra da faixa. A janela fica abaixo da quantidade de valores possíveis, para sempre sobrar um a sortear: 27 para os dias, 12 para o mês.
 2. **AutoData privado da classe**: a regra vale para vários testes de uma classe só. A classe declara um atributo `private sealed` que herda do `DomainAutoDataAttribute` e recebe a configuração no construtor, como o `ImportacaoDoCartaoAutoDataAttribute` da `LoteTransacoesFactoryTests`, que monta a importação a partir do cartão, e não da conta. Prefira esse atributo a um método auxiliar que pede valores ao `Fixture` para montar o objeto no corpo do teste.
 3. **Anotação no parâmetro**: o teste restringe só a si mesmo.
    - `[Range(1, 12)] int mes`, como em `MesReferenciaTests`, quando qualquer valor de uma faixa serve.

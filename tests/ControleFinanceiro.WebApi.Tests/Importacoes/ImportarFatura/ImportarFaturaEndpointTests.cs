@@ -116,7 +116,7 @@ public sealed class ImportarFaturaEndpointTests : IAsyncLifetime
     {
         Guid idUsuario = await _api.CadastrarUsuarioAsync(cadastro);
         AdicionarCartaoRequest fisico = cartao with { Banco = Banco.C6, Sufixo = FaturaCartaoC6.SufixoFisico, DiaVencimento = 15 };
-        Guid idCartao = await AdicionarCartaoAsync(idUsuario, fisico);
+        Guid idCartao = await _api.AdicionarCartaoAsync(idUsuario, fisico);
 
         ImportarFaturaResponse corpo = await ImportarComSucessoAsync(idUsuario, FaturaCartaoC6.Completo(), diaVencimento: 10);
 
@@ -234,14 +234,6 @@ public sealed class ImportarFaturaEndpointTests : IAsyncLifetime
         resposta.StatusCode.Should().Be(HttpStatusCode.BadRequest);
         (await resposta.CamposComErroAsync()).Should().BeEquivalentTo("idUsuario", "layout", "arquivo", "diaVencimento", "vencimentos");
         await _api.DeveEstarSemImportacaoAsync();
-    }
-
-    private async Task<Guid> AdicionarCartaoAsync(Guid idUsuario, AdicionarCartaoRequest cartao)
-    {
-        using HttpResponseMessage resposta = await _api.Client.PostAsJsonAsync(new Uri($"/api/usuarios/{idUsuario}/cartoes", UriKind.Relative), cartao);
-        resposta.StatusCode.Should().Be(HttpStatusCode.Created);
-        AdicionarCartaoResponse? corpo = await resposta.Content.ReadFromJsonAsync<AdicionarCartaoResponse>();
-        return corpo!.Id;
     }
 
     private Task<HttpResponseMessage> ImportarAsync(Guid idUsuario, byte[] arquivo)

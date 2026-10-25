@@ -38,4 +38,10 @@ public sealed class Cartao : AggregateRoot<IdCartao>
     {
         return new Cartao(IdCartao.FromNewVersion7Guid(), idUsuario, banco, sufixo, diaVencimento);
     }
+
+    /// <remarks>
+    /// As despesas já geradas não mudam, porque guardam a data projetada do pagamento: o dia novo vale para as
+    /// geradas depois.
+    /// </remarks>
+    public void AlterarVencimento(DiaVencimentoCartao diaVencimento) => DiaVencimento = diaVencimento;
 }

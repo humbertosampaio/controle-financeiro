@@ -1,7 +1,6 @@
 using AutoFixture.Xunit2;
 using ControleFinanceiro.Domain.Shared.ValueObjects;
 using ControleFinanceiro.Tests.Shared.AutoFixture.Attributes;
-using ControleFinanceiro.Tests.Shared.AutoFixture.SpecimenBuilders;
 using CSharpFunctionalExtensions;
 using System.ComponentModel.DataAnnotations;
 
@@ -223,21 +222,10 @@ public sealed class MesReferenciaTests
         referencia1.GetHashCode().Should().Be(referencia2.GetHashCode());
     }
 
-    [Theory, CustomAutoData]
+    [Theory, DomainAutoData]
     public void Equals_Quando_MesOuAnoDiferentes_Deve_RetornarFalse(MesReferencia referencia1, MesReferencia referencia2)
     {
         referencia1.Should().NotBe(referencia2);
         referencia1.GetHashCode().Should().NotBe(referencia2.GetHashCode());
-    }
-
-    /// <summary>
-    /// Adiciona uma customização para gerar instâncias de <see cref="MesReferencia"/> distintas
-    /// </summary>
-    private sealed class CustomAutoDataAttribute : DomainAutoDataAttribute
-    {
-        public CustomAutoDataAttribute()
-            : base(fixture => fixture.Customizations.Insert(index: 0, new DistinctSpecimenBuilder<MesReferencia>(new MesReferenciaGenerator(), janela: 2)))
-        {
-        }
     }
 }

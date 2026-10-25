@@ -54,9 +54,9 @@ public sealed class AdicionarCartaoEndpointTests : IAsyncLifetime
         AdicionarCartaoRequest segundo)
     {
         Guid idUsuario = await _api.CadastrarUsuarioAsync(cadastro);
-        Guid idPrimeiro = await AdicionarComSucessoAsync(idUsuario, primeiro);
+        Guid idPrimeiro = await _api.AdicionarCartaoAsync(idUsuario, primeiro);
 
-        Guid idSegundo = await AdicionarComSucessoAsync(idUsuario, segundo);
+        Guid idSegundo = await _api.AdicionarCartaoAsync(idUsuario, segundo);
 
         (await _api.LerTodosAsync(db => db.Cartoes)).Select(cartao => (Guid)cartao.Id).Should().BeEquivalentTo([idPrimeiro, idSegundo]);
     }
@@ -68,10 +68,10 @@ public sealed class AdicionarCartaoEndpointTests : IAsyncLifetime
         AdicionarCartaoRequest requisicao)
     {
         Guid idOutroUsuario = await _api.CadastrarUsuarioAsync(outroCadastro);
-        await AdicionarComSucessoAsync(idOutroUsuario, requisicao);
+        await _api.AdicionarCartaoAsync(idOutroUsuario, requisicao);
         Guid idUsuario = await _api.CadastrarUsuarioAsync(cadastro);
 
-        Guid idCartao = await AdicionarComSucessoAsync(idUsuario, requisicao);
+        Guid idCartao = await _api.AdicionarCartaoAsync(idUsuario, requisicao);
 
         List<Cartao> cartoes = await _api.LerTodosAsync(db => db.Cartoes);
         cartoes.Should().HaveCount(2);
@@ -85,7 +85,7 @@ public sealed class AdicionarCartaoEndpointTests : IAsyncLifetime
         AdicionarCartaoRequest requisicao)
     {
         Guid idUsuario = await _api.CadastrarUsuarioAsync(cadastro);
-        await AdicionarComSucessoAsync(idUsuario, requisicao);
+        await _api.AdicionarCartaoAsync(idUsuario, requisicao);
 
         using HttpResponseMessage resposta = await AdicionarAsync(idUsuario, requisicao);
 
@@ -122,14 +122,6 @@ public sealed class AdicionarCartaoEndpointTests : IAsyncLifetime
         return _api.Client.PostAsJsonAsync(
             new Uri($"/api/usuarios/{idUsuario}/cartoes", UriKind.Relative),
             requisicao);
-    }
-
-    private async Task<Guid> AdicionarComSucessoAsync(Guid idUsuario, AdicionarCartaoRequest requisicao)
-    {
-        using HttpResponseMessage resposta = await AdicionarAsync(idUsuario, requisicao);
-        resposta.StatusCode.Should().Be(HttpStatusCode.Created);
-        AdicionarCartaoResponse? corpo = await resposta.Content.ReadFromJsonAsync<AdicionarCartaoResponse>();
-        return corpo!.Id;
     }
 
     private Task<int> ContarCartoesAsync() =>
