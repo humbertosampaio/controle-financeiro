@@ -284,7 +284,12 @@ namespace ControleFinanceiro.Infrastructure.Persistence.Migrations
 
                     b.HasIndex("id_usuario");
 
-                    b.ToTable("descontos_salariais", (string)null);
+                    b.ToTable("descontos_salariais", null, t =>
+                        {
+                            t.HasCheckConstraint("CK_descontos_salariais_descricao", "btrim(descricao) <> ''");
+
+                            t.HasCheckConstraint("CK_descontos_salariais_valor", "valor >= 0");
+                        });
                 });
 
             modelBuilder.Entity("ControleFinanceiro.Domain.Usuarios.Usuario", b =>
@@ -305,7 +310,12 @@ namespace ControleFinanceiro.Infrastructure.Persistence.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("usuarios", (string)null);
+                    b.ToTable("usuarios", null, t =>
+                        {
+                            t.HasCheckConstraint("CK_usuarios_nome", "btrim(nome) <> ''");
+
+                            t.HasCheckConstraint("CK_usuarios_renda_bruta", "renda_bruta >= 0");
+                        });
                 });
 
             modelBuilder.Entity("ControleFinanceiro.Domain.Cartoes.Cartao", b =>

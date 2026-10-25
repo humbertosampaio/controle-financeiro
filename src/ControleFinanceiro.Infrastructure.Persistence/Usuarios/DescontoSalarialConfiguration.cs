@@ -8,7 +8,12 @@ internal sealed class DescontoSalarialConfiguration : IEntityTypeConfiguration<D
 {
     public void Configure(EntityTypeBuilder<DescontoSalarial> entity)
     {
-        entity.ToTable("descontos_salariais");
+        // Os CHECK repetem no esquema o que o domínio já garante; a API é a única porta de entrada dos dados.
+        entity.ToTable("descontos_salariais", tabela =>
+        {
+            tabela.HasCheckConstraint("CK_descontos_salariais_descricao", "btrim(descricao) <> ''");
+            tabela.HasCheckConstraint("CK_descontos_salariais_valor", "valor >= 0");
+        });
         entity.HasKey(d => d.Id);
 
         entity.Property(d => d.Id)
