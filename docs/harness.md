@@ -79,7 +79,22 @@ git config core.hooksPath .githooks
 | `pre-commit` | `scan-staged.sh`: arquivo de `dados/`, extrato fora de Fixtures, chave da Anthropic, token do GitHub, chave privada, senha em appsettings |
 | `commit-msg` | Conventional Commits em PT-BR, descrição com maiúscula e sem ponto final |
 | `pre-push` | nada vai para a `main`; branch `<tipo>/<issue>-<slug>` ou `dependabot/...` (para ajustar um PR do Dependabot, como acompanhar no código a versão que ele subiu); testes do guardrail e de `testes-afetados.mjs`; build; testes de unidade; testes de integração dos endpoints afetados (precisa do Docker) |
-| CI (`ci.yml`) | build; testes de unidade; suíte de integração completa; testes do guardrail e de `testes-afetados.mjs`; varredura dos arquivos do PR |
+| CI (`ci.yml`) | build; modelo do EF sem migration pendente; testes de unidade; suíte de integração completa; testes do guardrail e de `testes-afetados.mjs`; varredura dos arquivos do PR |
+
+### Modelo do EF sem migration
+
+Mudar um value object, uma configuração do EF ou uma convenção pode alterar o modelo sem que ninguém gere a migration. Os testes de integração só pegam isso de forma indireta: o EF 10 falha no `MigrateAsync` com uma mensagem que não aponta a causa. Por isso a conferência é um gate próprio:
+
+```bash
+dotnet tool restore
+dotnet ef migrations has-pending-model-changes --project src/ControleFinanceiro.Infrastructure.Persistence
+```
+
+O comando sai com código 1 quando há mudança pendente. Ele usa a `ControleFinanceiroDesignTimeDbContextFactory` e não abre conexão, então não precisa de Docker.
+
+- **`revisar-mudanca`:** roda quando o diff toca `src/ControleFinanceiro.Domain/**` ou `src/ControleFinanceiro.Infrastructure.Persistence/**`.
+- **CI:** roda em todo PR, logo depois do build (leva segundos e pega também a mudança que chega por outro caminho, como a atualização de um pacote).
+- **Versão:** o `dotnet-ef` é ferramenta local, fixada em `dotnet-tools.json` na versão do `Microsoft.EntityFrameworkCore` do `Directory.Packages.props`. O Dependabot atualiza os dois no mesmo grupo (`microsoft-e-npgsql`). Ao subir o EF à mão, suba também o `dotnet-ef` (`dotnet tool update dotnet-ef --version <versão>`).
 
 ### Testes de integração afetados
 

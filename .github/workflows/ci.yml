@@ -21,6 +21,13 @@ jobs:
       - name: Build
         run: dotnet build ControleFinanceiro.slnx --nologo
 
+      # Sai com código 1 se o modelo do EF mudou sem migration. O dotnet-ef vem de
+      # dotnet-tools.json, na mesma versão do EF do projeto, e não precisa de banco.
+      - name: Modelo do EF sem migration pendente
+        run: |
+          dotnet tool restore
+          dotnet ef migrations has-pending-model-changes --project src/ControleFinanceiro.Infrastructure.Persistence --no-build
+
       - name: Testes de unidade
         run: dotnet test ControleFinanceiro.slnx --no-build --nologo --filter "FullyQualifiedName!~ControleFinanceiro.WebApi.Tests"
 

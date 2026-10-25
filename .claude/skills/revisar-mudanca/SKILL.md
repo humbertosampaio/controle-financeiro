@@ -44,6 +44,15 @@ Depois, os testes de integração afetados (precisam do Docker), conforme o `fil
 
 O último comando da lista varre os arquivos alterados na branch em busca de secret e de dado financeiro.
 
+Se o diff toca `src/ControleFinanceiro.Domain/**` ou `src/ControleFinanceiro.Infrastructure.Persistence/**`, confira se o modelo do EF mudou sem migration:
+
+```bash
+dotnet tool restore
+dotnet ef migrations has-pending-model-changes --project src/ControleFinanceiro.Infrastructure.Persistence
+```
+
+Saída diferente de "No changes have been made to the model since the last migration." (o comando sai com código 1) é vermelho: gere a migration ou desfaça a mudança no mapeamento. Sem essa conferência, o problema só aparece nos testes de integração, como falha no `MigrateAsync` que não aponta a causa.
+
 Algum vermelho: **pare e corrija antes de seguir.**
 
 ## 3. Checagens rápidas no diff
@@ -65,7 +74,7 @@ Rode os revisores escolhidos no passo 1, em paralelo. Se o `autor-de-testes` esc
 
 ```
 ## Gates
-build ✅ | unidade ✅ (N) | integração ✅ (N, filtro) | guardrail ✅ | varredura ✅
+build ✅ | unidade ✅ (N) | integração ✅ (N, filtro) | modelo do EF ✅ (ou "não se aplica") | guardrail ✅ | varredura ✅
 
 ## Revisores
 <achados agrupados por severidade, com arquivo:linha>

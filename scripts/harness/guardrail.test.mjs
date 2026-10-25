@@ -62,6 +62,8 @@ const commandCases = [
   ["dotnet build ControleFinanceiro.slnx", "allow"],
   ["dotnet test ControleFinanceiro.slnx", "allow"],
   ["dotnet ef migrations add AdicionaTransacoes", "allow"],
+  ["dotnet ef migrations has-pending-model-changes --project src/ControleFinanceiro.Infrastructure.Persistence", "allow"],
+  ["dotnet tool restore", "allow"],
   ["dotnet user-secrets set \"Parameters:PostgresPassword\" \"x\" --project src/ControleFinanceiro.AppHost", "allow"],
   ["head -5 dados/c6-extrato-2026-09.csv", "allow"],
   ["gh issue view 1 --comments", "allow"],
