@@ -52,6 +52,38 @@ public sealed class LoteTransacoesFactoryTests
     }
 
     [Theory, DomainAutoData]
+    public void Criar_Quando_LancamentoComParcela_Deve_CriarTransacaoParcelada(
+        [Frozen] IdUsuario idUsuario,
+        [Frozen] ContaBancaria conta,
+        ImportacaoArquivo importacao,
+        [Frozen] Parcela parcela,
+        Lancamento lancamento)
+    {
+        Result<IReadOnlyList<Transacao>, Erro> result = LoteTransacoesFactory.Criar(idUsuario, conta, importacao, [lancamento]);
+
+        Transacao transacao = result.Should().Succeed().Which.Should().ContainSingle().Subject;
+        transacao.Parcela.Should().Be(parcela);
+        transacao.EhParcelada.Should().BeTrue();
+    }
+
+    [Theory, DomainAutoData]
+    public void Criar_Quando_LancamentoSemParcela_Deve_CriarTransacaoNaoParcelada(
+        [Frozen] IdUsuario idUsuario,
+        [Frozen] ContaBancaria conta,
+        ImportacaoArquivo importacao,
+        IdentidadeLancamento identidade,
+        DateOnly data,
+        Reais valor,
+        TextoObrigatorio descricao)
+    {
+        Lancamento lancamento = Lancamento.Criar(data, hora: null, valor, descricao, contraparte: null, parcela: null, categoriaBanco: null, identidade);
+
+        Result<IReadOnlyList<Transacao>, Erro> result = LoteTransacoesFactory.Criar(idUsuario, conta, importacao, [lancamento]);
+
+        result.Should().Succeed().Which.Should().ContainSingle().Which.EhParcelada.Should().BeFalse();
+    }
+
+    [Theory, DomainAutoData]
     public void Criar_Deve_LigarCadaTransacaoAoUsuarioEAImportacao(
         [Frozen] IdUsuario idUsuario,
         [Frozen] ContaBancaria conta,
