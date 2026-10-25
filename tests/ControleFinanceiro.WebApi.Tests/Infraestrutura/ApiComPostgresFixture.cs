@@ -106,11 +106,17 @@ public sealed class ApiComPostgresFixture : IAsyncLifetime
         return await consulta(dbContext);
     }
 
-    /// <summary>Todas as linhas de uma <paramref name="tabela"/>, lidas sem rastreio num escopo novo.</summary>
+    /// <summary>
+    /// Todas as linhas de uma <paramref name="tabela"/>, lidas sem rastreio num escopo novo. Ignora o filtro do
+    /// usuário atual: a leitura roda fora de requisição, sem usuário, e o teste confere a tabela inteira.
+    /// </summary>
     public Task<List<T>> LerTodosAsync<T>(Func<ControleFinanceiroDbContext, IQueryable<T>> tabela)
         where T : class
     {
-        return ConsultarAsync(db => tabela(db).AsNoTracking().ToListAsync());
+        return ConsultarAsync(db => tabela(db)
+            .IgnoreQueryFilters([ControleFinanceiroDbContext.FiltroUsuario])
+            .AsNoTracking()
+            .ToListAsync());
     }
 
     /// <summary>

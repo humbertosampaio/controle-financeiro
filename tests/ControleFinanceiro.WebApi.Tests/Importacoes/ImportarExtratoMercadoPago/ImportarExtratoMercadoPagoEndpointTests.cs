@@ -182,8 +182,8 @@ public sealed class ImportarExtratoMercadoPagoEndpointTests : IAsyncLifetime
 
     private async Task DeveEstarSemImportacaoAsync()
     {
-        (await _api.ConsultarAsync(db => db.Contas.CountAsync())).Should().Be(0);
-        (await _api.ConsultarAsync(db => db.Transacoes.CountAsync())).Should().Be(0);
-        (await _api.ConsultarAsync(db => db.Importacoes.CountAsync())).Should().Be(0);
+        (await _api.LerTodosAsync(db => db.Contas)).Should().BeEmpty();
+        (await _api.LerTodosAsync(db => db.Transacoes)).Should().BeEmpty();
+        (await _api.LerTodosAsync(db => db.Importacoes)).Should().BeEmpty();
     }
 }

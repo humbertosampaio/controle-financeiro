@@ -5,7 +5,6 @@ using ControleFinanceiro.WebApi.Endpoints.Usuarios.AdicionarCartao;
 using ControleFinanceiro.WebApi.Endpoints.Usuarios.Cadastrar;
 using ControleFinanceiro.WebApi.Tests.AutoFixture;
 using ControleFinanceiro.WebApi.Tests.Infraestrutura;
-using Microsoft.EntityFrameworkCore;
 using System.Net;
 using System.Net.Http.Json;
 
@@ -124,6 +123,5 @@ public sealed class AdicionarCartaoEndpointTests : IAsyncLifetime
             requisicao);
     }
 
-    private Task<int> ContarCartoesAsync() =>
-        _api.ConsultarAsync(db => db.Cartoes.CountAsync());
+    private async Task<int> ContarCartoesAsync() => (await _api.LerTodosAsync(db => db.Cartoes)).Count;
 }
