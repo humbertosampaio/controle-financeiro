@@ -8,8 +8,9 @@ O Mago responde no formato que o prompt pedir, então o importador só funciona 
 
 1. Abra o Mago no aplicativo do Mercado Pago.
 2. Cole o prompt abaixo, trocando `MM/AAAA` pelo mês de **vencimento** da fatura (ex.: `09/2026`).
-3. Copie só o bloco do CSV da resposta, do cabeçalho até a última linha, e salve em `dados/mercado-pago-cartao-MM-AAAA.csv` (UTF-8). A pasta `dados/` é ignorada pelo git; o arquivo nunca entra no repositório.
+3. Copie só o bloco do CSV da resposta, do cabeçalho até a última linha, e salve em `dados/mercado-pago-cartao-MM-AAAA.csv` (UTF-8), com `MM-AAAA` sendo o mês do **fechamento**, e não o do vencimento que vai no prompt: é o mês que o pagamento da fatura traz no nome ("Fatura de <mês>"). A pasta `dados/` é ignorada pelo git; o arquivo nunca entra no repositório.
 4. Leia a seção "Conferência" da resposta. Se o Mago disser que algum lançamento ou detalhe não pôde ser consultado, ou que os lançamentos não explicam o total, peça de novo antes de importar.
+5. Importe pela rota da fatura (`POST usuarios/{idUsuario}/importacoes/faturas`) com `layout=mercado-pago-cartao-csv`.
 
 ## Prompt
 
@@ -42,13 +43,17 @@ REGRAS DE CONSISTÊNCIA
 
 ## O que esperar do arquivo
 
-Observado na fatura de 09/2026, a primeira exportada assim:
+Observado nas faturas com vencimento em 09/2026 e 10/2026, as primeiras exportadas assim:
 
-- O cabeçalho e a ordem das 19 colunas são os do prompt; todas as células vêm entre aspas, mesmo as vazias.
-- `tipo_lancamento` é um código em minúsculas com `_` (ex.: `compra_a_vista`, `compra_parcelada`, `pagamento_debito_automatico_pos_fechamento`). A lista não é fechada: outro mês pode trazer tipos novos, como estorno, tarifa ou juros.
+- O cabeçalho e a ordem das 19 colunas são os do prompt; todas as células vêm entre aspas, mesmo as vazias. O leitor recusa colunas a mais, a menos ou em outra ordem.
+- O fim de linha varia: uma fatura veio com CRLF, e a outra com LF. O leitor aceita os dois.
+- `mes_referencia` é o mês do vencimento, e não o do fechamento.
+- `tipo_lancamento` é um código em minúsculas com `_` (ex.: `compra_a_vista`, `compra_parcelada`, `pagamento_debito_automatico_pos_fechamento`). A lista não é fechada: outro mês pode trazer tipos novos, como estorno, tarifa ou juros. O leitor só aceita os tipos que conhece e recusa o arquivo com o número da linha do tipo novo, que entra na lista do leitor, com teste, quando aparecer.
 - `status` é texto livre do Mago e não serve para regra.
 - Nas compras, `data_lancamento` costuma vir vazia; a data que importa é `data_compra`. No pagamento da fatura é o contrário: vem só a `data_lancamento`, sem cartão, produto nem pedido.
 - Cobrança e crédito ficam em colunas separadas, ambas positivas; o sinal sai do tipo de lançamento.
-- `numero_transacao` vem em todas as linhas.
+- `numero_transacao` vem em todas as linhas e não se repete dentro do arquivo, mas se repete entre faturas: a mesma compra parcelada traz o mesmo número em todas as parcelas. Por isso o leitor reconhece o lançamento pelo número, pela parcela e pelo valor.
+- O pagamento da fatura vem sem `cartao_final`; o leitor o põe no menor final do arquivo.
+- `vendedor` vem vazio, apesar de o prompt pedir.
 
 Como o arquivo é gerado por IA, o layout pode variar mesmo com o prompt fixo. Se a importação recusar um arquivo novo, confira primeiro se o cabeçalho e o formato batem com o prompt antes de mudar o leitor.
