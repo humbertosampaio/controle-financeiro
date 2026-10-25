@@ -19,9 +19,11 @@ namespace ControleFinanceiro.Domain.Transacoes;
 /// texto iguais produzam a mesma chave.
 /// </para>
 /// <para>
-/// O ordinal numera de 1 a n os lançamentos de identidade igual no lote: duas compras iguais no mesmo dia
-/// continuam sendo duas. Como a identidade composta começa pela data e o extrato traz sempre o dia
-/// inteiro, reimportar um período sobreposto gera as mesmas chaves.
+/// O ordinal numera de 1 a n os lançamentos de identidade igual no lote, qualquer que seja o primeiro campo
+/// da identidade composta: duas compras iguais no mesmo dia, ou duas linhas com o mesmo identificador do
+/// banco, a mesma parcela e o mesmo valor, continuam sendo duas. Como a identidade composta pela data
+/// começa por ela e o extrato traz sempre o dia inteiro, reimportar um período sobreposto gera as mesmas
+/// chaves; a composta pelo identificador gera as mesmas chaves ao reimportar o mesmo arquivo.
 /// </para>
 /// <para>Mudar o texto canônico exige uma versão nova (<c>v2</c>): as chaves gravadas deixariam de bater.</para>
 /// </remarks>

@@ -127,6 +127,37 @@ public sealed class IdentidadeLancamentoTests
         result.Should().FailWith("O identificador do lançamento no banco está em branco.");
     }
 
+    [Fact]
+    public void Composta_Quando_Identificador_Deve_ComecarPeloIdentificadorComoOBancoEscreveuSoAparado()
+    {
+        Result<IdentidadeLancamento> result = IdentidadeLancamento.Composta(" aB-123 ");
+
+        IdentidadeLancamento identidade = result.Should().Succeed().Subject;
+        identidade.Campos.Should().Equal("aB-123");
+        identidade.EhUnica.Should().BeFalse();
+    }
+
+    [Theory]
+    [InlineData(null)]
+    [InlineData("")]
+    [InlineData("   ")]
+    public void Composta_Quando_IdentificadorEmBranco_Deve_RetornarFalha(string? identificador)
+    {
+        Result<IdentidadeLancamento> result = IdentidadeLancamento.Composta(identificador);
+
+        result.Should().FailWith("O identificador do lançamento no banco está em branco.");
+    }
+
+    [Fact]
+    public void Composta_Quando_IdentificadorComParcelaEValor_Deve_ManterAOrdemDeclarada()
+    {
+        IdentidadeLancamento result = IdentidadeLancamento.Composta("100000000001").Value
+            .ComParcela((Parcela)(3, 10))
+            .ComValor(-123.4m);
+
+        result.Campos.Should().Equal("100000000001", "3/10", "-123.40");
+    }
+
     [Theory, DomainAutoData]
     public void ComHora_Quando_IdentidadeUnica_Deve_LancarExcecao(IdentidadeLancamento unica, TimeOnly hora)
     {

@@ -111,6 +111,27 @@ public sealed class LoteTransacoesFactoryTests
             .Which.Select(t => t.Chave).Should().HaveCount(2).And.OnlyHaveUniqueItems();
     }
 
+    [Theory, ImportacaoDoCartaoAutoData]
+    public void Criar_Quando_IdentidadesCompostasPeloMesmoIdentificador_Deve_GerarUmaTransacaoParaCadaPeloOrdinal(
+        [Frozen] IdUsuario idUsuario,
+        [Frozen] Cartao cartao,
+        ImportacaoArquivo importacao,
+        string identificador,
+        DateOnly data,
+        Reais valor,
+        TextoObrigatorio descricao)
+    {
+        IdentidadeLancamento identidade = IdentidadeLancamento.Composta(identificador).Value.ComValor(valor);
+        Lancamento lancamento = Lancamento.Criar(data, hora: null, valor, descricao, contraparte: null, parcela: null, categoriaBanco: null, identidade);
+        OrigemTransacao origem = OrigemTransacao.DoCartao(cartao.Id);
+
+        Result<IReadOnlyList<Transacao>, Erro> result = LoteTransacoesFactory.Criar(idUsuario, cartao, importacao, [lancamento, lancamento]);
+
+        result.Should().Succeed().Which.Select(t => t.Chave).Should().Equal(
+            ChaveDeduplicacao.Calcular(cartao.Banco, origem, identidade, ordinal: 1),
+            ChaveDeduplicacao.Calcular(cartao.Banco, origem, identidade, ordinal: 2));
+    }
+
     [Theory, DomainAutoData]
     public void Criar_Quando_ContaNaoPertenceAoUsuario_Deve_RetornarFalha(
         IdUsuario idUsuario,
