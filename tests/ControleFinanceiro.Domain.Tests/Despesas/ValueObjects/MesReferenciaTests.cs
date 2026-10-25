@@ -53,7 +53,7 @@ public sealed class MesReferenciaTests
     }
 
     [Theory, DomainAutoData]
-    public void Anterior_Quando_Janeiro_Deve_RetornarMesReferenciaEmDezembroDoAnoAnterior(int ano)
+    public void Anterior_Quando_Janeiro_Deve_RetornarMesReferenciaEmDezembroDoAnoAnterior([Range(2, 9999)] int ano)
     {
         const int janeiro = 1;
         const int dezembro = 12;
