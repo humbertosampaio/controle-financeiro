@@ -90,11 +90,11 @@ public sealed class CartaoFactoryTests
         [Frozen] Banco banco,
         [Frozen] SufixoCartao sufixo,
         Cartao existente,
-        DiaVencimentoCartao diaUnico)
+        DiaVencimentoCartao outroDia)
     {
         DiaVencimentoCartao vencimentoOriginal = existente.DiaVencimento;
         VencimentosCartoesNovos vencimentos = VencimentosCartoesNovos.Criar(
-            diaUnico, new Dictionary<SufixoCartao, DiaVencimentoCartao> { [sufixo] = diaUnico }).Value;
+            outroDia, new Dictionary<SufixoCartao, DiaVencimentoCartao> { [sufixo] = outroDia }).Value;
 
         IReadOnlyList<Cartao> result = CartaoFactory.ObterOuCriar(idUsuario, [existente], banco, [sufixo], vencimentos);
 
