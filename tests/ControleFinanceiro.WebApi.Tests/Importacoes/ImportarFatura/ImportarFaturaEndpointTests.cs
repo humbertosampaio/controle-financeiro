@@ -132,6 +132,30 @@ public sealed class ImportarFaturaEndpointTests : IAsyncLifetime
     }
 
     [Theory, ApiAutoData]
+    public async Task Post_Quando_OutroUsuarioTemOMesmoCartao_Deve_CriarOCartaoDoUsuario(
+        CadastrarUsuarioRequest cadastro,
+        CadastrarUsuarioRequest cadastroOutro)
+    {
+        Guid idUsuario = await _api.CadastrarUsuarioAsync(cadastro);
+        Guid idOutro = await _api.CadastrarUsuarioAsync(cadastroOutro);
+        ImportarFaturaResponse doOutro = await ImportarComSucessoAsync(idOutro, FaturaCartaoC6.Completo());
+
+        ImportarFaturaResponse corpo = await ImportarComSucessoAsync(idUsuario, FaturaCartaoC6.Completo());
+
+        corpo.Cartoes.Should().AllSatisfy(c =>
+        {
+            c.CartaoNovo.Should().BeTrue();
+            c.Novas.Should().Be(FaturaCartaoC6.LancamentosPorCartao);
+        });
+        List<Cartao> cartoes = await _api.ObterTodosAsync(db => db.Cartoes);
+        cartoes.Where(c => c.IdUsuario == IdUsuario.From(idUsuario)).Select(c => (Guid)c.Id)
+            .Should().BeEquivalentTo(corpo.Cartoes.Select(c => c.IdCartao));
+        cartoes.Where(c => c.IdUsuario == IdUsuario.From(idOutro)).Select(c => (Guid)c.Id)
+            .Should().BeEquivalentTo(doOutro.Cartoes.Select(c => c.IdCartao));
+        (await _api.ObterTodosAsync(db => db.Transacoes)).Should().HaveCount(2 * FaturaCartaoC6.QuantidadeLancamentos);
+    }
+
+    [Theory, ApiAutoData]
     public async Task Post_Quando_DiaUnicoEDiaDeUmFinal_Deve_AplicarOsDiasAosCartoesNovos(CadastrarUsuarioRequest cadastro)
     {
         Guid idUsuario = await _api.CadastrarUsuarioAsync(cadastro);

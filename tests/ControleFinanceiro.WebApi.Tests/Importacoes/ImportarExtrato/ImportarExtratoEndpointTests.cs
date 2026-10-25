@@ -114,6 +114,28 @@ public sealed class ImportarExtratoEndpointTests : IAsyncLifetime
     }
 
     [Theory, ApiAutoData]
+    public async Task Post_Quando_OutroUsuarioImportouOMesmoExtrato_Deve_CriarAContaDoUsuario(
+        CadastrarUsuarioRequest cadastro,
+        CadastrarUsuarioRequest cadastroOutro)
+    {
+        Guid idUsuario = await _api.CadastrarUsuarioAsync(cadastro);
+        Guid idOutro = await _api.CadastrarUsuarioAsync(cadastroOutro);
+        ImportarExtratoResponse doOutro = await ImportarComSucessoAsync(idOutro, ExtratoContaC6.Completo());
+
+        ImportarExtratoResponse corpo = await ImportarComSucessoAsync(idUsuario, ExtratoContaC6.Completo());
+
+        corpo.IdConta.Should().NotBe(doOutro.IdConta);
+        corpo.Novas.Should().Be(ExtratoContaC6.QuantidadeLancamentos);
+        corpo.JaExistentes.Should().Be(0);
+        corpo.PeriodoNaoImportado.Should().BeNull();
+        List<ContaBancaria> contas = await _api.ObterTodosAsync(db => db.Contas);
+        contas.Select(c => c.IdUsuario).Should().BeEquivalentTo([IdUsuario.From(idUsuario), IdUsuario.From(idOutro)]);
+        List<Transacao> transacoes = await _api.ObterTodosAsync(db => db.Transacoes);
+        transacoes.Should().HaveCount(2 * ExtratoContaC6.QuantidadeLancamentos);
+        transacoes.Count(t => t.IdUsuario == IdUsuario.From(idUsuario)).Should().Be(ExtratoContaC6.QuantidadeLancamentos);
+    }
+
+    [Theory, ApiAutoData]
     public async Task Post_Quando_PeriodoSobrepostoAoJaImportado_Deve_GravarSoAsNovas(CadastrarUsuarioRequest cadastro)
     {
         Guid idUsuario = await _api.CadastrarUsuarioAsync(cadastro);
