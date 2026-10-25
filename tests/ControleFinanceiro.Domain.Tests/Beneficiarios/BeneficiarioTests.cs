@@ -1,5 +1,6 @@
 using ControleFinanceiro.Domain.Beneficiarios;
 using ControleFinanceiro.Domain.Shared.ValueObjects;
+using ControleFinanceiro.Domain.Usuarios;
 using ControleFinanceiro.Tests.Shared.AutoFixture.Attributes;
 using CSharpFunctionalExtensions;
 
@@ -8,7 +9,7 @@ namespace ControleFinanceiro.Domain.Tests.Beneficiarios;
 public sealed class BeneficiarioTests
 {
     [Theory, DomainAutoData]
-    public void Criar_Quando_ParametrosValidos_Deve_RetornarSucesso(long idUsuario, TextoObrigatorio nomeExibicao)
+    public void Criar_Quando_ParametrosValidos_Deve_RetornarSucesso(IdUsuario idUsuario, TextoObrigatorio nomeExibicao)
     {
         Beneficiario beneficiario = Beneficiario.Criar(idUsuario, nomeExibicao);
 

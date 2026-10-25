@@ -1,5 +1,6 @@
 using ControleFinanceiro.Domain.Shared;
 using ControleFinanceiro.Domain.Shared.ValueObjects;
+using ControleFinanceiro.Domain.Usuarios;
 
 namespace ControleFinanceiro.Domain.Beneficiarios;
 
@@ -11,19 +12,19 @@ public readonly partial struct IdBeneficiario
 
 public sealed class Beneficiario : AggregateRoot<IdBeneficiario>
 {
-    public long IdUsuario { get; private set; }
+    public IdUsuario IdUsuario { get; private set; }
     public TextoObrigatorio NomeExibicao { get; private set; }
     private readonly List<AliasBeneficiario> _aliases = [];
     public IReadOnlyList<AliasBeneficiario> Aliases => _aliases.AsReadOnly();
 
-    private Beneficiario(IdBeneficiario id, long idUsuario, TextoObrigatorio nomeExibicao)
+    private Beneficiario(IdBeneficiario id, IdUsuario idUsuario, TextoObrigatorio nomeExibicao)
         : base(id)
     {
         IdUsuario = idUsuario;
         NomeExibicao = nomeExibicao;
     }
 
-    public static Beneficiario Criar(long idUsuario, TextoObrigatorio nomeExibicao) =>
+    public static Beneficiario Criar(IdUsuario idUsuario, TextoObrigatorio nomeExibicao) =>
         new(IdBeneficiario.FromNewVersion7Guid(), idUsuario, nomeExibicao);
 
     public Result AdicionarAlias(TextoObrigatorio textoExtrato, string? codigoOrigem = null)
