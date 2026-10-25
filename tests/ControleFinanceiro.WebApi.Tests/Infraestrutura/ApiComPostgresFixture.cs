@@ -94,6 +94,13 @@ public sealed class ApiComPostgresFixture : IAsyncLifetime
         return await consulta(dbContext);
     }
 
+    /// <summary>Todas as linhas de uma <paramref name="tabela"/>, lidas sem rastreio num escopo novo.</summary>
+    public Task<List<T>> LerTodosAsync<T>(Func<ControleFinanceiroDbContext, IQueryable<T>> tabela)
+        where T : class
+    {
+        return ConsultarAsync(db => tabela(db).AsNoTracking().ToListAsync());
+    }
+
     /// <summary>
     /// Todos os serviços do tipo <typeparamref name="T"/> registrados no container da API, resolvidos num escopo
     /// novo: confere a composição do <c>Program.cs</c>, e não a de um método de registro isolado.

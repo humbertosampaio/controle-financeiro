@@ -37,7 +37,7 @@ public sealed class AdicionarCartaoEndpointTests : IAsyncLifetime
 
         resposta.StatusCode.Should().Be(HttpStatusCode.Created);
         AdicionarCartaoResponse? corpo = await resposta.Content.ReadFromJsonAsync<AdicionarCartaoResponse>();
-        Cartao gravado = (await LerCartoesAsync()).Should().ContainSingle().Subject;
+        Cartao gravado = (await _api.LerTodosAsync(db => db.Cartoes)).Should().ContainSingle().Subject;
         corpo!.Id.Should().Be(gravado.Id);
         gravado.IdUsuario.Should().Be(IdUsuario.From(idUsuario));
         gravado.Banco.Should().BeSameAs(esperado.Banco);
@@ -58,7 +58,7 @@ public sealed class AdicionarCartaoEndpointTests : IAsyncLifetime
 
         Guid idSegundo = await AdicionarComSucessoAsync(idUsuario, segundo);
 
-        (await LerCartoesAsync()).Select(cartao => (Guid)cartao.Id).Should().BeEquivalentTo([idPrimeiro, idSegundo]);
+        (await _api.LerTodosAsync(db => db.Cartoes)).Select(cartao => (Guid)cartao.Id).Should().BeEquivalentTo([idPrimeiro, idSegundo]);
     }
 
     [Theory, ApiAutoData]
@@ -73,7 +73,7 @@ public sealed class AdicionarCartaoEndpointTests : IAsyncLifetime
 
         Guid idCartao = await AdicionarComSucessoAsync(idUsuario, requisicao);
 
-        List<Cartao> cartoes = await LerCartoesAsync();
+        List<Cartao> cartoes = await _api.LerTodosAsync(db => db.Cartoes);
         cartoes.Should().HaveCount(2);
         cartoes.Should().ContainSingle(cartao => cartao.Id == IdCartao.From(idCartao))
             .Which.IdUsuario.Should().Be(IdUsuario.From(idUsuario));
@@ -134,7 +134,4 @@ public sealed class AdicionarCartaoEndpointTests : IAsyncLifetime
 
     private Task<int> ContarCartoesAsync() =>
         _api.ConsultarAsync(db => db.Cartoes.CountAsync());
-
-    private Task<List<Cartao>> LerCartoesAsync() =>
-        _api.ConsultarAsync(db => db.Cartoes.AsNoTracking().ToListAsync());
 }
