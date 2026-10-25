@@ -36,9 +36,15 @@ internal sealed class ArquivoFixture
     }
 
     /// <summary>Um arquivo só com estas <paramref name="linhas"/>, no mesmo layout de bytes.</summary>
-    public Stream ComLinhas(IEnumerable<string> linhas)
+    public Stream ComLinhas(IEnumerable<string> linhas) => ComLinhas(linhas, _fimLinha);
+
+    /// <summary>O arquivo inteiro com outro fim de linha, para o banco que o varia entre exportações.</summary>
+    /// <param name="fimLinha"><c>\r\n</c> ou <c>\n</c>.</param>
+    public Stream ComFimLinha(string fimLinha) => ComLinhas(Linhas(), fimLinha);
+
+    private Stream ComLinhas(IEnumerable<string> linhas, string fimLinha)
     {
-        byte[] conteudo = Encoding.UTF8.GetBytes(string.Join(_fimLinha, linhas));
+        byte[] conteudo = Encoding.UTF8.GetBytes(string.Join(fimLinha, linhas));
         return new MemoryStream(_comBom ? [.. Encoding.UTF8.Preamble, .. conteudo] : conteudo);
     }
 }

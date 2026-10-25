@@ -18,7 +18,8 @@ public static class DependencyInjection
             return services
                 .AddTransient<ILeitorExtrato, LeitorExtratoContaC6>()
                 .AddTransient<ILeitorExtratoContaInformada, LeitorExtratoContaMercadoPago>()
-                .AddTransient<ILeitorFatura, LeitorFaturaCartaoC6>();
+                .AddTransient<ILeitorFatura, LeitorFaturaCartaoC6>()
+                .AddTransient<ILeitorFatura, LeitorFaturaCartaoMercadoPago>();
         }
     }
 }
