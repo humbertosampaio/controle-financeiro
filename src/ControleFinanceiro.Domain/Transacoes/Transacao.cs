@@ -20,7 +20,7 @@ public readonly partial struct IdTransacao
 /// <see cref="ChaveDeduplicacao"/> só reconhece o lançamento numa reimportação e muda com a versão do
 /// algoritmo.
 /// </remarks>
-public sealed class Transacao : AggregateRoot<IdTransacao>
+public sealed class Transacao : AggregateRoot<IdTransacao>, IPertenceAoUsuario
 {
     public IdUsuario IdUsuario { get; private set; }
 

@@ -12,7 +12,7 @@ public readonly partial struct IdDespesa
     private static Validation Validate(Guid input) => Id.Validar(input);
 }
 
-public abstract class Despesa : AggregateRoot<IdDespesa>
+public abstract class Despesa : AggregateRoot<IdDespesa>, IPertenceAoUsuario
 {
     public IdUsuario IdUsuario { get; protected set; }
     public IdBeneficiario IdBeneficiario { get; protected set; }

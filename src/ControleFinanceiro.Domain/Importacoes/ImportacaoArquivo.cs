@@ -19,7 +19,7 @@ public readonly partial struct IdImportacao
 /// Cada transação guarda o <see cref="IdImportacao"/> da importação que a criou. Quantas eram novas não fica
 /// aqui: são as transações ligadas a ela.
 /// </remarks>
-public sealed class ImportacaoArquivo : AggregateRoot<IdImportacao>
+public sealed class ImportacaoArquivo : AggregateRoot<IdImportacao>, IPertenceAoUsuario
 {
     public IdUsuario IdUsuario { get; private set; }
     public OrigemTransacao Origem { get; private set; } = null!;
