@@ -20,8 +20,6 @@ namespace ControleFinanceiro.WebApi.Tests.Importacoes.ImportarFatura;
 [Collection(ApiCollection.Nome)]
 public sealed class ImportarFaturaEndpointTests : IAsyncLifetime
 {
-    private static readonly Uri _rotaCadastro = new("/api/usuarios", UriKind.Relative);
-
     private readonly ApiComPostgresFixture _api;
 
     public ImportarFaturaEndpointTests(ApiComPostgresFixture api)
@@ -36,7 +34,7 @@ public sealed class ImportarFaturaEndpointTests : IAsyncLifetime
     [Theory, ApiAutoData]
     public async Task Post_Quando_PrimeiraFatura_Deve_CriarOsCartoesUmaImportacaoPorCartaoEAsTransacoes(CadastrarUsuarioRequest cadastro)
     {
-        Guid idUsuario = await CadastrarUsuarioAsync(cadastro);
+        Guid idUsuario = await _api.CadastrarUsuarioAsync(cadastro);
 
         using HttpResponseMessage resposta = await ImportarAsync(idUsuario, FaturaCartaoC6.Completo());
 
@@ -86,7 +84,7 @@ public sealed class ImportarFaturaEndpointTests : IAsyncLifetime
     [Theory, ApiAutoData]
     public async Task Post_Deve_GravarAParcelaEACategoriaDoBanco(CadastrarUsuarioRequest cadastro)
     {
-        Guid idUsuario = await CadastrarUsuarioAsync(cadastro);
+        Guid idUsuario = await _api.CadastrarUsuarioAsync(cadastro);
 
         await ImportarComSucessoAsync(idUsuario, FaturaCartaoC6.Completo());
 
@@ -101,7 +99,7 @@ public sealed class ImportarFaturaEndpointTests : IAsyncLifetime
     [Theory, ApiAutoData]
     public async Task Post_Deve_DeixarONomeDoTitularForaDoQueEGravado(CadastrarUsuarioRequest cadastro)
     {
-        Guid idUsuario = await CadastrarUsuarioAsync(cadastro);
+        Guid idUsuario = await _api.CadastrarUsuarioAsync(cadastro);
 
         await ImportarComSucessoAsync(idUsuario, FaturaCartaoC6.Completo());
 
@@ -118,7 +116,7 @@ public sealed class ImportarFaturaEndpointTests : IAsyncLifetime
         CadastrarUsuarioRequest cadastro,
         AdicionarCartaoRequest cartao)
     {
-        Guid idUsuario = await CadastrarUsuarioAsync(cadastro);
+        Guid idUsuario = await _api.CadastrarUsuarioAsync(cadastro);
         AdicionarCartaoRequest fisico = cartao with { Banco = Banco.C6, Sufixo = FaturaCartaoC6.SufixoFisico, DiaVencimento = 15 };
         Guid idCartao = await AdicionarCartaoAsync(idUsuario, fisico);
 
@@ -138,7 +136,7 @@ public sealed class ImportarFaturaEndpointTests : IAsyncLifetime
     [Theory, ApiAutoData]
     public async Task Post_Quando_DiaUnicoEDiaDeUmFinal_Deve_AplicarOsDiasAosCartoesNovos(CadastrarUsuarioRequest cadastro)
     {
-        Guid idUsuario = await CadastrarUsuarioAsync(cadastro);
+        Guid idUsuario = await _api.CadastrarUsuarioAsync(cadastro);
 
         ImportarFaturaResponse corpo = await ImportarComSucessoAsync(
             idUsuario,
@@ -156,7 +154,7 @@ public sealed class ImportarFaturaEndpointTests : IAsyncLifetime
     [Theory, ApiAutoData]
     public async Task Post_Quando_ReimportaAMesmaFatura_Deve_ManterAsTransacoesERegistrarAsNovasImportacoes(CadastrarUsuarioRequest cadastro)
     {
-        Guid idUsuario = await CadastrarUsuarioAsync(cadastro);
+        Guid idUsuario = await _api.CadastrarUsuarioAsync(cadastro);
         ImportarFaturaResponse primeira = await ImportarComSucessoAsync(idUsuario, FaturaCartaoC6.Completo());
 
         ImportarFaturaResponse segunda = await ImportarComSucessoAsync(idUsuario, FaturaCartaoC6.Completo());
@@ -177,7 +175,7 @@ public sealed class ImportarFaturaEndpointTests : IAsyncLifetime
     [Theory, ApiAutoData]
     public async Task Post_Quando_ParcelaSeguinteNaFaturaSeguinte_Deve_GravarUmaTransacaoParaCadaParcela(CadastrarUsuarioRequest cadastro)
     {
-        Guid idUsuario = await CadastrarUsuarioAsync(cadastro);
+        Guid idUsuario = await _api.CadastrarUsuarioAsync(cadastro);
         await ImportarComSucessoAsync(idUsuario, FaturaCartaoC6.Completo());
 
         ImportarFaturaResponse corpo = await ImportarComSucessoAsync(idUsuario, FaturaCartaoC6.ComParcelaSeguinte());
@@ -192,7 +190,7 @@ public sealed class ImportarFaturaEndpointTests : IAsyncLifetime
     [Theory, ApiAutoData]
     public async Task Post_Quando_ArquivoDoExtrato_Deve_RetornarErroNoArquivoSemGravar(CadastrarUsuarioRequest cadastro)
     {
-        Guid idUsuario = await CadastrarUsuarioAsync(cadastro);
+        Guid idUsuario = await _api.CadastrarUsuarioAsync(cadastro);
 
         using HttpResponseMessage resposta = await ImportarAsync(idUsuario, ExtratoContaC6.Completo());
 
@@ -214,7 +212,7 @@ public sealed class ImportarFaturaEndpointTests : IAsyncLifetime
     [Theory, ApiAutoData]
     public async Task Post_Quando_FormularioAcimaDoLimiteDaRota_Deve_RecusarSemLerOArquivoInteiro(CadastrarUsuarioRequest cadastro)
     {
-        Guid idUsuario = await CadastrarUsuarioAsync(cadastro);
+        Guid idUsuario = await _api.CadastrarUsuarioAsync(cadastro);
 
         using HttpResponseMessage resposta = await ImportarAsync(idUsuario, new byte[ImportarFaturaEndpoint.TamanhoMaximoFormulario + 1]);
 
@@ -238,14 +236,6 @@ public sealed class ImportarFaturaEndpointTests : IAsyncLifetime
         resposta.StatusCode.Should().Be(HttpStatusCode.BadRequest);
         (await resposta.CamposComErroAsync()).Should().BeEquivalentTo("idUsuario", "layout", "arquivo", "diaVencimento", "vencimentos");
         await DeveEstarSemImportacaoAsync();
-    }
-
-    private async Task<Guid> CadastrarUsuarioAsync(CadastrarUsuarioRequest cadastro)
-    {
-        using HttpResponseMessage resposta = await _api.Client.PostAsJsonAsync(_rotaCadastro, cadastro);
-        resposta.StatusCode.Should().Be(HttpStatusCode.Created);
-        CadastrarUsuarioResponse? corpo = await resposta.Content.ReadFromJsonAsync<CadastrarUsuarioResponse>();
-        return corpo!.Id;
     }
 
     private async Task<Guid> AdicionarCartaoAsync(Guid idUsuario, AdicionarCartaoRequest cartao)

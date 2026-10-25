@@ -14,8 +14,6 @@ namespace ControleFinanceiro.WebApi.Tests.Usuarios.AdicionarCartao;
 [Collection(ApiCollection.Nome)]
 public sealed class AdicionarCartaoEndpointTests : IAsyncLifetime
 {
-    private static readonly Uri _rotaCadastro = new("/api/usuarios", UriKind.Relative);
-
     private readonly ApiComPostgresFixture _api;
 
     public AdicionarCartaoEndpointTests(ApiComPostgresFixture api)
@@ -33,7 +31,7 @@ public sealed class AdicionarCartaoEndpointTests : IAsyncLifetime
         CadastrarUsuarioRequest cadastro,
         AdicionarCartaoRequest requisicao)
     {
-        Guid idUsuario = await CadastrarUsuarioAsync(cadastro);
+        Guid idUsuario = await _api.CadastrarUsuarioAsync(cadastro);
 
         using HttpResponseMessage resposta = await AdicionarAsync(idUsuario, requisicao);
 
@@ -55,7 +53,7 @@ public sealed class AdicionarCartaoEndpointTests : IAsyncLifetime
         AdicionarCartaoRequest primeiro,
         AdicionarCartaoRequest segundo)
     {
-        Guid idUsuario = await CadastrarUsuarioAsync(cadastro);
+        Guid idUsuario = await _api.CadastrarUsuarioAsync(cadastro);
         Guid idPrimeiro = await AdicionarComSucessoAsync(idUsuario, primeiro);
 
         Guid idSegundo = await AdicionarComSucessoAsync(idUsuario, segundo);
@@ -69,9 +67,9 @@ public sealed class AdicionarCartaoEndpointTests : IAsyncLifetime
         CadastrarUsuarioRequest outroCadastro,
         AdicionarCartaoRequest requisicao)
     {
-        Guid idOutroUsuario = await CadastrarUsuarioAsync(outroCadastro);
+        Guid idOutroUsuario = await _api.CadastrarUsuarioAsync(outroCadastro);
         await AdicionarComSucessoAsync(idOutroUsuario, requisicao);
-        Guid idUsuario = await CadastrarUsuarioAsync(cadastro);
+        Guid idUsuario = await _api.CadastrarUsuarioAsync(cadastro);
 
         Guid idCartao = await AdicionarComSucessoAsync(idUsuario, requisicao);
 
@@ -86,7 +84,7 @@ public sealed class AdicionarCartaoEndpointTests : IAsyncLifetime
         CadastrarUsuarioRequest cadastro,
         AdicionarCartaoRequest requisicao)
     {
-        Guid idUsuario = await CadastrarUsuarioAsync(cadastro);
+        Guid idUsuario = await _api.CadastrarUsuarioAsync(cadastro);
         await AdicionarComSucessoAsync(idUsuario, requisicao);
 
         using HttpResponseMessage resposta = await AdicionarAsync(idUsuario, requisicao);
@@ -117,14 +115,6 @@ public sealed class AdicionarCartaoEndpointTests : IAsyncLifetime
         resposta.StatusCode.Should().Be(HttpStatusCode.BadRequest);
         (await resposta.CamposComErroAsync()).Should().BeEquivalentTo("idUsuario", "banco", "sufixo", "diaVencimento");
         (await ContarCartoesAsync()).Should().Be(0);
-    }
-
-    private async Task<Guid> CadastrarUsuarioAsync(CadastrarUsuarioRequest cadastro)
-    {
-        using HttpResponseMessage resposta = await _api.Client.PostAsJsonAsync(_rotaCadastro, cadastro);
-        resposta.StatusCode.Should().Be(HttpStatusCode.Created);
-        CadastrarUsuarioResponse? corpo = await resposta.Content.ReadFromJsonAsync<CadastrarUsuarioResponse>();
-        return corpo!.Id;
     }
 
     private Task<HttpResponseMessage> AdicionarAsync(Guid idUsuario, AdicionarCartaoRequest requisicao)

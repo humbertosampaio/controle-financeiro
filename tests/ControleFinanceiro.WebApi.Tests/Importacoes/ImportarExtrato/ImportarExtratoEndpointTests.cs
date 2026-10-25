@@ -18,8 +18,6 @@ namespace ControleFinanceiro.WebApi.Tests.Importacoes.ImportarExtrato;
 [Collection(ApiCollection.Nome)]
 public sealed class ImportarExtratoEndpointTests : IAsyncLifetime
 {
-    private static readonly Uri _rotaCadastro = new("/api/usuarios", UriKind.Relative);
-
     private readonly ApiComPostgresFixture _api;
 
     public ImportarExtratoEndpointTests(ApiComPostgresFixture api)
@@ -36,7 +34,7 @@ public sealed class ImportarExtratoEndpointTests : IAsyncLifetime
     [Theory, ApiAutoData]
     public async Task Post_Quando_PrimeiroExtratoDaConta_Deve_GravarAContaAsTransacoesEAImportacaoJuntas(CadastrarUsuarioRequest cadastro)
     {
-        Guid idUsuario = await CadastrarUsuarioAsync(cadastro);
+        Guid idUsuario = await _api.CadastrarUsuarioAsync(cadastro);
 
         using HttpResponseMessage resposta = await ImportarAsync(idUsuario, ExtratoContaC6.Completo());
 
@@ -74,7 +72,7 @@ public sealed class ImportarExtratoEndpointTests : IAsyncLifetime
     [Theory, ApiAutoData]
     public async Task Post_Deve_GravarSoOSufixoDaConta(CadastrarUsuarioRequest cadastro)
     {
-        Guid idUsuario = await CadastrarUsuarioAsync(cadastro);
+        Guid idUsuario = await _api.CadastrarUsuarioAsync(cadastro);
 
         await ImportarComSucessoAsync(idUsuario, ExtratoContaC6.Completo());
 
@@ -86,7 +84,7 @@ public sealed class ImportarExtratoEndpointTests : IAsyncLifetime
     [Theory, ApiAutoData]
     public async Task Post_Quando_LancamentosIdenticosNoMesmoDia_Deve_GravarUmaTransacaoParaCada(CadastrarUsuarioRequest cadastro)
     {
-        Guid idUsuario = await CadastrarUsuarioAsync(cadastro);
+        Guid idUsuario = await _api.CadastrarUsuarioAsync(cadastro);
 
         await ImportarComSucessoAsync(idUsuario, ExtratoContaC6.Completo());
 
@@ -100,7 +98,7 @@ public sealed class ImportarExtratoEndpointTests : IAsyncLifetime
     [Theory, ApiAutoData]
     public async Task Post_Quando_ReimportaOMesmoArquivo_Deve_ManterAsTransacoesERegistrarANovaImportacao(CadastrarUsuarioRequest cadastro)
     {
-        Guid idUsuario = await CadastrarUsuarioAsync(cadastro);
+        Guid idUsuario = await _api.CadastrarUsuarioAsync(cadastro);
         ImportarExtratoResponse primeira = await ImportarComSucessoAsync(idUsuario, ExtratoContaC6.Completo());
 
         ImportarExtratoResponse segunda = await ImportarComSucessoAsync(idUsuario, ExtratoContaC6.Completo());
@@ -118,7 +116,7 @@ public sealed class ImportarExtratoEndpointTests : IAsyncLifetime
     [Theory, ApiAutoData]
     public async Task Post_Quando_PeriodoSobrepostoAoJaImportado_Deve_GravarSoAsNovas(CadastrarUsuarioRequest cadastro)
     {
-        Guid idUsuario = await CadastrarUsuarioAsync(cadastro);
+        Guid idUsuario = await _api.CadastrarUsuarioAsync(cadastro);
         ImportarExtratoResponse inicio = await ImportarComSucessoAsync(idUsuario, ExtratoContaC6.Recortado(ExtratoContaC6.Inicio, new DateOnly(2026, 3, 4)));
 
         ImportarExtratoResponse completo = await ImportarComSucessoAsync(idUsuario, ExtratoContaC6.Completo());
@@ -136,7 +134,7 @@ public sealed class ImportarExtratoEndpointTests : IAsyncLifetime
     [Theory, ApiAutoData]
     public async Task Post_Quando_DiasSemImportacaoDesdeAAnterior_Deve_AvisarOPeriodoNaoImportado(CadastrarUsuarioRequest cadastro)
     {
-        Guid idUsuario = await CadastrarUsuarioAsync(cadastro);
+        Guid idUsuario = await _api.CadastrarUsuarioAsync(cadastro);
         await ImportarComSucessoAsync(idUsuario, ExtratoContaC6.Recortado(ExtratoContaC6.Inicio, new DateOnly(2026, 3, 4)));
 
         ImportarExtratoResponse corpo = await ImportarComSucessoAsync(
@@ -150,7 +148,7 @@ public sealed class ImportarExtratoEndpointTests : IAsyncLifetime
     [Theory, ApiAutoData]
     public async Task Post_Quando_GravadaNoPeriodoQueOArquivoNaoTraz_Deve_AvisarASomaEGravarAsNovas(CadastrarUsuarioRequest cadastro)
     {
-        Guid idUsuario = await CadastrarUsuarioAsync(cadastro);
+        Guid idUsuario = await _api.CadastrarUsuarioAsync(cadastro);
         await ImportarComSucessoAsync(idUsuario, ExtratoContaC6.Completo());
 
         ImportarExtratoResponse corpo = await ImportarComSucessoAsync(idUsuario, ExtratoContaC6.ComDescricaoTrocada());
@@ -164,7 +162,7 @@ public sealed class ImportarExtratoEndpointTests : IAsyncLifetime
     [Theory, ApiAutoData]
     public async Task Post_Quando_ArquivoForaDoLayout_Deve_RetornarErroNoArquivoSemGravar(CadastrarUsuarioRequest cadastro)
     {
-        Guid idUsuario = await CadastrarUsuarioAsync(cadastro);
+        Guid idUsuario = await _api.CadastrarUsuarioAsync(cadastro);
 
         using HttpResponseMessage resposta = await ImportarAsync(idUsuario, Encoding.UTF8.GetBytes("isto não é um extrato"));
 
@@ -176,7 +174,7 @@ public sealed class ImportarExtratoEndpointTests : IAsyncLifetime
     [Theory, ApiAutoData]
     public async Task Post_Quando_SaldoDoArquivoNaoFecha_Deve_RetornarErroNoArquivoSemGravar(CadastrarUsuarioRequest cadastro)
     {
-        Guid idUsuario = await CadastrarUsuarioAsync(cadastro);
+        Guid idUsuario = await _api.CadastrarUsuarioAsync(cadastro);
 
         using HttpResponseMessage resposta = await ImportarAsync(idUsuario, ExtratoContaC6.ComSaldoQueNaoFecha());
 
@@ -198,7 +196,7 @@ public sealed class ImportarExtratoEndpointTests : IAsyncLifetime
     [Theory, ApiAutoData]
     public async Task Post_Quando_FormularioAcimaDoLimiteDaRota_Deve_RecusarSemLerOArquivoInteiro(CadastrarUsuarioRequest cadastro)
     {
-        Guid idUsuario = await CadastrarUsuarioAsync(cadastro);
+        Guid idUsuario = await _api.CadastrarUsuarioAsync(cadastro);
 
         using HttpResponseMessage resposta = await ImportarAsync(idUsuario, new byte[ImportarExtratoEndpoint.TamanhoMaximoFormulario + 1]);
 
@@ -217,14 +215,6 @@ public sealed class ImportarExtratoEndpointTests : IAsyncLifetime
         resposta.StatusCode.Should().Be(HttpStatusCode.BadRequest);
         (await resposta.CamposComErroAsync()).Should().BeEquivalentTo("idUsuario", "layout", "arquivo");
         await DeveEstarSemImportacaoAsync();
-    }
-
-    private async Task<Guid> CadastrarUsuarioAsync(CadastrarUsuarioRequest cadastro)
-    {
-        using HttpResponseMessage resposta = await _api.Client.PostAsJsonAsync(_rotaCadastro, cadastro);
-        resposta.StatusCode.Should().Be(HttpStatusCode.Created);
-        CadastrarUsuarioResponse? corpo = await resposta.Content.ReadFromJsonAsync<CadastrarUsuarioResponse>();
-        return corpo!.Id;
     }
 
     private async Task<HttpResponseMessage> ImportarAsync(Guid idUsuario, byte[] arquivo)
