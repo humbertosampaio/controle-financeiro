@@ -15,13 +15,23 @@ O [CLAUDE.md](../CLAUDE.md) é carregado sempre e traz só as regras. Este docum
 | Passo | O quê | Ferramenta |
 |---|---|---|
 | 1 | Descrever o problema numa issue, com critério de pronto | template da issue |
-| 2 | Partir da `main` atualizada e criar `<tipo>/<n>-<slug>` | `git` |
-| 3 | Plano revisado (se não trivial) e publicado na issue, com uma sub-issue por etapa grande | `planejar-issue` |
-| 4 | Implementar com commits semânticos | — |
-| 5 | Gates mecânicos + revisores conforme o diff | `revisar-mudanca` |
-| 6 | Push e PR com `Closes #n` | `abrir-pr` |
+| 2 | Plano revisado (se não trivial) e publicado na issue, com uma sub-issue por etapa grande | `planejar-issue` |
+| 3 | Numa sessão nova: partir da `main` atualizada, criar `<tipo>/<n>-<slug>` e implementar com commits semânticos | `implementar-issue` |
+| 4 | Gates mecânicos + revisores conforme o diff | `revisar-mudanca` |
+| 5 | Push e PR com `Closes #n` | `abrir-pr` |
 
-**Quando a tarefa é não trivial:** toca mais de 2 arquivos, ou cria classe, endpoint ou migration, ou integra algo externo. Abaixo disso, basta seguir as convenções do CLAUDE.md.
+**Quando a tarefa é não trivial:** toca mais de 2 arquivos, ou cria classe, endpoint ou migration, ou integra algo externo. Abaixo disso, não há plano: basta criar a branch e seguir as convenções do CLAUDE.md, na mesma sessão.
+
+### Do plano à implementação
+
+A implementação de um plano nunca roda na sessão que planejou. A conversa de planejamento acumula opções descartadas, versões do plano e decisões que mudaram no caminho; uma sessão que herda tudo isso pode seguir uma versão velha. A sessão de implementação começa com o contexto limpo e lê só o que está publicado:
+
+- **Um plano por issue**, num único comentário que começa com `<!-- plano -->`. Revisar o plano edita esse comentário; não se cria um segundo. As decisões tomadas na conversa entram nele, em "Decisões fechadas".
+- **A sub-issue é o briefing**: objetivo, arquivos, decisões fechadas, passos, critério de pronto, o que perguntar em vez de improvisar e de que outras sub-issues depende.
+- **A sessão nova é proposta, não iniciada**: a `planejar-issue` termina com um cartão para a primeira sub-issue, com o prompt `/implementar-issue <n>` e nada mais. Por padrão ela trabalha no checkout original, para as alterações aparecerem no Visual Studio; worktree só quando pedido.
+- **Dúvida se resolve na sessão de implementação**: quando o plano não fecha com o código, ela pergunta no chat e segue a decisão do dono. O comentário do plano não muda depois que a implementação começa.
+- **Desvios ficam registrados**: no fim, um comentário `<!-- desvios -->` na issue lista o que ficou diferente do plano, por quê e quem decidiu, e o PR aponta para ele.
+- **Uma sub-issue de cada vez**: ao abrir o PR, a sessão de implementação propõe a próxima.
 
 **Dividir antes de começar** quando o enunciado tem "e também", mistura mudança de comportamento com refatoração, toca mais de uma área (domínio + importação + MCP) ou não cabe num critério de pronto de até dois itens. PR grande vira revisão rasa.
 
