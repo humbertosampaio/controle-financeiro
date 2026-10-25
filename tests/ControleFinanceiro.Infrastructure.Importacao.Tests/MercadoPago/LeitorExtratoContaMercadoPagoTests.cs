@@ -1,4 +1,3 @@
-using System.Text;
 using ControleFinanceiro.Domain.Contas;
 using ControleFinanceiro.Domain.Importacoes;
 using ControleFinanceiro.Domain.Shared.ValueObjects;
@@ -18,7 +17,8 @@ public sealed class LeitorExtratoContaMercadoPagoTests
     private const int LinhaColunas = 4;
     private const int LinhaSegundoLancamento = 6;
 
-    private static readonly string _caminhoFixture = Path.Combine(AppContext.BaseDirectory, "Fixtures", "MercadoPago", "extrato-conta.csv");
+    /// <summary>O arquivo como o banco exporta: UTF-8 sem BOM e LF.</summary>
+    private static readonly ArquivoFixture _fixture = new("MercadoPago", "extrato-conta.csv", fimLinha: "\n", comBom: false);
     private static readonly SufixoConta _sufixo = (SufixoConta)"1234";
 
     private readonly LeitorExtratoContaMercadoPago _leitor = new();
@@ -102,7 +102,7 @@ public sealed class LeitorExtratoContaMercadoPagoTests
     [Fact]
     public async Task LerAsync_Quando_OnzeDigitosQueNaoSaoCpf_Deve_ManterOsDigitosNaContraparte()
     {
-        Stream arquivo = FixtureComLinha(
+        Stream arquivo = _fixture.ComLinha(
             LinhaSegundoLancamento,
             "03-03-2026;Pix enviado FULANO FICTICIO 12345678900;1000000002;-120,00;1.130,35");
 
@@ -124,7 +124,7 @@ public sealed class LeitorExtratoContaMercadoPagoTests
     [InlineData("Pix enviado FULANO FICTICIO ***456789**", "FULANO FICTICIO")]
     public async Task LerAsync_Quando_DocumentoEmOutroFormato_Deve_TirarODocumentoDaContraparte(string descricao, string contraparte)
     {
-        Stream arquivo = FixtureComLinha(LinhaSegundoLancamento, $"03-03-2026;{descricao};1000000002;-120,00;1.130,35");
+        Stream arquivo = _fixture.ComLinha(LinhaSegundoLancamento, $"03-03-2026;{descricao};1000000002;-120,00;1.130,35");
 
         Extrato extrato = (await _leitor.LerAsync(arquivo, _sufixo, CancellationToken.None)).Value;
 
@@ -134,7 +134,7 @@ public sealed class LeitorExtratoContaMercadoPagoTests
     [Fact]
     public async Task LerAsync_Quando_CatorzeCaracteresQueNaoSaoCnpj_Deve_ManterOsCaracteresNaContraparte()
     {
-        Stream arquivo = FixtureComLinha(
+        Stream arquivo = _fixture.ComLinha(
             LinhaSegundoLancamento,
             "03-03-2026;Pix enviado LOJA FICTICIA 11222333000182;1000000002;-120,00;1.130,35");
 
@@ -160,7 +160,7 @@ public sealed class LeitorExtratoContaMercadoPagoTests
     [Fact]
     public async Task LerAsync_Quando_PrimeiroDiaNaoFechaComOSaldoInicial_Deve_RetornarFalhaComODia()
     {
-        Stream arquivo = FixtureComLinha(LinhaSaldos, "1.250,01;3.500,77;-2.019,92;2.730,85");
+        Stream arquivo = _fixture.ComLinha(LinhaSaldos, "1.250,01;3.500,77;-2.019,92;2.730,85");
 
         Result<Extrato> result = await _leitor.LerAsync(arquivo, _sufixo, CancellationToken.None);
 
@@ -170,7 +170,7 @@ public sealed class LeitorExtratoContaMercadoPagoTests
     [Fact]
     public async Task LerAsync_Quando_SaldoFinalNaoFechaComAUltimaTransacao_Deve_RetornarFalha()
     {
-        Stream arquivo = FixtureComLinha(LinhaSaldos, "1.250,00;3.500,77;-2.019,92;2.730,86");
+        Stream arquivo = _fixture.ComLinha(LinhaSaldos, "1.250,00;3.500,77;-2.019,92;2.730,86");
 
         Result<Extrato> result = await _leitor.LerAsync(arquivo, _sufixo, CancellationToken.None);
 
@@ -189,7 +189,7 @@ public sealed class LeitorExtratoContaMercadoPagoTests
     [InlineData("03-03-2026;Pix enviado TEXTO-DO-ARQUIVO;1000000002;-1.000.000.000.000.000,00;1.130,35")]
     public async Task LerAsync_Quando_LinhaForaDoLayout_Deve_RetornarFalhaSoComONumeroDaLinha(string linha)
     {
-        Stream arquivo = FixtureComLinha(LinhaSegundoLancamento, linha);
+        Stream arquivo = _fixture.ComLinha(LinhaSegundoLancamento, linha);
 
         Result<Extrato> result = await _leitor.LerAsync(arquivo, _sufixo, CancellationToken.None);
 
@@ -201,7 +201,7 @@ public sealed class LeitorExtratoContaMercadoPagoTests
     [InlineData("03-03-2026; 123.456.789-09 ;1000000002;-120,00;1.130,35")]
     public async Task LerAsync_Quando_DescricaoEmBrancoOuSoComCpf_Deve_RetornarFalhaComONumeroDaLinha(string linha)
     {
-        Stream arquivo = FixtureComLinha(LinhaSegundoLancamento, linha);
+        Stream arquivo = _fixture.ComLinha(LinhaSegundoLancamento, linha);
 
         Result<Extrato> result = await _leitor.LerAsync(arquivo, _sufixo, CancellationToken.None);
 
@@ -211,7 +211,7 @@ public sealed class LeitorExtratoContaMercadoPagoTests
     [Fact]
     public async Task LerAsync_Quando_IdDeReferenciaEmBranco_Deve_RetornarFalhaComONumeroDaLinha()
     {
-        Stream arquivo = FixtureComLinha(LinhaSegundoLancamento, "03-03-2026;Pix enviado FULANO FICTICIO; ;-120,00;1.130,35");
+        Stream arquivo = _fixture.ComLinha(LinhaSegundoLancamento, "03-03-2026;Pix enviado FULANO FICTICIO; ;-120,00;1.130,35");
 
         Result<Extrato> result = await _leitor.LerAsync(arquivo, _sufixo, CancellationToken.None);
 
@@ -221,7 +221,7 @@ public sealed class LeitorExtratoContaMercadoPagoTests
     [Fact]
     public async Task LerAsync_Quando_ColunasDiferentes_Deve_RetornarFalhaComALinhaColunas()
     {
-        Stream arquivo = FixtureComLinha(LinhaColunas, "RELEASE_DATE;TRANSACTION_TYPE;TRANSACTION_NET_AMOUNT;PARTIAL_BALANCE");
+        Stream arquivo = _fixture.ComLinha(LinhaColunas, "RELEASE_DATE;TRANSACTION_TYPE;TRANSACTION_NET_AMOUNT;PARTIAL_BALANCE");
 
         Result<Extrato> result = await _leitor.LerAsync(arquivo, _sufixo, CancellationToken.None);
 
@@ -235,7 +235,7 @@ public sealed class LeitorExtratoContaMercadoPagoTests
     [InlineData(3, "TEXTO-DO-ARQUIVO", "A linha 3 do arquivo deveria estar em branco no extrato da conta do Mercado Pago.")]
     public async Task LerAsync_Quando_ResumoForaDoLayout_Deve_RetornarFalhaSoComONumeroDaLinha(int numero, string linha, string erro)
     {
-        Stream arquivo = FixtureComLinha(numero, linha);
+        Stream arquivo = _fixture.ComLinha(numero, linha);
 
         Result<Extrato> result = await _leitor.LerAsync(arquivo, _sufixo, CancellationToken.None);
 
@@ -245,7 +245,7 @@ public sealed class LeitorExtratoContaMercadoPagoTests
     [Fact]
     public async Task LerAsync_Quando_ArquivoTerminaAntesDasColunas_Deve_RetornarFalha()
     {
-        Stream arquivo = Arquivo(LinhasDaFixture().Take(LinhaColunas - 2));
+        Stream arquivo = _fixture.ComLinhas(_fixture.Linhas().Take(LinhaColunas - 2));
 
         Result<Extrato> result = await _leitor.LerAsync(arquivo, _sufixo, CancellationToken.None);
 
@@ -255,7 +255,7 @@ public sealed class LeitorExtratoContaMercadoPagoTests
     [Fact]
     public async Task LerAsync_Quando_SoAsColunas_Deve_RetornarFalhaSemTransacoes()
     {
-        Stream arquivo = Arquivo(LinhasDaFixture().Take(LinhaColunas));
+        Stream arquivo = _fixture.ComLinhas(_fixture.Linhas().Take(LinhaColunas));
 
         Result<Extrato> result = await _leitor.LerAsync(arquivo, _sufixo, CancellationToken.None);
 
@@ -264,23 +264,10 @@ public sealed class LeitorExtratoContaMercadoPagoTests
 
     private async Task<Extrato> LerFixtureAsync()
     {
-        await using FileStream arquivo = File.OpenRead(_caminhoFixture);
+        await using FileStream arquivo = File.OpenRead(_fixture.Caminho);
         Result<Extrato> result = await _leitor.LerAsync(arquivo, _sufixo, CancellationToken.None);
         return result.Should().Succeed().Which;
     }
 
     private static DateOnly Dia(int dia) => new(2026, 3, dia);
-
-    private static string[] LinhasDaFixture() => File.ReadAllText(_caminhoFixture, Encoding.UTF8).Split("\n");
-
-    /// <param name="numero">O número da linha no arquivo, a partir de 1.</param>
-    private static Stream FixtureComLinha(int numero, string linha)
-    {
-        string[] linhas = LinhasDaFixture();
-        linhas[numero - 1] = linha;
-        return Arquivo(linhas);
-    }
-
-    /// <summary>O arquivo como o Mercado Pago exporta: UTF-8 sem BOM e LF.</summary>
-    private static MemoryStream Arquivo(IEnumerable<string> linhas) => new(Encoding.UTF8.GetBytes(string.Join("\n", linhas)));
 }
