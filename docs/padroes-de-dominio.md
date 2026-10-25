@@ -11,11 +11,24 @@ Discordar de um padrão é motivo para conversar, não para contorná-lo no cód
 - Um conceito que outro agregado precisa referenciar de fora é uma raiz, não uma entidade interna. Foi o motivo da #50: o `Cartao` e a `ContaBancaria` eram internos do `Usuario`, mas a `Transacao` e a `ImportacaoArquivo` já chegavam a eles de fora.
 - Todo agregado que pertence a um usuário tem `IdUsuario` e implementa `IPertenceAoUsuario` (`Cartao`, `ContaBancaria`, `DespesaRecorrente`, `Despesa`, `Transacao`, `ImportacaoArquivo`, `Beneficiario`, `CategoriaDespesa`), mesmo quando o dono já é alcançável por outro id, como a origem da transação. Toda consulta dele fica restrita ao usuário atual (seção 8); sem a interface, o filtro some em silêncio, e o `PertenceAoUsuarioTests` é o que avisa. O `Usuario` é o dono e não a implementa.
 
-## 2. Um agregado por transação
+## 2. Um tipo de agregado por transação
 
-Um caso de uso altera um agregado só e grava com um `CommitAsync`. Ele pode ler outros agregados e criar um agregado novo a partir deles, como o cadastro de cartão, que lê os cartões do usuário e cria um.
+Um caso de uso altera agregados de um tipo só e grava com um `CommitAsync`. Ele pode ler agregados de outros tipos e criar um agregado novo a partir deles, como o cadastro de cartão, que lê os cartões do usuário e cria um.
 
-Precisar alterar dois agregados no mesmo caso de uso é sinal de que o efeito sobre o segundo é um evento de domínio (seção 6), ou de que a fronteira está errada. Pare e discuta no plano antes de escrever código.
+Várias instâncias do mesmo tipo no mesmo caso de uso:
+
+- **Criar várias é livre.** Nenhuma tem estado anterior para disputar, e a regra entre elas (unicidade) fica com a factory e o índice único (seção 3). Exemplo: a geração das despesas do mês a partir das recorrentes.
+- **Alterar várias é permitido quando cada alteração é independente:** a mesma operação aplicada a cada instância, e cada uma fica correta sozinha, mesmo que as outras não mudem. Exemplo: marcar várias despesas como pagas de uma vez.
+- **Alterar instâncias que dependem umas das outras pede justificativa no plano.** Se a operação só fica correta com as duas mudanças juntas, como tirar um alias de um beneficiário e pôr em outro, existe uma regra entre as instâncias que nenhuma delas protege sozinha. Antes de aceitar, tente nesta ordem:
+  1. modelar a operação alterando uma instância só. Exemplo: mesclar um beneficiário em outro grava no mesclado o id do destino, e os aliases do mesclado passam a ser lidos como do destino, sem mover nada;
+  2. ver se a regra pede um agregado que contenha as instâncias, ou se a segunda pode mudar depois, por evento (seção 6);
+  3. se nada disso servir, aceitar a exceção e registrar o motivo no plano.
+
+  A regra que envolve as instâncias segue a seção 3: mora num método do agregado que recebe a outra instância do mesmo tipo, ou numa factory quando depende de mais que as duas.
+
+O motivo de vigiar o último caso não é desempenho (o sistema tem um usuário e um banco só), e sim o lugar da regra: uma invariante entre instâncias que só o caso de uso conhece se perde no próximo caso de uso que mexer nelas.
+
+Precisar alterar agregados de dois tipos no mesmo caso de uso é sinal de que o efeito sobre o segundo tipo é um evento de domínio (seção 6), ou de que a fronteira está errada. Pare e discuta no plano antes de escrever código.
 
 **Exceção: criar vários agregados novos nascidos do mesmo fato.** Um caso de uso que só cria agregados, sem alterar nenhum que já existe, pode gravá-los num `CommitAsync` só. É a importação de um extrato: a conta nova (quando o arquivo é o primeiro dela), as transações e a `ImportacaoArquivo` nascem do mesmo arquivo e são gravadas juntas, para o arquivo entrar inteiro ou não entrar. Criar não disputa estado com outra requisição; a unicidade fica com o índice único (seção 3).
 
@@ -56,7 +69,7 @@ As camadas de fora reagem aos tipos (o endpoint mapeia cada um para um status nu
 
 ## 6. Efeito colateral em outro agregado
 
-Quando alterar um agregado precisa mudar outro (a seção 2 proíbe fazer os dois no mesmo caso de uso), o efeito vai por **evento de domínio**: o primeiro agregado registra que algo aconteceu, e um tratador altera o segundo, depois, na sua própria transação. A consistência entre os dois é eventual.
+Quando alterar um agregado precisa mudar outro de tipo diferente (a seção 2 proíbe fazer os dois no mesmo caso de uso), o efeito vai por **evento de domínio**: o primeiro agregado registra que algo aconteceu, e um tratador altera o segundo, depois, na sua própria transação. A consistência entre os dois é eventual.
 
 **Esse mecanismo ainda não existe.** No primeiro caso real, abra uma issue para desenhá-lo antes de implementar. O ponto de partida:
 
@@ -88,7 +101,7 @@ Responda no plano, para cada conceito novo ou alterado:
 1. É raiz ou entidade interna? Algum outro agregado vai referenciá-lo? (seção 1)
 2. Que ids ele guarda de outros agregados? (seção 1)
 3. Que regra depende de mais de um agregado, e em que factory ou serviço ela mora? O `Criar` precisa ser `internal`? (seção 3)
-4. Que caso de uso altera mais de um agregado? Se algum, qual evento substitui a segunda alteração? (seções 2 e 6)
+4. Que caso de uso altera agregados de mais de um tipo? Se algum, qual evento substitui a alteração do segundo tipo? (seções 2 e 6)
 5. Que repositório o caso de uso usa, e que consulta não é "me dê o agregado"? (seção 4)
 6. Que falhas são situações de negócio com nome próprio, e quais são entrada inválida? (seção 5)
 7. Que primitivos com regra viram value object, e em que pasta? (seção 7)
