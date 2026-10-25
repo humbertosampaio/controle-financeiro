@@ -1,5 +1,6 @@
 using ControleFinanceiro.AppHost.Resources;
 using ControleFinanceiro.Infrastructure.Persistence;
+using ControleFinanceiro.WebApi.Endpoints.Usuarios.AdicionarCartao;
 using ControleFinanceiro.WebApi.Endpoints.Usuarios.Cadastrar;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
@@ -80,6 +81,17 @@ public sealed class ApiComPostgresFixture : IAsyncLifetime
         using HttpResponseMessage resposta = await Client.PostAsJsonAsync(_rotaCadastro, cadastro);
         resposta.StatusCode.Should().Be(HttpStatusCode.Created);
         CadastrarUsuarioResponse? corpo = await resposta.Content.ReadFromJsonAsync<CadastrarUsuarioResponse>();
+        return corpo!.Id;
+    }
+
+    /// <summary>Adiciona um cartão ao usuário pela API, conferindo o 201, e devolve o id dele.</summary>
+    public async Task<Guid> AdicionarCartaoAsync(Guid idUsuario, AdicionarCartaoRequest cartao)
+    {
+        using HttpResponseMessage resposta = await Client.PostAsJsonAsync(
+            new Uri($"/api/usuarios/{idUsuario}/cartoes", UriKind.Relative),
+            cartao);
+        resposta.StatusCode.Should().Be(HttpStatusCode.Created);
+        AdicionarCartaoResponse? corpo = await resposta.Content.ReadFromJsonAsync<AdicionarCartaoResponse>();
         return corpo!.Id;
     }
 
