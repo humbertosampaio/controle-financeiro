@@ -30,6 +30,7 @@ classDiagram
     namespace Cartoes {
         class Cartao {
             <<AggregateRoot>>
+            AlterarVencimento(DiaVencimentoCartao)
         }
     }
 
@@ -128,7 +129,7 @@ classDiagram
 ### Invariantes que valem saber
 
 - **Usuario**: `RendaLiquida` = renda bruta − descontos.
-- **Cartao**: um por banco + sufixo em cada usuário. Só nasce pela `CartaoFactory`, que recebe os cartões do usuário: o `Criar` falha com `ErroCartaoJaCadastrado`, e o `ObterOuCriar` devolve o cartão de cada final de uma fatura, o existente sem mudança ou um novo com o vencimento dos `VencimentosCartoesNovos`. O índice único da tabela é a rede para duas requisições ao mesmo tempo.
+- **Cartao**: um por banco + sufixo em cada usuário. Só nasce pela `CartaoFactory`, que recebe os cartões do usuário: o `Criar` falha com `ErroCartaoJaCadastrado`, e o `ObterOuCriar` devolve o cartão de cada final de uma fatura, o existente sem mudança ou um novo com o vencimento dos `VencimentosCartoesNovos`. O índice único da tabela é a rede para duas requisições ao mesmo tempo. O vencimento pode ser alterado depois, e o dia novo vale só para as despesas geradas a partir daí: as já geradas guardam a data projetada do pagamento.
 - **ContaBancaria**: uma por banco + sufixo em cada usuário, com o apelido padrão "&lt;tipo&gt; &lt;banco&gt; final &lt;sufixo&gt;". Só nasce pela `ContaBancariaFactory.ObterOuCriar`, que devolve a conta existente ou uma nova, e falha com `ErroContaDeOutroTipo` se a conta existe com outro tipo.
 - **DespesaRecorrente**: cartão obrigatório no crédito e proibido nas outras formas. Só nasce pela `DespesaRecorrenteFactory`, que confere que o cartão é do próprio usuário.
 - **Despesas**: `DespesaSimples` é paga no dia em que ocorre e não aceita crédito; `DespesaAdiada` é sempre crédito, com pagamento pendente no mês seguinte, no dia de vencimento do cartão; `DespesaParcelada` é sempre crédito, com uma `ParcelaDespesa` pendente por mês.
