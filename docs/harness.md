@@ -81,6 +81,8 @@ git config core.hooksPath .githooks
 | `pre-push` | nada vai para a `main`; branch `<tipo>/<issue>-<slug>` ou `dependabot/...` (para ajustar um PR do Dependabot, como acompanhar no código a versão que ele subiu); testes do guardrail e de `testes-afetados.mjs`; build; testes de unidade; testes de integração dos endpoints afetados (precisa do Docker) |
 | CI (`ci.yml`) | build; modelo do EF sem migration pendente; testes de unidade; suíte de integração completa; testes do guardrail e de `testes-afetados.mjs`; varredura dos arquivos do PR |
 
+O `pre-push` não imprime nada quando passa. A saída de cada etapa vai para um log temporário (`%TEMP%\pre-push.XXXXXX`), apagado no sucesso. Na falha, o hook diz qual etapa falhou e mostra no stderr cada teste que falhou com a mensagem do erro (ou as últimas 30 linhas do log, num erro de build, por exemplo), além do caminho do log completo, que fica guardado até ser apagado à mão. Assim uma falha intermitente deixa rastro mesmo que a próxima rodada passe.
+
 ### Modelo do EF sem migration
 
 Mudar um value object, uma configuração do EF ou uma convenção pode alterar o modelo sem que ninguém gere a migration. Os testes de integração só pegam isso de forma indireta: o EF 10 falha no `MigrateAsync` com uma mensagem que não aponta a causa. Por isso a conferência é um gate próprio:
