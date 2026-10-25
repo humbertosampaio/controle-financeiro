@@ -1,7 +1,7 @@
 using ControleFinanceiro.Domain.Cartoes;
 using ControleFinanceiro.Domain.Importacoes;
 using ControleFinanceiro.WebApi.Endpoints.Importacoes.ImportarFatura;
-using Microsoft.AspNetCore.Http;
+using ControleFinanceiro.WebApi.Tests.Infraestrutura;
 
 namespace ControleFinanceiro.WebApi.Tests.Importacoes.ImportarFatura;
 
@@ -19,7 +19,7 @@ internal sealed class ImportarFaturaRequestCustomization : ICustomization
             {
                 IdUsuario = idUsuario,
                 Layout = LayoutArquivoImportacao.C6CartaoCsv.Value,
-                Arquivo = new FormFile(Stream.Null, baseStreamOffset: 0, length: 1, name: "arquivo", fileName: "fatura.csv"),
+                Arquivo = ArquivoFormulario.ComTamanho(tamanho: 1),
                 DiaVencimento = diaUnico,
                 Vencimentos = new Dictionary<string, int> { [sufixo] = diaDoFinal },
             });

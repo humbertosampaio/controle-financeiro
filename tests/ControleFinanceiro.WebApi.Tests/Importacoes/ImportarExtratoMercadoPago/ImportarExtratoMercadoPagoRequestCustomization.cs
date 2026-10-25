@@ -1,6 +1,6 @@
 using ControleFinanceiro.Domain.Contas;
 using ControleFinanceiro.WebApi.Endpoints.Importacoes.ImportarExtratoMercadoPago;
-using Microsoft.AspNetCore.Http;
+using ControleFinanceiro.WebApi.Tests.Infraestrutura;
 
 namespace ControleFinanceiro.WebApi.Tests.Importacoes.ImportarExtratoMercadoPago;
 
@@ -16,7 +16,7 @@ internal sealed class ImportarExtratoMercadoPagoRequestCustomization : ICustomiz
         fixture.Register((Guid idUsuario, SufixoConta sufixoConta) => new ImportarExtratoMercadoPagoRequest
         {
             IdUsuario = idUsuario,
-            Arquivo = new FormFile(Stream.Null, baseStreamOffset: 0, length: 1, name: "arquivo", fileName: "extrato.csv"),
+            Arquivo = ArquivoFormulario.ComTamanho(tamanho: 1),
             SufixoConta = sufixoConta.Value,
         });
     }

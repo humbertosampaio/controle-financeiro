@@ -1,7 +1,7 @@
 using ControleFinanceiro.WebApi.Endpoints.Importacoes.ImportarExtratoMercadoPago;
 using ControleFinanceiro.WebApi.Tests.AutoFixture;
+using ControleFinanceiro.WebApi.Tests.Infraestrutura;
 using FluentValidation.TestHelper;
-using Microsoft.AspNetCore.Http;
 
 namespace ControleFinanceiro.WebApi.Tests.Importacoes.ImportarExtratoMercadoPago;
 
@@ -41,7 +41,7 @@ public sealed class ImportarExtratoMercadoPagoValidatorTests
     public void Validate_Quando_ArquivoNoTamanhoMaximo_Deve_Passar(ImportarExtratoMercadoPagoRequest requisicao)
     {
         TestValidationResult<ImportarExtratoMercadoPagoRequest> resultado = _sut.TestValidate(
-            requisicao with { Arquivo = ArquivoCom(ImportarExtratoMercadoPagoValidator.TamanhoMaximoArquivo) });
+            requisicao with { Arquivo = ArquivoFormulario.ComTamanho(ImportarExtratoMercadoPagoValidator.TamanhoMaximoArquivo) });
 
         resultado.ShouldNotHaveAnyValidationErrors();
     }
@@ -50,7 +50,7 @@ public sealed class ImportarExtratoMercadoPagoValidatorTests
     public void Validate_Quando_ArquivoAcimaDoTamanhoMaximo_Deve_RetornarErroNoArquivo(ImportarExtratoMercadoPagoRequest requisicao)
     {
         TestValidationResult<ImportarExtratoMercadoPagoRequest> resultado = _sut.TestValidate(
-            requisicao with { Arquivo = ArquivoCom(ImportarExtratoMercadoPagoValidator.TamanhoMaximoArquivo + 1) });
+            requisicao with { Arquivo = ArquivoFormulario.ComTamanho(ImportarExtratoMercadoPagoValidator.TamanhoMaximoArquivo + 1) });
 
         resultado.ShouldHaveValidationErrorFor(r => r.Arquivo);
     }
@@ -66,8 +66,4 @@ public sealed class ImportarExtratoMercadoPagoValidatorTests
 
         resultado.ShouldHaveValidationErrorFor(r => r.SufixoConta);
     }
-
-    // O validator só lê o tamanho declarado; o conteúdo não importa aqui.
-    private static FormFile ArquivoCom(long tamanho) =>
-        new(Stream.Null, baseStreamOffset: 0, tamanho, name: "arquivo", fileName: "extrato.csv");
 }
