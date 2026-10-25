@@ -8,7 +8,12 @@ internal sealed class UsuarioConfiguration : IEntityTypeConfiguration<Usuario>
 {
     public void Configure(EntityTypeBuilder<Usuario> entity)
     {
-        entity.ToTable("usuarios");
+        // Os CHECK repetem no esquema o que o domínio já garante; a API é a única porta de entrada dos dados.
+        entity.ToTable("usuarios", tabela =>
+        {
+            tabela.HasCheckConstraint("CK_usuarios_nome", "btrim(nome) <> ''");
+            tabela.HasCheckConstraint("CK_usuarios_renda_bruta", "renda_bruta >= 0");
+        });
         entity.HasKey(u => u.Id);
 
         entity.Property(u => u.Id)
