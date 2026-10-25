@@ -32,13 +32,25 @@ public sealed class MesReferenciaTests
     }
 
     [Theory]
-    [InlineDomainAutoData(-1)]
     [InlineDomainAutoData(-2024)]
-    public void Criar_Quando_AnoNegativo_Deve_RetornarFalha(int ano, [Range(1, 12)] int mes)
+    [InlineDomainAutoData(-1)]
+    [InlineDomainAutoData(0)]
+    [InlineDomainAutoData(10000)]
+    public void Criar_Quando_AnoForaDaFaixa_Deve_RetornarFalha(int ano, [Range(1, 12)] int mes)
     {
         Result<MesReferencia> result = MesReferencia.Criar(mes, ano);
 
-        result.Should().FailWith($"Ano não pode ser negativo. Valor fornecido: {ano}");
+        result.Should().FailWith($"Ano deve estar entre 1 e 9999. Valor fornecido: {ano}");
+    }
+
+    [Theory]
+    [InlineDomainAutoData(1)]
+    [InlineDomainAutoData(9999)]
+    public void Criar_Quando_AnoNosLimitesDaFaixa_Deve_RetornarSucesso(int ano, [Range(1, 12)] int mes)
+    {
+        Result<MesReferencia> result = MesReferencia.Criar(mes, ano);
+
+        result.Should().Succeed().Which.Ano.Should().Be(ano);
     }
 
     [Theory, DomainAutoData]
@@ -54,7 +66,7 @@ public sealed class MesReferenciaTests
     }
 
     [Theory, DomainAutoData]
-    public void Anterior_Quando_Janeiro_Deve_RetornarMesReferenciaEmDezembroDoAnoAnterior(int ano)
+    public void Anterior_Quando_Janeiro_Deve_RetornarMesReferenciaEmDezembroDoAnoAnterior([Range(2, 9999)] int ano)
     {
         const int janeiro = 1;
         const int dezembro = 12;
@@ -64,6 +76,16 @@ public sealed class MesReferenciaTests
 
         result.Mes.Should().Be(dezembro);
         result.Ano.Should().Be(ano - 1);
+    }
+
+    [Fact]
+    public void Anterior_Quando_JaneiroDoAno1_Deve_LancarInvalidOperationException()
+    {
+        MesReferencia sut = MesReferencia.Criar(mes: 1, ano: 1).Value;
+
+        Action act = () => sut.Anterior();
+
+        act.Should().ThrowExactly<InvalidOperationException>().WithMessage("Não há mês de referência anterior a '01/1'");
     }
 
     [Theory, DomainAutoData]
@@ -78,7 +100,7 @@ public sealed class MesReferenciaTests
     }
 
     [Theory, DomainAutoData]
-    public void Posterior_Quando_Dezembro_Deve_RetornarMesReferenciaEmJaneiroDoAnoPosterior(int ano)
+    public void Posterior_Quando_Dezembro_Deve_RetornarMesReferenciaEmJaneiroDoAnoPosterior([Range(1, 9998)] int ano)
     {
         const int janeiro = 1;
         const int dezembro = 12;
@@ -88,6 +110,16 @@ public sealed class MesReferenciaTests
 
         result.Mes.Should().Be(janeiro);
         result.Ano.Should().Be(ano + 1);
+    }
+
+    [Fact]
+    public void Posterior_Quando_DezembroDoAno9999_Deve_LancarInvalidOperationException()
+    {
+        MesReferencia sut = MesReferencia.Criar(mes: 12, ano: 9999).Value;
+
+        Action act = () => sut.Posterior();
+
+        act.Should().ThrowExactly<InvalidOperationException>().WithMessage("Não há mês de referência posterior a '12/9999'");
     }
 
     [Theory, DomainAutoData]
