@@ -112,8 +112,8 @@ classDiagram
     Despesa ..> CategoriaDespesa : IdCategoria
 
     Beneficiario "1" *-- "*" AliasBeneficiario
-    Beneficiario ..> Usuario : IdUsuario (long)
-    CategoriaDespesa ..> Usuario : IdUsuario (long)
+    Beneficiario ..> Usuario : IdUsuario
+    CategoriaDespesa ..> Usuario : IdUsuario
 
     Transacao *-- OrigemTransacao
     Transacao *-- "0..1" Parcela

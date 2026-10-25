@@ -1,5 +1,6 @@
 using ControleFinanceiro.Domain.Shared;
 using ControleFinanceiro.Domain.Shared.ValueObjects;
+using ControleFinanceiro.Domain.Usuarios;
 
 namespace ControleFinanceiro.Domain.Categorias;
 
@@ -11,17 +12,17 @@ public readonly partial struct IdCategoriaDespesa
 
 public sealed class CategoriaDespesa : AggregateRoot<IdCategoriaDespesa>
 {
-    public long IdUsuario { get; private set; }
+    public IdUsuario IdUsuario { get; private set; }
     public TextoObrigatorio Nome { get; private set; }
 
-    private CategoriaDespesa(IdCategoriaDespesa id, long idUsuario, TextoObrigatorio nome)
+    private CategoriaDespesa(IdCategoriaDespesa id, IdUsuario idUsuario, TextoObrigatorio nome)
         : base(id)
     {
         IdUsuario = idUsuario;
         Nome = nome;
     }
 
-    public static CategoriaDespesa Criar(long idUsuario, TextoObrigatorio nome) =>
+    public static CategoriaDespesa Criar(IdUsuario idUsuario, TextoObrigatorio nome) =>
         new(IdCategoriaDespesa.FromNewVersion7Guid(), idUsuario, nome);
 
     public void Renomear(TextoObrigatorio novoNome) => Nome = novoNome;
