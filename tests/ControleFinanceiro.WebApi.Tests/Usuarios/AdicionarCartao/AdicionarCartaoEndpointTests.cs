@@ -8,7 +8,6 @@ using ControleFinanceiro.WebApi.Tests.Infraestrutura;
 using Microsoft.EntityFrameworkCore;
 using System.Net;
 using System.Net.Http.Json;
-using System.Text.Json;
 
 namespace ControleFinanceiro.WebApi.Tests.Usuarios.AdicionarCartao;
 
@@ -93,7 +92,7 @@ public sealed class AdicionarCartaoEndpointTests : IAsyncLifetime
         using HttpResponseMessage resposta = await AdicionarAsync(idUsuario, requisicao);
 
         resposta.StatusCode.Should().Be(HttpStatusCode.Conflict);
-        (await CamposComErroAsync(resposta)).Should().Equal("sufixo");
+        (await resposta.CamposComErroAsync()).Should().Equal("sufixo");
         (await ContarCartoesAsync()).Should().Be(1);
     }
 
@@ -116,7 +115,7 @@ public sealed class AdicionarCartaoEndpointTests : IAsyncLifetime
         using HttpResponseMessage resposta = await AdicionarAsync(Guid.Empty, invalida);
 
         resposta.StatusCode.Should().Be(HttpStatusCode.BadRequest);
-        (await CamposComErroAsync(resposta)).Should().BeEquivalentTo("idUsuario", "banco", "sufixo", "diaVencimento");
+        (await resposta.CamposComErroAsync()).Should().BeEquivalentTo("idUsuario", "banco", "sufixo", "diaVencimento");
         (await ContarCartoesAsync()).Should().Be(0);
     }
 
@@ -141,17 +140,6 @@ public sealed class AdicionarCartaoEndpointTests : IAsyncLifetime
         resposta.StatusCode.Should().Be(HttpStatusCode.Created);
         AdicionarCartaoResponse? corpo = await resposta.Content.ReadFromJsonAsync<AdicionarCartaoResponse>();
         return corpo!.Id;
-    }
-
-    private static async Task<IReadOnlyList<string>> CamposComErroAsync(HttpResponseMessage resposta)
-    {
-        using JsonDocument problema = JsonDocument.Parse(await resposta.Content.ReadAsStringAsync());
-        return problema.RootElement
-            .GetProperty("errors")
-            .EnumerateArray()
-            .Select(erro => erro.GetProperty("name").GetString()!)
-            .Distinct()
-            .ToList();
     }
 
     private Task<int> ContarCartoesAsync() =>

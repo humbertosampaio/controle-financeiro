@@ -14,7 +14,6 @@ using System.Globalization;
 using System.Net;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
-using System.Text.Json;
 
 namespace ControleFinanceiro.WebApi.Tests.Importacoes.ImportarFatura;
 
@@ -198,7 +197,7 @@ public sealed class ImportarFaturaEndpointTests : IAsyncLifetime
         using HttpResponseMessage resposta = await ImportarAsync(idUsuario, ExtratoContaC6.Completo());
 
         resposta.StatusCode.Should().Be(HttpStatusCode.UnprocessableEntity);
-        (await CamposComErroAsync(resposta)).Should().Equal("arquivo");
+        (await resposta.CamposComErroAsync()).Should().Equal("arquivo");
         await DeveEstarSemImportacaoAsync();
     }
 
@@ -220,7 +219,7 @@ public sealed class ImportarFaturaEndpointTests : IAsyncLifetime
         using HttpResponseMessage resposta = await ImportarAsync(idUsuario, new byte[ImportarFaturaEndpoint.TamanhoMaximoFormulario + 1]);
 
         resposta.StatusCode.Should().Be(HttpStatusCode.BadRequest);
-        (await CamposComErroAsync(resposta)).Should().Equal("generalErrors");
+        (await resposta.CamposComErroAsync()).Should().Equal("generalErrors");
         await DeveEstarSemImportacaoAsync();
     }
 
@@ -237,7 +236,7 @@ public sealed class ImportarFaturaEndpointTests : IAsyncLifetime
         using HttpResponseMessage resposta = await _api.Client.PostAsync(Rota(Guid.Empty), formulario);
 
         resposta.StatusCode.Should().Be(HttpStatusCode.BadRequest);
-        (await CamposComErroAsync(resposta)).Should().BeEquivalentTo("idUsuario", "layout", "arquivo", "diaVencimento", "vencimentos");
+        (await resposta.CamposComErroAsync()).Should().BeEquivalentTo("idUsuario", "layout", "arquivo", "diaVencimento", "vencimentos");
         await DeveEstarSemImportacaoAsync();
     }
 
@@ -289,17 +288,6 @@ public sealed class ImportarFaturaEndpointTests : IAsyncLifetime
     }
 
     private static Uri Rota(Guid idUsuario) => new($"/api/usuarios/{idUsuario}/importacoes/faturas", UriKind.Relative);
-
-    private static async Task<IReadOnlyList<string>> CamposComErroAsync(HttpResponseMessage resposta)
-    {
-        using JsonDocument problema = JsonDocument.Parse(await resposta.Content.ReadAsStringAsync());
-        return problema.RootElement
-            .GetProperty("errors")
-            .EnumerateArray()
-            .Select(erro => erro.GetProperty("name").GetString()!)
-            .Distinct()
-            .ToList();
-    }
 
     private async Task DeveEstarSemImportacaoAsync()
     {

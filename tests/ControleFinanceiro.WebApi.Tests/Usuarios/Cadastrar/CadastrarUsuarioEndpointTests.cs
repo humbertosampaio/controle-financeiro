@@ -1,6 +1,5 @@
 using System.Net;
 using System.Net.Http.Json;
-using System.Text.Json;
 using AutoFixture.Xunit2;
 using ControleFinanceiro.Domain.Usuarios;
 using ControleFinanceiro.WebApi.Endpoints.Usuarios.Cadastrar;
@@ -57,23 +56,12 @@ public sealed class CadastrarUsuarioEndpointTests : IAsyncLifetime
         using HttpResponseMessage resposta = await _api.Client.PostAsJsonAsync(_rota, invalida);
 
         resposta.StatusCode.Should().Be(HttpStatusCode.BadRequest);
-        (await CamposComErroAsync(resposta)).Should().BeEquivalentTo(
+        (await resposta.CamposComErroAsync()).Should().BeEquivalentTo(
             "nome",
             "rendaBruta",
             "descontosSalariais[0].descricao",
             "descontosSalariais[0].valor");
         (await _api.ConsultarAsync(db => db.Usuarios.CountAsync())).Should().Be(0);
-    }
-
-    private static async Task<IReadOnlyList<string>> CamposComErroAsync(HttpResponseMessage resposta)
-    {
-        using JsonDocument problema = JsonDocument.Parse(await resposta.Content.ReadAsStringAsync());
-        return problema.RootElement
-            .GetProperty("errors")
-            .EnumerateArray()
-            .Select(erro => erro.GetProperty("name").GetString()!)
-            .Distinct()
-            .ToList();
     }
 
     private Task<Usuario> LerUnicoUsuarioAsync()

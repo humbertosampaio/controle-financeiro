@@ -12,7 +12,6 @@ using System.Net;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Text;
-using System.Text.Json;
 
 namespace ControleFinanceiro.WebApi.Tests.Importacoes.ImportarExtrato;
 
@@ -170,7 +169,7 @@ public sealed class ImportarExtratoEndpointTests : IAsyncLifetime
         using HttpResponseMessage resposta = await ImportarAsync(idUsuario, Encoding.UTF8.GetBytes("isto não é um extrato"));
 
         resposta.StatusCode.Should().Be(HttpStatusCode.UnprocessableEntity);
-        (await CamposComErroAsync(resposta)).Should().Equal("arquivo");
+        (await resposta.CamposComErroAsync()).Should().Equal("arquivo");
         await DeveEstarSemImportacaoAsync();
     }
 
@@ -182,7 +181,7 @@ public sealed class ImportarExtratoEndpointTests : IAsyncLifetime
         using HttpResponseMessage resposta = await ImportarAsync(idUsuario, ExtratoContaC6.ComSaldoQueNaoFecha());
 
         resposta.StatusCode.Should().Be(HttpStatusCode.UnprocessableEntity);
-        (await CamposComErroAsync(resposta)).Should().Equal("arquivo");
+        (await resposta.CamposComErroAsync()).Should().Equal("arquivo");
         await DeveEstarSemImportacaoAsync();
     }
 
@@ -204,7 +203,7 @@ public sealed class ImportarExtratoEndpointTests : IAsyncLifetime
         using HttpResponseMessage resposta = await ImportarAsync(idUsuario, new byte[ImportarExtratoEndpoint.TamanhoMaximoFormulario + 1]);
 
         resposta.StatusCode.Should().Be(HttpStatusCode.BadRequest);
-        (await CamposComErroAsync(resposta)).Should().Equal("generalErrors");
+        (await resposta.CamposComErroAsync()).Should().Equal("generalErrors");
         await DeveEstarSemImportacaoAsync();
     }
 
@@ -216,7 +215,7 @@ public sealed class ImportarExtratoEndpointTests : IAsyncLifetime
         using HttpResponseMessage resposta = await _api.Client.PostAsync(Rota(Guid.Empty), formulario);
 
         resposta.StatusCode.Should().Be(HttpStatusCode.BadRequest);
-        (await CamposComErroAsync(resposta)).Should().BeEquivalentTo("idUsuario", "layout", "arquivo");
+        (await resposta.CamposComErroAsync()).Should().BeEquivalentTo("idUsuario", "layout", "arquivo");
         await DeveEstarSemImportacaoAsync();
     }
 
@@ -250,17 +249,6 @@ public sealed class ImportarExtratoEndpointTests : IAsyncLifetime
     }
 
     private static Uri Rota(Guid idUsuario) => new($"/api/usuarios/{idUsuario}/importacoes", UriKind.Relative);
-
-    private static async Task<IReadOnlyList<string>> CamposComErroAsync(HttpResponseMessage resposta)
-    {
-        using JsonDocument problema = JsonDocument.Parse(await resposta.Content.ReadAsStringAsync());
-        return problema.RootElement
-            .GetProperty("errors")
-            .EnumerateArray()
-            .Select(erro => erro.GetProperty("name").GetString()!)
-            .Distinct()
-            .ToList();
-    }
 
     private async Task DeveEstarSemImportacaoAsync()
     {
