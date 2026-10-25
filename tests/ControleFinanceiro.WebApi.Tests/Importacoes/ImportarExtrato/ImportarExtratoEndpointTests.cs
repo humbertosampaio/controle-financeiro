@@ -89,7 +89,7 @@ public sealed class ImportarExtratoEndpointTests : IAsyncLifetime
         await ImportarComSucessoAsync(idUsuario, ExtratoContaC6.Completo());
 
         List<Transacao> tarifas = (await _api.LerTodosAsync(db => db.Transacoes))
-            .Where(t => t.Data == ExtratoContaC6.DiaDasTarifasIdenticas && t.Descricao.Value == "Tarifa de exemplo")
+            .Where(t => t.Data == ExtratoContaC6.DiaTarifasIdenticas && t.Descricao.Value == "Tarifa de exemplo")
             .ToList();
         tarifas.Should().HaveCount(2);
         tarifas.Should().OnlyHaveUniqueItems(t => t.Chave);

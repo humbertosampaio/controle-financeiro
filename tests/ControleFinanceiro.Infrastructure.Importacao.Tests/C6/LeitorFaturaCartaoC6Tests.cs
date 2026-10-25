@@ -13,7 +13,7 @@ namespace ControleFinanceiro.Infrastructure.Importacao.Tests.C6;
 /// </summary>
 public sealed class LeitorFaturaCartaoC6Tests
 {
-    private const int LinhaDasColunas = 1;
+    private const int LinhaColunas = 1;
     private const string TitularFicticio = "FULANA DE TAL FICTICIA";
 
     /// <summary>O arquivo como o banco exporta: UTF-8 sem BOM e CRLF.</summary>
@@ -195,7 +195,7 @@ public sealed class LeitorFaturaCartaoC6Tests
     [Fact]
     public async Task LerAsync_Quando_ColunasDiferentes_Deve_RetornarFalhaComALinhaDasColunas()
     {
-        Stream arquivo = _fixture.ComLinha(LinhaDasColunas, "Data;Descrição;Valor");
+        Stream arquivo = _fixture.ComLinha(LinhaColunas, "Data;Descrição;Valor");
 
         Result<Fatura> result = await _leitor.LerAsync(arquivo, CancellationToken.None);
 
@@ -223,7 +223,7 @@ public sealed class LeitorFaturaCartaoC6Tests
     [Fact]
     public async Task LerAsync_Quando_SoAsColunas_Deve_RetornarFalha()
     {
-        Stream arquivo = _fixture.ComLinhas(_fixture.Linhas().Take(LinhaDasColunas));
+        Stream arquivo = _fixture.ComLinhas(_fixture.Linhas().Take(LinhaColunas));
 
         Result<Fatura> result = await _leitor.LerAsync(arquivo, CancellationToken.None);
 

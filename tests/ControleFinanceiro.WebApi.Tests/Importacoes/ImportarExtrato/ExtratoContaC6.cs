@@ -12,7 +12,7 @@ internal static class ExtratoContaC6
 {
     private const string Fim = "\r\n";
     private const string FormatoData = "dd/MM/yyyy";
-    private const int LinhasAntesDosLancamentos = 9;
+    private const int LinhasAntesLancamentos = 9;
 
     private static readonly string _caminho = Path.Combine(AppContext.BaseDirectory, "Importacoes", "ImportarExtrato", "Fixtures", "extrato-conta.csv");
     private static readonly UTF8Encoding _utf8ComBom = new(encoderShouldEmitUTF8Identifier: true);
@@ -20,7 +20,7 @@ internal static class ExtratoContaC6
     public const string SufixoConta = "4321";
     public const int QuantidadeLancamentos = 10;
     public static readonly DateOnly Inicio = new(2026, 3, 2);
-    public static readonly DateOnly DiaDasTarifasIdenticas = new(2026, 3, 3);
+    public static readonly DateOnly DiaTarifasIdenticas = new(2026, 3, 3);
 
     /// <summary>O número completo da conta no cabeçalho, que não pode ser gravado.</summary>
     public const string NumeroCompletoConta = "987654321";
@@ -36,7 +36,7 @@ internal static class ExtratoContaC6
     {
         string[] linhas = File.ReadAllText(_caminho).Split(Fim);
         IEnumerable<string> lancamentos = linhas
-            .Skip(LinhasAntesDosLancamentos)
+            .Skip(LinhasAntesLancamentos)
             .Where(linha => linha.Length > 0)
             .Where(linha =>
             {
@@ -45,7 +45,7 @@ internal static class ExtratoContaC6
             });
 
         string periodo = $"Extrato de {inicio.ToString(FormatoData, CultureInfo.InvariantCulture)} a {fim.ToString(FormatoData, CultureInfo.InvariantCulture)}";
-        IEnumerable<string> cabecalho = linhas.Take(LinhasAntesDosLancamentos).Select(linha => linha.StartsWith("Extrato de", StringComparison.Ordinal) ? periodo : linha);
+        IEnumerable<string> cabecalho = linhas.Take(LinhasAntesLancamentos).Select(linha => linha.StartsWith("Extrato de", StringComparison.Ordinal) ? periodo : linha);
 
         return Montar(string.Join(Fim, cabecalho.Concat(lancamentos)) + Fim);
     }

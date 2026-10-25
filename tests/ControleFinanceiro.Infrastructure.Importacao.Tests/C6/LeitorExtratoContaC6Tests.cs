@@ -13,8 +13,8 @@ namespace ControleFinanceiro.Infrastructure.Importacao.Tests.C6;
 /// </summary>
 public sealed class LeitorExtratoContaC6Tests
 {
-    private const int LinhaDasColunas = 9;
-    private const int LinhaDoPrimeiroLancamento = 10;
+    private const int LinhaColunas = 9;
+    private const int LinhaPrimeiroLancamento = 10;
 
     /// <summary>O arquivo como o banco exporta: UTF-8 com BOM e CRLF.</summary>
     private static readonly ArquivoFixture _fixture = new("C6", "extrato-conta.csv", fimLinha: "\r\n", comBom: true);
@@ -62,9 +62,9 @@ public sealed class LeitorExtratoContaC6Tests
     {
         Extrato extrato = await LerFixtureAsync();
 
-        LancamentoContabilizado pixDeSabado = extrato.LancamentosContabilizados[7];
-        pixDeSabado.Lancamento.Data.Should().Be(Dia(7));
-        pixDeSabado.DataContabil.Should().Be(Dia(9));
+        LancamentoContabilizado pixSabado = extrato.LancamentosContabilizados[7];
+        pixSabado.Lancamento.Data.Should().Be(Dia(7));
+        pixSabado.DataContabil.Should().Be(Dia(9));
     }
 
     [Fact]
@@ -132,7 +132,7 @@ public sealed class LeitorExtratoContaC6Tests
     public async Task LerAsync_Quando_DescricaoRepeteOTituloDoPix_Deve_DescartarADescricaoParaONomeNaoVoltar()
     {
         Stream arquivo = _fixture.ComLinha(
-            LinhaDoPrimeiroLancamento,
+            LinhaPrimeiroLancamento,
             "02/03/2026,02/03/2026,Pix recebido de FULANO FICTICIO,PIX RECEBIDO DE FULANO FICTICIO,150.00,0.00,-12.50");
 
         Extrato extrato = (await _leitor.LerAsync(arquivo, CancellationToken.None)).Value;
@@ -180,7 +180,7 @@ public sealed class LeitorExtratoContaC6Tests
     [Fact]
     public async Task LerAsync_Quando_ColunasDiferentes_Deve_RetornarFalhaComALinhaDasColunas()
     {
-        Stream arquivo = _fixture.ComLinha(LinhaDasColunas, "Data,Descrição,Valor");
+        Stream arquivo = _fixture.ComLinha(LinhaColunas, "Data,Descrição,Valor");
 
         Result<Extrato> result = await _leitor.LerAsync(arquivo, CancellationToken.None);
 
@@ -190,7 +190,7 @@ public sealed class LeitorExtratoContaC6Tests
     [Fact]
     public async Task LerAsync_Quando_ArquivoTerminaAntesDasColunas_Deve_RetornarFalha()
     {
-        Stream arquivo = _fixture.ComLinhas(_fixture.Linhas().Take(LinhaDasColunas - 2));
+        Stream arquivo = _fixture.ComLinhas(_fixture.Linhas().Take(LinhaColunas - 2));
 
         Result<Extrato> result = await _leitor.LerAsync(arquivo, CancellationToken.None);
 
@@ -254,7 +254,7 @@ public sealed class LeitorExtratoContaC6Tests
     [Fact]
     public async Task LerAsync_Quando_SoAsColunas_Deve_LerOExtratoSemLancamentos()
     {
-        Stream arquivo = _fixture.ComLinhas(_fixture.Linhas().Take(LinhaDoPrimeiroLancamento - 1));
+        Stream arquivo = _fixture.ComLinhas(_fixture.Linhas().Take(LinhaPrimeiroLancamento - 1));
 
         Extrato extrato = (await _leitor.LerAsync(arquivo, CancellationToken.None)).Value;
 
