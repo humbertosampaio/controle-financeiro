@@ -39,7 +39,7 @@ Discordar de uma regra é motivo para conversar, não para contorná-la no códi
 
 1. **Toda mudança de comportamento nasce de uma issue** (templates em `.github/ISSUE_TEMPLATE/`). Exceção: typo, comentário ou doc isolado.
 2. **Branch a partir da `main` atualizada**: `<tipo>/<numero-da-issue>-<slug>`, com tipo `feat`, `fix`, `chore`, `docs`, `refactor` ou `test`. Ex.: `feat/7-importar-ofx-c6`.
-3. **Plano antes do código** quando a tarefa toca mais de 2 arquivos, cria classe, endpoint ou migration, ou integra algo externo. Use o agente `planejador` ou a skill `planejar-issue` e espere aprovação.
+3. **Plano antes do código** quando a tarefa toca mais de 2 arquivos, cria classe, endpoint ou migration, ou integra algo externo. Use o agente `planejador` ou a skill `planejar-issue` e espere aprovação. **A implementação de um plano roda numa sessão nova**, com o contexto limpo, pela skill `implementar-issue`: ela lê só a issue e o comentário `<!-- plano -->`, cria a branch, tira as dúvidas no chat e registra os desvios do plano na issue.
 4. **Commits em Conventional Commits, em PT-BR**, divididos por assunto: cada commit agrupa mudanças que fazem sentido juntas. Formato `tipo(escopo): Descrição no presente`, ex. `feat(importacao): Lê o extrato OFX da conta do C6`. Referencie a issue no corpo (`Refs #7`).
 5. **Verificação antes do PR**: `dotnet build` e `dotnet test` verdes e o diff relido. Rode a skill `revisar-mudanca`.
 6. **PR com `Closes #N`** no corpo, aberto pela skill `abrir-pr`. Nada vai direto para a `main`.
@@ -95,7 +95,7 @@ Três camadas, descritas em [docs/harness.md](docs/harness.md):
 
 - **Guardrail** (`.claude/settings.json` → `scripts/harness/guardrail.mjs`): bloqueia commit de dados financeiros, secret em arquivo e push na `main`; pede confirmação em git destrutivo, pacote novo e migration.
 - **Agentes** (`.claude/agents/`): `planejador`, `autor-de-testes`, `revisor-dominio`, `revisor-convencoes` e `revisor-privacidade`. Os revisores só reportam.
-- **Skills** (`.claude/skills/`): `planejar-issue` (plano na issue + sub-issues, antes do código), `revisar-mudanca` (gates + revisores) e `abrir-pr` (push + PR vinculado), depois do código.
+- **Skills** (`.claude/skills/`): `planejar-issue` (plano na issue + sub-issues, antes do código), `implementar-issue` (numa sessão nova, a partir do plano publicado), `revisar-mudanca` (gates + revisores) e `abrir-pr` (push + PR vinculado), depois do código.
 - **Gates** (`.githooks/` + `.github/workflows/ci.yml`): varredura de secrets e de dados no pre-commit, Conventional Commits no commit-msg, bloqueio de push na `main`, testes de unidade e testes de integração afetados (`scripts/harness/testes-afetados.mjs`) no pre-push, build, modelo do EF sem migration pendente e as duas suítes completas no CI. Ative uma vez por clone: `git config core.hooksPath .githooks`.
 
 ## GitHub

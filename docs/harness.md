@@ -64,7 +64,7 @@ Os revisores leem o `--stat` antes do diff. Até ~800 linhas, leem tudo; acima d
 
 Cada revisor carrega uma lista de **dívidas conhecidas** que não deve reportar. Revisor que repete os mesmos achados a cada PR passa a ser ignorado.
 
-As skills `planejar-issue`, `revisar-mudanca` e `abrir-pr` encadeiam agentes e gates nas pontas do ciclo de uma issue.
+As skills `planejar-issue`, `implementar-issue`, `revisar-mudanca` e `abrir-pr` encadeiam agentes e gates ao longo do ciclo de uma issue. A `planejar-issue` e a `implementar-issue` rodam em sessões diferentes, e a passagem entre elas é só o que está publicado no GitHub (ver [trabalhando-com-ia.md](trabalhando-com-ia.md#do-plano-à-implementação)).
 
 ## Camada 3: gates
 
