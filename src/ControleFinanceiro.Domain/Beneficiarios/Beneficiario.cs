@@ -10,30 +10,59 @@ public readonly partial struct IdBeneficiario
     private static Validation Validate(Guid input) => Id.Validar(input);
 }
 
+/// <summary>
+/// Quem recebeu o dinheiro de uma saída. É reconhecido no arquivo só pelos aliases, nunca pelo nome, que o usuário
+/// escolhe livremente.
+/// </summary>
 public sealed class Beneficiario : AggregateRoot<IdBeneficiario>, IPertenceAoUsuario
 {
     public IdUsuario IdUsuario { get; private set; }
-    public TextoObrigatorio NomeExibicao { get; private set; }
+    public TextoObrigatorio Nome { get; private set; } = null!;
     private readonly List<AliasBeneficiario> _aliases = [];
     public IReadOnlyList<AliasBeneficiario> Aliases => _aliases.AsReadOnly();
 
-    private Beneficiario(IdBeneficiario id, IdUsuario idUsuario, TextoObrigatorio nomeExibicao)
+    private Beneficiario()
+    {
+    }
+
+    private Beneficiario(IdBeneficiario id, IdUsuario idUsuario, TextoObrigatorio nome)
         : base(id)
     {
         IdUsuario = idUsuario;
-        NomeExibicao = nomeExibicao;
+        Nome = nome;
     }
 
-    public static Beneficiario Criar(IdUsuario idUsuario, TextoObrigatorio nomeExibicao) =>
-        new(IdBeneficiario.FromNewVersion7Guid(), idUsuario, nomeExibicao);
-
-    public Result AdicionarAlias(TextoObrigatorio textoExtrato, string? codigoOrigem = null)
+    /// <remarks>
+    /// Interno pois um alias aponta para um beneficiário só em cada usuário, e só a
+    /// <see cref="Services.BeneficiarioFactory"/>, que recebe os beneficiários do usuário, confere isso.
+    /// </remarks>
+    /// <param name="alias">Nulo no cadastro manual, sem arquivo.</param>
+    internal static Beneficiario Criar(IdUsuario idUsuario, TextoObrigatorio nome, Alias? alias)
     {
-        AliasBeneficiario novo = AliasBeneficiario.Criar(textoExtrato, codigoOrigem);
-        if (_aliases.Contains(novo))
-            return Result.Failure("Já existe um alias com o mesmo texto e origem para este beneficiário.");
+        Beneficiario beneficiario = new(IdBeneficiario.FromNewVersion7Guid(), idUsuario, nome);
+        if (alias is not null)
+            beneficiario.AdicionarAlias(alias);
 
-        _aliases.Add(novo);
-        return Result.Success();
+        return beneficiario;
     }
+
+    /// <remarks>
+    /// Interno pelo mesmo motivo do <see cref="Criar"/>. O alias que o beneficiário já tem não muda nada.
+    /// </remarks>
+    /// <returns>Se o alias foi adicionado, ou seja, se o beneficiário ainda não o tinha.</returns>
+    internal bool AdicionarAlias(Alias alias)
+    {
+        if (PossuiAlias(alias))
+            return false;
+
+        _aliases.Add(AliasBeneficiario.Criar(alias, IdUsuario));
+        return true;
+    }
+
+    /// <summary>O alias que o beneficiário não tem não muda nada.</summary>
+    public void RemoverAlias(Alias alias) => _aliases.RemoveAll(a => a.Alias == alias);
+
+    public void Renomear(TextoObrigatorio nome) => Nome = nome;
+
+    public bool PossuiAlias(Alias alias) => _aliases.Exists(a => a.Alias == alias);
 }

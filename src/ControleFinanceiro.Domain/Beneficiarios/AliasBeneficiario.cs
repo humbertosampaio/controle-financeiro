@@ -1,24 +1,32 @@
 using ControleFinanceiro.Domain.Shared.ValueObjects;
+using ControleFinanceiro.Domain.Usuarios;
 
 namespace ControleFinanceiro.Domain.Beneficiarios;
 
-public sealed class AliasBeneficiario : ComparableValueObject
+/// <summary>
+/// Um texto do arquivo que aponta para o beneficiário. Guarda o dono do beneficiário para o banco garantir um só
+/// beneficiário por alias em cada usuário.
+/// </summary>
+public sealed class AliasBeneficiario : ValueObject
 {
-    public TextoObrigatorio TextoExtrato { get; }
-    public string? CodigoOrigem { get; }
+    public Alias Alias { get; private set; } = null!;
+    public IdUsuario IdUsuario { get; private set; }
 
-    private AliasBeneficiario(TextoObrigatorio textoExtrato, string? codigoOrigem)
+    private AliasBeneficiario()
     {
-        TextoExtrato = textoExtrato;
-        CodigoOrigem = codigoOrigem;
     }
 
-    public static AliasBeneficiario Criar(TextoObrigatorio textoExtrato, string? codigoOrigem) =>
-        new(textoExtrato, codigoOrigem);
-
-    protected override IEnumerable<IComparable> GetComparableEqualityComponents()
+    private AliasBeneficiario(Alias alias, IdUsuario idUsuario)
     {
-        yield return TextoExtrato.Value.ToUpperInvariant();
-        yield return CodigoOrigem ?? string.Empty;
+        Alias = alias;
+        IdUsuario = idUsuario;
+    }
+
+    internal static AliasBeneficiario Criar(Alias alias, IdUsuario idUsuario) => new(alias, idUsuario);
+
+    protected override IEnumerable<object?> GetEqualityComponents()
+    {
+        yield return Alias;
+        yield return IdUsuario;
     }
 }
