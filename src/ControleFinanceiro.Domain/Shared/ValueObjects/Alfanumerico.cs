@@ -16,4 +16,6 @@ public sealed class Alfanumerico : SimpleValueObject<string>
     {
         return new Alfanumerico(texto is null ? string.Empty : string.Concat(texto.Where(char.IsAsciiLetterOrDigit)));
     }
+
+    public static explicit operator Alfanumerico(string? texto) => Criar(texto);
 }
