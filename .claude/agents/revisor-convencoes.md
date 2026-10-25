@@ -52,10 +52,11 @@ O build já quebra em parte das regras (IDE0021 em construtor, `TreatWarningsAsE
    - value object se compara, ordena e agrupa inteiro (`OrderBy(p => p.Key)`, `c.Sufixo == sufixo`), sem abrir as propriedades de dentro sem necessidade (`p.Key.Value`): quem decide o que entra na comparação é o `GetEqualityComponents`, e o `SimpleValueObject` já compara pelo `Value`.
 
    Se uma delas passar a escapar com frequência, ela sobe para as Convenções do `CLAUDE.md`.
+9. **Conversão explícita no `SimpleValueObject<T>`.** Todo `SimpleValueObject<T>` concreto novo ou alterado no diff tem um `explicit operator` do primitivo para ele, chamando o `Criar`, com as exceções do `CLAUDE.md` (base abstrata, conversão implícita). Aponte também o código do diff que chama `X.Criar(v)` para um valor sabidamente válido, ou para um `Criar` que não falha, onde o cast `(X)v` serviria, e o `.Value` desnecessário onde a conversão implícita do `SimpleValueObject<T>` para o primitivo já basta.
 
 ## Severidade
 
-- **MÉDIO**: convenção que o `CLAUDE.md` chama de obrigatória (block body, argumento nomeado, nome de teste, espelho da integração).
+- **MÉDIO**: convenção que o `CLAUDE.md` chama de obrigatória (block body, argumento nomeado, nome de teste, espelho da integração, conversão explícita no `SimpleValueObject<T>`).
 - **BAIXO**: o resto, inclusive comentário.
 
 Convenção não derruba PR sozinha: nada aqui é CRÍTICO ou ALTO.
