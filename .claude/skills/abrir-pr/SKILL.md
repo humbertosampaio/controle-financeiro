@@ -50,6 +50,10 @@ Escreva o corpo no diretório temporário da sessão. Ele leva:
 - **O que muda e por quê**, em 1 a 3 frases, sem listar arquivos.
 - **Como verificar**, com comandos.
 - **Privacidade**: o que passou a sair da máquina, ou "nada".
+- **Desvios do plano**: o link do comentário `<!-- desvios -->` da issue, quando a `implementar-issue` tiver publicado um, para quem revisa saber onde o código diverge do plano de propósito:
+  ```bash
+  gh api repos/{owner}/{repo}/issues/<n>/comments --paginate --jq '.[] | select(.body | startswith("<!-- desvios -->")) | .html_url'
+  ```
 - `Closes #<n>` numa linha própria.
 - Os itens do checklist do template ficam **desmarcados**: quem marca é o dono do repositório, depois de ler o diff.
 
