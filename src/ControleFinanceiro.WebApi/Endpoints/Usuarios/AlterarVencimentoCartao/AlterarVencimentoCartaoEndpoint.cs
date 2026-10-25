@@ -1,6 +1,5 @@
 using ControleFinanceiro.Application.Abstractions;
 using ControleFinanceiro.Domain.Cartoes;
-using ControleFinanceiro.Domain.Usuarios;
 using CSharpFunctionalExtensions;
 using FastEndpoints;
 
@@ -30,10 +29,7 @@ public sealed class AlterarVencimentoCartaoEndpoint : Endpoint<AlterarVencimento
     // Não carrega o usuário: um usuário que não existe não tem cartão, e cai no mesmo 404.
     public override async Task HandleAsync(AlterarVencimentoCartaoRequest req, CancellationToken ct)
     {
-        Maybe<Cartao> cartao = await _cartaoRepository.ObterDoUsuarioAsync(
-            IdUsuario.From(req.IdUsuario),
-            IdCartao.From(req.IdCartao),
-            ct);
+        Maybe<Cartao> cartao = await _cartaoRepository.ObterAsync(IdCartao.From(req.IdCartao), ct);
 
         if (cartao.HasNoValue)
         {

@@ -48,7 +48,7 @@ public sealed class ImportacaoExtratoService
         Extrato extrato,
         CancellationToken ct)
     {
-        IReadOnlyList<ContaBancaria> contasDoUsuario = await _contaRepository.ListarDoUsuarioAsync(idUsuario, ct);
+        IReadOnlyList<ContaBancaria> contasDoUsuario = await _contaRepository.ListarAsync(ct);
 
         return await ContaBancariaFactory
             .ObterOuCriar(idUsuario, contasDoUsuario, extrato.Banco, extrato.TipoConta, extrato.SufixoConta)

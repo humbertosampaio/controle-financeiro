@@ -11,15 +11,18 @@ namespace ControleFinanceiro.WebApi.Endpoints.Usuarios.AdicionarCartao;
 
 public sealed class AdicionarCartaoEndpoint : Endpoint<AdicionarCartaoRequest, AdicionarCartaoResponse, AdicionarCartaoMapper>
 {
+    private readonly IUsuarioAtual _usuarioAtual;
     private readonly IUsuarioRepository _usuarioRepository;
     private readonly ICartaoRepository _cartaoRepository;
     private readonly IUnitOfWork _unitOfWork;
 
     public AdicionarCartaoEndpoint(
+        IUsuarioAtual usuarioAtual,
         IUsuarioRepository usuarioRepository,
         ICartaoRepository cartaoRepository,
         IUnitOfWork unitOfWork)
     {
+        _usuarioAtual = usuarioAtual;
         _usuarioRepository = usuarioRepository;
         _cartaoRepository = cartaoRepository;
         _unitOfWork = unitOfWork;
@@ -33,7 +36,7 @@ public sealed class AdicionarCartaoEndpoint : Endpoint<AdicionarCartaoRequest, A
 
     public override async Task HandleAsync(AdicionarCartaoRequest req, CancellationToken ct)
     {
-        IdUsuario idUsuario = IdUsuario.From(req.IdUsuario);
+        IdUsuario idUsuario = _usuarioAtual.Id;
 
         Maybe<Usuario> usuario = await _usuarioRepository.ObterPorIdAsync(idUsuario, ct);
         if (usuario.HasNoValue)
@@ -42,7 +45,7 @@ public sealed class AdicionarCartaoEndpoint : Endpoint<AdicionarCartaoRequest, A
             return;
         }
 
-        IReadOnlyList<Cartao> cartoesDoUsuario = await _cartaoRepository.ListarDoUsuarioAsync(idUsuario, ct);
+        IReadOnlyList<Cartao> cartoesDoUsuario = await _cartaoRepository.ListarAsync(ct);
 
         Result<Cartao, Erro> criado = CartaoFactory.Criar(
             idUsuario,
