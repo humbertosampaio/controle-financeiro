@@ -1,10 +1,9 @@
-using ControleFinanceiro.Domain.Usuarios;
-
 namespace ControleFinanceiro.Domain.Contas;
 
+/// <summary>Enxerga só as contas do usuário atual.</summary>
 public interface IContaRepository
 {
-    Task<IReadOnlyList<ContaBancaria>> ListarDoUsuarioAsync(IdUsuario idUsuario, CancellationToken cancellationToken);
+    Task<IReadOnlyList<ContaBancaria>> ListarAsync(CancellationToken cancellationToken);
 
     Task AdicionarAsync(ContaBancaria conta, CancellationToken cancellationToken);
 }

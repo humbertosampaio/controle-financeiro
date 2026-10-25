@@ -1,5 +1,4 @@
 using ControleFinanceiro.Domain.Cartoes;
-using ControleFinanceiro.Domain.Usuarios;
 using CSharpFunctionalExtensions;
 using Microsoft.EntityFrameworkCore;
 
@@ -14,11 +13,11 @@ internal sealed class CartaoRepository : ICartaoRepository
         _dbSet = dbContext.Cartoes;
     }
 
-    public async Task<IReadOnlyList<Cartao>> ListarDoUsuarioAsync(IdUsuario idUsuario, CancellationToken cancellationToken) =>
-        await _dbSet.Where(c => c.IdUsuario == idUsuario).ToListAsync(cancellationToken);
+    public async Task<IReadOnlyList<Cartao>> ListarAsync(CancellationToken cancellationToken) =>
+        await _dbSet.ToListAsync(cancellationToken);
 
-    public async Task<Maybe<Cartao>> ObterDoUsuarioAsync(IdUsuario idUsuario, IdCartao idCartao, CancellationToken cancellationToken) =>
-        await _dbSet.SingleOrDefaultAsync(c => c.Id == idCartao && c.IdUsuario == idUsuario, cancellationToken);
+    public async Task<Maybe<Cartao>> ObterAsync(IdCartao idCartao, CancellationToken cancellationToken) =>
+        await _dbSet.SingleOrDefaultAsync(c => c.Id == idCartao, cancellationToken);
 
     public async Task AdicionarAsync(Cartao cartao, CancellationToken cancellationToken) =>
         await _dbSet.AddAsync(cartao, cancellationToken);

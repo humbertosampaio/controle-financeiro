@@ -46,19 +46,19 @@ public sealed class ImportarExtratoEndpointTests : IAsyncLifetime
         corpo.PeriodoNaoImportado.Should().BeNull();
         corpo.AvisoSomaPeriodo.Should().BeNull();
 
-        ContaBancaria conta = (await _api.LerTodosAsync(db => db.Contas)).Should().ContainSingle().Subject;
+        ContaBancaria conta = (await _api.ObterTodosAsync(db => db.Contas)).Should().ContainSingle().Subject;
         ((Guid)conta.Id).Should().Be(corpo.IdConta);
         conta.IdUsuario.Should().Be(IdUsuario.From(idUsuario));
         conta.Banco.Should().BeSameAs(Banco.C6);
         conta.Tipo.Should().BeSameAs(TipoConta.ContaCorrente);
         conta.Sufixo.Value.Should().Be(ExtratoContaC6.SufixoConta);
 
-        ImportacaoArquivo importacao = (await _api.LerTodosAsync(db => db.Importacoes)).Should().ContainSingle().Subject;
+        ImportacaoArquivo importacao = (await _api.ObterTodosAsync(db => db.Importacoes)).Should().ContainSingle().Subject;
         ((Guid)importacao.Id).Should().Be(corpo.IdImportacao);
         importacao.Origem.Should().Be(OrigemTransacao.DaConta(conta.Id));
         importacao.Layout.Should().BeSameAs(LayoutArquivoImportacao.C6ContaCsv);
 
-        List<Transacao> transacoes = await _api.LerTodosAsync(db => db.Transacoes);
+        List<Transacao> transacoes = await _api.ObterTodosAsync(db => db.Transacoes);
         transacoes.Should().HaveCount(ExtratoContaC6.QuantidadeLancamentos);
         transacoes.Should().AllSatisfy(t =>
         {
@@ -76,7 +76,7 @@ public sealed class ImportarExtratoEndpointTests : IAsyncLifetime
 
         await ImportarComSucessoAsync(idUsuario, ExtratoContaC6.Completo());
 
-        ContaBancaria conta = (await _api.LerTodosAsync(db => db.Contas)).Should().ContainSingle().Subject;
+        ContaBancaria conta = (await _api.ObterTodosAsync(db => db.Contas)).Should().ContainSingle().Subject;
         conta.Sufixo.Value.Should().NotContain(ExtratoContaC6.NumeroCompletoConta);
         conta.Apelido.Value.Should().NotContain(ExtratoContaC6.NumeroCompletoConta);
     }
@@ -88,7 +88,7 @@ public sealed class ImportarExtratoEndpointTests : IAsyncLifetime
 
         await ImportarComSucessoAsync(idUsuario, ExtratoContaC6.Completo());
 
-        List<Transacao> tarifas = (await _api.LerTodosAsync(db => db.Transacoes))
+        List<Transacao> tarifas = (await _api.ObterTodosAsync(db => db.Transacoes))
             .Where(t => t.Data == ExtratoContaC6.DiaTarifasIdenticas && t.Descricao.Value == "Tarifa de exemplo")
             .ToList();
         tarifas.Should().HaveCount(2);
@@ -106,11 +106,33 @@ public sealed class ImportarExtratoEndpointTests : IAsyncLifetime
         segunda.Novas.Should().Be(0);
         segunda.JaExistentes.Should().Be(ExtratoContaC6.QuantidadeLancamentos);
         segunda.IdConta.Should().Be(primeira.IdConta);
-        List<Transacao> transacoes = await _api.LerTodosAsync(db => db.Transacoes);
+        List<Transacao> transacoes = await _api.ObterTodosAsync(db => db.Transacoes);
         transacoes.Should().HaveCount(ExtratoContaC6.QuantidadeLancamentos);
         transacoes.Should().AllSatisfy(t => ((Guid)t.IdImportacao).Should().Be(primeira.IdImportacao));
-        (await _api.LerTodosAsync(db => db.Contas)).Should().ContainSingle();
-        (await _api.LerTodosAsync(db => db.Importacoes)).Should().HaveCount(2);
+        (await _api.ObterTodosAsync(db => db.Contas)).Should().ContainSingle();
+        (await _api.ObterTodosAsync(db => db.Importacoes)).Should().HaveCount(2);
+    }
+
+    [Theory, ApiAutoData]
+    public async Task Post_Quando_OutroUsuarioImportouOMesmoExtrato_Deve_CriarAContaDoUsuario(
+        CadastrarUsuarioRequest cadastro,
+        CadastrarUsuarioRequest cadastroOutro)
+    {
+        Guid idUsuario = await _api.CadastrarUsuarioAsync(cadastro);
+        Guid idOutro = await _api.CadastrarUsuarioAsync(cadastroOutro);
+        ImportarExtratoResponse doOutro = await ImportarComSucessoAsync(idOutro, ExtratoContaC6.Completo());
+
+        ImportarExtratoResponse corpo = await ImportarComSucessoAsync(idUsuario, ExtratoContaC6.Completo());
+
+        corpo.IdConta.Should().NotBe(doOutro.IdConta);
+        corpo.Novas.Should().Be(ExtratoContaC6.QuantidadeLancamentos);
+        corpo.JaExistentes.Should().Be(0);
+        corpo.PeriodoNaoImportado.Should().BeNull();
+        List<ContaBancaria> contas = await _api.ObterTodosAsync(db => db.Contas);
+        contas.Select(c => c.IdUsuario).Should().BeEquivalentTo([IdUsuario.From(idUsuario), IdUsuario.From(idOutro)]);
+        List<Transacao> transacoes = await _api.ObterTodosAsync(db => db.Transacoes);
+        transacoes.Should().HaveCount(2 * ExtratoContaC6.QuantidadeLancamentos);
+        transacoes.Count(t => t.IdUsuario == IdUsuario.From(idUsuario)).Should().Be(ExtratoContaC6.QuantidadeLancamentos);
     }
 
     [Theory, ApiAutoData]
@@ -126,7 +148,7 @@ public sealed class ImportarExtratoEndpointTests : IAsyncLifetime
         completo.JaExistentes.Should().Be(7);
         completo.PeriodoNaoImportado.Should().BeNull();
         completo.AvisoSomaPeriodo.Should().BeNull();
-        List<Transacao> transacoes = await _api.LerTodosAsync(db => db.Transacoes);
+        List<Transacao> transacoes = await _api.ObterTodosAsync(db => db.Transacoes);
         transacoes.Should().HaveCount(ExtratoContaC6.QuantidadeLancamentos);
         transacoes.Count(t => t.IdImportacao == IdImportacao.From(completo.IdImportacao)).Should().Be(3);
     }
@@ -156,7 +178,7 @@ public sealed class ImportarExtratoEndpointTests : IAsyncLifetime
         corpo.AvisoSomaPeriodo.Should().Be(
             "A soma das transações gravadas de 02/03/2026 a 09/03/2026 não fecha com a soma dos lançamentos do extrato.");
         corpo.Novas.Should().Be(1);
-        (await _api.LerTodosAsync(db => db.Transacoes)).Should().HaveCount(ExtratoContaC6.QuantidadeLancamentos + 1);
+        (await _api.ObterTodosAsync(db => db.Transacoes)).Should().HaveCount(ExtratoContaC6.QuantidadeLancamentos + 1);
     }
 
     [Theory, ApiAutoData]
@@ -242,8 +264,8 @@ public sealed class ImportarExtratoEndpointTests : IAsyncLifetime
 
     private async Task DeveEstarSemImportacaoAsync()
     {
-        (await _api.ConsultarAsync(db => db.Contas.CountAsync())).Should().Be(0);
-        (await _api.ConsultarAsync(db => db.Transacoes.CountAsync())).Should().Be(0);
-        (await _api.ConsultarAsync(db => db.Importacoes.CountAsync())).Should().Be(0);
+        (await _api.ObterTodosAsync(db => db.Contas)).Should().BeEmpty();
+        (await _api.ObterTodosAsync(db => db.Transacoes)).Should().BeEmpty();
+        (await _api.ObterTodosAsync(db => db.Importacoes)).Should().BeEmpty();
     }
 }

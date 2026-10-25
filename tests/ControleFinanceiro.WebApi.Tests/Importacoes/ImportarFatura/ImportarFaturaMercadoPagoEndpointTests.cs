@@ -42,19 +42,19 @@ public sealed class ImportarFaturaMercadoPagoEndpointTests : IAsyncLifetime
         linha.Lidas.Should().Be(FaturaCartaoMercadoPago.QuantidadeLancamentos);
         linha.Novas.Should().Be(FaturaCartaoMercadoPago.QuantidadeLancamentos);
 
-        Cartao cartao = (await _api.LerTodosAsync(db => db.Cartoes)).Should().ContainSingle().Subject;
+        Cartao cartao = (await _api.ObterTodosAsync(db => db.Cartoes)).Should().ContainSingle().Subject;
         ((Guid)cartao.Id).Should().Be(linha.IdCartao);
         cartao.IdUsuario.Should().Be(IdUsuario.From(idUsuario));
         cartao.Banco.Should().BeSameAs(Banco.MercadoPago);
         cartao.Sufixo.Should().Be(FaturaCartaoMercadoPago.Sufixo);
 
-        ImportacaoArquivo importacao = (await _api.LerTodosAsync(db => db.Importacoes)).Should().ContainSingle().Subject;
+        ImportacaoArquivo importacao = (await _api.ObterTodosAsync(db => db.Importacoes)).Should().ContainSingle().Subject;
         ((Guid)importacao.Id).Should().Be(linha.IdImportacao);
         importacao.Layout.Should().BeSameAs(LayoutArquivoImportacao.MercadoPagoCartaoCsv);
         importacao.Origem.Should().Be(OrigemTransacao.DoCartao(cartao.Id));
         importacao.Periodo.Should().Be((PeriodoArquivo)(FaturaCartaoMercadoPago.PrimeiraData, FaturaCartaoMercadoPago.UltimaData));
 
-        List<Transacao> transacoes = await _api.LerTodosAsync(db => db.Transacoes);
+        List<Transacao> transacoes = await _api.ObterTodosAsync(db => db.Transacoes);
         transacoes.Should().HaveCount(FaturaCartaoMercadoPago.QuantidadeLancamentos).And.AllSatisfy(t =>
         {
             t.Origem.Should().Be(OrigemTransacao.DoCartao(cartao.Id));
@@ -70,7 +70,7 @@ public sealed class ImportarFaturaMercadoPagoEndpointTests : IAsyncLifetime
 
         _ = await ImportarComSucessoAsync(idUsuario, FaturaCartaoMercadoPago.Completo());
 
-        List<Transacao> transacoes = await _api.LerTodosAsync(db => db.Transacoes);
+        List<Transacao> transacoes = await _api.ObterTodosAsync(db => db.Transacoes);
         Transacao parcelada = transacoes.Should().ContainSingle(t => t.EhParcelada).Subject;
         parcelada.Parcela.Should().Be((Parcela)(3, 10));
         parcelada.Data.Should().Be(FaturaCartaoMercadoPago.PrimeiraData);
@@ -83,7 +83,7 @@ public sealed class ImportarFaturaMercadoPagoEndpointTests : IAsyncLifetime
 
         _ = await ImportarComSucessoAsync(idUsuario, FaturaCartaoMercadoPago.Completo());
 
-        List<Transacao> transacoes = await _api.LerTodosAsync(db => db.Transacoes);
+        List<Transacao> transacoes = await _api.ObterTodosAsync(db => db.Transacoes);
         Transacao pagamento = transacoes.Should().ContainSingle(t => t.Valor > 0m).Subject;
         pagamento.Data.Should().Be(FaturaCartaoMercadoPago.UltimaData);
         pagamento.Valor.Should().Be((Reais)1429.36m);
@@ -100,7 +100,7 @@ public sealed class ImportarFaturaMercadoPagoEndpointTests : IAsyncLifetime
         ImportarFaturaResponse.CartaoImportado linha = segunda.Cartoes.Should().ContainSingle().Subject;
         linha.Novas.Should().Be(0);
         linha.JaExistentes.Should().Be(FaturaCartaoMercadoPago.QuantidadeLancamentos);
-        (await _api.LerTodosAsync(db => db.Transacoes)).Should().HaveCount(FaturaCartaoMercadoPago.QuantidadeLancamentos);
+        (await _api.ObterTodosAsync(db => db.Transacoes)).Should().HaveCount(FaturaCartaoMercadoPago.QuantidadeLancamentos);
     }
 
     [Theory, ApiAutoData]
@@ -112,7 +112,7 @@ public sealed class ImportarFaturaMercadoPagoEndpointTests : IAsyncLifetime
         ImportarFaturaResponse corpo = await ImportarComSucessoAsync(idUsuario, FaturaCartaoMercadoPago.ComParcelaSeguinte());
 
         corpo.Cartoes.Should().ContainSingle().Which.Novas.Should().Be(1);
-        List<Transacao> transacoes = await _api.LerTodosAsync(db => db.Transacoes);
+        List<Transacao> transacoes = await _api.ObterTodosAsync(db => db.Transacoes);
         transacoes.Should().HaveCount(FaturaCartaoMercadoPago.QuantidadeLancamentos + 1);
         transacoes
             .Where(t => t.EhParcelada)
@@ -130,7 +130,7 @@ public sealed class ImportarFaturaMercadoPagoEndpointTests : IAsyncLifetime
 
         primeira.Cartoes.Should().ContainSingle().Which.Novas.Should().Be(FaturaCartaoMercadoPago.QuantidadeLancamentos);
         segunda.Cartoes.Should().ContainSingle().Which.Novas.Should().Be(0);
-        (await _api.LerTodosAsync(db => db.Transacoes)).Should().HaveCount(FaturaCartaoMercadoPago.QuantidadeLancamentos);
+        (await _api.ObterTodosAsync(db => db.Transacoes)).Should().HaveCount(FaturaCartaoMercadoPago.QuantidadeLancamentos);
     }
 
     [Theory, ApiAutoData]
@@ -152,7 +152,7 @@ public sealed class ImportarFaturaMercadoPagoEndpointTests : IAsyncLifetime
 
         _ = await ImportarComSucessoAsync(idUsuario, FaturaCartaoMercadoPago.Completo());
 
-        (await _api.LerTodosAsync(db => db.Transacoes)).Should().AllSatisfy(t =>
+        (await _api.ObterTodosAsync(db => db.Transacoes)).Should().AllSatisfy(t =>
         {
             string?[] textos = [t.Descricao, t.Contraparte, t.CategoriaBanco];
             textos.Should().NotContain(texto =>

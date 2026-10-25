@@ -26,6 +26,7 @@ public static class DependencyInjection
                 throw new InvalidOperationException("Connection string 'controlefinanceiro' não encontrada.");
 
             // Os agregados vêm inteiros (AutoInclude); split query evita o produto cartesiano entre as coleções.
+            // Sem pooling: o DbContext recebe pelo construtor o IUsuarioAtual, que cada host registra.
             services.AddDbContext<ControleFinanceiroDbContext>(options =>
                 options.UseNpgsql(
                     connectionString,

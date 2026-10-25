@@ -18,6 +18,6 @@ public sealed class ControleFinanceiroDesignTimeDbContextFactory : IDesignTimeDb
         DbContextOptionsBuilder<ControleFinanceiroDbContext> optionsBuilder = new();
         optionsBuilder.UseNpgsql(connectionString);
 
-        return new ControleFinanceiroDbContext(optionsBuilder.Options);
+        return new ControleFinanceiroDbContext(optionsBuilder.Options, new UsuarioAtualIndisponivel());
     }
 }

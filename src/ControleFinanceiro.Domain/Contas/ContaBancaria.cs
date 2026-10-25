@@ -14,7 +14,7 @@ public readonly partial struct IdConta
 /// Conta de onde vêm os lançamentos de um extrato. Guarda só o sufixo do número: o número completo, a
 /// agência e o titular não são gravados.
 /// </summary>
-public sealed class ContaBancaria : AggregateRoot<IdConta>
+public sealed class ContaBancaria : AggregateRoot<IdConta>, IPertenceAoUsuario
 {
     public IdUsuario IdUsuario { get; private set; }
     public Banco Banco { get; private set; } = null!;

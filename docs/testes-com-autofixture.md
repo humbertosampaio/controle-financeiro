@@ -97,7 +97,7 @@ Use `ThrowExactly<T>()`, e não `Throw<T>()`, que também passa com uma exceçã
 - **`[ApiAutoData]`**, ou `[InlineApiAutoData(...)]`, é o `DomainFixture` com as customizações realistas e as de request.
 - **Customização de request.** Cada endpoint tem uma customização na própria pasta, como `CadastrarUsuarioRequestCustomization`, que monta o DTO a partir da entidade do fixture: `fixture.Register((Usuario u) => new CadastrarUsuarioRequest { ... })`. Todo teste que pede o request recebe um válido, e nenhum teste repete o mapeamento.
 - **Um container para a suíte.** A `ApiComPostgresFixture` fica na collection `ApiCollection`. Cada classe chama `ResetarBancoAsync()` no `InitializeAsync`, antes de cada teste, para o que um teste que falhou gravou ficar no banco para depuração.
-- **Leitura de volta pelo banco**, com `LerTodosAsync(db => db.Contas)` ou `ConsultarAsync`, num escopo novo e com `AsNoTracking`. O teste confere o que foi gravado, não o que a requisição tinha em memória.
+- **Leitura de volta pelo banco**, com `ObterTodosAsync(db => db.Contas)` ou `ConsultarAsync`, num escopo novo e com `AsNoTracking`. O teste confere o que foi gravado, não o que a requisição tinha em memória.
 - **O que se repete entre os testes fica num lugar só**, em `Infraestrutura/`:
   - `ApiComPostgresFixture` cadastra o usuário (`CadastrarUsuarioAsync`) e lê as tabelas de volta;
   - `CamposComErroAsync` lê os campos com erro do `ProblemDetails` da resposta;

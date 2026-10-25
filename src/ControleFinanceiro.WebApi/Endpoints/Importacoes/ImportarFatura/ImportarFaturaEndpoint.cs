@@ -25,6 +25,7 @@ public sealed class ImportarFaturaEndpoint : Endpoint<ImportarFaturaRequest, Imp
     /// </summary>
     public const long TamanhoMaximoFormulario = ImportarFaturaValidator.TamanhoMaximoArquivo + 1024 * 1024;
 
+    private readonly IUsuarioAtual _usuarioAtual;
     private readonly IUsuarioRepository _usuarioRepository;
     private readonly ICartaoRepository _cartaoRepository;
     private readonly ITransacaoRepository _transacaoRepository;
@@ -34,6 +35,7 @@ public sealed class ImportarFaturaEndpoint : Endpoint<ImportarFaturaRequest, Imp
     private readonly IUnitOfWork _unitOfWork;
 
     public ImportarFaturaEndpoint(
+        IUsuarioAtual usuarioAtual,
         IUsuarioRepository usuarioRepository,
         ICartaoRepository cartaoRepository,
         ITransacaoRepository transacaoRepository,
@@ -42,6 +44,7 @@ public sealed class ImportarFaturaEndpoint : Endpoint<ImportarFaturaRequest, Imp
         TimeProvider timeProvider,
         IUnitOfWork unitOfWork)
     {
+        _usuarioAtual = usuarioAtual;
         _usuarioRepository = usuarioRepository;
         _cartaoRepository = cartaoRepository;
         _transacaoRepository = transacaoRepository;
@@ -64,7 +67,7 @@ public sealed class ImportarFaturaEndpoint : Endpoint<ImportarFaturaRequest, Imp
 
     public override async Task HandleAsync(ImportarFaturaRequest req, CancellationToken ct)
     {
-        IdUsuario idUsuario = IdUsuario.From(req.IdUsuario);
+        IdUsuario idUsuario = _usuarioAtual.Id;
         LayoutArquivoImportacao layout = LayoutArquivoImportacao.FromValue(req.Layout);
         VencimentosCartoesNovos vencimentos = LerVencimentos(req);
 
@@ -102,7 +105,7 @@ public sealed class ImportarFaturaEndpoint : Endpoint<ImportarFaturaRequest, Imp
         VencimentosCartoesNovos vencimentos,
         CancellationToken ct)
     {
-        IReadOnlyList<Cartao> cartoesDoUsuario = await _cartaoRepository.ListarDoUsuarioAsync(idUsuario, ct);
+        IReadOnlyList<Cartao> cartoesDoUsuario = await _cartaoRepository.ListarAsync(ct);
         IReadOnlyList<Cartao> cartoes = CartaoFactory.ObterOuCriar(idUsuario, cartoesDoUsuario, fatura.Banco, fatura.Sufixos, vencimentos);
 
         return await MontarLotes(idUsuario, layout, fatura, cartoes)

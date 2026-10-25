@@ -1,3 +1,4 @@
+using ControleFinanceiro.Application.Abstractions;
 using ControleFinanceiro.Application.Importacoes;
 using ControleFinanceiro.Domain.Contas;
 using ControleFinanceiro.Domain.Importacoes;
@@ -22,15 +23,18 @@ public sealed class ImportarExtratoEndpoint : Endpoint<ImportarExtratoRequest, I
     /// </summary>
     public const long TamanhoMaximoFormulario = ImportarExtratoValidator.TamanhoMaximoArquivo + 1024 * 1024;
 
+    private readonly IUsuarioAtual _usuarioAtual;
     private readonly IUsuarioRepository _usuarioRepository;
     private readonly IEnumerable<ILeitorExtrato> _leitores;
     private readonly ImportacaoExtratoService _importacaoExtrato;
 
     public ImportarExtratoEndpoint(
+        IUsuarioAtual usuarioAtual,
         IUsuarioRepository usuarioRepository,
         IEnumerable<ILeitorExtrato> leitores,
         ImportacaoExtratoService importacaoExtrato)
     {
+        _usuarioAtual = usuarioAtual;
         _usuarioRepository = usuarioRepository;
         _leitores = leitores;
         _importacaoExtrato = importacaoExtrato;
@@ -49,7 +53,7 @@ public sealed class ImportarExtratoEndpoint : Endpoint<ImportarExtratoRequest, I
 
     public override async Task HandleAsync(ImportarExtratoRequest req, CancellationToken ct)
     {
-        IdUsuario idUsuario = IdUsuario.From(req.IdUsuario);
+        IdUsuario idUsuario = _usuarioAtual.Id;
         LayoutArquivoImportacao layout = LayoutArquivoImportacao.FromValue(req.Layout);
 
         await _usuarioRepository.ObterPorIdAsync(idUsuario, ct)

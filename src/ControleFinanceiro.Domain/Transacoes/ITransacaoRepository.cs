@@ -2,6 +2,7 @@ using ControleFinanceiro.Domain.Importacoes;
 
 namespace ControleFinanceiro.Domain.Transacoes;
 
+/// <summary>Enxerga só as transações do usuário atual.</summary>
 public interface ITransacaoRepository
 {
     /// <summary>

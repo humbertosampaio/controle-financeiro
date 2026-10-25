@@ -1,7 +1,6 @@
 using ControleFinanceiro.Domain.Importacoes;
 using ControleFinanceiro.WebApi.Endpoints.Importacoes.ImportarFatura;
 using ControleFinanceiro.WebApi.Tests.Infraestrutura;
-using Microsoft.EntityFrameworkCore;
 using System.Globalization;
 using System.Net;
 using System.Net.Http.Headers;
@@ -57,9 +56,9 @@ internal static class ImportacaoFaturaExtensions
 
         public async Task DeveEstarSemImportacaoAsync()
         {
-            (await api.ConsultarAsync(db => db.Cartoes.CountAsync())).Should().Be(0);
-            (await api.ConsultarAsync(db => db.Transacoes.CountAsync())).Should().Be(0);
-            (await api.ConsultarAsync(db => db.Importacoes.CountAsync())).Should().Be(0);
+            (await api.ObterTodosAsync(db => db.Cartoes)).Should().BeEmpty();
+            (await api.ObterTodosAsync(db => db.Transacoes)).Should().BeEmpty();
+            (await api.ObterTodosAsync(db => db.Importacoes)).Should().BeEmpty();
         }
     }
 }

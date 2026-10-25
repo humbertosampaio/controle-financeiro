@@ -93,7 +93,7 @@ public sealed class AlterarVencimentoCartaoEndpointTests : IAsyncLifetime
 
     private async Task<Cartao> LerCartaoAsync(Guid idCartao)
     {
-        List<Cartao> cartoes = await _api.LerTodosAsync(db => db.Cartoes);
+        List<Cartao> cartoes = await _api.ObterTodosAsync(db => db.Cartoes);
         return cartoes.Should().ContainSingle(c => c.Id == IdCartao.From(idCartao)).Subject;
     }
 }

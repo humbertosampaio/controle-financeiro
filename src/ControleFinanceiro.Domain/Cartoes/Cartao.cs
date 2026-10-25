@@ -10,7 +10,7 @@ public readonly partial struct IdCartao
     private static Validation Validate(Guid input) => Id.Validar(input);
 }
 
-public sealed class Cartao : AggregateRoot<IdCartao>
+public sealed class Cartao : AggregateRoot<IdCartao>, IPertenceAoUsuario
 {
     public IdUsuario IdUsuario { get; private set; }
     public Banco Banco { get; private set; } = null!;

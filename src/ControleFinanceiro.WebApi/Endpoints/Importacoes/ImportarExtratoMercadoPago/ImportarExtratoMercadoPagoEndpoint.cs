@@ -1,3 +1,4 @@
+using ControleFinanceiro.Application.Abstractions;
 using ControleFinanceiro.Application.Importacoes;
 using ControleFinanceiro.Domain.Contas;
 using ControleFinanceiro.Domain.Importacoes;
@@ -26,15 +27,18 @@ public sealed class ImportarExtratoMercadoPagoEndpoint : Endpoint<ImportarExtrat
 
     private static readonly LayoutArquivoImportacao _layout = LayoutArquivoImportacao.MercadoPagoContaCsv;
 
+    private readonly IUsuarioAtual _usuarioAtual;
     private readonly IUsuarioRepository _usuarioRepository;
     private readonly IEnumerable<ILeitorExtratoContaInformada> _leitores;
     private readonly ImportacaoExtratoService _importacaoExtrato;
 
     public ImportarExtratoMercadoPagoEndpoint(
+        IUsuarioAtual usuarioAtual,
         IUsuarioRepository usuarioRepository,
         IEnumerable<ILeitorExtratoContaInformada> leitores,
         ImportacaoExtratoService importacaoExtrato)
     {
+        _usuarioAtual = usuarioAtual;
         _usuarioRepository = usuarioRepository;
         _leitores = leitores;
         _importacaoExtrato = importacaoExtrato;
@@ -53,7 +57,7 @@ public sealed class ImportarExtratoMercadoPagoEndpoint : Endpoint<ImportarExtrat
 
     public override async Task HandleAsync(ImportarExtratoMercadoPagoRequest req, CancellationToken ct)
     {
-        IdUsuario idUsuario = IdUsuario.From(req.IdUsuario);
+        IdUsuario idUsuario = _usuarioAtual.Id;
 
         await _usuarioRepository.ObterPorIdAsync(idUsuario, ct)
             .ToResult(Falha.UsuarioNaoEncontrado)

@@ -9,6 +9,7 @@ Legenda:
 - `<<ValueObject>>` e `<<SmartEnum>>`: sem identidade, comparados pelo valor.
 - `*--` composição (faz parte do agregado); `..>` referência por id a outro agregado; `--|>` herança.
 - Ids são structs Vogen sobre `Guid` (`IdUsuario`, `IdDespesa`…), gerados com `FromNewVersion7Guid`.
+- Todo agregado com `..> Usuario : IdUsuario` implementa `IPertenceAoUsuario` e é filtrado pelo usuário atual.
 
 Entre agregados, a referência é sempre pelo id da raiz: nenhum agregado guarda outro nem entidade de outro.
 
