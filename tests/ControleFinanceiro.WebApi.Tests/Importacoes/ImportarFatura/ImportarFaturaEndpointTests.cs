@@ -48,7 +48,7 @@ public sealed class ImportarFaturaEndpointTests : IAsyncLifetime
             c.JaExistentes.Should().Be(0);
         });
 
-        List<Cartao> cartoes = await _api.LerTodosAsync(db => db.Cartoes);
+        List<Cartao> cartoes = await _api.ObterTodosAsync(db => db.Cartoes);
         cartoes.Select(c => c.Sufixo).Should().BeEquivalentTo([FaturaCartaoC6.SufixoFisico, FaturaCartaoC6.SufixoVirtual]);
         cartoes.Should().AllSatisfy(c =>
         {
@@ -61,7 +61,7 @@ public sealed class ImportarFaturaEndpointTests : IAsyncLifetime
         ImportarFaturaResponse.CartaoImportado linhaFisico = corpo.Cartoes[0];
         ((Guid)fisico.Id).Should().Be(linhaFisico.IdCartao);
 
-        List<ImportacaoArquivo> importacoes = await _api.LerTodosAsync(db => db.Importacoes);
+        List<ImportacaoArquivo> importacoes = await _api.ObterTodosAsync(db => db.Importacoes);
         importacoes.Should().HaveCount(2);
         ImportacaoArquivo importacaoFisico = importacoes.Single(i => i.Origem == OrigemTransacao.DoCartao(fisico.Id));
         ((Guid)importacaoFisico.Id).Should().Be(linhaFisico.IdImportacao);
@@ -69,7 +69,7 @@ public sealed class ImportarFaturaEndpointTests : IAsyncLifetime
         importacaoFisico.Periodo.Should().Be((PeriodoArquivo)(FaturaCartaoC6.PrimeiraCompraFisico, FaturaCartaoC6.UltimaCompraFisico));
         importacaoFisico.Lidas.Should().Be(FaturaCartaoC6.LancamentosPorCartao);
 
-        List<Transacao> transacoes = await _api.LerTodosAsync(db => db.Transacoes);
+        List<Transacao> transacoes = await _api.ObterTodosAsync(db => db.Transacoes);
         transacoes.Should().HaveCount(FaturaCartaoC6.QuantidadeLancamentos);
         transacoes.Where(t => t.Origem == OrigemTransacao.DoCartao(fisico.Id)).Should().AllSatisfy(t =>
         {
@@ -86,7 +86,7 @@ public sealed class ImportarFaturaEndpointTests : IAsyncLifetime
 
         await ImportarComSucessoAsync(idUsuario, FaturaCartaoC6.Completo());
 
-        List<Transacao> transacoes = await _api.LerTodosAsync(db => db.Transacoes);
+        List<Transacao> transacoes = await _api.ObterTodosAsync(db => db.Transacoes);
         Transacao parcelada = transacoes.Should().ContainSingle(t => t.EhParcelada).Subject;
         parcelada.Parcela.Should().Be((Parcela)(3, 10));
         parcelada.Data.Should().Be(FaturaCartaoC6.PrimeiraCompraFisico);
@@ -101,7 +101,7 @@ public sealed class ImportarFaturaEndpointTests : IAsyncLifetime
 
         await ImportarComSucessoAsync(idUsuario, FaturaCartaoC6.Completo());
 
-        (await _api.LerTodosAsync(db => db.Transacoes)).Should().AllSatisfy(t =>
+        (await _api.ObterTodosAsync(db => db.Transacoes)).Should().AllSatisfy(t =>
         {
             t.Descricao.Value.Should().NotContain(FaturaCartaoC6.TitularFicticio);
             t.Contraparte.Should().BeNull();
@@ -126,7 +126,7 @@ public sealed class ImportarFaturaEndpointTests : IAsyncLifetime
         linhaFisico.VencimentoPadrao.Should().BeFalse();
         corpo.Cartoes[1].CartaoNovo.Should().BeTrue();
 
-        List<Cartao> cartoes = await _api.LerTodosAsync(db => db.Cartoes);
+        List<Cartao> cartoes = await _api.ObterTodosAsync(db => db.Cartoes);
         cartoes.Should().HaveCount(2);
         cartoes.Single(c => c.Id == IdCartao.From(idCartao)).DiaVencimento.Should().Be((DiaVencimentoCartao)15);
     }
@@ -143,7 +143,7 @@ public sealed class ImportarFaturaEndpointTests : IAsyncLifetime
             vencimentos: $$"""{"{{FaturaCartaoC6.SufixoVirtual}}":20,"9999":5}""");
 
         corpo.Cartoes.Should().AllSatisfy(c => c.VencimentoPadrao.Should().BeFalse());
-        List<Cartao> cartoes = await _api.LerTodosAsync(db => db.Cartoes);
+        List<Cartao> cartoes = await _api.ObterTodosAsync(db => db.Cartoes);
         cartoes.Should().HaveCount(2);
         cartoes.Single(c => c.Sufixo == FaturaCartaoC6.SufixoFisico).DiaVencimento.Should().Be((DiaVencimentoCartao)10);
         cartoes.Single(c => c.Sufixo == FaturaCartaoC6.SufixoVirtual).DiaVencimento.Should().Be((DiaVencimentoCartao)20);
@@ -165,9 +165,9 @@ public sealed class ImportarFaturaEndpointTests : IAsyncLifetime
             c.JaExistentes.Should().Be(FaturaCartaoC6.LancamentosPorCartao);
         });
         segunda.Cartoes.Select(c => c.IdCartao).Should().Equal(primeira.Cartoes.Select(c => c.IdCartao));
-        (await _api.LerTodosAsync(db => db.Transacoes)).Should().HaveCount(FaturaCartaoC6.QuantidadeLancamentos);
-        (await _api.LerTodosAsync(db => db.Cartoes)).Should().HaveCount(2);
-        (await _api.LerTodosAsync(db => db.Importacoes)).Should().HaveCount(4);
+        (await _api.ObterTodosAsync(db => db.Transacoes)).Should().HaveCount(FaturaCartaoC6.QuantidadeLancamentos);
+        (await _api.ObterTodosAsync(db => db.Cartoes)).Should().HaveCount(2);
+        (await _api.ObterTodosAsync(db => db.Importacoes)).Should().HaveCount(4);
     }
 
     [Theory, ApiAutoData]
@@ -180,7 +180,7 @@ public sealed class ImportarFaturaEndpointTests : IAsyncLifetime
 
         corpo.Cartoes[0].Novas.Should().Be(1);
         corpo.Cartoes[1].Novas.Should().Be(0);
-        List<Transacao> transacoes = await _api.LerTodosAsync(db => db.Transacoes);
+        List<Transacao> transacoes = await _api.ObterTodosAsync(db => db.Transacoes);
         transacoes.Should().HaveCount(FaturaCartaoC6.QuantidadeLancamentos + 1);
         transacoes.Where(t => t.EhParcelada).Select(t => t.Parcela).Should().BeEquivalentTo([(Parcela)(3, 10), (Parcela)(4, 10)]);
     }

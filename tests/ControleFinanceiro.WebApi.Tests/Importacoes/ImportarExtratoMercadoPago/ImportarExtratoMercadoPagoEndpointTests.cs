@@ -44,20 +44,20 @@ public sealed class ImportarExtratoMercadoPagoEndpointTests : IAsyncLifetime
         corpo.PeriodoNaoImportado.Should().BeNull();
         corpo.AvisoSomaPeriodo.Should().BeNull();
 
-        ContaBancaria conta = (await _api.LerTodosAsync(db => db.Contas)).Should().ContainSingle().Subject;
+        ContaBancaria conta = (await _api.ObterTodosAsync(db => db.Contas)).Should().ContainSingle().Subject;
         ((Guid)conta.Id).Should().Be(corpo.IdConta);
         conta.IdUsuario.Should().Be(IdUsuario.From(idUsuario));
         conta.Banco.Should().BeSameAs(Banco.MercadoPago);
         conta.Tipo.Should().BeSameAs(TipoConta.ContaPagamento);
         conta.Sufixo.Should().Be(ExtratoContaMercadoPago.SufixoConta);
 
-        ImportacaoArquivo importacao = (await _api.LerTodosAsync(db => db.Importacoes)).Should().ContainSingle().Subject;
+        ImportacaoArquivo importacao = (await _api.ObterTodosAsync(db => db.Importacoes)).Should().ContainSingle().Subject;
         ((Guid)importacao.Id).Should().Be(corpo.IdImportacao);
         importacao.Origem.Should().Be(OrigemTransacao.DaConta(conta.Id));
         importacao.Layout.Should().BeSameAs(LayoutArquivoImportacao.MercadoPagoContaCsv);
         importacao.Periodo.Should().Be(ExtratoContaMercadoPago.Periodo);
 
-        List<Transacao> transacoes = await _api.LerTodosAsync(db => db.Transacoes);
+        List<Transacao> transacoes = await _api.ObterTodosAsync(db => db.Transacoes);
         transacoes.Should().HaveCount(ExtratoContaMercadoPago.QuantidadeLancamentos);
         transacoes.Should().AllSatisfy(t =>
         {
@@ -75,7 +75,7 @@ public sealed class ImportarExtratoMercadoPagoEndpointTests : IAsyncLifetime
 
         await ImportarComSucessoAsync(idUsuario, ExtratoContaMercadoPago.Completo());
 
-        (await _api.LerTodosAsync(db => db.Transacoes)).Should().AllSatisfy(t =>
+        (await _api.ObterTodosAsync(db => db.Transacoes)).Should().AllSatisfy(t =>
         {
             string texto = $"{t.Descricao} {t.Contraparte}";
             ExtratoContaMercadoPago.CpfFicticio.Should().AllSatisfy(cpf => texto.Should().NotContain(cpf));
@@ -94,9 +94,9 @@ public sealed class ImportarExtratoMercadoPagoEndpointTests : IAsyncLifetime
         segunda.JaExistentes.Should().Be(ExtratoContaMercadoPago.QuantidadeLancamentos);
         segunda.IdConta.Should().Be(primeira.IdConta);
         segunda.AvisoSomaPeriodo.Should().BeNull();
-        (await _api.LerTodosAsync(db => db.Transacoes)).Should().HaveCount(ExtratoContaMercadoPago.QuantidadeLancamentos);
-        (await _api.LerTodosAsync(db => db.Contas)).Should().ContainSingle();
-        (await _api.LerTodosAsync(db => db.Importacoes)).Should().HaveCount(2);
+        (await _api.ObterTodosAsync(db => db.Transacoes)).Should().HaveCount(ExtratoContaMercadoPago.QuantidadeLancamentos);
+        (await _api.ObterTodosAsync(db => db.Contas)).Should().ContainSingle();
+        (await _api.ObterTodosAsync(db => db.Importacoes)).Should().HaveCount(2);
     }
 
     [Theory, ApiAutoData]
@@ -182,8 +182,8 @@ public sealed class ImportarExtratoMercadoPagoEndpointTests : IAsyncLifetime
 
     private async Task DeveEstarSemImportacaoAsync()
     {
-        (await _api.LerTodosAsync(db => db.Contas)).Should().BeEmpty();
-        (await _api.LerTodosAsync(db => db.Transacoes)).Should().BeEmpty();
-        (await _api.LerTodosAsync(db => db.Importacoes)).Should().BeEmpty();
+        (await _api.ObterTodosAsync(db => db.Contas)).Should().BeEmpty();
+        (await _api.ObterTodosAsync(db => db.Transacoes)).Should().BeEmpty();
+        (await _api.ObterTodosAsync(db => db.Importacoes)).Should().BeEmpty();
     }
 }

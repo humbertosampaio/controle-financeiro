@@ -56,9 +56,9 @@ internal static class ImportacaoFaturaExtensions
 
         public async Task DeveEstarSemImportacaoAsync()
         {
-            (await api.LerTodosAsync(db => db.Cartoes)).Should().BeEmpty();
-            (await api.LerTodosAsync(db => db.Transacoes)).Should().BeEmpty();
-            (await api.LerTodosAsync(db => db.Importacoes)).Should().BeEmpty();
+            (await api.ObterTodosAsync(db => db.Cartoes)).Should().BeEmpty();
+            (await api.ObterTodosAsync(db => db.Transacoes)).Should().BeEmpty();
+            (await api.ObterTodosAsync(db => db.Importacoes)).Should().BeEmpty();
         }
     }
 }
