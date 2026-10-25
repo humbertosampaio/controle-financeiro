@@ -79,6 +79,8 @@ dotnet test tests/ControleFinanceiro.WebApi.Tests --filter "FullyQualifiedName~C
 dotnet run --project src/ControleFinanceiro.AppHost   # Postgres + API; dashboard do Aspire no console
 pwsh scripts/CoverageReport.ps1                       # relatório de cobertura em coveragereport/
 node scripts/harness/guardrail.test.mjs               # testes do guardrail
+dotnet tool restore                                   # dotnet-ef local, na versão do EF (dotnet-tools.json)
+dotnet ef migrations has-pending-model-changes --project src/ControleFinanceiro.Infrastructure.Persistence   # modelo mudou sem migration?
 ```
 
 Os testes de integração e o `pre-push` precisam do **Docker** rodando: sem ele, a suíte de integração falha (não é pulada). A cobertura (`CoverageReport.ps1`) também.
@@ -94,7 +96,7 @@ Três camadas, descritas em [docs/harness.md](docs/harness.md):
 - **Guardrail** (`.claude/settings.json` → `scripts/harness/guardrail.mjs`): bloqueia commit de dados financeiros, secret em arquivo e push na `main`; pede confirmação em git destrutivo, pacote novo e migration.
 - **Agentes** (`.claude/agents/`): `planejador`, `autor-de-testes`, `revisor-dominio`, `revisor-convencoes` e `revisor-privacidade`. Os revisores só reportam.
 - **Skills** (`.claude/skills/`): `planejar-issue` (plano na issue + sub-issues, antes do código), `revisar-mudanca` (gates + revisores) e `abrir-pr` (push + PR vinculado), depois do código.
-- **Gates** (`.githooks/` + `.github/workflows/ci.yml`): varredura de secrets e de dados no pre-commit, Conventional Commits no commit-msg, bloqueio de push na `main`, testes de unidade e testes de integração afetados (`scripts/harness/testes-afetados.mjs`) no pre-push, build e as duas suítes completas no CI. Ative uma vez por clone: `git config core.hooksPath .githooks`.
+- **Gates** (`.githooks/` + `.github/workflows/ci.yml`): varredura de secrets e de dados no pre-commit, Conventional Commits no commit-msg, bloqueio de push na `main`, testes de unidade e testes de integração afetados (`scripts/harness/testes-afetados.mjs`) no pre-push, build, modelo do EF sem migration pendente e as duas suítes completas no CI. Ative uma vez por clone: `git config core.hooksPath .githooks`.
 
 ## GitHub
 
