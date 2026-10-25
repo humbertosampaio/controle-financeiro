@@ -22,7 +22,7 @@ public sealed class DespesaRecorrente : AggregateRoot<IdDespesaRecorrente>
     public FormaPagamento FormaPagamento { get; private set; }
     public IdCartao? IdCartao { get; private set; }
     public ReaisPositivo Valor { get; private set; }
-    public DiaCompraRecorrente DiaCompra { get; private set; }
+    public DiaOcorrenciaRecorrente DiaOcorrencia { get; private set; }
 
     private DespesaRecorrente(
         IdDespesaRecorrente id,
@@ -33,7 +33,7 @@ public sealed class DespesaRecorrente : AggregateRoot<IdDespesaRecorrente>
         FormaPagamento formaPagamento,
         IdCartao? idCartao,
         ReaisPositivo valor,
-        DiaCompraRecorrente diaCompra)
+        DiaOcorrenciaRecorrente diaOcorrencia)
             : base(id)
     {
         IdUsuario = idUsuario;
@@ -43,7 +43,7 @@ public sealed class DespesaRecorrente : AggregateRoot<IdDespesaRecorrente>
         FormaPagamento = formaPagamento;
         IdCartao = idCartao;
         Valor = valor;
-        DiaCompra = diaCompra;
+        DiaOcorrencia = diaOcorrencia;
     }
 
     /// <remarks>
@@ -59,7 +59,7 @@ public sealed class DespesaRecorrente : AggregateRoot<IdDespesaRecorrente>
         FormaPagamento formaPagamento,
         IdCartao? idCartao,
         ReaisPositivo valor,
-        DiaCompraRecorrente diaCompra)
+        DiaOcorrenciaRecorrente diaOcorrencia)
     {
         bool ehCredito = formaPagamento == FormaPagamento.Credito;
 
@@ -78,6 +78,6 @@ public sealed class DespesaRecorrente : AggregateRoot<IdDespesaRecorrente>
             formaPagamento,
             idCartao,
             valor,
-            diaCompra);
+            diaOcorrencia);
     }
 }

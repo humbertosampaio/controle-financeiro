@@ -11,14 +11,14 @@ namespace ControleFinanceiro.Domain.Tests.Despesas;
 public sealed class DespesaAdiadaTests
 {
     [Theory, DomainAutoData]
-    public void Criar_Quando_VencimentoPosteriorADataCompra_Deve_RetornarSucesso(
+    public void Criar_Quando_VencimentoPosteriorADataOcorrencia_Deve_RetornarSucesso(
         IdUsuario idUsuario,
         IdBeneficiario idBeneficiario,
         TextoObrigatorio descricao,
         IdCategoriaDespesa idCategoria,
         ReaisPositivo valor)
     {
-        DateTimeOffset dataCompra = new DateOnly(2026, 02, 05).ToLocalDateTimeOffset();
+        DateTimeOffset dataOcorrencia = new DateOnly(2026, 02, 05).ToLocalDateTimeOffset();
         DiaVencimentoCartao diaVencimento = (DiaVencimentoCartao)05;
         MesReferencia mesReferenciaEsperado = MesReferencia.Criar(mes: 03, ano: 2026).Value;
         DateTimeOffset dataProjetadaPagamentoEsperada = new DateOnly(2026, 03, 05).ToLocalDateTimeOffset();
@@ -28,7 +28,7 @@ public sealed class DespesaAdiadaTests
             idBeneficiario,
             descricao,
             idCategoria,
-            dataCompra,
+            dataOcorrencia,
             valor,
             diaVencimento);
 
@@ -36,7 +36,7 @@ public sealed class DespesaAdiadaTests
         result.IdBeneficiario.Should().Be(idBeneficiario);
         result.Descricao.Should().Be(descricao);
         result.IdCategoria.Should().Be(idCategoria);
-        result.DataCompra.Should().Be(dataCompra);
+        result.DataOcorrencia.Should().Be(dataOcorrencia);
         result.FormaPagamento.Should().Be(FormaPagamento.Credito);
         result.MesReferencia.Should().Be(mesReferenciaEsperado);
 

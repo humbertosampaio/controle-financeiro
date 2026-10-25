@@ -18,7 +18,7 @@ public abstract class Despesa : AggregateRoot<IdDespesa>
     public IdBeneficiario IdBeneficiario { get; protected set; }
     public TextoObrigatorio Descricao { get; protected set; }
     public IdCategoriaDespesa IdCategoria { get; protected set; }
-    public DateTimeOffset DataCompra { get; protected set; }
+    public DateTimeOffset DataOcorrencia { get; protected set; }
     public FormaPagamento FormaPagamento { get; protected set; }
 
     protected Despesa(
@@ -27,7 +27,7 @@ public abstract class Despesa : AggregateRoot<IdDespesa>
         IdBeneficiario idBeneficiario,
         TextoObrigatorio descricao,
         IdCategoriaDespesa idCategoria,
-        DateTimeOffset dataCompra,
+        DateTimeOffset dataOcorrencia,
         FormaPagamento formaPagamento)
             : base(id)
     {
@@ -35,7 +35,7 @@ public abstract class Despesa : AggregateRoot<IdDespesa>
         IdBeneficiario = idBeneficiario;
         Descricao = descricao;
         IdCategoria = idCategoria;
-        DataCompra = dataCompra;
+        DataOcorrencia = dataOcorrencia;
         FormaPagamento = formaPagamento;
     }
 }

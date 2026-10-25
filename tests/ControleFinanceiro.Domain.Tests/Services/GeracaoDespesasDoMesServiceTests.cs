@@ -80,11 +80,11 @@ public sealed class GeracaoDespesasDoMesServiceTests
     [Theory, DomainAutoData]
     public void GerarComPagamentoAdiado_Quando_FormaPagamentoCredito_Deve_RetornarDespesaAdiadaDoUsuarioDaRecorrente(
         [Frozen] Cartao cartao,
-        [Frozen] DiaCompraRecorrente diaCompra,
+        [Frozen] DiaOcorrenciaRecorrente diaOcorrencia,
         Fixture fixture)
     {
         MesReferencia mesReferencia = MesReferencia.Criar(mes: 03, ano: 2026).Value;
-        DateTimeOffset dataCompraEsperada = new DateOnly(2026, 02, diaCompra.Value).ToLocalDateTimeOffset();
+        DateTimeOffset dataOcorrenciaEsperada = new DateOnly(2026, 02, diaOcorrencia.Value).ToLocalDateTimeOffset();
         fixture.Inject(FormaPagamento.Credito);
         DespesaRecorrente despesaRecorrente = fixture.Create<DespesaRecorrente>();
 
@@ -93,7 +93,7 @@ public sealed class GeracaoDespesasDoMesServiceTests
         DespesaAdiada despesa = result.Should().Succeed()
             .Which.Should().BeOfType<DespesaAdiada>().Subject;
         despesa.IdUsuario.Should().Be(despesaRecorrente.IdUsuario);
-        despesa.DataCompra.Should().Be(dataCompraEsperada);
+        despesa.DataOcorrencia.Should().Be(dataOcorrenciaEsperada);
     }
 
     [Theory, DomainAutoData]
@@ -160,11 +160,11 @@ public sealed class GeracaoDespesasDoMesServiceTests
 
     [Theory, DomainAutoData]
     public void GerarComPagamentoImediato_Quando_FormaPagamentoPix_Deve_RetornarDespesaSimplesDoUsuarioDaRecorrente(
-        [Frozen] DiaCompraRecorrente diaCompra,
+        [Frozen] DiaOcorrenciaRecorrente diaOcorrencia,
         Fixture fixture)
     {
         MesReferencia mesReferencia = MesReferencia.Criar(mes: 03, ano: 2026).Value;
-        DateTimeOffset dataCompraEsperada = new DateOnly(2026, 03, diaCompra.Value).ToLocalDateTimeOffset();
+        DateTimeOffset dataOcorrenciaEsperada = new DateOnly(2026, 03, diaOcorrencia.Value).ToLocalDateTimeOffset();
         fixture.Inject(FormaPagamento.Pix);
         DespesaRecorrente despesaRecorrente = fixture.Create<DespesaRecorrente>();
 
@@ -173,16 +173,16 @@ public sealed class GeracaoDespesasDoMesServiceTests
         DespesaSimples despesa = result.Should().Succeed()
             .Which.Should().BeOfType<DespesaSimples>().Subject;
         despesa.IdUsuario.Should().Be(despesaRecorrente.IdUsuario);
-        despesa.DataCompra.Should().Be(dataCompraEsperada);
+        despesa.DataOcorrencia.Should().Be(dataOcorrenciaEsperada);
     }
 
     [Theory, DomainAutoData]
     public void GerarComPagamentoImediato_Quando_FormaPagamentoBoleto_Deve_RetornarDespesaSimples(
-        [Frozen] DiaCompraRecorrente diaCompra,
+        [Frozen] DiaOcorrenciaRecorrente diaOcorrencia,
         Fixture fixture)
     {
         MesReferencia mesReferencia = MesReferencia.Criar(mes: 03, ano: 2026).Value;
-        DateTimeOffset dataCompraEsperada = new DateOnly(2026, 03, diaCompra.Value).ToLocalDateTimeOffset();
+        DateTimeOffset dataOcorrenciaEsperada = new DateOnly(2026, 03, diaOcorrencia.Value).ToLocalDateTimeOffset();
         fixture.Inject(FormaPagamento.Boleto);
         DespesaRecorrente despesaRecorrente = fixture.Create<DespesaRecorrente>();
 
@@ -190,6 +190,6 @@ public sealed class GeracaoDespesasDoMesServiceTests
 
         DespesaSimples despesa = result.Should().Succeed()
             .Which.Should().BeOfType<DespesaSimples>().Subject;
-        despesa.DataCompra.Should().Be(dataCompraEsperada);
+        despesa.DataOcorrencia.Should().Be(dataOcorrenciaEsperada);
     }
 }

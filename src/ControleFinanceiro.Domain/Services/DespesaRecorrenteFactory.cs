@@ -22,10 +22,10 @@ public static class DespesaRecorrenteFactory
         FormaPagamento formaPagamento,
         Cartao? cartao,
         ReaisPositivo valor,
-        DiaCompraRecorrente diaCompra)
+        DiaOcorrenciaRecorrente diaOcorrencia)
     {
         return DespesaRecorrente
-            .Criar(idUsuario, idBeneficiario, descricao, idCategoria, formaPagamento, cartao?.Id, valor, diaCompra)
+            .Criar(idUsuario, idBeneficiario, descricao, idCategoria, formaPagamento, cartao?.Id, valor, diaOcorrencia)
             .Ensure(
                 _ => cartao is null || cartao.IdUsuario == idUsuario,
                 "O cartão da despesa recorrente não pertence ao usuário.");

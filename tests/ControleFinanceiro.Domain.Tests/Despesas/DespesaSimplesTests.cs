@@ -19,14 +19,14 @@ public sealed class DespesaSimplesTests
         IdCategoriaDespesa idCategoria,
         ReaisPositivo valor)
     {
-        DateTimeOffset dataCompra = mesReferencia.Inicio.AddDays(14).ToLocalDateTimeOffset();
+        DateTimeOffset dataOcorrencia = mesReferencia.Inicio.AddDays(14).ToLocalDateTimeOffset();
 
         Result<DespesaSimples> result = DespesaSimples.Criar(
             idUsuario,
             idBeneficiario,
             descricao,
             idCategoria,
-            dataCompra,
+            dataOcorrencia,
             FormaPagamento.Pix,
             valor);
 
@@ -35,13 +35,13 @@ public sealed class DespesaSimplesTests
         despesa.IdBeneficiario.Should().Be(idBeneficiario);
         despesa.Descricao.Should().Be(descricao);
         despesa.IdCategoria.Should().Be(idCategoria);
-        despesa.DataCompra.Should().Be(dataCompra);
+        despesa.DataOcorrencia.Should().Be(dataOcorrencia);
         despesa.FormaPagamento.Should().Be(FormaPagamento.Pix);
         despesa.MesReferencia.Should().Be(mesReferencia);
 
         Pagamento pagamento = despesa.Pagamento;
-        pagamento.DataProjetada.Should().Be(dataCompra);
-        pagamento.DataEfetiva.Should().Be(dataCompra);
+        pagamento.DataProjetada.Should().Be(dataOcorrencia);
+        pagamento.DataEfetiva.Should().Be(dataOcorrencia);
         pagamento.Status.Should().Be(StatusPagamento.Pago);
         pagamento.Valor.Should().Be(valor);
     }
@@ -55,14 +55,14 @@ public sealed class DespesaSimplesTests
         IdCategoriaDespesa idCategoria,
         ReaisPositivo valor)
     {
-        DateTimeOffset dataCompra = mesReferencia.Inicio.AddDays(14).ToLocalDateTimeOffset();
+        DateTimeOffset dataOcorrencia = mesReferencia.Inicio.AddDays(14).ToLocalDateTimeOffset();
 
         Result<DespesaSimples> result = DespesaSimples.Criar(
             idUsuario,
             idBeneficiario,
             descricao,
             idCategoria,
-            dataCompra,
+            dataOcorrencia,
             FormaPagamento.Credito,
             valor);
 

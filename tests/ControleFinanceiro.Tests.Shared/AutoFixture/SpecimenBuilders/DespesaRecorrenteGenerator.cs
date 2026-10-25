@@ -34,7 +34,7 @@ public sealed class DespesaRecorrenteGenerator : ISpecimenBuilder
                 formaPagamento,
                 cartao,
                 context.Create<ReaisPositivo>(),
-                context.Create<DiaCompraRecorrente>())
+                context.Create<DiaOcorrenciaRecorrente>())
             .Value;
     }
 }
