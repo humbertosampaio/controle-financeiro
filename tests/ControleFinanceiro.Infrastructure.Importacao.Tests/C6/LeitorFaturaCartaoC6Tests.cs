@@ -4,7 +4,6 @@ using ControleFinanceiro.Domain.Shared.ValueObjects;
 using ControleFinanceiro.Domain.Transacoes;
 using ControleFinanceiro.Infrastructure.Importacao.C6;
 using CSharpFunctionalExtensions;
-using System.Text;
 
 namespace ControleFinanceiro.Infrastructure.Importacao.Tests.C6;
 
@@ -14,10 +13,11 @@ namespace ControleFinanceiro.Infrastructure.Importacao.Tests.C6;
 /// </summary>
 public sealed class LeitorFaturaCartaoC6Tests
 {
-    private const int LinhaDasColunas = 1;
+    private const int LinhaColunas = 1;
     private const string TitularFicticio = "FULANA DE TAL FICTICIA";
 
-    private static readonly string _caminhoFixture = Path.Combine(AppContext.BaseDirectory, "Fixtures", "C6", "fatura-cartao.csv");
+    /// <summary>O arquivo como o banco exporta: UTF-8 sem BOM e CRLF.</summary>
+    private static readonly ArquivoFixture _fixture = new("C6", "fatura-cartao.csv", fimLinha: "\r\n", comBom: false);
     private static readonly string _caminhoExtrato = Path.Combine(AppContext.BaseDirectory, "Fixtures", "C6", "extrato-conta.csv");
 
     private readonly LeitorFaturaCartaoC6 _leitor = new();
@@ -89,7 +89,7 @@ public sealed class LeitorFaturaCartaoC6Tests
     [Fact]
     public async Task LerAsync_Quando_ParcelaUmDeUm_Deve_DeixarSemParcela()
     {
-        Stream arquivo = FixtureComLinha(numero: 2, $"05/03/2026;{TitularFicticio};1111;Supermercado;MERCADO FICTICIO;1/1;0;0;123.45");
+        Stream arquivo = _fixture.ComLinha(numero: 2, $"05/03/2026;{TitularFicticio};1111;Supermercado;MERCADO FICTICIO;1/1;0;0;123.45");
 
         Fatura fatura = (await _leitor.LerAsync(arquivo, CancellationToken.None)).Value;
 
@@ -170,7 +170,7 @@ public sealed class LeitorFaturaCartaoC6Tests
     [InlineData($"05/03/2026;{TitularFicticio};1111;Supermercado;\"  \";Única;0;0;123.45", "não tem descrição.")]
     public async Task LerAsync_Quando_CampoInvalido_Deve_RetornarFalhaSoComONumeroDaLinha(string linha, string erro)
     {
-        Stream arquivo = FixtureComLinha(numero: 4, linha);
+        Stream arquivo = _fixture.ComLinha(numero: 4, linha);
 
         Result<Fatura> result = await _leitor.LerAsync(arquivo, CancellationToken.None);
 
@@ -185,7 +185,7 @@ public sealed class LeitorFaturaCartaoC6Tests
     [InlineData($"05/03/2026;{TitularFicticio};1111;Supermercado;MERCADO\"FICTICIO;Única;0;0;123.45")]
     public async Task LerAsync_Quando_LinhaForaDoLayout_Deve_RetornarFalhaSoComONumeroDaLinha(string linha)
     {
-        Stream arquivo = FixtureComLinha(numero: 3, linha);
+        Stream arquivo = _fixture.ComLinha(numero: 3, linha);
 
         Result<Fatura> result = await _leitor.LerAsync(arquivo, CancellationToken.None);
 
@@ -195,7 +195,7 @@ public sealed class LeitorFaturaCartaoC6Tests
     [Fact]
     public async Task LerAsync_Quando_ColunasDiferentes_Deve_RetornarFalhaComALinhaDasColunas()
     {
-        Stream arquivo = FixtureComLinha(LinhaDasColunas, "Data;Descrição;Valor");
+        Stream arquivo = _fixture.ComLinha(LinhaColunas, "Data;Descrição;Valor");
 
         Result<Fatura> result = await _leitor.LerAsync(arquivo, CancellationToken.None);
 
@@ -215,7 +215,7 @@ public sealed class LeitorFaturaCartaoC6Tests
     [Fact]
     public async Task LerAsync_Quando_ArquivoVazio_Deve_RetornarFalha()
     {
-        Result<Fatura> result = await _leitor.LerAsync(Arquivo([]), CancellationToken.None);
+        Result<Fatura> result = await _leitor.LerAsync(_fixture.ComLinhas(linhas: []), CancellationToken.None);
 
         result.Should().FailWith("O arquivo termina antes das colunas da fatura do cartão do C6.");
     }
@@ -223,7 +223,7 @@ public sealed class LeitorFaturaCartaoC6Tests
     [Fact]
     public async Task LerAsync_Quando_SoAsColunas_Deve_RetornarFalha()
     {
-        Stream arquivo = Arquivo(LinhasDaFixture().Take(LinhaDasColunas));
+        Stream arquivo = _fixture.ComLinhas(_fixture.Linhas().Take(LinhaColunas));
 
         Result<Fatura> result = await _leitor.LerAsync(arquivo, CancellationToken.None);
 
@@ -232,21 +232,8 @@ public sealed class LeitorFaturaCartaoC6Tests
 
     private async Task<Fatura> LerFixtureAsync()
     {
-        await using FileStream arquivo = File.OpenRead(_caminhoFixture);
+        await using FileStream arquivo = File.OpenRead(_fixture.Caminho);
         Result<Fatura> result = await _leitor.LerAsync(arquivo, CancellationToken.None);
         return result.Should().Succeed().Which;
     }
-
-    private static string[] LinhasDaFixture() => File.ReadAllText(_caminhoFixture, Encoding.UTF8).Split("\r\n");
-
-    /// <param name="numero">O número da linha no arquivo, a partir de 1.</param>
-    private static Stream FixtureComLinha(int numero, string linha)
-    {
-        string[] linhas = LinhasDaFixture();
-        linhas[numero - 1] = linha;
-        return Arquivo(linhas);
-    }
-
-    /// <summary>O arquivo como o C6 exporta: UTF-8 sem BOM e CRLF.</summary>
-    private static MemoryStream Arquivo(IEnumerable<string> linhas) => new(Encoding.UTF8.GetBytes(string.Join("\r\n", linhas)));
 }

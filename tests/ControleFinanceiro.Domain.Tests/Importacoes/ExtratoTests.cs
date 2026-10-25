@@ -54,19 +54,19 @@ public sealed class ExtratoTests
         DateOnly sabado,
         Reais saldoBase,
         Lancamento anterior,
-        Lancamento pixDeSabado)
+        Lancamento pixSabado)
     {
         DateOnly sexta = sabado.AddDays(-1);
         DateOnly segunda = sabado.AddDays(2);
         Lancamento pix = Lancamento.Criar(
             sabado,
-            pixDeSabado.Hora,
-            pixDeSabado.Valor,
-            pixDeSabado.Descricao,
-            pixDeSabado.Contraparte,
-            pixDeSabado.Parcela,
-            pixDeSabado.CategoriaBanco,
-            pixDeSabado.Identidade);
+            pixSabado.Hora,
+            pixSabado.Valor,
+            pixSabado.Descricao,
+            pixSabado.Contraparte,
+            pixSabado.Parcela,
+            pixSabado.CategoriaBanco,
+            pixSabado.Identidade);
 
         Result<Extrato> result = Criar(
             arquivo,

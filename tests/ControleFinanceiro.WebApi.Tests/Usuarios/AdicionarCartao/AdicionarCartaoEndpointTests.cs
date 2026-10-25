@@ -8,15 +8,12 @@ using ControleFinanceiro.WebApi.Tests.Infraestrutura;
 using Microsoft.EntityFrameworkCore;
 using System.Net;
 using System.Net.Http.Json;
-using System.Text.Json;
 
 namespace ControleFinanceiro.WebApi.Tests.Usuarios.AdicionarCartao;
 
 [Collection(ApiCollection.Nome)]
 public sealed class AdicionarCartaoEndpointTests : IAsyncLifetime
 {
-    private static readonly Uri _rotaCadastro = new("/api/usuarios", UriKind.Relative);
-
     private readonly ApiComPostgresFixture _api;
 
     public AdicionarCartaoEndpointTests(ApiComPostgresFixture api)
@@ -34,13 +31,13 @@ public sealed class AdicionarCartaoEndpointTests : IAsyncLifetime
         CadastrarUsuarioRequest cadastro,
         AdicionarCartaoRequest requisicao)
     {
-        Guid idUsuario = await CadastrarUsuarioAsync(cadastro);
+        Guid idUsuario = await _api.CadastrarUsuarioAsync(cadastro);
 
         using HttpResponseMessage resposta = await AdicionarAsync(idUsuario, requisicao);
 
         resposta.StatusCode.Should().Be(HttpStatusCode.Created);
         AdicionarCartaoResponse? corpo = await resposta.Content.ReadFromJsonAsync<AdicionarCartaoResponse>();
-        Cartao gravado = (await LerCartoesAsync()).Should().ContainSingle().Subject;
+        Cartao gravado = (await _api.LerTodosAsync(db => db.Cartoes)).Should().ContainSingle().Subject;
         corpo!.Id.Should().Be(gravado.Id);
         gravado.IdUsuario.Should().Be(IdUsuario.From(idUsuario));
         gravado.Banco.Should().BeSameAs(esperado.Banco);
@@ -56,12 +53,12 @@ public sealed class AdicionarCartaoEndpointTests : IAsyncLifetime
         AdicionarCartaoRequest primeiro,
         AdicionarCartaoRequest segundo)
     {
-        Guid idUsuario = await CadastrarUsuarioAsync(cadastro);
+        Guid idUsuario = await _api.CadastrarUsuarioAsync(cadastro);
         Guid idPrimeiro = await AdicionarComSucessoAsync(idUsuario, primeiro);
 
         Guid idSegundo = await AdicionarComSucessoAsync(idUsuario, segundo);
 
-        (await LerCartoesAsync()).Select(cartao => (Guid)cartao.Id).Should().BeEquivalentTo([idPrimeiro, idSegundo]);
+        (await _api.LerTodosAsync(db => db.Cartoes)).Select(cartao => (Guid)cartao.Id).Should().BeEquivalentTo([idPrimeiro, idSegundo]);
     }
 
     [Theory, ApiAutoData]
@@ -70,13 +67,13 @@ public sealed class AdicionarCartaoEndpointTests : IAsyncLifetime
         CadastrarUsuarioRequest outroCadastro,
         AdicionarCartaoRequest requisicao)
     {
-        Guid idOutroUsuario = await CadastrarUsuarioAsync(outroCadastro);
+        Guid idOutroUsuario = await _api.CadastrarUsuarioAsync(outroCadastro);
         await AdicionarComSucessoAsync(idOutroUsuario, requisicao);
-        Guid idUsuario = await CadastrarUsuarioAsync(cadastro);
+        Guid idUsuario = await _api.CadastrarUsuarioAsync(cadastro);
 
         Guid idCartao = await AdicionarComSucessoAsync(idUsuario, requisicao);
 
-        List<Cartao> cartoes = await LerCartoesAsync();
+        List<Cartao> cartoes = await _api.LerTodosAsync(db => db.Cartoes);
         cartoes.Should().HaveCount(2);
         cartoes.Should().ContainSingle(cartao => cartao.Id == IdCartao.From(idCartao))
             .Which.IdUsuario.Should().Be(IdUsuario.From(idUsuario));
@@ -87,13 +84,13 @@ public sealed class AdicionarCartaoEndpointTests : IAsyncLifetime
         CadastrarUsuarioRequest cadastro,
         AdicionarCartaoRequest requisicao)
     {
-        Guid idUsuario = await CadastrarUsuarioAsync(cadastro);
+        Guid idUsuario = await _api.CadastrarUsuarioAsync(cadastro);
         await AdicionarComSucessoAsync(idUsuario, requisicao);
 
         using HttpResponseMessage resposta = await AdicionarAsync(idUsuario, requisicao);
 
         resposta.StatusCode.Should().Be(HttpStatusCode.Conflict);
-        (await CamposComErroAsync(resposta)).Should().Equal("sufixo");
+        (await resposta.CamposComErroAsync()).Should().Equal("sufixo");
         (await ContarCartoesAsync()).Should().Be(1);
     }
 
@@ -116,16 +113,8 @@ public sealed class AdicionarCartaoEndpointTests : IAsyncLifetime
         using HttpResponseMessage resposta = await AdicionarAsync(Guid.Empty, invalida);
 
         resposta.StatusCode.Should().Be(HttpStatusCode.BadRequest);
-        (await CamposComErroAsync(resposta)).Should().BeEquivalentTo("idUsuario", "banco", "sufixo", "diaVencimento");
+        (await resposta.CamposComErroAsync()).Should().BeEquivalentTo("idUsuario", "banco", "sufixo", "diaVencimento");
         (await ContarCartoesAsync()).Should().Be(0);
-    }
-
-    private async Task<Guid> CadastrarUsuarioAsync(CadastrarUsuarioRequest cadastro)
-    {
-        using HttpResponseMessage resposta = await _api.Client.PostAsJsonAsync(_rotaCadastro, cadastro);
-        resposta.StatusCode.Should().Be(HttpStatusCode.Created);
-        CadastrarUsuarioResponse? corpo = await resposta.Content.ReadFromJsonAsync<CadastrarUsuarioResponse>();
-        return corpo!.Id;
     }
 
     private Task<HttpResponseMessage> AdicionarAsync(Guid idUsuario, AdicionarCartaoRequest requisicao)
@@ -143,20 +132,6 @@ public sealed class AdicionarCartaoEndpointTests : IAsyncLifetime
         return corpo!.Id;
     }
 
-    private static async Task<IReadOnlyList<string>> CamposComErroAsync(HttpResponseMessage resposta)
-    {
-        using JsonDocument problema = JsonDocument.Parse(await resposta.Content.ReadAsStringAsync());
-        return problema.RootElement
-            .GetProperty("errors")
-            .EnumerateArray()
-            .Select(erro => erro.GetProperty("name").GetString()!)
-            .Distinct()
-            .ToList();
-    }
-
     private Task<int> ContarCartoesAsync() =>
         _api.ConsultarAsync(db => db.Cartoes.CountAsync());
-
-    private Task<List<Cartao>> LerCartoesAsync() =>
-        _api.ConsultarAsync(db => db.Cartoes.AsNoTracking().ToListAsync());
 }

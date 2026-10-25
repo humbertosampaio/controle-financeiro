@@ -1,6 +1,6 @@
 using ControleFinanceiro.Domain.Importacoes;
 using ControleFinanceiro.WebApi.Endpoints.Importacoes.ImportarExtrato;
-using Microsoft.AspNetCore.Http;
+using ControleFinanceiro.WebApi.Tests.Infraestrutura;
 
 namespace ControleFinanceiro.WebApi.Tests.Importacoes.ImportarExtrato;
 
@@ -18,7 +18,7 @@ internal sealed class ImportarExtratoRequestCustomization : ICustomization
         {
             IdUsuario = idUsuario,
             Layout = LayoutArquivoImportacao.C6ContaCsv.Value,
-            Arquivo = new FormFile(Stream.Null, baseStreamOffset: 0, length: 1, name: "arquivo", fileName: "extrato.csv"),
+            Arquivo = ArquivoFormulario.ComTamanho(tamanho: 1),
         });
     }
 }

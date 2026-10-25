@@ -14,15 +14,12 @@ using System.Globalization;
 using System.Net;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
-using System.Text.Json;
 
 namespace ControleFinanceiro.WebApi.Tests.Importacoes.ImportarFatura;
 
 [Collection(ApiCollection.Nome)]
 public sealed class ImportarFaturaEndpointTests : IAsyncLifetime
 {
-    private static readonly Uri _rotaCadastro = new("/api/usuarios", UriKind.Relative);
-
     private readonly ApiComPostgresFixture _api;
 
     public ImportarFaturaEndpointTests(ApiComPostgresFixture api)
@@ -37,7 +34,7 @@ public sealed class ImportarFaturaEndpointTests : IAsyncLifetime
     [Theory, ApiAutoData]
     public async Task Post_Quando_PrimeiraFatura_Deve_CriarOsCartoesUmaImportacaoPorCartaoEAsTransacoes(CadastrarUsuarioRequest cadastro)
     {
-        Guid idUsuario = await CadastrarUsuarioAsync(cadastro);
+        Guid idUsuario = await _api.CadastrarUsuarioAsync(cadastro);
 
         using HttpResponseMessage resposta = await ImportarAsync(idUsuario, FaturaCartaoC6.Completo());
 
@@ -53,7 +50,7 @@ public sealed class ImportarFaturaEndpointTests : IAsyncLifetime
             c.JaExistentes.Should().Be(0);
         });
 
-        List<Cartao> cartoes = await LerCartoesAsync();
+        List<Cartao> cartoes = await _api.LerTodosAsync(db => db.Cartoes);
         cartoes.Select(c => c.Sufixo).Should().BeEquivalentTo([FaturaCartaoC6.SufixoFisico, FaturaCartaoC6.SufixoVirtual]);
         cartoes.Should().AllSatisfy(c =>
         {
@@ -66,7 +63,7 @@ public sealed class ImportarFaturaEndpointTests : IAsyncLifetime
         ImportarFaturaResponse.CartaoImportado linhaFisico = corpo.Cartoes[0];
         ((Guid)fisico.Id).Should().Be(linhaFisico.IdCartao);
 
-        List<ImportacaoArquivo> importacoes = await LerImportacoesAsync();
+        List<ImportacaoArquivo> importacoes = await _api.LerTodosAsync(db => db.Importacoes);
         importacoes.Should().HaveCount(2);
         ImportacaoArquivo importacaoFisico = importacoes.Single(i => i.Origem == OrigemTransacao.DoCartao(fisico.Id));
         ((Guid)importacaoFisico.Id).Should().Be(linhaFisico.IdImportacao);
@@ -74,7 +71,7 @@ public sealed class ImportarFaturaEndpointTests : IAsyncLifetime
         importacaoFisico.Periodo.Should().Be((PeriodoArquivo)(FaturaCartaoC6.PrimeiraCompraFisico, FaturaCartaoC6.UltimaCompraFisico));
         importacaoFisico.Lidas.Should().Be(FaturaCartaoC6.LancamentosPorCartao);
 
-        List<Transacao> transacoes = await LerTransacoesAsync();
+        List<Transacao> transacoes = await _api.LerTodosAsync(db => db.Transacoes);
         transacoes.Should().HaveCount(FaturaCartaoC6.QuantidadeLancamentos);
         transacoes.Where(t => t.Origem == OrigemTransacao.DoCartao(fisico.Id)).Should().AllSatisfy(t =>
         {
@@ -87,11 +84,11 @@ public sealed class ImportarFaturaEndpointTests : IAsyncLifetime
     [Theory, ApiAutoData]
     public async Task Post_Deve_GravarAParcelaEACategoriaDoBanco(CadastrarUsuarioRequest cadastro)
     {
-        Guid idUsuario = await CadastrarUsuarioAsync(cadastro);
+        Guid idUsuario = await _api.CadastrarUsuarioAsync(cadastro);
 
         await ImportarComSucessoAsync(idUsuario, FaturaCartaoC6.Completo());
 
-        List<Transacao> transacoes = await LerTransacoesAsync();
+        List<Transacao> transacoes = await _api.LerTodosAsync(db => db.Transacoes);
         Transacao parcelada = transacoes.Should().ContainSingle(t => t.Parcela != null).Subject;
         parcelada.Parcela.Should().Be((Parcela)(3, 10));
         parcelada.Data.Should().Be(FaturaCartaoC6.PrimeiraCompraFisico);
@@ -102,11 +99,11 @@ public sealed class ImportarFaturaEndpointTests : IAsyncLifetime
     [Theory, ApiAutoData]
     public async Task Post_Deve_DeixarONomeDoTitularForaDoQueEGravado(CadastrarUsuarioRequest cadastro)
     {
-        Guid idUsuario = await CadastrarUsuarioAsync(cadastro);
+        Guid idUsuario = await _api.CadastrarUsuarioAsync(cadastro);
 
         await ImportarComSucessoAsync(idUsuario, FaturaCartaoC6.Completo());
 
-        (await LerTransacoesAsync()).Should().AllSatisfy(t =>
+        (await _api.LerTodosAsync(db => db.Transacoes)).Should().AllSatisfy(t =>
         {
             t.Descricao.Value.Should().NotContain(FaturaCartaoC6.TitularFicticio);
             t.Contraparte.Should().BeNull();
@@ -119,7 +116,7 @@ public sealed class ImportarFaturaEndpointTests : IAsyncLifetime
         CadastrarUsuarioRequest cadastro,
         AdicionarCartaoRequest cartao)
     {
-        Guid idUsuario = await CadastrarUsuarioAsync(cadastro);
+        Guid idUsuario = await _api.CadastrarUsuarioAsync(cadastro);
         AdicionarCartaoRequest fisico = cartao with { Banco = Banco.C6, Sufixo = FaturaCartaoC6.SufixoFisico, DiaVencimento = 15 };
         Guid idCartao = await AdicionarCartaoAsync(idUsuario, fisico);
 
@@ -131,7 +128,7 @@ public sealed class ImportarFaturaEndpointTests : IAsyncLifetime
         linhaFisico.VencimentoPadrao.Should().BeFalse();
         corpo.Cartoes[1].CartaoNovo.Should().BeTrue();
 
-        List<Cartao> cartoes = await LerCartoesAsync();
+        List<Cartao> cartoes = await _api.LerTodosAsync(db => db.Cartoes);
         cartoes.Should().HaveCount(2);
         cartoes.Single(c => c.Id == IdCartao.From(idCartao)).DiaVencimento.Should().Be((DiaVencimentoCartao)15);
     }
@@ -139,7 +136,7 @@ public sealed class ImportarFaturaEndpointTests : IAsyncLifetime
     [Theory, ApiAutoData]
     public async Task Post_Quando_DiaUnicoEDiaDeUmFinal_Deve_AplicarOsDiasAosCartoesNovos(CadastrarUsuarioRequest cadastro)
     {
-        Guid idUsuario = await CadastrarUsuarioAsync(cadastro);
+        Guid idUsuario = await _api.CadastrarUsuarioAsync(cadastro);
 
         ImportarFaturaResponse corpo = await ImportarComSucessoAsync(
             idUsuario,
@@ -148,7 +145,7 @@ public sealed class ImportarFaturaEndpointTests : IAsyncLifetime
             vencimentos: $$"""{"{{FaturaCartaoC6.SufixoVirtual}}":20,"9999":5}""");
 
         corpo.Cartoes.Should().AllSatisfy(c => c.VencimentoPadrao.Should().BeFalse());
-        List<Cartao> cartoes = await LerCartoesAsync();
+        List<Cartao> cartoes = await _api.LerTodosAsync(db => db.Cartoes);
         cartoes.Should().HaveCount(2);
         cartoes.Single(c => c.Sufixo == FaturaCartaoC6.SufixoFisico).DiaVencimento.Should().Be((DiaVencimentoCartao)10);
         cartoes.Single(c => c.Sufixo == FaturaCartaoC6.SufixoVirtual).DiaVencimento.Should().Be((DiaVencimentoCartao)20);
@@ -157,7 +154,7 @@ public sealed class ImportarFaturaEndpointTests : IAsyncLifetime
     [Theory, ApiAutoData]
     public async Task Post_Quando_ReimportaAMesmaFatura_Deve_ManterAsTransacoesERegistrarAsNovasImportacoes(CadastrarUsuarioRequest cadastro)
     {
-        Guid idUsuario = await CadastrarUsuarioAsync(cadastro);
+        Guid idUsuario = await _api.CadastrarUsuarioAsync(cadastro);
         ImportarFaturaResponse primeira = await ImportarComSucessoAsync(idUsuario, FaturaCartaoC6.Completo());
 
         ImportarFaturaResponse segunda = await ImportarComSucessoAsync(idUsuario, FaturaCartaoC6.Completo());
@@ -170,22 +167,22 @@ public sealed class ImportarFaturaEndpointTests : IAsyncLifetime
             c.JaExistentes.Should().Be(FaturaCartaoC6.LancamentosPorCartao);
         });
         segunda.Cartoes.Select(c => c.IdCartao).Should().Equal(primeira.Cartoes.Select(c => c.IdCartao));
-        (await LerTransacoesAsync()).Should().HaveCount(FaturaCartaoC6.QuantidadeLancamentos);
-        (await LerCartoesAsync()).Should().HaveCount(2);
-        (await LerImportacoesAsync()).Should().HaveCount(4);
+        (await _api.LerTodosAsync(db => db.Transacoes)).Should().HaveCount(FaturaCartaoC6.QuantidadeLancamentos);
+        (await _api.LerTodosAsync(db => db.Cartoes)).Should().HaveCount(2);
+        (await _api.LerTodosAsync(db => db.Importacoes)).Should().HaveCount(4);
     }
 
     [Theory, ApiAutoData]
     public async Task Post_Quando_ParcelaSeguinteNaFaturaSeguinte_Deve_GravarUmaTransacaoParaCadaParcela(CadastrarUsuarioRequest cadastro)
     {
-        Guid idUsuario = await CadastrarUsuarioAsync(cadastro);
+        Guid idUsuario = await _api.CadastrarUsuarioAsync(cadastro);
         await ImportarComSucessoAsync(idUsuario, FaturaCartaoC6.Completo());
 
         ImportarFaturaResponse corpo = await ImportarComSucessoAsync(idUsuario, FaturaCartaoC6.ComParcelaSeguinte());
 
         corpo.Cartoes[0].Novas.Should().Be(1);
         corpo.Cartoes[1].Novas.Should().Be(0);
-        List<Transacao> transacoes = await LerTransacoesAsync();
+        List<Transacao> transacoes = await _api.LerTodosAsync(db => db.Transacoes);
         transacoes.Should().HaveCount(FaturaCartaoC6.QuantidadeLancamentos + 1);
         transacoes.Where(t => t.Parcela != null).Select(t => t.Parcela).Should().BeEquivalentTo([(Parcela)(3, 10), (Parcela)(4, 10)]);
     }
@@ -193,12 +190,12 @@ public sealed class ImportarFaturaEndpointTests : IAsyncLifetime
     [Theory, ApiAutoData]
     public async Task Post_Quando_ArquivoDoExtrato_Deve_RetornarErroNoArquivoSemGravar(CadastrarUsuarioRequest cadastro)
     {
-        Guid idUsuario = await CadastrarUsuarioAsync(cadastro);
+        Guid idUsuario = await _api.CadastrarUsuarioAsync(cadastro);
 
         using HttpResponseMessage resposta = await ImportarAsync(idUsuario, ExtratoContaC6.Completo());
 
         resposta.StatusCode.Should().Be(HttpStatusCode.UnprocessableEntity);
-        (await CamposComErroAsync(resposta)).Should().Equal("arquivo");
+        (await resposta.CamposComErroAsync()).Should().Equal("arquivo");
         await DeveEstarSemImportacaoAsync();
     }
 
@@ -215,12 +212,12 @@ public sealed class ImportarFaturaEndpointTests : IAsyncLifetime
     [Theory, ApiAutoData]
     public async Task Post_Quando_FormularioAcimaDoLimiteDaRota_Deve_RecusarSemLerOArquivoInteiro(CadastrarUsuarioRequest cadastro)
     {
-        Guid idUsuario = await CadastrarUsuarioAsync(cadastro);
+        Guid idUsuario = await _api.CadastrarUsuarioAsync(cadastro);
 
         using HttpResponseMessage resposta = await ImportarAsync(idUsuario, new byte[ImportarFaturaEndpoint.TamanhoMaximoFormulario + 1]);
 
         resposta.StatusCode.Should().Be(HttpStatusCode.BadRequest);
-        (await CamposComErroAsync(resposta)).Should().Equal("generalErrors");
+        (await resposta.CamposComErroAsync()).Should().Equal("generalErrors");
         await DeveEstarSemImportacaoAsync();
     }
 
@@ -237,16 +234,8 @@ public sealed class ImportarFaturaEndpointTests : IAsyncLifetime
         using HttpResponseMessage resposta = await _api.Client.PostAsync(Rota(Guid.Empty), formulario);
 
         resposta.StatusCode.Should().Be(HttpStatusCode.BadRequest);
-        (await CamposComErroAsync(resposta)).Should().BeEquivalentTo("idUsuario", "layout", "arquivo", "diaVencimento", "vencimentos");
+        (await resposta.CamposComErroAsync()).Should().BeEquivalentTo("idUsuario", "layout", "arquivo", "diaVencimento", "vencimentos");
         await DeveEstarSemImportacaoAsync();
-    }
-
-    private async Task<Guid> CadastrarUsuarioAsync(CadastrarUsuarioRequest cadastro)
-    {
-        using HttpResponseMessage resposta = await _api.Client.PostAsJsonAsync(_rotaCadastro, cadastro);
-        resposta.StatusCode.Should().Be(HttpStatusCode.Created);
-        CadastrarUsuarioResponse? corpo = await resposta.Content.ReadFromJsonAsync<CadastrarUsuarioResponse>();
-        return corpo!.Id;
     }
 
     private async Task<Guid> AdicionarCartaoAsync(Guid idUsuario, AdicionarCartaoRequest cartao)
@@ -290,30 +279,10 @@ public sealed class ImportarFaturaEndpointTests : IAsyncLifetime
 
     private static Uri Rota(Guid idUsuario) => new($"/api/usuarios/{idUsuario}/importacoes/faturas", UriKind.Relative);
 
-    private static async Task<IReadOnlyList<string>> CamposComErroAsync(HttpResponseMessage resposta)
-    {
-        using JsonDocument problema = JsonDocument.Parse(await resposta.Content.ReadAsStringAsync());
-        return problema.RootElement
-            .GetProperty("errors")
-            .EnumerateArray()
-            .Select(erro => erro.GetProperty("name").GetString()!)
-            .Distinct()
-            .ToList();
-    }
-
     private async Task DeveEstarSemImportacaoAsync()
     {
         (await _api.ConsultarAsync(db => db.Cartoes.CountAsync())).Should().Be(0);
         (await _api.ConsultarAsync(db => db.Transacoes.CountAsync())).Should().Be(0);
         (await _api.ConsultarAsync(db => db.Importacoes.CountAsync())).Should().Be(0);
     }
-
-    private Task<List<Cartao>> LerCartoesAsync() =>
-        _api.ConsultarAsync(db => db.Cartoes.AsNoTracking().ToListAsync());
-
-    private Task<List<Transacao>> LerTransacoesAsync() =>
-        _api.ConsultarAsync(db => db.Transacoes.AsNoTracking().ToListAsync());
-
-    private Task<List<ImportacaoArquivo>> LerImportacoesAsync() =>
-        _api.ConsultarAsync(db => db.Importacoes.AsNoTracking().ToListAsync());
 }

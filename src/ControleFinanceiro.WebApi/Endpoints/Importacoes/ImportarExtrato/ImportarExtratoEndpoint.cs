@@ -1,8 +1,6 @@
-using ControleFinanceiro.Application.Abstractions;
 using ControleFinanceiro.Application.Importacoes;
 using ControleFinanceiro.Domain.Contas;
 using ControleFinanceiro.Domain.Importacoes;
-using ControleFinanceiro.Domain.Services;
 using ControleFinanceiro.Domain.Shared;
 using ControleFinanceiro.Domain.Transacoes;
 using ControleFinanceiro.Domain.Usuarios;
@@ -13,8 +11,8 @@ using Microsoft.AspNetCore.Mvc;
 namespace ControleFinanceiro.WebApi.Endpoints.Importacoes.ImportarExtrato;
 
 /// <summary>
-/// Lê o arquivo, obtém ou cria a conta e grava só as transações novas, junto com a conta
-/// nova e o registro da importação, num commit só. Nada é gravado quando a resposta é de erro.
+/// Lê o arquivo de um layout que traz a conta e o importa pelo <see cref="ImportacaoExtratoService"/>. Nada é gravado
+/// quando a resposta é de erro.
 /// </summary>
 public sealed class ImportarExtratoEndpoint : Endpoint<ImportarExtratoRequest, ImportarExtratoResponse>
 {
@@ -25,29 +23,17 @@ public sealed class ImportarExtratoEndpoint : Endpoint<ImportarExtratoRequest, I
     public const long TamanhoMaximoFormulario = ImportarExtratoValidator.TamanhoMaximoArquivo + 1024 * 1024;
 
     private readonly IUsuarioRepository _usuarioRepository;
-    private readonly IContaRepository _contaRepository;
-    private readonly ITransacaoRepository _transacaoRepository;
-    private readonly IImportacaoRepository _importacaoRepository;
     private readonly IEnumerable<ILeitorExtrato> _leitores;
-    private readonly TimeProvider _timeProvider;
-    private readonly IUnitOfWork _unitOfWork;
+    private readonly ImportacaoExtratoService _importacaoExtrato;
 
     public ImportarExtratoEndpoint(
         IUsuarioRepository usuarioRepository,
-        IContaRepository contaRepository,
-        ITransacaoRepository transacaoRepository,
-        IImportacaoRepository importacaoRepository,
         IEnumerable<ILeitorExtrato> leitores,
-        TimeProvider timeProvider,
-        IUnitOfWork unitOfWork)
+        ImportacaoExtratoService importacaoExtrato)
     {
         _usuarioRepository = usuarioRepository;
-        _contaRepository = contaRepository;
-        _transacaoRepository = transacaoRepository;
-        _importacaoRepository = importacaoRepository;
         _leitores = leitores;
-        _timeProvider = timeProvider;
-        _unitOfWork = unitOfWork;
+        _importacaoExtrato = importacaoExtrato;
     }
 
     public override void Configure()
@@ -69,7 +55,9 @@ public sealed class ImportarExtratoEndpoint : Endpoint<ImportarExtratoRequest, I
         await _usuarioRepository.ObterPorIdAsync(idUsuario, ct)
             .ToResult(Falha.UsuarioNaoEncontrado)
             .Bind(_ => LerAsync(layout, req.Arquivo!, ct))
-            .Bind(extrato => ImportarAsync(idUsuario, layout, extrato, ct))
+            .Bind(extrato => _importacaoExtrato
+                .ImportarAsync(idUsuario, layout, extrato, ct)
+                .MapError(Falha.DeDominio))
             .Match(
                 resposta => Send.OkAsync(resposta, ct),
                 falha => EnviarFalhaAsync(falha, ct));
@@ -83,73 +71,6 @@ public sealed class ImportarExtratoEndpoint : Endpoint<ImportarExtratoRequest, I
         return await leitor
             .LerAsync(conteudo, ct)
             .MapError(Falha.ArquivoInvalido);
-    }
-
-    /// <summary>
-    /// Obtém a conta, registra a importação e monta o lote; só grava se nenhum deles falhar. Cada etapa fica
-    /// dentro da anterior para enxergar o que ela produziu.
-    /// </summary>
-    private async Task<Result<ImportarExtratoResponse, Falha>> ImportarAsync(
-        IdUsuario idUsuario,
-        LayoutArquivoImportacao layout,
-        Extrato extrato,
-        CancellationToken ct)
-    {
-        IReadOnlyList<ContaBancaria> contasDoUsuario = await _contaRepository.ListarDoUsuarioAsync(idUsuario, ct);
-
-        return await ContaBancariaFactory
-            .ObterOuCriar(idUsuario, contasDoUsuario, extrato.Banco, extrato.TipoConta, extrato.SufixoConta)
-            .MapError(Falha.DeDominio)
-            .Bind(conta =>
-            {
-                ImportacaoArquivo importacao = ImportacaoArquivoFactory.Registrar(
-                    conta,
-                    layout,
-                    extrato.Periodo,
-                    extrato.LancamentosContabilizados.Count,
-                    _timeProvider.GetUtcNow());
-
-                return LoteTransacoesFactory
-                    .Criar(idUsuario, conta, importacao, extrato.Lancamentos)
-                    .MapError(Falha.DeDominio)
-                    .Map(transacoes => GravarAsync(extrato, contasDoUsuario, conta, importacao, transacoes, ct));
-            });
-    }
-
-    private async Task<ImportarExtratoResponse> GravarAsync(
-        Extrato extrato,
-        IReadOnlyList<ContaBancaria> contasDoUsuario,
-        ContaBancaria conta,
-        ImportacaoArquivo importacao,
-        IReadOnlyList<Transacao> transacoes,
-        CancellationToken ct)
-    {
-        OrigemTransacao origem = importacao.Origem;
-
-        Maybe<ImportacaoArquivo> importacaoAnterior = await _importacaoRepository.ObterMaisRecenteAsync(origem, ct);
-
-        // Lidas antes de adicionar as novas: a consulta só traz o que já estava gravado.
-        IReadOnlyList<Transacao> transacoesExistentesNoPeriodo = await _transacaoRepository.ListarNoPeriodoAsync(origem, extrato.Periodo, ct);
-
-        if (!contasDoUsuario.Contains(conta))
-            await _contaRepository.AdicionarAsync(conta, ct);
-
-        await _importacaoRepository.AdicionarAsync(importacao, ct);
-        IReadOnlyList<Transacao> novas = await _transacaoRepository.AdicionarNovasAsync(transacoes, ct);
-
-        Result somaDoPeriodo = ConferenciaSomaPeriodo.Conferir(extrato, transacoesExistentesNoPeriodo, novas);
-        Maybe<PeriodoArquivo> periodoNaoImportado = importacao.PeriodoNaoImportado(importacaoAnterior);
-
-        await _unitOfWork.CommitAsync(ct);
-
-        return new ImportarExtratoResponse(
-            importacao.Id,
-            conta.Id,
-            importacao.Lidas,
-            novas.Count,
-            importacao.Lidas - novas.Count,
-            periodoNaoImportado.Map(p => new ImportarExtratoResponse.Periodo(p.Inicio, p.Fim)).GetValueOrDefault(),
-            somaDoPeriodo.IsFailure ? somaDoPeriodo.Error : null);
     }
 
     private async Task EnviarFalhaAsync(Falha falha, CancellationToken ct)

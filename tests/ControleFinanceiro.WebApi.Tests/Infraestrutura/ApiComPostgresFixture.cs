@@ -1,11 +1,14 @@
 using ControleFinanceiro.AppHost.Resources;
 using ControleFinanceiro.Infrastructure.Persistence;
+using ControleFinanceiro.WebApi.Endpoints.Usuarios.Cadastrar;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Npgsql;
 using Respawn;
+using System.Net;
+using System.Net.Http.Json;
 using Testcontainers.PostgreSql;
 
 namespace ControleFinanceiro.WebApi.Tests.Infraestrutura;
@@ -17,6 +20,8 @@ namespace ControleFinanceiro.WebApi.Tests.Infraestrutura;
 /// </summary>
 public sealed class ApiComPostgresFixture : IAsyncLifetime
 {
+    private static readonly Uri _rotaCadastro = new("/api/usuarios", UriKind.Relative);
+
     private readonly PostgreSqlContainer _postgres = new PostgreSqlBuilder(PostgresImagem.Completa).Build();
 
     private WebApplicationFactory<Program>? _factory;
@@ -69,6 +74,15 @@ public sealed class ApiComPostgresFixture : IAsyncLifetime
         await _respawner.ResetAsync(conexao);
     }
 
+    /// <summary>Cadastra um usuário pela API, conferindo o 201, e devolve o id dele.</summary>
+    public async Task<Guid> CadastrarUsuarioAsync(CadastrarUsuarioRequest cadastro)
+    {
+        using HttpResponseMessage resposta = await Client.PostAsJsonAsync(_rotaCadastro, cadastro);
+        resposta.StatusCode.Should().Be(HttpStatusCode.Created);
+        CadastrarUsuarioResponse? corpo = await resposta.Content.ReadFromJsonAsync<CadastrarUsuarioResponse>();
+        return corpo!.Id;
+    }
+
     /// <summary>
     /// Executa <paramref name="consulta"/> num escopo novo, com um DbContext sem nada rastreado:
     /// o que ele lê veio do banco, não da memória da requisição.
@@ -78,6 +92,13 @@ public sealed class ApiComPostgresFixture : IAsyncLifetime
         await using AsyncServiceScope escopo = Factory.Services.CreateAsyncScope();
         ControleFinanceiroDbContext dbContext = escopo.ServiceProvider.GetRequiredService<ControleFinanceiroDbContext>();
         return await consulta(dbContext);
+    }
+
+    /// <summary>Todas as linhas de uma <paramref name="tabela"/>, lidas sem rastreio num escopo novo.</summary>
+    public Task<List<T>> LerTodosAsync<T>(Func<ControleFinanceiroDbContext, IQueryable<T>> tabela)
+        where T : class
+    {
+        return ConsultarAsync(db => tabela(db).AsNoTracking().ToListAsync());
     }
 
     /// <summary>

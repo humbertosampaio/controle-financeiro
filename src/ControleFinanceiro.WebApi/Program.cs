@@ -1,6 +1,7 @@
 using ControleFinanceiro.Domain.Shared;
 using ControleFinanceiro.Infrastructure.Importacao;
 using ControleFinanceiro.Infrastructure.Persistence;
+using ControleFinanceiro.WebApi;
 using CSharpFunctionalExtensions;
 using FastEndpoints;
 using FastEndpoints.Swagger;
@@ -14,12 +15,10 @@ WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
 
 builder.AddServiceDefaults();
 builder.Services
-    .AddFastEndpoints()
-    .SwaggerDocument()
     //.AddApplication()
-    .AddPersistence(builder.Configuration)
-    .AddImportacao()
-    .AddSingleton(TimeProvider.System);
+    .AddInfrastructurePersistence(builder.Configuration)
+    .AddInfrastructureImportacao()
+    .AddWebApi();
 
 WebApplication app = builder.Build();
 

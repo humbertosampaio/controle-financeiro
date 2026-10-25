@@ -10,7 +10,7 @@ namespace ControleFinanceiro.WebApi.Tests.Importacoes.ImportarFatura;
 /// </summary>
 internal static class FaturaCartaoC6
 {
-    private const string ParcelaDaCompraAntiga = "LOJA DE EXEMPLO;3/10";
+    private const string ParcelaCompraAntiga = "LOJA DE EXEMPLO;3/10";
 
     private static readonly string _caminho = Path.Combine(AppContext.BaseDirectory, "Importacoes", "ImportarFatura", "Fixtures", "fatura-cartao.csv");
 
@@ -28,7 +28,7 @@ internal static class FaturaCartaoC6
     /// <summary>A fatura seguinte da compra parcelada: a mesma compra antiga, agora na parcela 4/10.</summary>
     public static byte[] ComParcelaSeguinte()
     {
-        string conteudo = File.ReadAllText(_caminho, Encoding.UTF8).Replace(ParcelaDaCompraAntiga, "LOJA DE EXEMPLO;4/10", StringComparison.Ordinal);
+        string conteudo = File.ReadAllText(_caminho, Encoding.UTF8).Replace(ParcelaCompraAntiga, "LOJA DE EXEMPLO;4/10", StringComparison.Ordinal);
         return Encoding.UTF8.GetBytes(conteudo);
     }
 }

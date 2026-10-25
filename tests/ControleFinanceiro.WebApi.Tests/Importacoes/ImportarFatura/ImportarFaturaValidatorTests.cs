@@ -1,7 +1,7 @@
 using ControleFinanceiro.WebApi.Endpoints.Importacoes.ImportarFatura;
 using ControleFinanceiro.WebApi.Tests.AutoFixture;
+using ControleFinanceiro.WebApi.Tests.Infraestrutura;
 using FluentValidation.TestHelper;
-using Microsoft.AspNetCore.Http;
 
 namespace ControleFinanceiro.WebApi.Tests.Importacoes.ImportarFatura;
 
@@ -61,7 +61,7 @@ public sealed class ImportarFaturaValidatorTests
     public void Validate_Quando_ArquivoNoTamanhoMaximo_Deve_Passar(ImportarFaturaRequest requisicao)
     {
         TestValidationResult<ImportarFaturaRequest> resultado = _sut.TestValidate(
-            requisicao with { Arquivo = ArquivoCom(ImportarFaturaValidator.TamanhoMaximoArquivo) });
+            requisicao with { Arquivo = ArquivoFormulario.ComTamanho(ImportarFaturaValidator.TamanhoMaximoArquivo) });
 
         resultado.ShouldNotHaveAnyValidationErrors();
     }
@@ -70,7 +70,7 @@ public sealed class ImportarFaturaValidatorTests
     public void Validate_Quando_ArquivoAcimaDoTamanhoMaximo_Deve_RetornarErroNoArquivo(ImportarFaturaRequest requisicao)
     {
         TestValidationResult<ImportarFaturaRequest> resultado = _sut.TestValidate(
-            requisicao with { Arquivo = ArquivoCom(ImportarFaturaValidator.TamanhoMaximoArquivo + 1) });
+            requisicao with { Arquivo = ArquivoFormulario.ComTamanho(ImportarFaturaValidator.TamanhoMaximoArquivo + 1) });
 
         resultado.ShouldHaveValidationErrorFor(r => r.Arquivo);
     }
@@ -109,8 +109,4 @@ public sealed class ImportarFaturaValidatorTests
 
         resultado.ShouldHaveValidationErrorFor(r => r.Vencimentos);
     }
-
-    // O validator só lê o tamanho declarado; o conteúdo não importa aqui.
-    private static FormFile ArquivoCom(long tamanho) =>
-        new(Stream.Null, baseStreamOffset: 0, tamanho, name: "arquivo", fileName: "fatura.csv");
 }

@@ -9,7 +9,7 @@ using System.Globalization;
 using System.Text;
 using System.Text.RegularExpressions;
 using ContaEPeriodo = (ControleFinanceiro.Domain.Contas.SufixoConta Sufixo, ControleFinanceiro.Domain.Importacoes.PeriodoArquivo Periodo);
-using DatasDoPeriodo = (System.DateOnly Inicio, System.DateOnly Fim);
+using DatasPeriodo = (System.DateOnly Inicio, System.DateOnly Fim);
 using LancamentoComSaldo = (ControleFinanceiro.Domain.Importacoes.LancamentoContabilizado Lancamento, ControleFinanceiro.Domain.Importacoes.SaldoDiario Saldo);
 
 namespace ControleFinanceiro.Infrastructure.Importacao.C6;
@@ -29,7 +29,7 @@ namespace ControleFinanceiro.Infrastructure.Importacao.C6;
 /// </remarks>
 public sealed partial class LeitorExtratoContaC6 : ILeitorExtrato
 {
-    private const int LinhasAntesDasColunas = 8;
+    private const int LinhasAntesColunas = 8;
     private const string SeparadorDescricao = " · ";
 
     /// <summary>Títulos de Pix que trazem o nome da contraparte depois do prefixo.</summary>
@@ -58,7 +58,7 @@ public sealed partial class LeitorExtratoContaC6 : ILeitorExtrato
     private static async Task<Result<IReadOnlyList<string>>> LerCabecalhoAsync(StreamReader leitor, CancellationToken cancellationToken)
     {
         List<string> linhas = [];
-        for (int i = 0; i < LinhasAntesDasColunas; i++)
+        for (int i = 0; i < LinhasAntesColunas; i++)
         {
             string? linha = await leitor.ReadLineAsync(cancellationToken);
             if (linha is null)
@@ -96,17 +96,17 @@ public sealed partial class LeitorExtratoContaC6 : ILeitorExtrato
             .Select(l => Periodo().Match(l))
             .TryFirst(m => m.Success)
             .ToResult("O cabeçalho do arquivo não traz o período do extrato.")
-            .Bind(LerDatasDoPeriodo)
+            .Bind(LerDatasPeriodo)
             .Bind(datas => PeriodoArquivo.Criar(datas.Inicio, datas.Fim));
     }
 
-    private static Result<DatasDoPeriodo> LerDatasDoPeriodo(Match periodo)
+    private static Result<DatasPeriodo> LerDatasPeriodo(Match periodo)
     {
-        return LerDataDoPeriodo(periodo.Groups["inicio"].Value)
-            .Bind(inicio => LerDataDoPeriodo(periodo.Groups["fim"].Value).Map(fim => (inicio, fim)));
+        return LerDataPeriodo(periodo.Groups["inicio"].Value)
+            .Bind(inicio => LerDataPeriodo(periodo.Groups["fim"].Value).Map(fim => (inicio, fim)));
     }
 
-    private static Result<DateOnly> LerDataDoPeriodo(string texto)
+    private static Result<DateOnly> LerDataPeriodo(string texto)
     {
         return Result.SuccessIf(
             DateOnly.TryParseExact(texto, LinhaExtratoC6Map.FormatoData, CultureInfo.InvariantCulture, DateTimeStyles.None, out DateOnly data),
@@ -161,7 +161,7 @@ public sealed partial class LeitorExtratoContaC6 : ILeitorExtrato
         }
         catch (CsvHelperException)
         {
-            return Result.Failure($"A linha {LinhasAntesDasColunas + 1} do arquivo não traz as colunas do extrato da conta do C6.");
+            return Result.Failure($"A linha {LinhasAntesColunas + 1} do arquivo não traz as colunas do extrato da conta do C6.");
         }
     }
 
@@ -185,9 +185,9 @@ public sealed partial class LeitorExtratoContaC6 : ILeitorExtrato
             LinhaExtratoC6 linha = proxima.Value.Value;
             Result<LancamentoContabilizado> lancamento = Converter(linha);
             if (lancamento.IsFailure)
-                return Result.Failure<IReadOnlyList<LancamentoComSaldo>>($"A linha {NumeroDaLinha(csv)} do arquivo {lancamento.Error}");
+                return Result.Failure<IReadOnlyList<LancamentoComSaldo>>($"A linha {NumeroLinha(csv)} do arquivo {lancamento.Error}");
 
-            lidos.Add((lancamento.Value, SaldoDiario.Criar(linha.DataContabil, linha.SaldoDoDia)));
+            lidos.Add((lancamento.Value, SaldoDiario.Criar(linha.DataContabil, linha.SaldoDia)));
         }
     }
 
@@ -200,7 +200,7 @@ public sealed partial class LeitorExtratoContaC6 : ILeitorExtrato
         }
         catch (CsvHelperException)
         {
-            return Result.Failure<Maybe<LinhaExtratoC6>>($"A linha {NumeroDaLinha(csv)} do arquivo não está no layout do extrato da conta do C6.");
+            return Result.Failure<Maybe<LinhaExtratoC6>>($"A linha {NumeroLinha(csv)} do arquivo não está no layout do extrato da conta do C6.");
         }
     }
 
@@ -254,7 +254,7 @@ public sealed partial class LeitorExtratoContaC6 : ILeitorExtrato
         return ((TextoObrigatorio)descricao, contraparte);
     }
 
-    private static long NumeroDaLinha(CsvReader csv) => LinhasAntesDasColunas + csv.Parser.RawRow;
+    private static long NumeroLinha(CsvReader csv) => LinhasAntesColunas + csv.Parser.RawRow;
 
     [GeneratedRegex(@"Conta:\s*(?<numero>\S+)")]
     private static partial Regex NumeroConta();
@@ -273,7 +273,7 @@ public sealed partial class LeitorExtratoContaC6 : ILeitorExtrato
         public string Descricao { get; init; } = string.Empty;
         public decimal Entrada { get; init; }
         public decimal Saida { get; init; }
-        public decimal SaldoDoDia { get; init; }
+        public decimal SaldoDia { get; init; }
     }
 
     private sealed class LinhaExtratoC6Map : ClassMap<LinhaExtratoC6>
@@ -292,7 +292,7 @@ public sealed partial class LeitorExtratoContaC6 : ILeitorExtrato
             Map(l => l.Descricao).Name("Descrição");
             Map(l => l.Entrada).Name("Entrada(R$)").TypeConverterOption.NumberStyles(ValorSemSinal);
             Map(l => l.Saida).Name("Saída(R$)").TypeConverterOption.NumberStyles(ValorSemSinal);
-            Map(l => l.SaldoDoDia).Name("Saldo do Dia(R$)").TypeConverterOption.NumberStyles(ValorComSinal);
+            Map(l => l.SaldoDia).Name("Saldo do Dia(R$)").TypeConverterOption.NumberStyles(ValorComSinal);
         }
     }
 }

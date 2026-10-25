@@ -1,0 +1,134 @@
+using ControleFinanceiro.Application.Importacoes;
+using ControleFinanceiro.Domain.Contas;
+using ControleFinanceiro.Domain.Importacoes;
+using ControleFinanceiro.Domain.Shared;
+using ControleFinanceiro.Domain.Transacoes;
+using ControleFinanceiro.Domain.Usuarios;
+using ControleFinanceiro.WebApi.Endpoints.Importacoes.ImportarExtrato;
+using CSharpFunctionalExtensions;
+using FastEndpoints;
+using Microsoft.AspNetCore.Mvc;
+
+namespace ControleFinanceiro.WebApi.Endpoints.Importacoes.ImportarExtratoMercadoPago;
+
+/// <summary>
+/// Lê o extrato do Mercado Pago com o sufixo da conta que o usuário informou e o importa pelo
+/// <see cref="ImportacaoExtratoService"/>. A rota é do layout, cujo código é o último segmento. Nada é gravado quando
+/// a resposta é de erro.
+/// </summary>
+public sealed class ImportarExtratoMercadoPagoEndpoint : Endpoint<ImportarExtratoMercadoPagoRequest, ImportarExtratoResponse>
+{
+    /// <summary>
+    /// O maior formulário que a rota lê: o arquivo no tamanho máximo do validator, com folga para o outro campo e
+    /// os cabeçalhos do multipart.
+    /// </summary>
+    public const long TamanhoMaximoFormulario = ImportarExtratoMercadoPagoValidator.TamanhoMaximoArquivo + 1024 * 1024;
+
+    private static readonly LayoutArquivoImportacao _layout = LayoutArquivoImportacao.MercadoPagoContaCsv;
+
+    private readonly IUsuarioRepository _usuarioRepository;
+    private readonly IEnumerable<ILeitorExtratoContaInformada> _leitores;
+    private readonly ImportacaoExtratoService _importacaoExtrato;
+
+    public ImportarExtratoMercadoPagoEndpoint(
+        IUsuarioRepository usuarioRepository,
+        IEnumerable<ILeitorExtratoContaInformada> leitores,
+        ImportacaoExtratoService importacaoExtrato)
+    {
+        _usuarioRepository = usuarioRepository;
+        _leitores = leitores;
+        _importacaoExtrato = importacaoExtrato;
+    }
+
+    public override void Configure()
+    {
+        Post($"usuarios/{{idUsuario}}/importacoes/{_layout.Value}");
+        AllowFileUploads();
+        AllowAnonymous();
+
+        // Sem o limite na rota, o formulário é lido inteiro, e acima de 64 KB guardado em disco, antes de o validator
+        // recusar o arquivo. Acima do limite, a leitura para e a resposta é um 400 geral, sem chegar ao validator.
+        Options(rota => rota.WithMetadata(new RequestFormLimitsAttribute { MultipartBodyLengthLimit = TamanhoMaximoFormulario }));
+    }
+
+    public override async Task HandleAsync(ImportarExtratoMercadoPagoRequest req, CancellationToken ct)
+    {
+        IdUsuario idUsuario = IdUsuario.From(req.IdUsuario);
+
+        await _usuarioRepository.ObterPorIdAsync(idUsuario, ct)
+            .ToResult(Falha.UsuarioNaoEncontrado)
+            .Bind(_ => LerAsync(req.Arquivo!, (SufixoConta)req.SufixoConta, ct))
+            .Bind(extrato => _importacaoExtrato
+                .ImportarAsync(idUsuario, _layout, extrato, ct)
+                .MapError(Falha.DeDominio))
+            .Match(
+                resposta => Send.OkAsync(resposta, ct),
+                falha => EnviarFalhaAsync(falha, ct));
+    }
+
+    private async Task<Result<Extrato, Falha>> LerAsync(IFormFile arquivo, SufixoConta sufixoConta, CancellationToken ct)
+    {
+        ILeitorExtratoContaInformada leitor = _leitores.Single(l => l.Layout == _layout);
+        await using Stream conteudo = arquivo.OpenReadStream();
+
+        return await leitor
+            .LerAsync(conteudo, sufixoConta, ct)
+            .MapError(Falha.ArquivoInvalido);
+    }
+
+    private async Task EnviarFalhaAsync(Falha falha, CancellationToken ct)
+    {
+        switch (falha)
+        {
+            case Falha.NaoEncontrado:
+                await Send.NotFoundAsync(ct);
+                break;
+
+            case Falha.Arquivo(string mensagem):
+                await EnviarArquivoInvalidoAsync(mensagem, ct);
+                break;
+
+            case Falha.Dominio(ErroContaDeOutroTipo erro):
+                AddError(r => r.SufixoConta, erro.Descricao);
+                await Send.ErrorsAsync(StatusCodes.Status409Conflict, ct);
+                break;
+
+            case Falha.Dominio(ErroIdentificadorRepetido erro):
+                await EnviarArquivoInvalidoAsync(erro.Descricao, ct);
+                break;
+
+            // ErroOrigemNaoPertenceAoUsuario é bug de quem escolheu a conta, e cai aqui: 500. A mensagem leva só o
+            // código, e não a descrição, que vai para o log.
+            case Falha.Dominio(Erro erro):
+                throw new InvalidOperationException($"Erro de domínio sem status mapeado: {erro.Codigo}");
+
+            default:
+                throw new InvalidOperationException($"Falha sem status mapeado: {falha.GetType().Name}");
+        }
+    }
+
+    private async Task EnviarArquivoInvalidoAsync(string mensagem, CancellationToken ct)
+    {
+        AddError(r => r.Arquivo, mensagem);
+        await Send.ErrorsAsync(StatusCodes.Status422UnprocessableEntity, ct);
+    }
+
+    /// <summary>
+    /// O que interrompe a importação, num tipo só para a cadeia: o usuário inexistente, o arquivo que o leitor recusou,
+    /// inclusive pelo saldo que não fecha (mensagem em texto), e os erros tipados do domínio.
+    /// </summary>
+    private abstract record Falha
+    {
+        public static readonly Falha UsuarioNaoEncontrado = new NaoEncontrado();
+
+        public static Falha ArquivoInvalido(string mensagem) => new Arquivo(mensagem);
+
+        public static Falha DeDominio(Erro erro) => new Dominio(erro);
+
+        public sealed record NaoEncontrado : Falha;
+
+        public sealed record Arquivo(string Mensagem) : Falha;
+
+        public sealed record Dominio(Erro Erro) : Falha;
+    }
+}

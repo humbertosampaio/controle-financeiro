@@ -53,9 +53,10 @@ public sealed class Extrato : ValueObject
     /// do dia útil seguinte.
     /// </para>
     /// <para>
-    /// O primeiro dia contábil só serve de base, porque o arquivo não traz o saldo de abertura. Os dias
-    /// contábeis depois do fim do período ficam de fora: o banco filtra o período pela data do lançamento, e
-    /// esses dias podem ter chegado incompletos.
+    /// O primeiro saldo só serve de base. Quando o arquivo não traz o saldo de abertura, é o do primeiro dia
+    /// contábil; quando traz, o adaptador o passa como o saldo da véspera do primeiro dia, e o primeiro dia também
+    /// é conferido. Os dias contábeis depois do fim do período ficam de fora: o banco filtra o período pela data
+    /// do lançamento, e esses dias podem ter chegado incompletos.
     /// </para>
     /// </remarks>
     public static Result<Extrato> Criar(
