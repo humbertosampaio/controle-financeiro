@@ -20,14 +20,29 @@ public sealed class MesReferencia : ComparableValueObject
         if (mes is < 1 or > 12)
             return Result.Failure<MesReferencia>($"Mês deve estar entre 1 e 12. Valor fornecido: {mes}");
 
-        if (ano < 0)
-            return Result.Failure<MesReferencia>($"Ano não pode ser negativo. Valor fornecido: {ano}");
+        if (ano is < 1 or > 9999)
+            return Result.Failure<MesReferencia>($"Ano deve estar entre 1 e 9999. Valor fornecido: {ano}");
 
         return new MesReferencia(mes, ano);
     }
 
-    public MesReferencia Anterior() => Inicio.AddMonths(-1);
-    public MesReferencia Posterior() => Inicio.AddMonths(1);
+    /// <exception cref="InvalidOperationException">Quando o mês de referência é 01/1, o primeiro que o <see cref="DateOnly"/> representa.</exception>
+    public MesReferencia Anterior()
+    {
+        if (Inicio == DateOnly.MinValue)
+            throw new InvalidOperationException($"Não há mês de referência anterior a '{this}'");
+
+        return Inicio.AddMonths(-1);
+    }
+
+    /// <exception cref="InvalidOperationException">Quando o mês de referência é 12/9999, o último que o <see cref="DateOnly"/> representa.</exception>
+    public MesReferencia Posterior()
+    {
+        if (Fim == DateOnly.MaxValue)
+            throw new InvalidOperationException($"Não há mês de referência posterior a '{this}'");
+
+        return Inicio.AddMonths(1);
+    }
 
     /// <summary>
     /// Tenta criar um <see cref="DateOnly"/> representando o dia específico dentro do mês de referência. 
