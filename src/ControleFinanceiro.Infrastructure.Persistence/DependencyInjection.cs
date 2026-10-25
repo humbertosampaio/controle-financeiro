@@ -19,7 +19,7 @@ public static class DependencyInjection
 {
     extension(IServiceCollection services)
     {
-        public IServiceCollection AddPersistence(IConfiguration configuration)
+        public IServiceCollection AddInfrastructurePersistence(IConfiguration configuration)
         {
             string? connectionString = configuration.GetConnectionString("controlefinanceiro");
             if (string.IsNullOrWhiteSpace(connectionString))
@@ -33,36 +33,11 @@ public static class DependencyInjection
 
             return services
                 .AddScoped<IUnitOfWork, EntityFrameworkUnitOfWork>()
-                .AddUsuarios()
-                .AddCartoes()
-                .AddContas()
-                .AddTransacoes()
-                .AddImportacoes();
-        }
-
-        private IServiceCollection AddUsuarios()
-        {
-            return services.AddTransient<IUsuarioRepository, UsuarioRepository>();
-        }
-
-        private IServiceCollection AddCartoes()
-        {
-            return services.AddTransient<ICartaoRepository, CartaoRepository>();
-        }
-
-        private IServiceCollection AddContas()
-        {
-            return services.AddTransient<IContaRepository, ContaRepository>();
-        }
-
-        private IServiceCollection AddTransacoes()
-        {
-            return services.AddTransient<ITransacaoRepository, TransacaoRepository>();
-        }
-
-        private IServiceCollection AddImportacoes()
-        {
-            return services.AddTransient<IImportacaoRepository, ImportacaoRepository>();
+                .AddTransient<IUsuarioRepository, UsuarioRepository>()
+                .AddTransient<ICartaoRepository, CartaoRepository>()
+                .AddTransient<IContaRepository, ContaRepository>()
+                .AddTransient<ITransacaoRepository, TransacaoRepository>()
+                .AddTransient<IImportacaoRepository, ImportacaoRepository>();
         }
     }
 }

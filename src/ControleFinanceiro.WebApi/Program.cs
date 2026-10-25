@@ -16,8 +16,8 @@ WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
 builder.AddServiceDefaults();
 builder.Services
     //.AddApplication()
-    .AddPersistence(builder.Configuration)
-    .AddImportacao()
+    .AddInfrastructurePersistence(builder.Configuration)
+    .AddInfrastructureImportacao()
     .AddWebApi();
 
 WebApplication app = builder.Build();

@@ -13,7 +13,7 @@ public static class DependencyInjection
         /// Registra um <see cref="ILeitorExtrato"/>, um <see cref="ILeitorExtratoContaInformada"/> ou um
         /// <see cref="ILeitorFatura"/> por layout; a importação escolhe pelo layout.
         /// </summary>
-        public IServiceCollection AddImportacao()
+        public IServiceCollection AddInfrastructureImportacao()
         {
             return services
                 .AddTransient<ILeitorExtrato, LeitorExtratoContaC6>()
