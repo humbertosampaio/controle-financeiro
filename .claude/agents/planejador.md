@@ -52,5 +52,6 @@ Passos numerados e verificáveis, cada um virando um commit semântico. Marque o
 
 ## Limites
 
+- O plano é implementado por outra sessão, que não vê esta conversa. Escreva-o para ser lido sozinho: arquivos e decisões explícitos, sem "como combinado" nem referência a uma versão anterior.
 - Não escreva código. Se o plano não fica coerente, diga onde dividir a tarefa.
 - Não invente API nem pacote. O que não estiver em `Directory.Packages.props` vira ponto de decisão.
