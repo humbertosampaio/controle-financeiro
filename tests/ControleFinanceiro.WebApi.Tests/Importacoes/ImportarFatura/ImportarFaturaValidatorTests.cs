@@ -1,3 +1,4 @@
+using ControleFinanceiro.Domain.Importacoes;
 using ControleFinanceiro.WebApi.Endpoints.Importacoes.ImportarFatura;
 using ControleFinanceiro.WebApi.Tests.AutoFixture;
 using ControleFinanceiro.WebApi.Tests.Infraestrutura;
@@ -36,6 +37,15 @@ public sealed class ImportarFaturaValidatorTests
         TestValidationResult<ImportarFaturaRequest> resultado = _sut.TestValidate(requisicao with { IdUsuario = Guid.Empty });
 
         resultado.ShouldHaveValidationErrorFor(r => r.IdUsuario);
+    }
+
+    [Theory, ApiAutoData]
+    public void Validate_Quando_LayoutDaFaturaDoMercadoPago_Deve_Passar(ImportarFaturaRequest requisicao)
+    {
+        TestValidationResult<ImportarFaturaRequest> resultado = _sut.TestValidate(
+            requisicao with { Layout = LayoutArquivoImportacao.MercadoPagoCartaoCsv.Value });
+
+        resultado.ShouldNotHaveAnyValidationErrors();
     }
 
     [Theory]
