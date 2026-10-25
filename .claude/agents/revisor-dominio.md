@@ -41,7 +41,7 @@ Os arquivos `.Designer.cs` e `ModelSnapshot.cs` são gerados pelo EF: não leia.
 14. **Diagrama do domínio acompanha o Domain.** Se o diff cria, remove ou renomeia agregado, entidade ou value object em `src/ControleFinanceiro.Domain/`, ou muda uma relação entre eles (composição, referência por id, herança), ou muda um invariante listado em `docs/modelo-de-dominio.md`, e esse arquivo não está no diff, é achado MÉDIO. Mudança interna que não altera estrutura nem invariante (método privado, mensagem de erro, refatoração) não conta. Se o arquivo está no diff, confira que o diagrama bate com o código.
 15. **Padrões de domínio** (`docs/padroes-de-dominio.md`). É achado ALTO, citando a seção do guia:
     - um agregado que guarda outra raiz, entidade de outro agregado ou coleção delas, em vez do id (seção 1);
-    - um caso de uso que altera e grava mais de um agregado (seção 2);
+    - um caso de uso que altera e grava agregados de mais de um tipo (seção 2). Criar várias instâncias do mesmo tipo, ou alterá-las de forma independente, é permitido; alterar instâncias que dependem umas das outras (a operação só fica correta com as duas mudanças juntas) sem o motivo registrado no plano é achado MÉDIO;
     - um método de agregado que recebe outro agregado, ou uma regra entre agregados no endpoint ou no repositório (seção 3);
     - um repositório que devolve DTO, projeção, contagem ou existência, ou que recebe outra coisa que não o agregado (seção 4);
     - erro tipado criado só porque uma camada de fora precisa dele, sem ser uma situação de negócio própria (seção 5).

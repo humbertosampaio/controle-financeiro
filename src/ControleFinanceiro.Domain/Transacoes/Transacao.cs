@@ -49,6 +49,14 @@ public sealed class Transacao : AggregateRoot<IdTransacao>, IPertenceAoUsuario
     /// <summary>Verdadeiro quando a transação é uma parcela de uma compra parcelada.</summary>
     public bool EhParcelada => Parcela is not null;
 
+    /// <summary>
+    /// O texto do arquivo que diz quem recebeu o dinheiro de uma saída: a contraparte no extrato da conta (nula em
+    /// boleto e tarifa) e a descrição, o estabelecimento, na fatura do cartão. Nulo na entrada, o que inclui o
+    /// estorno e o pagamento da fatura do lado do cartão. A saída da conta para outra conta do titular, como o
+    /// pagamento da fatura do lado da conta, tem texto como qualquer saída.
+    /// </summary>
+    public string? TextoBeneficiario => Valor >= 0 ? null : Origem.IdCartao is null ? Contraparte : Descricao;
+
     /// <summary>A categoria que o banco deu à compra, quando o layout traz.</summary>
     public string? CategoriaBanco { get; private set; }
 

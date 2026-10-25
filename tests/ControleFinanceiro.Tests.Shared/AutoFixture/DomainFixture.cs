@@ -25,6 +25,7 @@ public class DomainFixture : Fixture
             .Customize(new VencimentosCartoesNovosCustomization())
             .Customize(new SufixoContaCustomization())
             .Customize(new CartaoCustomization())
+            .Customize(new BeneficiarioCustomization())
             .Customize(new ContaBancariaCustomization())
             .Customize(new DespesaRecorrenteCustomization())
             .Customize(new ParcelaCustomization())
@@ -36,7 +37,8 @@ public class DomainFixture : Fixture
             .Customize(new FaturaCustomization())
             .Customize(new ImportacaoArquivoCustomization())
             .Customize(new DiaOcorrenciaRecorrenteCustomization())
-            .Customize(new TextoObrigatorioCustomization());
+            .Customize(new TextoObrigatorioCustomization())
+            .Customize(new AliasCustomization());
     }
 
     public static DomainFixture Create() => new();

@@ -1,52 +1,56 @@
+using AutoFixture.Xunit2;
 using ControleFinanceiro.Domain.Beneficiarios;
 using ControleFinanceiro.Domain.Shared.ValueObjects;
-using ControleFinanceiro.Domain.Usuarios;
 using ControleFinanceiro.Tests.Shared.AutoFixture.Attributes;
-using CSharpFunctionalExtensions;
 
 namespace ControleFinanceiro.Domain.Tests.Beneficiarios;
 
 public sealed class BeneficiarioTests
 {
     [Theory, DomainAutoData]
-    public void Criar_Quando_ParametrosValidos_Deve_RetornarSucesso(IdUsuario idUsuario, TextoObrigatorio nomeExibicao)
+    public void PossuiAlias_Quando_MesmoTextoNormalizado_Deve_RetornarVerdadeiro([Frozen] Alias alias, Beneficiario beneficiario)
     {
-        Beneficiario beneficiario = Beneficiario.Criar(idUsuario, nomeExibicao);
+        string desnormalizado = $"  {alias.TextoOriginal.ToLowerInvariant()} ";
 
-        beneficiario.IdUsuario.Should().Be(idUsuario);
-        beneficiario.NomeExibicao.Should().Be(nomeExibicao);
+        bool result = beneficiario.PossuiAlias((Alias)desnormalizado);
+
+        result.Should().BeTrue();
+    }
+
+    [Theory, DomainAutoData]
+    public void PossuiAlias_Quando_AliasDeOutroTexto_Deve_RetornarFalso(Beneficiario beneficiario, Alias outroAlias)
+    {
+        bool result = beneficiario.PossuiAlias(outroAlias);
+
+        result.Should().BeFalse();
+    }
+
+    [Theory, DomainAutoData]
+    public void RemoverAlias_Quando_PossuiOAlias_Deve_Remover([Frozen] Alias alias, Beneficiario beneficiario)
+    {
+        beneficiario.RemoverAlias(alias);
+
         beneficiario.Aliases.Should().BeEmpty();
     }
 
     [Theory, DomainAutoData]
-    public void AdicionarAlias_Quando_NaoExistente_Deve_Adicionar(Beneficiario beneficiario, TextoObrigatorio textoExtrato)
+    public void RemoverAlias_Quando_NaoPossuiOAlias_Deve_ManterOsAliases(Beneficiario beneficiario, Alias outroAlias)
     {
-        beneficiario.AdicionarAlias(textoExtrato);
+        IReadOnlyList<AliasBeneficiario> antes = [.. beneficiario.Aliases];
 
-        AliasBeneficiario alias = beneficiario.Aliases.Should().ContainSingle().Which;
-        alias.TextoExtrato.Should().Be(textoExtrato);
-        alias.CodigoOrigem.Should().BeNull();
+        beneficiario.RemoverAlias(outroAlias);
+
+        beneficiario.Aliases.Should().Equal(antes);
     }
 
     [Theory, DomainAutoData]
-    public void AdicionarAlias_Quando_ExistenteMesmoTextoEOrigem_Deve_RetornarFalha(Beneficiario beneficiario, TextoObrigatorio textoExtrato)
+    public void Renomear_Deve_TrocarONomeSemMudarOsAliases(Beneficiario beneficiario, TextoObrigatorio nome)
     {
-        beneficiario.AdicionarAlias(textoExtrato);
+        IReadOnlyList<AliasBeneficiario> antes = [.. beneficiario.Aliases];
 
-        Result result = beneficiario.AdicionarAlias(textoExtrato);
+        beneficiario.Renomear(nome);
 
-        result.Should().FailWith("Já existe um alias com o mesmo texto e origem para este beneficiário.");
-        beneficiario.Aliases.Should().ContainSingle();
-    }
-
-    [Theory, DomainAutoData]
-    public void AdicionarAlias_Quando_MesmoTextoMasOrigemDiferente_Deve_Adicionar(Beneficiario beneficiario, TextoObrigatorio textoExtrato)
-    {
-        beneficiario.AdicionarAlias(textoExtrato, "nubank");
-
-        Result result = beneficiario.AdicionarAlias(textoExtrato, "itau");
-
-        result.Should().Succeed();
-        beneficiario.Aliases.Should().HaveCount(2);
+        beneficiario.Nome.Should().Be(nome);
+        beneficiario.Aliases.Should().Equal(antes);
     }
 }
