@@ -9,7 +9,7 @@ Discordar de um padrão é motivo para conversar, não para contorná-lo no cód
 - A raiz é a única entrada do agregado. Entidade interna (`DescontoSalarial` no `Usuario`, `ParcelaDespesa` na `DespesaParcelada`) só é criada, alterada e lida pela raiz.
 - Entre agregados, a referência é **pelo id da raiz**. Nenhum agregado guarda outra raiz, nem uma entidade de outro agregado, nem uma coleção delas. A `DespesaRecorrente` guarda o `IdCartao`, não o `Cartao`; a `OrigemTransacao` guarda o `IdConta` ou o `IdCartao`.
 - Um conceito que outro agregado precisa referenciar de fora é uma raiz, não uma entidade interna. Foi o motivo da #50: o `Cartao` e a `ContaBancaria` eram internos do `Usuario`, mas a `Transacao` e a `ImportacaoArquivo` já chegavam a eles de fora.
-- Todo agregado que pertence a um usuário tem `IdUsuario` (`Cartao`, `ContaBancaria`, `DespesaRecorrente`, `Despesa`, `Transacao`, `ImportacaoArquivo`), mesmo quando o dono já é alcançável por outro id, como a origem da transação.
+- Todo agregado que pertence a um usuário tem `IdUsuario` e implementa `IPertenceAoUsuario` (`Cartao`, `ContaBancaria`, `DespesaRecorrente`, `Despesa`, `Transacao`, `ImportacaoArquivo`, `Beneficiario`, `CategoriaDespesa`), mesmo quando o dono já é alcançável por outro id, como a origem da transação. Toda consulta dele fica restrita ao usuário atual (seção 8); sem a interface, o filtro some em silêncio, e o `PertenceAoUsuarioTests` é o que avisa. O `Usuario` é o dono e não a implementa.
 
 ## 2. Um agregado por transação
 
@@ -35,7 +35,8 @@ Concorrência: a unicidade garantida pela factory tem um índice único no banco
 ## 4. Repositórios
 
 - Um repositório por raiz, com a porta no Domain, na pasta do agregado (`Cartoes/ICartaoRepository.cs`) e o adaptador na Persistence (`Cartoes/CartaoRepository.cs`).
-- O repositório **recebe e devolve o agregado inteiro**: para adicionar (`AdicionarAsync`), para obter e alterar (`ObterPorIdAsync`, seguido do `CommitAsync` do `IUnitOfWork`) e para listar os de um dono (`ListarDoUsuarioAsync`). O agregado vem com todas as coleções (`AutoInclude`).
+- O repositório **recebe e devolve o agregado inteiro**: para adicionar (`AdicionarAsync`), para obter e alterar (`ObterAsync`, seguido do `CommitAsync` do `IUnitOfWork`) e para listar os do usuário atual (`ListarAsync`). O agregado vem com todas as coleções (`AutoInclude`).
+- A porta de agregado do usuário **não recebe o `IdUsuario`**: quem é o usuário atual vem do `IUsuarioAtual`, pelo filtro do `DbContext`. O item de outro usuário é "não encontrado", como o que não existe. O `IUsuarioRepository` segue com `ObterPorIdAsync`, porque o `Usuario` fica fora do filtro.
 - O repositório de agregado não devolve DTO, projeção, contagem nem existência. Uma consulta que não é "me dê o agregado", como uma contagem ou um relatório, vai para:
   - um **serviço de domínio não puro** com uma porta de consulta própria, quando a resposta alimenta uma regra de domínio;
   - ou um **serviço de aplicação**, na Application, quando a resposta é só para quem chama (tela, MCP, relatório).
@@ -77,6 +78,7 @@ Até lá, uma feature que precise disso para no plano.
 
 - O mapeamento fica em `IEntityTypeConfiguration` na Persistence, na pasta do agregado (`Cartoes/CartaoConfiguration.cs`). O domínio não conhece EF.
 - A FK entre agregados é declarada **sem navegação**: `HasOne<Usuario>().WithMany().HasForeignKey(c => c.IdUsuario)`, com o `IdUsuario` como propriedade real do agregado. Navegação de coleção só para entidades internas, sempre com `AutoInclude`.
+- Toda raiz que implementa `IPertenceAoUsuario` ganha, no `ControleFinanceiroDbContext`, o filtro global nomeado `FiltroUsuario` (`IdUsuario == usuário atual`), montado num laço sobre o modelo: agregado novo mapeado já chega filtrado, sem tocar no `DbContext`. O repositório não repete o `Where` por usuário. Só a leitura de volta dos testes de integração usa `IgnoreQueryFilters`, porque roda fora de requisição e confere a tabela inteira.
 - Cascade entre agregados é exceção: só quando o filho não faz sentido sem o pai e não existe exclusão que dependa de regra (hoje, cartões de um usuário que não pode ser excluído).
 
 ## 9. Checklist para o plano
