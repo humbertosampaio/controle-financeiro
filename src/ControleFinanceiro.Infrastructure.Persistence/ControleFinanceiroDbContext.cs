@@ -1,6 +1,7 @@
 using ControleFinanceiro.Application.Abstractions;
 using ControleFinanceiro.Domain.Beneficiarios;
 using ControleFinanceiro.Domain.Cartoes;
+using ControleFinanceiro.Domain.Categorias;
 using ControleFinanceiro.Domain.Contas;
 using ControleFinanceiro.Domain.Despesas;
 using ControleFinanceiro.Domain.Importacoes;
@@ -38,6 +39,7 @@ public sealed class ControleFinanceiroDbContext : DbContext
     public DbSet<Transacao> Transacoes => Set<Transacao>();
     public DbSet<ImportacaoArquivo> Importacoes => Set<ImportacaoArquivo>();
     public DbSet<Beneficiario> Beneficiarios => Set<Beneficiario>();
+    public DbSet<CategoriaDespesa> Categorias => Set<CategoriaDespesa>();
 
     /// <summary>Lido pelo filtro a cada consulta: o EF troca o <c>this</c> da expressão pela instância corrente.</summary>
     private IdUsuario IdUsuarioAtual => _usuarioAtual.Id;
