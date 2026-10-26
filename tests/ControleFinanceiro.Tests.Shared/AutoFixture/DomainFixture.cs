@@ -26,6 +26,7 @@ public class DomainFixture : Fixture
             .Customize(new SufixoContaCustomization())
             .Customize(new CartaoCustomization())
             .Customize(new BeneficiarioCustomization())
+            .Customize(new CategoriaDespesaCustomization())
             .Customize(new ContaBancariaCustomization())
             .Customize(new DespesaRecorrenteCustomization())
             .Customize(new ParcelaCustomization())
