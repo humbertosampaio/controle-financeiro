@@ -14,6 +14,7 @@ public sealed class OrigemTransacaoTests
 
         result.IdConta.Should().Be(idConta);
         result.IdCartao.Should().BeNull();
+        result.Tipo.Should().Be(TipoOrigem.Conta);
     }
 
     [Theory, DomainAutoData]
@@ -23,6 +24,7 @@ public sealed class OrigemTransacaoTests
 
         result.IdCartao.Should().Be(idCartao);
         result.IdConta.Should().BeNull();
+        result.Tipo.Should().Be(TipoOrigem.Cartao);
     }
 
     [Theory, DomainAutoData]
