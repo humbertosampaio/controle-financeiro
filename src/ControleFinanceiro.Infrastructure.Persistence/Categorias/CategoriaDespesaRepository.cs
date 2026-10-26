@@ -21,4 +21,7 @@ internal sealed class CategoriaDespesaRepository : ICategoriaDespesaRepository
 
     public async Task AdicionarAsync(CategoriaDespesa categoria, CancellationToken cancellationToken) =>
         await _dbSet.AddAsync(categoria, cancellationToken);
+
+    public async Task AdicionarTodasAsync(IEnumerable<CategoriaDespesa> categorias, CancellationToken cancellationToken) =>
+        await _dbSet.AddRangeAsync(categorias, cancellationToken);
 }

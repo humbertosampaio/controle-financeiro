@@ -9,4 +9,6 @@ public interface ICategoriaDespesaRepository
     Task<Maybe<CategoriaDespesa>> ObterAsync(IdCategoriaDespesa idCategoria, CancellationToken cancellationToken);
 
     Task AdicionarAsync(CategoriaDespesa categoria, CancellationToken cancellationToken);
+
+    Task AdicionarTodasAsync(IEnumerable<CategoriaDespesa> categorias, CancellationToken cancellationToken);
 }
