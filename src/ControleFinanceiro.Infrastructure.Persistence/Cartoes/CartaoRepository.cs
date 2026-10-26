@@ -17,7 +17,7 @@ internal sealed class CartaoRepository : ICartaoRepository
         await _dbSet.ToListAsync(cancellationToken);
 
     public async Task<Maybe<Cartao>> ObterAsync(IdCartao idCartao, CancellationToken cancellationToken) =>
-        await _dbSet.SingleOrDefaultAsync(c => c.Id == idCartao, cancellationToken);
+        await _dbSet.FindAsync([idCartao], cancellationToken);
 
     public async Task AdicionarAsync(Cartao cartao, CancellationToken cancellationToken) =>
         await _dbSet.AddAsync(cartao, cancellationToken);

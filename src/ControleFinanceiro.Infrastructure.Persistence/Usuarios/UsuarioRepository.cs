@@ -17,5 +17,5 @@ internal sealed class UsuarioRepository : IUsuarioRepository
         await _dbSet.AddAsync(usuario, cancellationToken);
 
     public async Task<Maybe<Usuario>> ObterPorIdAsync(IdUsuario id, CancellationToken cancellationToken) =>
-        await _dbSet.SingleOrDefaultAsync(u => u.Id == id, cancellationToken);
+        await _dbSet.FindAsync([id], cancellationToken);
 }
