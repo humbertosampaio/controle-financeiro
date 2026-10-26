@@ -1,5 +1,8 @@
 using ControleFinanceiro.Tests.Shared.AutoFixture;
 using ControleFinanceiro.Tests.Shared.AutoFixture.Customizations.Realistas;
+using ControleFinanceiro.WebApi.Tests.Categorias.CadastrarLote;
+using ControleFinanceiro.WebApi.Tests.Categorias.RemoverAlias;
+using ControleFinanceiro.WebApi.Tests.Categorias.Renomear;
 using ControleFinanceiro.WebApi.Tests.Importacoes.ImportarExtrato;
 using ControleFinanceiro.WebApi.Tests.Importacoes.ImportarFatura;
 using ControleFinanceiro.WebApi.Tests.Importacoes.PreVisualizarFatura;
@@ -23,7 +26,10 @@ public sealed class ApiFixture : DomainFixture
             .Customize(new AlterarVencimentoCartaoRequestCustomization())
             .Customize(new ImportarExtratoRequestCustomization())
             .Customize(new ImportarFaturaRequestCustomization())
-            .Customize(new PreVisualizarFaturaRequestCustomization());
+            .Customize(new PreVisualizarFaturaRequestCustomization())
+            .Customize(new CadastrarLoteCategoriasRequestCustomization())
+            .Customize(new RenomearCategoriaRequestCustomization())
+            .Customize(new RemoverAliasCategoriaRequestCustomization());
     }
 
     public static new ApiFixture Create() => new();

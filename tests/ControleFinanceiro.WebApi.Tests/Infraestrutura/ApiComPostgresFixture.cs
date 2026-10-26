@@ -1,5 +1,6 @@
 using ControleFinanceiro.AppHost.Resources;
 using ControleFinanceiro.Infrastructure.Persistence;
+using ControleFinanceiro.WebApi.Endpoints.Categorias.CadastrarLote;
 using ControleFinanceiro.WebApi.Endpoints.Usuarios.AdicionarCartao;
 using ControleFinanceiro.WebApi.Endpoints.Usuarios.Cadastrar;
 using Microsoft.AspNetCore.Hosting;
@@ -93,6 +94,19 @@ public sealed class ApiComPostgresFixture : IAsyncLifetime
         resposta.StatusCode.Should().Be(HttpStatusCode.Created);
         AdicionarCartaoResponse? corpo = await resposta.Content.ReadFromJsonAsync<AdicionarCartaoResponse>();
         return corpo!.Id;
+    }
+
+    /// <summary>
+    /// Cadastra categorias do usuário pela API, conferindo o 200, e devolve a categoria de cada item, na ordem dos itens.
+    /// </summary>
+    public async Task<IReadOnlyList<Guid>> CadastrarCategoriasAsync(Guid idUsuario, CadastrarLoteCategoriasRequest categorias)
+    {
+        using HttpResponseMessage resposta = await Client.PostAsJsonAsync(
+            new Uri($"/api/usuarios/{idUsuario}/categorias/lote", UriKind.Relative),
+            categorias);
+        resposta.StatusCode.Should().Be(HttpStatusCode.OK);
+        CadastrarLoteCategoriasResponse? corpo = await resposta.Content.ReadFromJsonAsync<CadastrarLoteCategoriasResponse>();
+        return corpo!.IdsCategorias;
     }
 
     /// <summary>

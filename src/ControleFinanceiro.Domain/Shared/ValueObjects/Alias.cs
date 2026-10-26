@@ -1,6 +1,3 @@
-using System.Globalization;
-using System.Text;
-
 namespace ControleFinanceiro.Domain.Shared.ValueObjects;
 
 /// <summary>
@@ -23,7 +20,7 @@ public sealed class Alias : ValueObject
     /// <remarks>Falha também com o texto que fica vazio depois de normalizado, como o feito só de acentos soltos.</remarks>
     public static Result<Alias> Criar(string? texto)
     {
-        string normalizado = Normalizar(texto ?? string.Empty);
+        string normalizado = ValueObjects.TextoNormalizado.Criar(texto);
         return normalizado.Length == 0
             ? Result.Failure<Alias>("Alias é obrigatório")
             : new Alias(texto!.Trim(), normalizado);
@@ -36,15 +33,5 @@ public sealed class Alias : ValueObject
     protected override IEnumerable<object?> GetEqualityComponents()
     {
         yield return TextoNormalizado;
-    }
-
-    private static string Normalizar(string texto)
-    {
-        string espacosUnicos = string.Join(' ', texto.Split((char[]?)null, StringSplitOptions.RemoveEmptyEntries));
-        string semAcentos = string.Concat(espacosUnicos
-            .Normalize(NormalizationForm.FormD)
-            .Where(c => CharUnicodeInfo.GetUnicodeCategory(c) != UnicodeCategory.NonSpacingMark));
-
-        return semAcentos.ToUpperInvariant().Normalize(NormalizationForm.FormC);
     }
 }

@@ -89,6 +89,31 @@ namespace ControleFinanceiro.Infrastructure.Persistence.Migrations
                         });
                 });
 
+            modelBuilder.Entity("ControleFinanceiro.Domain.Categorias.CategoriaDespesa", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<Guid>("IdUsuario")
+                        .HasColumnType("uuid")
+                        .HasColumnName("id_usuario");
+
+                    b.Property<string>("Nome")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("nome");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("IdUsuario");
+
+                    b.ToTable("categorias_despesa", null, t =>
+                        {
+                            t.HasCheckConstraint("CK_categorias_despesa_nome", "btrim(nome) <> ''");
+                        });
+                });
+
             modelBuilder.Entity("ControleFinanceiro.Domain.Contas.ContaBancaria", b =>
                 {
                     b.Property<Guid>("Id")
@@ -415,6 +440,71 @@ namespace ControleFinanceiro.Infrastructure.Persistence.Migrations
                         .HasForeignKey("IdUsuario")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+                });
+
+            modelBuilder.Entity("ControleFinanceiro.Domain.Categorias.CategoriaDespesa", b =>
+                {
+                    b.HasOne("ControleFinanceiro.Domain.Usuarios.Usuario", null)
+                        .WithMany()
+                        .HasForeignKey("IdUsuario")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.OwnsMany("ControleFinanceiro.Domain.Categorias.AliasCategoria", "Aliases", b1 =>
+                        {
+                            b1.Property<int>("id")
+                                .ValueGeneratedOnAdd()
+                                .HasColumnType("integer");
+
+                            NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b1.Property<int>("id"));
+
+                            b1.Property<Guid>("IdUsuario")
+                                .HasColumnType("uuid")
+                                .HasColumnName("id_usuario");
+
+                            b1.Property<Guid>("id_categoria")
+                                .HasColumnType("uuid");
+
+                            b1.HasKey("id");
+
+                            b1.HasIndex("id_categoria");
+
+                            b1.ToTable("aliases_categorias", null, t =>
+                                {
+                                    t.HasCheckConstraint("CK_aliases_categorias_texto_normalizado", "btrim(texto_normalizado) <> ''");
+                                });
+
+                            b1.WithOwner()
+                                .HasForeignKey("id_categoria");
+
+                            b1.OwnsOne("ControleFinanceiro.Domain.Shared.ValueObjects.Alias", "Alias", b2 =>
+                                {
+                                    b2.Property<int>("AliasCategoriaid")
+                                        .HasColumnType("integer");
+
+                                    b2.Property<string>("TextoNormalizado")
+                                        .IsRequired()
+                                        .HasColumnType("text")
+                                        .HasColumnName("texto_normalizado");
+
+                                    b2.Property<string>("TextoOriginal")
+                                        .IsRequired()
+                                        .HasColumnType("text")
+                                        .HasColumnName("texto_original");
+
+                                    b2.HasKey("AliasCategoriaid");
+
+                                    b2.ToTable("aliases_categorias");
+
+                                    b2.WithOwner()
+                                        .HasForeignKey("AliasCategoriaid");
+                                });
+
+                            b1.Navigation("Alias")
+                                .IsRequired();
+                        });
+
+                    b.Navigation("Aliases");
                 });
 
             modelBuilder.Entity("ControleFinanceiro.Domain.Contas.ContaBancaria", b =>

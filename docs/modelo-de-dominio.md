@@ -80,7 +80,13 @@ classDiagram
     namespace Categorias {
         class CategoriaDespesa {
             <<AggregateRoot>>
-            Renomear()
+            RemoverAlias(Alias)
+            PossuiAlias(Alias)
+            PossuiNome(TextoObrigatorio)
+            EhOutros
+        }
+        class AliasCategoria {
+            <<ValueObject>>
         }
     }
 
@@ -125,6 +131,9 @@ classDiagram
     AliasBeneficiario *-- Alias
     AliasBeneficiario ..> Usuario : IdUsuario
     Beneficiario ..> Usuario : IdUsuario
+    CategoriaDespesa "1" *-- "*" AliasCategoria
+    AliasCategoria *-- Alias
+    AliasCategoria ..> Usuario : IdUsuario
     CategoriaDespesa ..> Usuario : IdUsuario
 
     Transacao *-- OrigemTransacao
@@ -143,6 +152,7 @@ classDiagram
 - **Cartao**: um por banco + sufixo em cada usuário. Só nasce pela `CartaoFactory`, que recebe os cartões do usuário: o `Criar` falha com `ErroCartaoJaCadastrado`, e o `ObterOuCriar` devolve o cartão de cada final de uma fatura, o existente sem mudança ou um novo com o vencimento dos `VencimentosCartoesNovos`. O índice único da tabela é a rede para duas requisições ao mesmo tempo. O vencimento pode ser alterado depois, e o dia novo vale só para as despesas geradas a partir daí: as já geradas guardam a data projetada do pagamento.
 - **ContaBancaria**: uma por banco + sufixo em cada usuário, com o apelido padrão "&lt;tipo&gt; &lt;banco&gt; final &lt;sufixo&gt;". Só nasce pela `ContaBancariaFactory.ObterOuCriar`, que devolve a conta existente ou uma nova, e falha com `ErroContaDeOutroTipo` se a conta existe com outro tipo.
 - **Beneficiario**: quem recebeu o dinheiro de uma saída, reconhecido no arquivo só pelos aliases, nunca pelo nome. Pode nascer sem alias (cadastro manual, sem arquivo). Cada alias aponta para um beneficiário só em cada usuário: o beneficiário só nasce e só ganha alias pela `BeneficiarioFactory`, que recebe os beneficiários do usuário e falha com `ErroAliasBeneficiarioJaAtribuido`. O índice único `(id_usuario, texto_normalizado)` é a rede, e por isso o `AliasBeneficiario` guarda o `IdUsuario`. Renomear e remover alias não passam pela factory.
+- **CategoriaDespesa**: categoria de despesa do usuário. Os aliases são as categorias do banco que ele associou a ela; a busca casa só com eles, nunca com o nome. O nome é único em cada usuário, comparado sem caixa, acentos e espaços repetidos, e cada alias aponta para uma categoria só. A categoria só nasce, só ganha alias e só é renomeada pela `CategoriaDespesaFactory`, que recebe as categorias do usuário: o `Resolver` aplica um lote inteiro ou nada (categorias novas, com ou sem alias, e aliases para as existentes) e falha com `ErroCategoriaJaCadastrada` ou `ErroAliasCategoriaJaAtribuido`. O índice único `(id_usuario, texto_normalizado)` dos aliases é a rede. Todo usuário tem a categoria `Outros` (`CategoriaDespesa.NomeOutros`), criada junto com ele pela `CriarOutros`: é achada pelo nome, então não pode ser renomeada (`ErroCategoriaOutrosNaoRenomeavel`). Remover alias não passa pela factory.
 - **DespesaRecorrente**: cartão obrigatório no crédito e proibido nas outras formas. Só nasce pela `DespesaRecorrenteFactory`, que confere que o cartão é do próprio usuário.
 - **Despesas**: `DespesaSimples` é paga no dia em que ocorre e não aceita crédito; `DespesaAdiada` é sempre crédito, com pagamento pendente no mês seguinte, no dia de vencimento do cartão; `DespesaParcelada` é sempre crédito, com uma `ParcelaDespesa` pendente por mês.
 - **Transacao**: valor com sinal do ponto de vista do usuário (negativo é saída). Só nasce pela `LoteTransacoesFactory`, que confere que a conta ou o cartão é do usuário e que a importação é da mesma origem, e garante a `ChaveDeduplicacao` do lote. A identidade é o `IdTransacao`; a chave só reconhece o lançamento numa reimportação. Guarda a importação que a criou: a reimportação não a recria, então ela fica ligada à primeira importação que a trouxe. O `TextoBeneficiario`, calculado e sem coluna, é o texto do arquivo que diz quem recebeu o dinheiro de uma saída, pela mesma regra do `Lancamento`. O beneficiário é o que tem esse texto como alias, resolvido na leitura: a transação não guarda o id dele.
@@ -277,6 +287,7 @@ Estáticos e puros: recebem os agregados e as listas de que precisam, e quem cha
 |---|---|
 | `AliasesBeneficiarioPendentes` | Lista os textos de beneficiário das saídas de um arquivo que ainda não são alias de nenhum beneficiário do usuário, um por forma normalizada, para a prévia da importação. |
 | `BeneficiarioFactory` | Cria o beneficiário do usuário, com ou sem alias, e atribui aliases a um existente, conferindo que o alias não é de outro beneficiário dele. |
+| `CategoriaDespesaFactory` | Cria a categoria Outros do usuário (`CriarOutros`), aplica um lote inteiro ou nada de categorias novas e aliases para as existentes (`Resolver`), conferindo o nome e os aliases entre as categorias dele e as do lote, e renomeia uma categoria (`Renomear`), conferindo o nome entre as dele. |
 | `CartaoFactory` | Cria o cartão do usuário, conferindo banco + sufixo entre os cartões dele, ou obtém os cartões dos finais de uma fatura, criando os que faltam com o vencimento informado ou o dia 1. `ObterDoFinal` acha o cartão de um final sem criar, para a prévia da importação. |
 | `ContaBancariaFactory` | Acha a conta do extrato entre as do usuário, ou cria uma. |
 | `DespesaRecorrenteFactory` | Cria a despesa recorrente, conferindo que o cartão é do usuário. |
@@ -308,6 +319,6 @@ Cada value object mora na pasta do agregado dono, mesmo quando outro agregado o 
 - `Importacoes`: `Extrato`, `LancamentoContabilizado`, `Fatura`, `LancamentoFatura`, `PeriodoArquivo`, `SaldoDiario` e o SmartEnum `LayoutArquivoImportacao`, com as listas `Extratos` (o arquivo traz a conta), `ExtratosContaInformada` (o usuário informa o sufixo, numa rota própria do layout) e `Faturas`.
 - `Transacoes`: `OrigemTransacao`, `Lancamento`, `Parcela`, `IdentidadeLancamento`, `ChaveDeduplicacao`.
 
-Em `Shared/ValueObjects` ficam só os conceitos sem dono: `Reais` (com sinal, e o zero sempre sem sinal) e `ReaisPositivo` para dinheiro; `TextoObrigatorio`; `MesReferencia`, o calendário do balanço, nos anos de 1 a 9999 que o `DateOnly` representa; `DiaValidoEmTodoMes`, a base dos dias de 1 a 28 que o `MesReferencia` aceita; o SmartEnum `Banco` (código COMPE); `Alias`, um texto do arquivo com o original, para exibir, e o normalizado (aparado, espaços juntos, sem acentos, em maiúsculas), que decide a igualdade; `Alfanumerico`, só as letras e os dígitos ASCII de um texto; `TextoSemDocumentos`, um texto do banco sem os CPFs e CNPJs que ele trazia; e o `Documento` abstrato, com o `Cpf` e o `Cnpj`.
+Em `Shared/ValueObjects` ficam só os conceitos sem dono: `Reais` (com sinal, e o zero sempre sem sinal) e `ReaisPositivo` para dinheiro; `TextoObrigatorio`; `MesReferencia`, o calendário do balanço, nos anos de 1 a 9999 que o `DateOnly` representa; `DiaValidoEmTodoMes`, a base dos dias de 1 a 28 que o `MesReferencia` aceita; o SmartEnum `Banco` (código COMPE); `TextoNormalizado`, a forma de um texto usada para comparar (aparado, espaços juntos, sem acentos, em maiúsculas), que o `Alias` e o nome da `CategoriaDespesa` usam; `Alias`, um texto do arquivo com o original, para exibir, e o normalizado, que decide a igualdade; `Alfanumerico`, só as letras e os dígitos ASCII de um texto; `TextoSemDocumentos`, um texto do banco sem os CPFs e CNPJs que ele trazia; e o `Documento` abstrato, com o `Cpf` e o `Cnpj`.
 
 - **Documento**: guardado sem a máscara e em maiúsculas, com os dígitos verificadores conferidos (módulo 11). O `Documento.Criar` escolhe pelo tamanho: 11 caracteres é `Cpf`, e 14 é `Cnpj`. O `Cnpj` segue a regra alfanumérica vigente desde julho de 2026, e o CNPJ só numérico é um caso particular dela. As mensagens de falha não repetem o número. Hoje, o `Cpf` e o `Cnpj` servem ao `TextoSemDocumentos`, que os leitores do Mercado Pago usam para tirar os documentos da descrição e da contraparte antes de elas saírem do leitor.
