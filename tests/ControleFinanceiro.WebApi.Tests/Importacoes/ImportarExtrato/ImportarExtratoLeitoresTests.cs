@@ -5,8 +5,8 @@ using ControleFinanceiro.WebApi.Tests.Infraestrutura;
 namespace ControleFinanceiro.WebApi.Tests.Importacoes.ImportarExtrato;
 
 /// <summary>
-/// Cada endpoint escolhe o leitor pelo layout: o validator aceita os layouts do seu tipo (extrato ou fatura), e a rota de
-/// um extrato de conta informada fixa o seu. Um layout sem leitor no container da API daria 500.
+/// Cada endpoint escolhe o leitor pelo layout da rota: o validator aceita os layouts do seu tipo (extrato ou fatura), e o
+/// extrato de conta informada vai ao leitor que recebe o sufixo. Um layout sem leitor no container da API daria 500.
 /// </summary>
 [Collection(ApiCollection.Nome)]
 public sealed class ImportarExtratoLeitoresTests

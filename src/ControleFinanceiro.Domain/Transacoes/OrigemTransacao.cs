@@ -11,6 +11,8 @@ public sealed class OrigemTransacao : ValueObject
     public IdConta? IdConta { get; }
     public IdCartao? IdCartao { get; }
 
+    public TipoOrigem Tipo => IdCartao is null ? TipoOrigem.Conta : TipoOrigem.Cartao;
+
     private OrigemTransacao(IdConta? idConta, IdCartao? idCartao)
     {
         IdConta = idConta;

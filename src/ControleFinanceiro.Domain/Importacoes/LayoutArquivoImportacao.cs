@@ -13,12 +13,10 @@ public sealed class LayoutArquivoImportacao : SmartEnum<LayoutArquivoImportacao,
     public static readonly LayoutArquivoImportacao MercadoPagoContaCsv = new("mercado-pago-conta-csv", "Extrato CSV da conta do Mercado Pago");
     public static readonly LayoutArquivoImportacao MercadoPagoCartaoCsv = new("mercado-pago-cartao-csv", "Fatura CSV do cartão do Mercado Pago");
 
-    /// <summary>Os layouts de extrato de conta que trazem a conta no arquivo, que a importação do extrato aceita.</summary>
+    /// <summary>Os layouts de extrato de conta que trazem a conta no arquivo.</summary>
     public static readonly IReadOnlyCollection<LayoutArquivoImportacao> Extratos = [C6ContaCsv];
 
-    /// <summary>
-    /// Os layouts de extrato de conta sem a conta no arquivo: o usuário informa o sufixo, e cada um tem a sua rota.
-    /// </summary>
+    /// <summary>Os layouts de extrato de conta sem a conta no arquivo: o usuário informa o sufixo ao importar.</summary>
     public static readonly IReadOnlyCollection<LayoutArquivoImportacao> ExtratosContaInformada = [MercadoPagoContaCsv];
 
     /// <summary>Os layouts de fatura de cartão, que a importação da fatura aceita.</summary>

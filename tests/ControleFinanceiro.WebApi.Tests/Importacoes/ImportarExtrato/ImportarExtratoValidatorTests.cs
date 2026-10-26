@@ -1,3 +1,4 @@
+using ControleFinanceiro.Domain.Contas;
 using ControleFinanceiro.Domain.Importacoes;
 using ControleFinanceiro.WebApi.Endpoints.Importacoes.ImportarExtrato;
 using ControleFinanceiro.WebApi.Tests.AutoFixture;
@@ -74,5 +75,35 @@ public sealed class ImportarExtratoValidatorTests
             requisicao with { Arquivo = ArquivoFormulario.ComTamanho(ImportarExtratoValidator.TamanhoMaximoArquivo + 1) });
 
         resultado.ShouldHaveValidationErrorFor(r => r.Arquivo);
+    }
+
+    [Theory, ApiAutoData]
+    public void Validate_Quando_LayoutDoMercadoPagoComSufixo_Deve_Passar(ImportarExtratoRequest requisicao, SufixoConta sufixo)
+    {
+        TestValidationResult<ImportarExtratoRequest> resultado = _sut.TestValidate(
+            requisicao with { Layout = LayoutArquivoImportacao.MercadoPagoContaCsv.Value, SufixoConta = sufixo });
+
+        resultado.ShouldNotHaveAnyValidationErrors();
+    }
+
+    [Theory]
+    [InlineApiAutoData(null)]
+    [InlineApiAutoData("")]
+    [InlineApiAutoData("123")]
+    [InlineApiAutoData("12a4")]
+    public void Validate_Quando_LayoutDoMercadoPagoComSufixoAusenteOuMalformado_Deve_RetornarErroNoSufixo(string? sufixo, ImportarExtratoRequest requisicao)
+    {
+        TestValidationResult<ImportarExtratoRequest> resultado = _sut.TestValidate(
+            requisicao with { Layout = LayoutArquivoImportacao.MercadoPagoContaCsv.Value, SufixoConta = sufixo });
+
+        resultado.ShouldHaveValidationErrorFor(r => r.SufixoConta);
+    }
+
+    [Theory, ApiAutoData]
+    public void Validate_Quando_LayoutComAContaNoArquivoSemSufixo_Deve_Passar(ImportarExtratoRequest requisicao)
+    {
+        TestValidationResult<ImportarExtratoRequest> resultado = _sut.TestValidate(requisicao with { SufixoConta = null });
+
+        resultado.ShouldNotHaveAnyValidationErrors();
     }
 }

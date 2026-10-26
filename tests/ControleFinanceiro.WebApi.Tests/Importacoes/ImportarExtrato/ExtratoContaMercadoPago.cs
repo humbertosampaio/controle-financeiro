@@ -2,7 +2,7 @@ using ControleFinanceiro.Domain.Contas;
 using ControleFinanceiro.Domain.Importacoes;
 using System.Text;
 
-namespace ControleFinanceiro.WebApi.Tests.Importacoes.ImportarExtratoMercadoPago;
+namespace ControleFinanceiro.WebApi.Tests.Importacoes.ImportarExtrato;
 
 /// <summary>
 /// Variações do extrato fictício do Mercado Pago (<c>Fixtures/MercadoPago/extrato-conta.csv</c>, do projeto de testes
@@ -13,7 +13,7 @@ internal static class ExtratoContaMercadoPago
 {
     private const string LinhaSaldos = "1.250,00;3.500,77;-2.019,92;2.730,85";
 
-    private static readonly string _caminho = Path.Combine(AppContext.BaseDirectory, "Importacoes", "ImportarExtratoMercadoPago", "Fixtures", "extrato-conta.csv");
+    private static readonly string _caminho = Path.Combine(AppContext.BaseDirectory, "Importacoes", "ImportarExtrato", "Fixtures", "extrato-conta-mercado-pago.csv");
 
     public const int QuantidadeLancamentos = 10;
     public const decimal SomaLancamentos = 1480.85m;

@@ -19,7 +19,8 @@ public static class DependencyInjection
                 .AddSingleton(TimeProvider.System)
                 .AddHttpContextAccessor()
                 .AddScoped<IUsuarioAtual, UsuarioAtualRota>()
-                .AddScoped<ImportacaoExtratoService>();
+                .AddScoped<ImportacaoExtratoService>()
+                .AddScoped<LeituraExtratoService>();
         }
     }
 }

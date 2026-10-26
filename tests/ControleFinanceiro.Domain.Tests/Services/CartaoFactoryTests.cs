@@ -161,4 +161,41 @@ public sealed class CartaoFactoryTests
 
         act.Should().ThrowExactly<ArgumentException>();
     }
+
+    [Theory, DomainAutoData]
+    public void ObterDoFinal_Quando_CartaoDoFinalNoMesmoBanco_Deve_RetornarOCartao(
+        [Frozen] IdUsuario idUsuario,
+        [Frozen] Banco banco,
+        [Frozen] SufixoCartao sufixo,
+        Cartao existente)
+    {
+        Maybe<Cartao> result = CartaoFactory.ObterDoFinal(idUsuario, [existente], banco, sufixo);
+
+        result.Should().HaveValue(existente);
+    }
+
+    [Theory, DomainAutoData]
+    public void ObterDoFinal_Quando_MesmoFinalEmOutroBanco_Deve_RetornarVazio(
+        [Frozen] IdUsuario idUsuario,
+        [Frozen] SufixoCartao sufixo,
+        Cartao existente)
+    {
+        Banco outroBanco = Banco.List.First(b => b != existente.Banco);
+
+        Maybe<Cartao> result = CartaoFactory.ObterDoFinal(idUsuario, [existente], outroBanco, sufixo);
+
+        result.Should().HaveNoValue();
+    }
+
+    [Theory, DomainAutoData]
+    public void ObterDoFinal_Quando_ListaComCartaoDeOutroUsuario_Deve_LancarExcecao(
+        IdUsuario idUsuario,
+        Cartao cartaoDeOutroUsuario,
+        Banco banco,
+        SufixoCartao sufixo)
+    {
+        Action act = () => CartaoFactory.ObterDoFinal(idUsuario, [cartaoDeOutroUsuario], banco, sufixo);
+
+        act.Should().ThrowExactly<ArgumentException>();
+    }
 }

@@ -248,12 +248,11 @@ public sealed class ImportarFaturaEndpointTests : IAsyncLifetime
     {
         using MultipartFormDataContent formulario = new()
         {
-            { new StringContent("layout-desconhecido"), "layout" },
             { new StringContent("29"), "diaVencimento" },
             { new StringContent("""{"123":0}"""), "vencimentos" },
         };
 
-        using HttpResponseMessage resposta = await _api.Client.PostAsync(ImportacaoFaturaExtensions.RotaFatura(Guid.Empty), formulario);
+        using HttpResponseMessage resposta = await _api.Client.PostAsync(ImportacaoFaturaExtensions.RotaFatura(Guid.Empty, layout: "layout-desconhecido"), formulario);
 
         resposta.StatusCode.Should().Be(HttpStatusCode.BadRequest);
         (await resposta.CamposComErroAsync()).Should().BeEquivalentTo("idUsuario", "layout", "arquivo", "diaVencimento", "vencimentos");

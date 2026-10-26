@@ -281,6 +281,71 @@ public sealed class LoteTransacoesFactoryTests
             .Which.TextoBeneficiario.Should().BeNull();
     }
 
+    [Theory]
+    [InlineDomainAutoData(-0.01, true)]
+    [InlineDomainAutoData(0, false)]
+    [InlineDomainAutoData(0.01, false)]
+    public void Criar_Deve_TerSaidaSoComValorNegativo(
+        decimal valor,
+        bool esperado,
+        [Frozen] IdUsuario idUsuario,
+        [Frozen] ContaBancaria conta,
+        ImportacaoArquivo importacao,
+        IdentidadeLancamento identidade,
+        DateOnly data,
+        TextoObrigatorio descricao)
+    {
+        Lancamento lancamento = Lancamento.Criar(data, hora: null, valor, descricao, contraparte: null, parcela: null, categoriaBanco: null, identidade);
+
+        Result<IReadOnlyList<Transacao>, Erro> result = LoteTransacoesFactory.Criar(idUsuario, conta, importacao, [lancamento]);
+
+        result.Should().Succeed()
+            .Which.Should().ContainSingle()
+            .Which.EhSaida.Should().Be(esperado);
+    }
+
+    [Theory]
+    [InlineDomainAutoData(-0.01, false)]
+    [InlineDomainAutoData(0, false)]
+    [InlineDomainAutoData(0.01, true)]
+    public void Criar_Deve_TerEntradaSoComValorPositivo(
+        decimal valor,
+        bool esperado,
+        [Frozen] IdUsuario idUsuario,
+        [Frozen] ContaBancaria conta,
+        ImportacaoArquivo importacao,
+        IdentidadeLancamento identidade,
+        DateOnly data,
+        TextoObrigatorio descricao)
+    {
+        Lancamento lancamento = Lancamento.Criar(data, hora: null, valor, descricao, contraparte: null, parcela: null, categoriaBanco: null, identidade);
+
+        Result<IReadOnlyList<Transacao>, Erro> result = LoteTransacoesFactory.Criar(idUsuario, conta, importacao, [lancamento]);
+
+        result.Should().Succeed()
+            .Which.Should().ContainSingle()
+            .Which.EhEntrada.Should().Be(esperado);
+    }
+
+    [Theory, DomainAutoData]
+    public void Criar_Quando_ValorZeroNaConta_Deve_FicarSemTextoBeneficiario(
+        [Frozen] IdUsuario idUsuario,
+        [Frozen] ContaBancaria conta,
+        ImportacaoArquivo importacao,
+        IdentidadeLancamento identidade,
+        DateOnly data,
+        TextoObrigatorio descricao,
+        string contraparte)
+    {
+        Lancamento ajuste = Lancamento.Criar(data, hora: null, valor: 0m, descricao, contraparte, parcela: null, categoriaBanco: null, identidade);
+
+        Result<IReadOnlyList<Transacao>, Erro> result = LoteTransacoesFactory.Criar(idUsuario, conta, importacao, [ajuste]);
+
+        result.Should().Succeed()
+            .Which.Should().ContainSingle()
+            .Which.TextoBeneficiario.Should().BeNull();
+    }
+
     [Theory, ImportacaoDoCartaoAutoData]
     public void Criar_Quando_SaidaNoCartao_Deve_TerADescricaoComoTextoBeneficiario(
         [Frozen] IdUsuario idUsuario,

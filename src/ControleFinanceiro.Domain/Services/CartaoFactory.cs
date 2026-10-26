@@ -20,10 +20,9 @@ public static class CartaoFactory
         SufixoCartao sufixo,
         DiaVencimentoCartao diaVencimento)
     {
-        if (cartoesDoUsuario.Any(c => c.IdUsuario != idUsuario))
-            throw new ArgumentException("A lista traz um cartão de outro usuário.", nameof(cartoesDoUsuario));
+        GarantirDoUsuario(idUsuario, cartoesDoUsuario);
 
-        if (cartoesDoUsuario.Any(c => c.Banco == banco && c.Sufixo == sufixo))
+        if (DoFinal(cartoesDoUsuario, banco, sufixo).HasValue)
             return new ErroCartaoJaCadastrado(banco, sufixo);
 
         return Cartao.Criar(idUsuario, banco, sufixo, diaVencimento);
@@ -46,14 +45,36 @@ public static class CartaoFactory
         IEnumerable<SufixoCartao> sufixos,
         VencimentosCartoesNovos vencimentos)
     {
-        if (cartoesDoUsuario.Any(c => c.IdUsuario != idUsuario))
-            throw new ArgumentException("A lista traz um cartão de outro usuário.", nameof(cartoesDoUsuario));
+        GarantirDoUsuario(idUsuario, cartoesDoUsuario);
 
         return sufixos
             .Distinct()
-            .Select(sufixo =>
-                cartoesDoUsuario.FirstOrDefault(c => c.Banco == banco && c.Sufixo == sufixo)
-                ?? Cartao.Criar(idUsuario, banco, sufixo, vencimentos.Para(sufixo)))
+            .Select(sufixo => DoFinal(cartoesDoUsuario, banco, sufixo)
+                .GetValueOrDefault(() => Cartao.Criar(idUsuario, banco, sufixo, vencimentos.Para(sufixo))))
             .ToList();
+    }
+
+    /// <summary>O cartão do usuário com o final no mesmo banco, o que a importação usa em vez de criar outro.</summary>
+    /// <param name="cartoesDoUsuario">Todos os cartões do usuário, e só os dele.</param>
+    /// <exception cref="ArgumentException">Quando a lista traz um cartão de outro usuário.</exception>
+    public static Maybe<Cartao> ObterDoFinal(
+        IdUsuario idUsuario,
+        IReadOnlyCollection<Cartao> cartoesDoUsuario,
+        Banco banco,
+        SufixoCartao sufixo)
+    {
+        GarantirDoUsuario(idUsuario, cartoesDoUsuario);
+        return DoFinal(cartoesDoUsuario, banco, sufixo);
+    }
+
+    private static Maybe<Cartao> DoFinal(IReadOnlyCollection<Cartao> cartoes, Banco banco, SufixoCartao sufixo)
+    {
+        return cartoes.TryFirst(c => c.Banco == banco && c.Sufixo == sufixo);
+    }
+
+    private static void GarantirDoUsuario(IdUsuario idUsuario, IReadOnlyCollection<Cartao> cartoesDoUsuario)
+    {
+        if (cartoesDoUsuario.Any(c => c.IdUsuario != idUsuario))
+            throw new ArgumentException("A lista traz um cartão de outro usuário.", nameof(cartoesDoUsuario));
     }
 }

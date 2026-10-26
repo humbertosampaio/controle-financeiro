@@ -94,4 +94,105 @@ public sealed class LancamentoTests
 
         outro.Should().Be(lancamento);
     }
+
+    [Theory]
+    [InlineDomainAutoData(-0.01, true)]
+    [InlineDomainAutoData(0, false)]
+    [InlineDomainAutoData(0.01, false)]
+    public void EhSaida_Deve_SerVerdadeiroSoComValorNegativo(
+        decimal valor,
+        bool esperado,
+        DateOnly data,
+        TextoObrigatorio descricao,
+        IdentidadeLancamento identidade)
+    {
+        Lancamento lancamento = Lancamento.Criar(data, hora: null, valor, descricao, contraparte: null, parcela: null, categoriaBanco: null, identidade);
+
+        lancamento.EhSaida.Should().Be(esperado);
+    }
+
+    [Theory]
+    [InlineDomainAutoData(-0.01, false)]
+    [InlineDomainAutoData(0, false)]
+    [InlineDomainAutoData(0.01, true)]
+    public void EhEntrada_Deve_SerVerdadeiroSoComValorPositivo(
+        decimal valor,
+        bool esperado,
+        DateOnly data,
+        TextoObrigatorio descricao,
+        IdentidadeLancamento identidade)
+    {
+        Lancamento lancamento = Lancamento.Criar(data, hora: null, valor, descricao, contraparte: null, parcela: null, categoriaBanco: null, identidade);
+
+        lancamento.EhEntrada.Should().Be(esperado);
+    }
+
+    [Theory]
+    [InlineDomainAutoData(TipoOrigem.Conta)]
+    [InlineDomainAutoData(TipoOrigem.Cartao)]
+    public void TextoBeneficiario_Quando_ValorZero_Deve_RetornarNulo(
+        TipoOrigem tipoOrigem,
+        DateOnly data,
+        TextoObrigatorio descricao,
+        string contraparte,
+        IdentidadeLancamento identidade)
+    {
+        Lancamento lancamento = Lancamento.Criar(data, hora: null, valor: 0m, descricao, contraparte, parcela: null, categoriaBanco: null, identidade);
+
+        lancamento.TextoBeneficiario(tipoOrigem).Should().BeNull();
+    }
+
+    [Theory, DomainAutoData]
+    public void TextoBeneficiario_Quando_SaidaNaConta_Deve_RetornarAContraparte(
+        DateOnly data,
+        ReaisPositivo valor,
+        TextoObrigatorio descricao,
+        string contraparte,
+        IdentidadeLancamento identidade)
+    {
+        Lancamento saida = Lancamento.Criar(data, hora: null, -valor.Value, descricao, contraparte, parcela: null, categoriaBanco: null, identidade);
+
+        saida.TextoBeneficiario(TipoOrigem.Conta).Should().Be(contraparte);
+    }
+
+    [Theory, DomainAutoData]
+    public void TextoBeneficiario_Quando_SaidaNaContaSemContraparte_Deve_RetornarNulo(
+        DateOnly data,
+        ReaisPositivo valor,
+        TextoObrigatorio descricao,
+        IdentidadeLancamento identidade)
+    {
+        Lancamento boleto = Lancamento.Criar(data, hora: null, -valor.Value, descricao, contraparte: null, parcela: null, categoriaBanco: null, identidade);
+
+        boleto.TextoBeneficiario(TipoOrigem.Conta).Should().BeNull();
+    }
+
+    [Theory, DomainAutoData]
+    public void TextoBeneficiario_Quando_SaidaNoCartao_Deve_RetornarADescricao(
+        DateOnly data,
+        ReaisPositivo valor,
+        TextoObrigatorio estabelecimento,
+        string contraparte,
+        IdentidadeLancamento identidade)
+    {
+        Lancamento compra = Lancamento.Criar(data, hora: null, -valor.Value, estabelecimento, contraparte, parcela: null, categoriaBanco: null, identidade);
+
+        compra.TextoBeneficiario(TipoOrigem.Cartao).Should().Be(estabelecimento.Value);
+    }
+
+    [Theory]
+    [InlineDomainAutoData(TipoOrigem.Conta)]
+    [InlineDomainAutoData(TipoOrigem.Cartao)]
+    public void TextoBeneficiario_Quando_Entrada_Deve_RetornarNulo(
+        TipoOrigem tipoOrigem,
+        DateOnly data,
+        ReaisPositivo valor,
+        TextoObrigatorio descricao,
+        string contraparte,
+        IdentidadeLancamento identidade)
+    {
+        Lancamento entrada = Lancamento.Criar(data, hora: null, valor, descricao, contraparte, parcela: null, categoriaBanco: null, identidade);
+
+        entrada.TextoBeneficiario(tipoOrigem).Should().BeNull();
+    }
 }

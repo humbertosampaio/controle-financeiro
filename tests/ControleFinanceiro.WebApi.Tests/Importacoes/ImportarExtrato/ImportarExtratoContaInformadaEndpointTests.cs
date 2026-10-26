@@ -4,7 +4,6 @@ using ControleFinanceiro.Domain.Shared.ValueObjects;
 using ControleFinanceiro.Domain.Transacoes;
 using ControleFinanceiro.Domain.Usuarios;
 using ControleFinanceiro.WebApi.Endpoints.Importacoes.ImportarExtrato;
-using ControleFinanceiro.WebApi.Endpoints.Importacoes.ImportarExtratoMercadoPago;
 using ControleFinanceiro.WebApi.Endpoints.Usuarios.Cadastrar;
 using ControleFinanceiro.WebApi.Tests.AutoFixture;
 using ControleFinanceiro.WebApi.Tests.Infraestrutura;
@@ -13,14 +12,18 @@ using System.Net;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
 
-namespace ControleFinanceiro.WebApi.Tests.Importacoes.ImportarExtratoMercadoPago;
+namespace ControleFinanceiro.WebApi.Tests.Importacoes.ImportarExtrato;
 
+/// <summary>
+/// O endpoint de importação do extrato com um layout de <see cref="LayoutArquivoImportacao.ExtratosContaInformada"/>,
+/// hoje só o do Mercado Pago, cujo arquivo não traz a conta: o sufixo vem no formulário.
+/// </summary>
 [Collection(ApiCollection.Nome)]
-public sealed class ImportarExtratoMercadoPagoEndpointTests : IAsyncLifetime
+public sealed class ImportarExtratoContaInformadaEndpointTests : IAsyncLifetime
 {
     private readonly ApiComPostgresFixture _api;
 
-    public ImportarExtratoMercadoPagoEndpointTests(ApiComPostgresFixture api)
+    public ImportarExtratoContaInformadaEndpointTests(ApiComPostgresFixture api)
     {
         _api = api;
     }
@@ -138,7 +141,7 @@ public sealed class ImportarExtratoMercadoPagoEndpointTests : IAsyncLifetime
     {
         Guid idUsuario = await _api.CadastrarUsuarioAsync(cadastro);
 
-        using HttpResponseMessage resposta = await ImportarAsync(idUsuario, new byte[ImportarExtratoMercadoPagoEndpoint.TamanhoMaximoFormulario + 1]);
+        using HttpResponseMessage resposta = await ImportarAsync(idUsuario, new byte[ImportarExtratoEndpoint.TamanhoMaximoFormulario + 1]);
 
         resposta.StatusCode.Should().Be(HttpStatusCode.BadRequest);
         (await resposta.CamposComErroAsync()).Should().Equal("generalErrors");
@@ -178,7 +181,7 @@ public sealed class ImportarExtratoMercadoPagoEndpointTests : IAsyncLifetime
         return (await resposta.Content.ReadFromJsonAsync<ImportarExtratoResponse>())!;
     }
 
-    private static Uri Rota(Guid idUsuario) => new($"/api/usuarios/{idUsuario}/importacoes/mercado-pago-conta-csv", UriKind.Relative);
+    private static Uri Rota(Guid idUsuario) => new($"/api/usuarios/{idUsuario}/importacoes/extratos/{LayoutArquivoImportacao.MercadoPagoContaCsv.Value}", UriKind.Relative);
 
     private async Task DeveEstarSemImportacaoAsync()
     {

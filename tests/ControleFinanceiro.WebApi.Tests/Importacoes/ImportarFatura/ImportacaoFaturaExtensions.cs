@@ -13,7 +13,7 @@ namespace ControleFinanceiro.WebApi.Tests.Importacoes.ImportarFatura;
 /// </summary>
 internal static class ImportacaoFaturaExtensions
 {
-    public static Uri RotaFatura(Guid idUsuario) => new($"/api/usuarios/{idUsuario}/importacoes/faturas", UriKind.Relative);
+    public static Uri RotaFatura(Guid idUsuario, string layout) => new($"/api/usuarios/{idUsuario}/importacoes/faturas/{layout}", UriKind.Relative);
 
     extension(ApiComPostgresFixture api)
     {
@@ -29,7 +29,6 @@ internal static class ImportacaoFaturaExtensions
 
             using MultipartFormDataContent formulario = new()
             {
-                { new StringContent(layout.Value), "layout" },
                 { conteudo, "arquivo", "fatura.csv" },
             };
 
@@ -39,7 +38,7 @@ internal static class ImportacaoFaturaExtensions
             if (vencimentos is not null)
                 formulario.Add(new StringContent(vencimentos), "vencimentos");
 
-            return await api.Client.PostAsync(RotaFatura(idUsuario), formulario);
+            return await api.Client.PostAsync(RotaFatura(idUsuario, layout.Value), formulario);
         }
 
         public async Task<ImportarFaturaResponse> ImportarFaturaComSucessoAsync(

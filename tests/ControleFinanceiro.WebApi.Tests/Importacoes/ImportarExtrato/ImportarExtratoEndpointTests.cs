@@ -230,9 +230,10 @@ public sealed class ImportarExtratoEndpointTests : IAsyncLifetime
     [Fact]
     public async Task Post_Quando_RequisicaoInvalida_Deve_RetornarErroEmCadaCampo()
     {
-        using MultipartFormDataContent formulario = new() { { new StringContent("layout-desconhecido"), "layout" } };
+        // O formulário multipart vazio não chega ao validator. O sufixo só é conferido nos layouts que o pedem.
+        using MultipartFormDataContent formulario = new() { { new StringContent("12a4"), "sufixoConta" } };
 
-        using HttpResponseMessage resposta = await _api.Client.PostAsync(Rota(Guid.Empty), formulario);
+        using HttpResponseMessage resposta = await _api.Client.PostAsync(Rota(Guid.Empty, layout: "layout-desconhecido"), formulario);
 
         resposta.StatusCode.Should().Be(HttpStatusCode.BadRequest);
         (await resposta.CamposComErroAsync()).Should().BeEquivalentTo("idUsuario", "layout", "arquivo");
@@ -246,7 +247,6 @@ public sealed class ImportarExtratoEndpointTests : IAsyncLifetime
 
         using MultipartFormDataContent formulario = new()
         {
-            { new StringContent(LayoutArquivoImportacao.C6ContaCsv.Value), "layout" },
             { conteudo, "arquivo", "extrato.csv" },
         };
 
@@ -260,7 +260,9 @@ public sealed class ImportarExtratoEndpointTests : IAsyncLifetime
         return (await resposta.Content.ReadFromJsonAsync<ImportarExtratoResponse>())!;
     }
 
-    private static Uri Rota(Guid idUsuario) => new($"/api/usuarios/{idUsuario}/importacoes", UriKind.Relative);
+    private static Uri Rota(Guid idUsuario) => Rota(idUsuario, LayoutArquivoImportacao.C6ContaCsv.Value);
+
+    private static Uri Rota(Guid idUsuario, string layout) => new($"/api/usuarios/{idUsuario}/importacoes/extratos/{layout}", UriKind.Relative);
 
     private async Task DeveEstarSemImportacaoAsync()
     {
