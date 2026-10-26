@@ -275,8 +275,9 @@ Estáticos e puros: recebem os agregados e as listas de que precisam, e quem cha
 
 | Serviço | O que faz |
 |---|---|
+| `AliasesBeneficiarioPendentes` | Lista os textos de beneficiário das saídas de um arquivo que ainda não são alias de nenhum beneficiário do usuário, um por forma normalizada, para a prévia da importação. |
 | `BeneficiarioFactory` | Cria o beneficiário do usuário, com ou sem alias, e atribui aliases a um existente, conferindo que o alias não é de outro beneficiário dele. |
-| `CartaoFactory` | Cria o cartão do usuário, conferindo banco + sufixo entre os cartões dele, ou obtém os cartões dos finais de uma fatura, criando os que faltam com o vencimento informado ou o dia 1. |
+| `CartaoFactory` | Cria o cartão do usuário, conferindo banco + sufixo entre os cartões dele, ou obtém os cartões dos finais de uma fatura, criando os que faltam com o vencimento informado ou o dia 1. `ObterDoFinal` acha o cartão de um final sem criar, para a prévia da importação. |
 | `ContaBancariaFactory` | Acha a conta do extrato entre as do usuário, ou cria uma. |
 | `DespesaRecorrenteFactory` | Cria a despesa recorrente, conferindo que o cartão é do usuário. |
 | `ImportacaoArquivoFactory` | Registra a importação de um arquivo com o usuário e a origem da própria conta ou do próprio cartão. |
