@@ -47,11 +47,11 @@ public sealed class DespesaRecorrente : AggregateRoot<IdDespesaRecorrente>, IPer
     }
 
     /// <remarks>
-    /// Interno pois o cartão precisa ser do usuário, e só a <see cref="Services.DespesaRecorrenteFactory"/>,
-    /// que recebe o cartão, confere isso.
+    /// Interno pois o cartão, o beneficiário e a categoria precisam ser do usuário, e a mesma despesa não pode ser
+    /// cadastrada duas vezes; só a <see cref="Services.DespesaRecorrenteFactory"/>, que recebe as instâncias e as
+    /// recorrentes do usuário, confere isso. Ela também garante o cartão no crédito, e só nele.
     /// </remarks>
-    /// <param name="idCartao">Obrigatório no crédito e proibido nas outras formas de pagamento.</param>
-    internal static Result<DespesaRecorrente> Criar(
+    internal static DespesaRecorrente Criar(
         IdUsuario idUsuario,
         IdBeneficiario idBeneficiario,
         TextoObrigatorio descricao,
@@ -61,14 +61,6 @@ public sealed class DespesaRecorrente : AggregateRoot<IdDespesaRecorrente>, IPer
         ReaisPositivo valor,
         DiaOcorrenciaRecorrente diaOcorrencia)
     {
-        bool ehCredito = formaPagamento == FormaPagamento.Credito;
-
-        if (ehCredito && idCartao is null)
-            return Result.Failure<DespesaRecorrente>("Despesa recorrente no crédito precisa de um cartão.");
-
-        if (!ehCredito && idCartao is not null)
-            return Result.Failure<DespesaRecorrente>($"Despesa recorrente paga com {formaPagamento.Name} não pode ter cartão.");
-
         return new DespesaRecorrente(
             IdDespesaRecorrente.FromNewVersion7Guid(),
             idUsuario,
@@ -80,4 +72,8 @@ public sealed class DespesaRecorrente : AggregateRoot<IdDespesaRecorrente>, IPer
             valor,
             diaOcorrencia);
     }
+
+    /// <summary>Se é do mesmo beneficiário, com a mesma descrição sem contar caixa, acentos e espaços repetidos.</summary>
+    public bool PossuiBeneficiarioEDescricao(IdBeneficiario idBeneficiario, TextoObrigatorio descricao) =>
+        IdBeneficiario == idBeneficiario && (TextoNormalizado)Descricao == (TextoNormalizado)descricao;
 }
