@@ -33,6 +33,7 @@ public sealed class ImportarFaturaMercadoPagoEndpointTests : IAsyncLifetime
     public async Task Post_Quando_PrimeiraFatura_Deve_CriarOCartaoAImportacaoEAsTransacoes(CadastrarUsuarioRequest cadastro)
     {
         Guid idUsuario = await _api.CadastrarUsuarioAsync(cadastro);
+        await ResolverBeneficiariosAsync(idUsuario, FaturaCartaoMercadoPago.Completo());
 
         ImportarFaturaResponse corpo = await ImportarComSucessoAsync(idUsuario, FaturaCartaoMercadoPago.Completo());
 
@@ -67,6 +68,7 @@ public sealed class ImportarFaturaMercadoPagoEndpointTests : IAsyncLifetime
     public async Task Post_Deve_GravarAParcelaComADataDaCompraOriginal(CadastrarUsuarioRequest cadastro)
     {
         Guid idUsuario = await _api.CadastrarUsuarioAsync(cadastro);
+        await ResolverBeneficiariosAsync(idUsuario, FaturaCartaoMercadoPago.Completo());
 
         _ = await ImportarComSucessoAsync(idUsuario, FaturaCartaoMercadoPago.Completo());
 
@@ -80,6 +82,7 @@ public sealed class ImportarFaturaMercadoPagoEndpointTests : IAsyncLifetime
     public async Task Post_Deve_GravarOPagamentoComoValorPositivo(CadastrarUsuarioRequest cadastro)
     {
         Guid idUsuario = await _api.CadastrarUsuarioAsync(cadastro);
+        await ResolverBeneficiariosAsync(idUsuario, FaturaCartaoMercadoPago.Completo());
 
         _ = await ImportarComSucessoAsync(idUsuario, FaturaCartaoMercadoPago.Completo());
 
@@ -93,6 +96,7 @@ public sealed class ImportarFaturaMercadoPagoEndpointTests : IAsyncLifetime
     public async Task Post_Quando_ReimportaAMesmaFatura_Deve_ManterAsTransacoes(CadastrarUsuarioRequest cadastro)
     {
         Guid idUsuario = await _api.CadastrarUsuarioAsync(cadastro);
+        await ResolverBeneficiariosAsync(idUsuario, FaturaCartaoMercadoPago.Completo());
         _ = await ImportarComSucessoAsync(idUsuario, FaturaCartaoMercadoPago.Completo());
 
         ImportarFaturaResponse segunda = await ImportarComSucessoAsync(idUsuario, FaturaCartaoMercadoPago.Completo());
@@ -107,7 +111,9 @@ public sealed class ImportarFaturaMercadoPagoEndpointTests : IAsyncLifetime
     public async Task Post_Quando_ParcelaSeguinteComOMesmoNumero_Deve_GravarUmaTransacaoParaCadaParcela(CadastrarUsuarioRequest cadastro)
     {
         Guid idUsuario = await _api.CadastrarUsuarioAsync(cadastro);
+        await ResolverBeneficiariosAsync(idUsuario, FaturaCartaoMercadoPago.Completo());
         _ = await ImportarComSucessoAsync(idUsuario, FaturaCartaoMercadoPago.Completo());
+        await ResolverBeneficiariosAsync(idUsuario, FaturaCartaoMercadoPago.ComParcelaSeguinte());
 
         ImportarFaturaResponse corpo = await ImportarComSucessoAsync(idUsuario, FaturaCartaoMercadoPago.ComParcelaSeguinte());
 
@@ -124,6 +130,7 @@ public sealed class ImportarFaturaMercadoPagoEndpointTests : IAsyncLifetime
     public async Task Post_Quando_DuasLinhasIguais_Deve_GravarDuasTransacoesSemDuplicarAoReimportar(CadastrarUsuarioRequest cadastro)
     {
         Guid idUsuario = await _api.CadastrarUsuarioAsync(cadastro);
+        await ResolverBeneficiariosAsync(idUsuario, FaturaCartaoMercadoPago.ComLinhasIguais());
         ImportarFaturaResponse primeira = await ImportarComSucessoAsync(idUsuario, FaturaCartaoMercadoPago.ComLinhasIguais());
 
         ImportarFaturaResponse segunda = await ImportarComSucessoAsync(idUsuario, FaturaCartaoMercadoPago.ComLinhasIguais());
@@ -149,6 +156,7 @@ public sealed class ImportarFaturaMercadoPagoEndpointTests : IAsyncLifetime
     public async Task Post_Deve_DeixarOsDocumentosEOsProdutosForaDoQueEGravado(CadastrarUsuarioRequest cadastro)
     {
         Guid idUsuario = await _api.CadastrarUsuarioAsync(cadastro);
+        await ResolverBeneficiariosAsync(idUsuario, FaturaCartaoMercadoPago.Completo());
 
         _ = await ImportarComSucessoAsync(idUsuario, FaturaCartaoMercadoPago.Completo());
 
@@ -163,4 +171,7 @@ public sealed class ImportarFaturaMercadoPagoEndpointTests : IAsyncLifetime
 
     private Task<ImportarFaturaResponse> ImportarComSucessoAsync(Guid idUsuario, byte[] arquivo) =>
         _api.ImportarFaturaComSucessoAsync(idUsuario, LayoutArquivoImportacao.MercadoPagoCartaoCsv, arquivo);
+
+    private Task ResolverBeneficiariosAsync(Guid idUsuario, byte[] arquivo) =>
+        _api.ResolverBeneficiariosDaFaturaAsync(idUsuario, LayoutArquivoImportacao.MercadoPagoCartaoCsv, arquivo);
 }

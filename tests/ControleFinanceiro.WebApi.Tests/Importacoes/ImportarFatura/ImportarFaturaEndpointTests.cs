@@ -33,6 +33,7 @@ public sealed class ImportarFaturaEndpointTests : IAsyncLifetime
     public async Task Post_Quando_PrimeiraFatura_Deve_CriarOsCartoesUmaImportacaoPorCartaoEAsTransacoes(CadastrarUsuarioRequest cadastro)
     {
         Guid idUsuario = await _api.CadastrarUsuarioAsync(cadastro);
+        await ResolverBeneficiariosAsync(idUsuario, FaturaCartaoC6.Completo());
 
         using HttpResponseMessage resposta = await ImportarAsync(idUsuario, FaturaCartaoC6.Completo());
 
@@ -83,6 +84,7 @@ public sealed class ImportarFaturaEndpointTests : IAsyncLifetime
     public async Task Post_Deve_GravarAParcelaEACategoriaDoBanco(CadastrarUsuarioRequest cadastro)
     {
         Guid idUsuario = await _api.CadastrarUsuarioAsync(cadastro);
+        await ResolverBeneficiariosAsync(idUsuario, FaturaCartaoC6.Completo());
 
         await ImportarComSucessoAsync(idUsuario, FaturaCartaoC6.Completo());
 
@@ -98,6 +100,7 @@ public sealed class ImportarFaturaEndpointTests : IAsyncLifetime
     public async Task Post_Deve_DeixarONomeDoTitularForaDoQueEGravado(CadastrarUsuarioRequest cadastro)
     {
         Guid idUsuario = await _api.CadastrarUsuarioAsync(cadastro);
+        await ResolverBeneficiariosAsync(idUsuario, FaturaCartaoC6.Completo());
 
         await ImportarComSucessoAsync(idUsuario, FaturaCartaoC6.Completo());
 
@@ -117,6 +120,7 @@ public sealed class ImportarFaturaEndpointTests : IAsyncLifetime
         Guid idUsuario = await _api.CadastrarUsuarioAsync(cadastro);
         AdicionarCartaoRequest fisico = cartao with { Banco = Banco.C6, Sufixo = FaturaCartaoC6.SufixoFisico, DiaVencimento = 15 };
         Guid idCartao = await _api.AdicionarCartaoAsync(idUsuario, fisico);
+        await ResolverBeneficiariosAsync(idUsuario, FaturaCartaoC6.Completo());
 
         ImportarFaturaResponse corpo = await ImportarComSucessoAsync(idUsuario, FaturaCartaoC6.Completo(), diaVencimento: 10);
 
@@ -138,7 +142,9 @@ public sealed class ImportarFaturaEndpointTests : IAsyncLifetime
     {
         Guid idUsuario = await _api.CadastrarUsuarioAsync(cadastro);
         Guid idOutro = await _api.CadastrarUsuarioAsync(cadastroOutro);
+        await ResolverBeneficiariosAsync(idOutro, FaturaCartaoC6.Completo());
         ImportarFaturaResponse doOutro = await ImportarComSucessoAsync(idOutro, FaturaCartaoC6.Completo());
+        await ResolverBeneficiariosAsync(idUsuario, FaturaCartaoC6.Completo());
 
         ImportarFaturaResponse corpo = await ImportarComSucessoAsync(idUsuario, FaturaCartaoC6.Completo());
 
@@ -159,6 +165,7 @@ public sealed class ImportarFaturaEndpointTests : IAsyncLifetime
     public async Task Post_Quando_DiaUnicoEDiaDeUmFinal_Deve_AplicarOsDiasAosCartoesNovos(CadastrarUsuarioRequest cadastro)
     {
         Guid idUsuario = await _api.CadastrarUsuarioAsync(cadastro);
+        await ResolverBeneficiariosAsync(idUsuario, FaturaCartaoC6.Completo());
 
         ImportarFaturaResponse corpo = await ImportarComSucessoAsync(
             idUsuario,
@@ -177,6 +184,7 @@ public sealed class ImportarFaturaEndpointTests : IAsyncLifetime
     public async Task Post_Quando_ReimportaAMesmaFatura_Deve_ManterAsTransacoesERegistrarAsNovasImportacoes(CadastrarUsuarioRequest cadastro)
     {
         Guid idUsuario = await _api.CadastrarUsuarioAsync(cadastro);
+        await ResolverBeneficiariosAsync(idUsuario, FaturaCartaoC6.Completo());
         ImportarFaturaResponse primeira = await ImportarComSucessoAsync(idUsuario, FaturaCartaoC6.Completo());
 
         ImportarFaturaResponse segunda = await ImportarComSucessoAsync(idUsuario, FaturaCartaoC6.Completo());
@@ -198,7 +206,9 @@ public sealed class ImportarFaturaEndpointTests : IAsyncLifetime
     public async Task Post_Quando_ParcelaSeguinteNaFaturaSeguinte_Deve_GravarUmaTransacaoParaCadaParcela(CadastrarUsuarioRequest cadastro)
     {
         Guid idUsuario = await _api.CadastrarUsuarioAsync(cadastro);
+        await ResolverBeneficiariosAsync(idUsuario, FaturaCartaoC6.Completo());
         await ImportarComSucessoAsync(idUsuario, FaturaCartaoC6.Completo());
+        await ResolverBeneficiariosAsync(idUsuario, FaturaCartaoC6.ComParcelaSeguinte());
 
         ImportarFaturaResponse corpo = await ImportarComSucessoAsync(idUsuario, FaturaCartaoC6.ComParcelaSeguinte());
 
@@ -272,4 +282,7 @@ public sealed class ImportarFaturaEndpointTests : IAsyncLifetime
     {
         return _api.ImportarFaturaComSucessoAsync(idUsuario, LayoutArquivoImportacao.C6CartaoCsv, arquivo, diaVencimento, vencimentos);
     }
+
+    private Task ResolverBeneficiariosAsync(Guid idUsuario, byte[] arquivo) =>
+        _api.ResolverBeneficiariosDaFaturaAsync(idUsuario, LayoutArquivoImportacao.C6CartaoCsv, arquivo);
 }
