@@ -311,8 +311,7 @@ Estáticos e puros: recebem os agregados e as listas de que precisam, e quem cha
 | `IContaRepository` | `ContaBancaria` (lista as do usuário) |
 | `ITransacaoRepository` | `Transacao` (adiciona só as de chave nova e devolve essas mesmas instâncias) |
 | `IImportacaoRepository` | `ImportacaoArquivo` |
-
-O repositório da `DespesaRecorrente` chega com o cadastro das despesas fixas (#9).
+| `IDespesaRecorrenteRepository` | `DespesaRecorrente` (lista as do usuário atual) |
 
 ## Value objects
 

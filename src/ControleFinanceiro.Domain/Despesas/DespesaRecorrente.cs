@@ -17,12 +17,16 @@ public sealed class DespesaRecorrente : AggregateRoot<IdDespesaRecorrente>, IPer
 {
     public IdUsuario IdUsuario { get; private set; }
     public IdBeneficiario IdBeneficiario { get; private set; }
-    public TextoObrigatorio Descricao { get; private set; }
+    public TextoObrigatorio Descricao { get; private set; } = null!;
     public IdCategoriaDespesa IdCategoria { get; private set; }
-    public FormaPagamento FormaPagamento { get; private set; }
+    public FormaPagamento FormaPagamento { get; private set; } = null!;
     public IdCartao? IdCartao { get; private set; }
-    public ReaisPositivo Valor { get; private set; }
-    public DiaOcorrenciaRecorrente DiaOcorrencia { get; private set; }
+    public ReaisPositivo Valor { get; private set; } = null!;
+    public DiaOcorrenciaRecorrente DiaOcorrencia { get; private set; } = null!;
+
+    private DespesaRecorrente()
+    {
+    }
 
     private DespesaRecorrente(
         IdDespesaRecorrente id,

@@ -158,6 +158,68 @@ namespace ControleFinanceiro.Infrastructure.Persistence.Migrations
                         });
                 });
 
+            modelBuilder.Entity("ControleFinanceiro.Domain.Despesas.DespesaRecorrente", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<string>("Descricao")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("descricao");
+
+                    b.Property<int>("DiaOcorrencia")
+                        .HasColumnType("integer")
+                        .HasColumnName("dia_ocorrencia");
+
+                    b.Property<int>("FormaPagamento")
+                        .HasColumnType("integer")
+                        .HasColumnName("forma_pagamento");
+
+                    b.Property<Guid>("IdBeneficiario")
+                        .HasColumnType("uuid")
+                        .HasColumnName("id_beneficiario");
+
+                    b.Property<Guid?>("IdCartao")
+                        .HasColumnType("uuid")
+                        .HasColumnName("id_cartao");
+
+                    b.Property<Guid>("IdCategoria")
+                        .HasColumnType("uuid")
+                        .HasColumnName("id_categoria");
+
+                    b.Property<Guid>("IdUsuario")
+                        .HasColumnType("uuid")
+                        .HasColumnName("id_usuario");
+
+                    b.Property<decimal>("Valor")
+                        .HasPrecision(14, 2)
+                        .HasColumnType("numeric(14,2)")
+                        .HasColumnName("valor");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("IdBeneficiario");
+
+                    b.HasIndex("IdCartao");
+
+                    b.HasIndex("IdCategoria");
+
+                    b.HasIndex("IdUsuario");
+
+                    b.ToTable("despesas_recorrentes", null, t =>
+                        {
+                            t.HasCheckConstraint("CK_despesas_recorrentes_cartao", "(forma_pagamento = 2) = (id_cartao IS NOT NULL)");
+
+                            t.HasCheckConstraint("CK_despesas_recorrentes_descricao", "btrim(descricao) <> ''");
+
+                            t.HasCheckConstraint("CK_despesas_recorrentes_dia_ocorrencia", "dia_ocorrencia BETWEEN 1 AND 28");
+
+                            t.HasCheckConstraint("CK_despesas_recorrentes_valor", "valor >= 0");
+                        });
+                });
+
             modelBuilder.Entity("ControleFinanceiro.Domain.Importacoes.ImportacaoArquivo", b =>
                 {
                     b.Property<Guid>("Id")
@@ -509,6 +571,32 @@ namespace ControleFinanceiro.Infrastructure.Persistence.Migrations
 
             modelBuilder.Entity("ControleFinanceiro.Domain.Contas.ContaBancaria", b =>
                 {
+                    b.HasOne("ControleFinanceiro.Domain.Usuarios.Usuario", null)
+                        .WithMany()
+                        .HasForeignKey("IdUsuario")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("ControleFinanceiro.Domain.Despesas.DespesaRecorrente", b =>
+                {
+                    b.HasOne("ControleFinanceiro.Domain.Beneficiarios.Beneficiario", null)
+                        .WithMany()
+                        .HasForeignKey("IdBeneficiario")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+
+                    b.HasOne("ControleFinanceiro.Domain.Cartoes.Cartao", null)
+                        .WithMany()
+                        .HasForeignKey("IdCartao")
+                        .OnDelete(DeleteBehavior.NoAction);
+
+                    b.HasOne("ControleFinanceiro.Domain.Categorias.CategoriaDespesa", null)
+                        .WithMany()
+                        .HasForeignKey("IdCategoria")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+
                     b.HasOne("ControleFinanceiro.Domain.Usuarios.Usuario", null)
                         .WithMany()
                         .HasForeignKey("IdUsuario")
