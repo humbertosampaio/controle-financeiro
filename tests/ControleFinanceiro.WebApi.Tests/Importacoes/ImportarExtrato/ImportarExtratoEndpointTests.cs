@@ -218,6 +218,48 @@ public sealed class ImportarExtratoEndpointTests : IAsyncLifetime
     }
 
     [Theory, ApiAutoData]
+    public async Task Post_Quando_BeneficiarioSemAlias_Deve_RetornarErroNoArquivoSemGravar(CadastrarUsuarioRequest cadastro)
+    {
+        Guid idUsuario = await _api.CadastrarUsuarioAsync(cadastro);
+
+        using HttpResponseMessage resposta = await ImportarAsync(idUsuario, ExtratoContaC6.Completo());
+
+        resposta.StatusCode.Should().Be(HttpStatusCode.UnprocessableEntity);
+        (await resposta.CamposComErroAsync()).Should().Equal("arquivo");
+        await DeveEstarSemImportacaoAsync();
+    }
+
+    [Theory, ApiAutoData]
+    public async Task Post_Quando_BeneficiariosResolvidosDepoisDaRecusa_Deve_Importar(CadastrarUsuarioRequest cadastro)
+    {
+        Guid idUsuario = await _api.CadastrarUsuarioAsync(cadastro);
+        using HttpResponseMessage recusa = await ImportarAsync(idUsuario, ExtratoContaC6.Completo());
+        recusa.StatusCode.Should().Be(HttpStatusCode.UnprocessableEntity);
+        await ResolverBeneficiariosAsync(idUsuario, ExtratoContaC6.Completo());
+
+        ImportarExtratoResponse corpo = await ImportarComSucessoAsync(idUsuario, ExtratoContaC6.Completo());
+
+        corpo.Novas.Should().Be(ExtratoContaC6.QuantidadeLancamentos);
+        (await _api.ObterTodosAsync(db => db.Transacoes)).Should().HaveCount(ExtratoContaC6.QuantidadeLancamentos);
+    }
+
+    [Theory, ApiAutoData]
+    public async Task Post_Quando_OutroUsuarioResolveuOsTextos_Deve_RecusarOArquivo(
+        CadastrarUsuarioRequest cadastro,
+        CadastrarUsuarioRequest cadastroOutro)
+    {
+        Guid idUsuario = await _api.CadastrarUsuarioAsync(cadastro);
+        Guid idOutro = await _api.CadastrarUsuarioAsync(cadastroOutro);
+        await ResolverBeneficiariosAsync(idOutro, ExtratoContaC6.Completo());
+
+        using HttpResponseMessage resposta = await ImportarAsync(idUsuario, ExtratoContaC6.Completo());
+
+        resposta.StatusCode.Should().Be(HttpStatusCode.UnprocessableEntity);
+        (await resposta.CamposComErroAsync()).Should().Equal("arquivo");
+        await DeveEstarSemImportacaoAsync();
+    }
+
+    [Theory, ApiAutoData]
     public async Task Post_Quando_UsuarioNaoExiste_Deve_RetornarNaoEncontradoSemGravar(Guid idUsuario)
     {
         using HttpResponseMessage resposta = await ImportarAsync(idUsuario, ExtratoContaC6.Completo());

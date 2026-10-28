@@ -1,4 +1,5 @@
 using ControleFinanceiro.Domain.Beneficiarios;
+using ControleFinanceiro.Domain.Shared;
 using ControleFinanceiro.Domain.Shared.ValueObjects;
 using ControleFinanceiro.Domain.Transacoes;
 using ControleFinanceiro.Domain.Usuarios;
@@ -7,7 +8,8 @@ namespace ControleFinanceiro.Domain.Services;
 
 /// <summary>
 /// Os textos de beneficiário das saídas de um arquivo que ainda não são alias de nenhum beneficiário do usuário: o que
-/// ele precisa resolver antes de importar o arquivo.
+/// ele precisa resolver antes de importar o arquivo. A prévia os lista, e a importação recusa o arquivo enquanto houver
+/// algum.
 /// </summary>
 public static class AliasesBeneficiarioPendentes
 {
@@ -34,5 +36,19 @@ public static class AliasesBeneficiarioPendentes
             .Distinct()
             .Where(alias => beneficiariosDoUsuario.All(b => !b.PossuiAlias(alias)))
             .ToList();
+    }
+
+    /// <summary>Falha quando o <see cref="Listar"/> traz algum texto: o arquivo inteiro fica sem importar.</summary>
+    /// <param name="beneficiariosDoUsuario">Todos os beneficiários do usuário, e só os dele.</param>
+    /// <exception cref="ArgumentException">Quando a lista traz um beneficiário de outro usuário.</exception>
+    public static UnitResult<Erro> Conferir(
+        IdUsuario idUsuario,
+        IReadOnlyCollection<Beneficiario> beneficiariosDoUsuario,
+        IEnumerable<Lancamento> lancamentos,
+        TipoOrigem tipoOrigem)
+    {
+        return Listar(idUsuario, beneficiariosDoUsuario, lancamentos, tipoOrigem).Count == 0
+            ? UnitResult.Success<Erro>()
+            : ErroBeneficiariosNaoResolvidos.Instancia;
     }
 }

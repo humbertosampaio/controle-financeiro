@@ -232,6 +232,31 @@ public sealed class ImportarFaturaEndpointTests : IAsyncLifetime
     }
 
     [Theory, ApiAutoData]
+    public async Task Post_Quando_BeneficiarioSemAlias_Deve_RetornarErroNoArquivoSemGravar(CadastrarUsuarioRequest cadastro)
+    {
+        Guid idUsuario = await _api.CadastrarUsuarioAsync(cadastro);
+
+        using HttpResponseMessage resposta = await ImportarAsync(idUsuario, FaturaCartaoC6.Completo());
+
+        resposta.StatusCode.Should().Be(HttpStatusCode.UnprocessableEntity);
+        (await resposta.CamposComErroAsync()).Should().Equal("arquivo");
+        await _api.DeveEstarSemImportacaoAsync();
+    }
+
+    [Theory, ApiAutoData]
+    public async Task Post_Quando_BeneficiariosResolvidosDepoisDaRecusa_Deve_Importar(CadastrarUsuarioRequest cadastro)
+    {
+        Guid idUsuario = await _api.CadastrarUsuarioAsync(cadastro);
+        using HttpResponseMessage recusa = await ImportarAsync(idUsuario, FaturaCartaoC6.Completo());
+        recusa.StatusCode.Should().Be(HttpStatusCode.UnprocessableEntity);
+        await ResolverBeneficiariosAsync(idUsuario, FaturaCartaoC6.Completo());
+
+        ImportarFaturaResponse corpo = await ImportarComSucessoAsync(idUsuario, FaturaCartaoC6.Completo());
+
+        corpo.Cartoes.Sum(c => c.Novas).Should().Be(FaturaCartaoC6.QuantidadeLancamentos);
+    }
+
+    [Theory, ApiAutoData]
     public async Task Post_Quando_UsuarioNaoExiste_Deve_RetornarNaoEncontradoSemGravar(Guid idUsuario)
     {
         using HttpResponseMessage resposta = await ImportarAsync(idUsuario, FaturaCartaoC6.Completo());

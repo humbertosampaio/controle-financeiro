@@ -130,6 +130,32 @@ public sealed class ImportarExtratoContaInformadaEndpointTests : IAsyncLifetime
     }
 
     [Theory, ApiAutoData]
+    public async Task Post_Quando_BeneficiarioSemAlias_Deve_RetornarErroNoArquivoSemGravar(CadastrarUsuarioRequest cadastro)
+    {
+        Guid idUsuario = await _api.CadastrarUsuarioAsync(cadastro);
+
+        using HttpResponseMessage resposta = await ImportarAsync(idUsuario, ExtratoContaMercadoPago.Completo());
+
+        resposta.StatusCode.Should().Be(HttpStatusCode.UnprocessableEntity);
+        (await resposta.CamposComErroAsync()).Should().Equal("arquivo");
+        await DeveEstarSemImportacaoAsync();
+    }
+
+    [Theory, ApiAutoData]
+    public async Task Post_Quando_BeneficiariosResolvidosDepoisDaRecusa_Deve_Importar(CadastrarUsuarioRequest cadastro)
+    {
+        Guid idUsuario = await _api.CadastrarUsuarioAsync(cadastro);
+        using HttpResponseMessage recusa = await ImportarAsync(idUsuario, ExtratoContaMercadoPago.Completo());
+        recusa.StatusCode.Should().Be(HttpStatusCode.UnprocessableEntity);
+        await ResolverBeneficiariosAsync(idUsuario, ExtratoContaMercadoPago.Completo());
+
+        ImportarExtratoResponse corpo = await ImportarComSucessoAsync(idUsuario, ExtratoContaMercadoPago.Completo());
+
+        corpo.Novas.Should().Be(ExtratoContaMercadoPago.QuantidadeLancamentos);
+        (await _api.ObterTodosAsync(db => db.Transacoes)).Should().HaveCount(ExtratoContaMercadoPago.QuantidadeLancamentos);
+    }
+
+    [Theory, ApiAutoData]
     public async Task Post_Quando_UsuarioNaoExiste_Deve_RetornarNaoEncontradoSemGravar(Guid idUsuario)
     {
         using HttpResponseMessage resposta = await ImportarAsync(idUsuario, ExtratoContaMercadoPago.Completo());

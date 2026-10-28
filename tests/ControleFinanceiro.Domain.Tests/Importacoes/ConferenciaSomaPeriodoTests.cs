@@ -1,8 +1,10 @@
 using AutoFixture.Xunit2;
+using ControleFinanceiro.Domain.Beneficiarios;
 using ControleFinanceiro.Domain.Contas;
 using ControleFinanceiro.Domain.Importacoes;
 using ControleFinanceiro.Domain.Services;
 using ControleFinanceiro.Domain.Shared.ValueObjects;
+using ControleFinanceiro.Domain.Tests.Services;
 using ControleFinanceiro.Domain.Transacoes;
 using ControleFinanceiro.Tests.Shared.AutoFixture.Attributes;
 using CSharpFunctionalExtensions;
@@ -79,7 +81,8 @@ public sealed class ConferenciaSomaPeriodoTests
 
     private static IReadOnlyList<Transacao> Lote(ContaBancaria conta, ImportacaoArquivo importacao, IReadOnlyList<Lancamento> lancamentos)
     {
-        return LoteTransacoesFactory.Criar(conta.IdUsuario, conta, importacao, lancamentos).Value;
+        IReadOnlyList<Beneficiario> beneficiarios = BeneficiariosResolvidos.Dos(conta.IdUsuario, lancamentos, TipoOrigem.Conta);
+        return LoteTransacoesFactory.Criar(conta.IdUsuario, beneficiarios, conta, importacao, lancamentos).Value;
     }
 
     private static string Formatar(DateOnly data) => data.ToString("dd/MM/yyyy", CultureInfo.InvariantCulture);

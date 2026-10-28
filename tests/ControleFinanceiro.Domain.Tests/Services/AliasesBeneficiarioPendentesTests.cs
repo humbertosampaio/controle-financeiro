@@ -1,10 +1,12 @@
 using AutoFixture.Xunit2;
 using ControleFinanceiro.Domain.Beneficiarios;
 using ControleFinanceiro.Domain.Services;
+using ControleFinanceiro.Domain.Shared;
 using ControleFinanceiro.Domain.Shared.ValueObjects;
 using ControleFinanceiro.Domain.Transacoes;
 using ControleFinanceiro.Domain.Usuarios;
 using ControleFinanceiro.Tests.Shared.AutoFixture.Attributes;
+using CSharpFunctionalExtensions;
 
 namespace ControleFinanceiro.Domain.Tests.Services;
 
@@ -123,6 +125,71 @@ public sealed class AliasesBeneficiarioPendentesTests
         Action listar = () => AliasesBeneficiarioPendentes.Listar(idUsuario, [deOutroUsuario], [lancamento], TipoOrigem.Conta);
 
         listar.Should().ThrowExactly<ArgumentException>().WithParameterName("beneficiariosDoUsuario");
+    }
+
+    [Theory, DomainAutoData]
+    public void Conferir_Quando_TodosOsTextosSaoAlias_Deve_RetornarSucesso(
+        [Frozen] IdUsuario idUsuario,
+        [Frozen] Alias alias,
+        Beneficiario beneficiario,
+        DateOnly data,
+        ReaisPositivo valor,
+        TextoObrigatorio descricao,
+        IdentidadeLancamento identidade)
+    {
+        UnitResult<Erro> result = AliasesBeneficiarioPendentes.Conferir(
+            idUsuario,
+            [beneficiario],
+            [Saida(data, valor, descricao, alias.TextoOriginal, identidade)],
+            TipoOrigem.Conta);
+
+        result.Should().Succeed();
+    }
+
+    [Theory, DomainAutoData]
+    public void Conferir_Quando_TextoSemAlias_Deve_RetornarBeneficiariosNaoResolvidos(
+        [Frozen] IdUsuario idUsuario,
+        [Frozen] Alias alias,
+        Beneficiario beneficiario,
+        DateOnly data,
+        ReaisPositivo valor,
+        TextoObrigatorio descricao,
+        IdentidadeLancamento identidade,
+        string semAlias)
+    {
+        Lancamento[] lancamentos = [Saida(data, valor, descricao, alias.TextoOriginal, identidade), Saida(data, valor, descricao, semAlias, identidade)];
+
+        UnitResult<Erro> result = AliasesBeneficiarioPendentes.Conferir(idUsuario, [beneficiario], lancamentos, TipoOrigem.Conta);
+
+        result.Should().Fail().Which.Should().Be(ErroBeneficiariosNaoResolvidos.Instancia);
+    }
+
+    [Theory, DomainAutoData]
+    public void Conferir_Quando_SoEntradasEBoletos_Deve_RetornarSucesso(
+        IdUsuario idUsuario,
+        DateOnly data,
+        ReaisPositivo valor,
+        TextoObrigatorio descricao,
+        string contraparte,
+        IdentidadeLancamento identidade)
+    {
+        Lancamento entrada = Lancamento.Criar(data, hora: null, valor, descricao, contraparte, parcela: null, categoriaBanco: null, identidade);
+        Lancamento boleto = Lancamento.Criar(data, hora: null, -valor.Value, descricao, contraparte: null, parcela: null, categoriaBanco: null, identidade);
+
+        UnitResult<Erro> result = AliasesBeneficiarioPendentes.Conferir(idUsuario, beneficiariosDoUsuario: [], [entrada, boleto], TipoOrigem.Conta);
+
+        result.Should().Succeed();
+    }
+
+    [Theory, DomainAutoData]
+    public void Conferir_Quando_ListaComBeneficiarioDeOutroUsuario_Deve_LancarExcecao(
+        IdUsuario idUsuario,
+        Beneficiario deOutroUsuario,
+        Lancamento lancamento)
+    {
+        Action conferir = () => AliasesBeneficiarioPendentes.Conferir(idUsuario, [deOutroUsuario], [lancamento], TipoOrigem.Conta);
+
+        conferir.Should().ThrowExactly<ArgumentException>().WithParameterName("beneficiariosDoUsuario");
     }
 
     private static Lancamento Saida(DateOnly data, ReaisPositivo valor, TextoObrigatorio descricao, string contraparte, IdentidadeLancamento identidade)
