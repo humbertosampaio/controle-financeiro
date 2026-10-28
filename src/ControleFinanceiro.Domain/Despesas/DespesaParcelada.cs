@@ -14,8 +14,8 @@ public sealed class DespesaParcelada : Despesa
         IdUsuario idUsuario,
         IdBeneficiario idBeneficiario,
         TextoObrigatorio descricao,
-        IdCategoriaDespesa idCategoria,
-        DateTimeOffset dataOcorrencia,
+        IdCategoriaDespesa? idCategoria,
+        DateOnly dataOcorrencia,
         IEnumerable<ParcelaDespesa> parcelas)
         : base(
             id,
@@ -24,7 +24,8 @@ public sealed class DespesaParcelada : Despesa
             descricao,
             idCategoria,
             dataOcorrencia,
-            FormaPagamento.Credito)
+            FormaPagamento.Credito,
+            idDespesaRecorrente: null)
     {
         Parcelas = parcelas.ToArray();
     }

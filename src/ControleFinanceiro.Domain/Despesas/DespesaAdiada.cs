@@ -8,14 +8,18 @@ namespace ControleFinanceiro.Domain.Despesas;
 
 public sealed class DespesaAdiada : DespesaInteira
 {
+    public IdCartao IdCartao { get; private set; }
+
     private DespesaAdiada(
         IdDespesa id,
         IdUsuario idUsuario,
         IdBeneficiario idBeneficiario,
         TextoObrigatorio descricao,
-        IdCategoriaDespesa idCategoria,
-        DateTimeOffset dataOcorrencia,
+        IdCategoriaDespesa? idCategoria,
+        DateOnly dataOcorrencia,
         FormaPagamento formaPagamento,
+        IdCartao idCartao,
+        IdDespesaRecorrente? idDespesaRecorrente,
         MesReferencia mesReferencia,
         Pagamento pagamento)
         : base(
@@ -26,19 +30,24 @@ public sealed class DespesaAdiada : DespesaInteira
             idCategoria,
             dataOcorrencia,
             formaPagamento,
+            idDespesaRecorrente,
             mesReferencia,
             pagamento)
     {
+        IdCartao = idCartao;
     }
 
+    /// <param name="idDespesaRecorrente">A recorrente que gerou a despesa, ou nulo quando ela não veio de uma.</param>
     public static DespesaAdiada Criar(
         IdUsuario idUsuario,
         IdBeneficiario idBeneficiario,
         TextoObrigatorio descricao,
-        IdCategoriaDespesa idCategoria,
-        DateTimeOffset dataOcorrencia,
+        IdCategoriaDespesa? idCategoria,
+        DateOnly dataOcorrencia,
         ReaisPositivo valor,
-        DiaVencimentoCartao diaVencimento)
+        IdCartao idCartao,
+        DiaVencimentoCartao diaVencimento,
+        IdDespesaRecorrente? idDespesaRecorrente)
     {
         MesReferencia mesReferenciaOcorrencia = dataOcorrencia;
         MesReferencia mesReferenciaPagamento = mesReferenciaOcorrencia.Posterior();
@@ -52,6 +61,8 @@ public sealed class DespesaAdiada : DespesaInteira
             idCategoria,
             dataOcorrencia,
             FormaPagamento.Credito,
+            idCartao,
+            idDespesaRecorrente,
             mesReferenciaPagamento,
             pagamento);
     }

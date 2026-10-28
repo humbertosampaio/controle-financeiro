@@ -41,23 +41,27 @@ public static class GeracaoDespesasDoMesService
         return GerarComPagamentoAdiado(recorrente, cartao, mesReferencia);
     }
 
-    /// <summary>A despesa do mês de uma recorrente paga sem cartão: a data e o pagamento ficam no próprio mês.</summary>
+    /// <summary>
+    /// A despesa do mês de uma recorrente paga sem cartão, ainda pendente: a data e o pagamento projetado ficam no
+    /// próprio mês.
+    /// </summary>
     /// <exception cref="ArgumentException">Quando a despesa recorrente é no crédito.</exception>
     public static Result<Despesa> GerarComPagamentoImediato(DespesaRecorrente despesaRecorrente, MesReferencia mesReferencia)
     {
         if (despesaRecorrente.FormaPagamento == FormaPagamento.Credito)
             throw new ArgumentException("A despesa recorrente no crédito precisa do cartão.", nameof(despesaRecorrente));
 
-        DateTimeOffset dataOcorrencia = mesReferencia.NoDia(despesaRecorrente.DiaOcorrencia).ToLocalDateTimeOffset();
+        DateOnly dataOcorrencia = mesReferencia.NoDia(despesaRecorrente.DiaOcorrencia);
         return DespesaSimples
-            .Criar(
+            .Prever(
                 despesaRecorrente.IdUsuario,
                 despesaRecorrente.IdBeneficiario,
                 despesaRecorrente.Descricao,
                 despesaRecorrente.IdCategoria,
                 dataOcorrencia,
                 despesaRecorrente.FormaPagamento,
-                despesaRecorrente.Valor)
+                despesaRecorrente.Valor,
+                despesaRecorrente.Id)
             .Map(despesa => despesa as Despesa);
     }
 
@@ -83,9 +87,7 @@ public static class GeracaoDespesasDoMesService
         if (cartao.Id != despesaRecorrente.IdCartao)
             throw new ArgumentException("O cartão não é o da despesa recorrente.", nameof(cartao));
 
-        DateTimeOffset dataOcorrencia = mesReferencia.Anterior()
-            .NoDia(despesaRecorrente.DiaOcorrencia)
-            .ToLocalDateTimeOffset();
+        DateOnly dataOcorrencia = mesReferencia.Anterior().NoDia(despesaRecorrente.DiaOcorrencia);
 
         return DespesaAdiada
             .Criar(
@@ -95,6 +97,8 @@ public static class GeracaoDespesasDoMesService
                 despesaRecorrente.IdCategoria,
                 dataOcorrencia,
                 despesaRecorrente.Valor,
-                cartao.DiaVencimento);
+                cartao.Id,
+                cartao.DiaVencimento,
+                despesaRecorrente.Id);
     }
 }

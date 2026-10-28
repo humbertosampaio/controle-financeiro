@@ -3,6 +3,7 @@ using ControleFinanceiro.Domain.Beneficiarios;
 using ControleFinanceiro.Domain.Cartoes;
 using ControleFinanceiro.Domain.Categorias;
 using ControleFinanceiro.Domain.Contas;
+using ControleFinanceiro.Domain.Despesas;
 using ControleFinanceiro.Domain.Importacoes;
 using ControleFinanceiro.Domain.Transacoes;
 using ControleFinanceiro.Domain.Usuarios;
@@ -10,6 +11,7 @@ using ControleFinanceiro.Infrastructure.Persistence.Beneficiarios;
 using ControleFinanceiro.Infrastructure.Persistence.Cartoes;
 using ControleFinanceiro.Infrastructure.Persistence.Categorias;
 using ControleFinanceiro.Infrastructure.Persistence.Contas;
+using ControleFinanceiro.Infrastructure.Persistence.Despesas;
 using ControleFinanceiro.Infrastructure.Persistence.Importacoes;
 using ControleFinanceiro.Infrastructure.Persistence.Transacoes;
 using ControleFinanceiro.Infrastructure.Persistence.Usuarios;
@@ -44,7 +46,8 @@ public static class DependencyInjection
                 .AddTransient<ITransacaoRepository, TransacaoRepository>()
                 .AddTransient<IImportacaoRepository, ImportacaoRepository>()
                 .AddTransient<IBeneficiarioRepository, BeneficiarioRepository>()
-                .AddTransient<ICategoriaDespesaRepository, CategoriaDespesaRepository>();
+                .AddTransient<ICategoriaDespesaRepository, CategoriaDespesaRepository>()
+                .AddTransient<IDespesaRecorrenteRepository, DespesaRecorrenteRepository>();
         }
     }
 }

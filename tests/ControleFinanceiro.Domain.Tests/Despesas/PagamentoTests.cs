@@ -13,12 +13,12 @@ public sealed class PagamentoTests
 
         pagamento.Valor.Should().Be(valor);
         pagamento.Status.Should().Be(StatusPagamento.Pendente);
-        pagamento.DataProjetada.Should().Be(dataProjetada.ToLocalDateTimeOffset());
+        pagamento.DataProjetada.Should().Be(dataProjetada);
         pagamento.DataEfetiva.Should().BeNull();
     }
 
     [Theory, DomainAutoData]
-    public void Pago_Deve_CriarPagamentoPago(ReaisPositivo valor, DateTimeOffset dataProjetada, DateTimeOffset dataEfetiva)
+    public void Pago_Deve_CriarPagamentoPago(ReaisPositivo valor, DateOnly dataProjetada, DateOnly dataEfetiva)
     {
         Pagamento pagamento = Pagamento.Pago(valor, dataProjetada, dataEfetiva);
 
@@ -37,7 +37,7 @@ public sealed class PagamentoTests
     }
 
     [Theory, DomainAutoData]
-    public void EstaPago_Quando_PagamentoPago_Deve_RetornarTrue(ReaisPositivo valor, DateTimeOffset dataProjetada, DateTimeOffset dataEfetiva)
+    public void EstaPago_Quando_PagamentoPago_Deve_RetornarTrue(ReaisPositivo valor, DateOnly dataProjetada, DateOnly dataEfetiva)
     {
         Pagamento pagamento = Pagamento.Pago(valor, dataProjetada, dataEfetiva);
 

@@ -40,13 +40,13 @@ public sealed class ControleFinanceiroDbContext : DbContext
     public DbSet<ImportacaoArquivo> Importacoes => Set<ImportacaoArquivo>();
     public DbSet<Beneficiario> Beneficiarios => Set<Beneficiario>();
     public DbSet<CategoriaDespesa> Categorias => Set<CategoriaDespesa>();
+    public DbSet<DespesaRecorrente> DespesasRecorrentes => Set<DespesaRecorrente>();
 
     /// <summary>Lido pelo filtro a cada consulta: o EF troca o <c>this</c> da expressão pela instância corrente.</summary>
     private IdUsuario IdUsuarioAtual => _usuarioAtual.Id;
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
-        modelBuilder.Ignore<DespesaRecorrente>();
         modelBuilder.ApplyConfigurationsFromAssembly(_assembly);
         FiltrarPeloUsuarioAtual(modelBuilder);
     }

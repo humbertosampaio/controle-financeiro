@@ -25,7 +25,7 @@ public sealed class ParcelaDespesaTests
         pagamento.Should().NotBeNull();
         pagamento.Status.Should().Be(StatusPagamento.Pendente);
         pagamento.Valor.Should().Be(valor);
-        pagamento.DataProjetada.Should().Be(mesReferencia.NoDia(diaVencimento).ToLocalDateTimeOffset());
+        pagamento.DataProjetada.Should().Be(mesReferencia.NoDia(diaVencimento));
         pagamento.DataEfetiva.Should().BeNull();
     }
 

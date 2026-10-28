@@ -15,9 +15,10 @@ public abstract class DespesaInteira : Despesa
         IdUsuario idUsuario,
         IdBeneficiario idBeneficiario,
         TextoObrigatorio descricao,
-        IdCategoriaDespesa idCategoria,
-        DateTimeOffset dataOcorrencia,
+        IdCategoriaDespesa? idCategoria,
+        DateOnly dataOcorrencia,
         FormaPagamento formaPagamento,
+        IdDespesaRecorrente? idDespesaRecorrente,
         MesReferencia mesReferencia,
         Pagamento pagamento)
         : base(
@@ -27,7 +28,8 @@ public abstract class DespesaInteira : Despesa
             descricao,
             idCategoria,
             dataOcorrencia,
-            formaPagamento)
+            formaPagamento,
+            idDespesaRecorrente)
     {
         MesReferencia = mesReferencia;
         Pagamento = pagamento;

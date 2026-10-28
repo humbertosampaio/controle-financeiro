@@ -16,12 +16,13 @@ public sealed class DespesaAdiadaTests
         IdBeneficiario idBeneficiario,
         TextoObrigatorio descricao,
         IdCategoriaDespesa idCategoria,
-        ReaisPositivo valor)
+        ReaisPositivo valor,
+        IdCartao idCartao)
     {
-        DateTimeOffset dataOcorrencia = new DateOnly(2026, 02, 05).ToLocalDateTimeOffset();
+        DateOnly dataOcorrencia = new DateOnly(2026, 02, 05);
         DiaVencimentoCartao diaVencimento = (DiaVencimentoCartao)05;
         MesReferencia mesReferenciaEsperado = MesReferencia.Criar(mes: 03, ano: 2026).Value;
-        DateTimeOffset dataProjetadaPagamentoEsperada = new DateOnly(2026, 03, 05).ToLocalDateTimeOffset();
+        DateOnly dataProjetadaPagamentoEsperada = new DateOnly(2026, 03, 05);
 
         DespesaAdiada result = DespesaAdiada.Criar(
             idUsuario,
@@ -30,7 +31,9 @@ public sealed class DespesaAdiadaTests
             idCategoria,
             dataOcorrencia,
             valor,
-            diaVencimento);
+            idCartao,
+            diaVencimento,
+            idDespesaRecorrente: null);
 
         result.IdUsuario.Should().Be(idUsuario);
         result.IdBeneficiario.Should().Be(idBeneficiario);
@@ -38,6 +41,7 @@ public sealed class DespesaAdiadaTests
         result.IdCategoria.Should().Be(idCategoria);
         result.DataOcorrencia.Should().Be(dataOcorrencia);
         result.FormaPagamento.Should().Be(FormaPagamento.Credito);
+        result.IdCartao.Should().Be(idCartao);
         result.MesReferencia.Should().Be(mesReferenciaEsperado);
 
         Pagamento pagamento = result.Pagamento;
