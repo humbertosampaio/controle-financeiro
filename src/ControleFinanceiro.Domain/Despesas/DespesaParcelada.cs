@@ -24,7 +24,8 @@ public sealed class DespesaParcelada : Despesa
             descricao,
             idCategoria,
             dataOcorrencia,
-            FormaPagamento.Credito)
+            FormaPagamento.Credito,
+            idDespesaRecorrente: null)
     {
         Parcelas = parcelas.ToArray();
     }

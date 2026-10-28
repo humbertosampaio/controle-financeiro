@@ -89,4 +89,70 @@ public sealed class DespesaSimplesTests
 
         result.Should().FailWith("Cartão de Crédito não é uma forma de pagamento válida para despesa simples");
     }
+
+    [Theory]
+    [InlineDomainAutoData(1)] // Pix
+    [InlineDomainAutoData(3)] // Boleto
+    public void Prever_Quando_FormaPixOuBoleto_Deve_RetornarDespesaPendenteNoDiaDaOcorrencia(
+        int valorFormaPagamento,
+        IdUsuario idUsuario,
+        MesReferencia mesReferencia,
+        IdBeneficiario idBeneficiario,
+        TextoObrigatorio descricao,
+        IdCategoriaDespesa idCategoria,
+        ReaisPositivo valor,
+        IdDespesaRecorrente idDespesaRecorrente)
+    {
+        FormaPagamento formaPagamento = FormaPagamento.FromValue(valorFormaPagamento);
+        DateOnly dataOcorrencia = mesReferencia.Inicio.AddDays(14);
+
+        Result<DespesaSimples> result = DespesaSimples.Prever(
+            idUsuario,
+            idBeneficiario,
+            descricao,
+            idCategoria,
+            dataOcorrencia,
+            formaPagamento,
+            valor,
+            idDespesaRecorrente);
+
+        DespesaSimples despesa = result.Should().Succeed().Which;
+        despesa.IdUsuario.Should().Be(idUsuario);
+        despesa.IdBeneficiario.Should().Be(idBeneficiario);
+        despesa.Descricao.Should().Be(descricao);
+        despesa.IdCategoria.Should().Be(idCategoria);
+        despesa.DataOcorrencia.Should().Be(dataOcorrencia);
+        despesa.FormaPagamento.Should().Be(formaPagamento);
+        despesa.IdDespesaRecorrente.Should().Be(idDespesaRecorrente);
+        despesa.MesReferencia.Should().Be(mesReferencia);
+
+        Pagamento pagamento = despesa.Pagamento;
+        pagamento.DataProjetada.Should().Be(dataOcorrencia);
+        pagamento.DataEfetiva.Should().BeNull();
+        pagamento.Status.Should().Be(StatusPagamento.Pendente);
+        pagamento.Valor.Should().Be(valor);
+    }
+
+    [Theory, DomainAutoData]
+    public void Prever_Quando_FormaPagamentoCredito_Deve_RetornarFalha(
+        IdUsuario idUsuario,
+        IdBeneficiario idBeneficiario,
+        TextoObrigatorio descricao,
+        IdCategoriaDespesa idCategoria,
+        DateOnly dataOcorrencia,
+        ReaisPositivo valor,
+        IdDespesaRecorrente idDespesaRecorrente)
+    {
+        Result<DespesaSimples> result = DespesaSimples.Prever(
+            idUsuario,
+            idBeneficiario,
+            descricao,
+            idCategoria,
+            dataOcorrencia,
+            FormaPagamento.Credito,
+            valor,
+            idDespesaRecorrente);
+
+        result.Should().FailWith("Cartão de Crédito não é uma forma de pagamento válida para despesa simples");
+    }
 }

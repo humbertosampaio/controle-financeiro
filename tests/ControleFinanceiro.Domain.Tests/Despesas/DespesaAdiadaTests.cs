@@ -32,7 +32,8 @@ public sealed class DespesaAdiadaTests
             dataOcorrencia,
             valor,
             idCartao,
-            diaVencimento);
+            diaVencimento,
+            idDespesaRecorrente: null);
 
         result.IdUsuario.Should().Be(idUsuario);
         result.IdBeneficiario.Should().Be(idBeneficiario);

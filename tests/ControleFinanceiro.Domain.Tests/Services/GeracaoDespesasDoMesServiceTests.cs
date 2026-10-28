@@ -208,4 +208,59 @@ public sealed class GeracaoDespesasDoMesServiceTests
             .Which.Should().BeOfType<DespesaSimples>().Subject;
         despesa.DataOcorrencia.Should().Be(dataOcorrenciaEsperada);
     }
+
+    [Theory, DomainAutoData]
+    public void GerarComPagamentoImediato_Quando_FormaPagamentoPix_Deve_RetornarDespesaPendenteDaRecorrente(
+        MesReferencia mesReferencia,
+        Fixture fixture)
+    {
+        fixture.Inject(FormaPagamento.Pix);
+        DespesaRecorrente despesaRecorrente = fixture.Create<DespesaRecorrente>();
+
+        Result<Despesa> result = GeracaoDespesasDoMesService.GerarComPagamentoImediato(despesaRecorrente, mesReferencia);
+
+        DespesaSimples despesa = result.Should().Succeed()
+            .Which.Should().BeOfType<DespesaSimples>().Subject;
+        despesa.IdDespesaRecorrente.Should().Be(despesaRecorrente.Id);
+        despesa.Pagamento.Status.Should().Be(StatusPagamento.Pendente);
+        despesa.Pagamento.DataProjetada.Should().Be(despesa.DataOcorrencia);
+        despesa.Pagamento.DataEfetiva.Should().BeNull();
+    }
+
+    [Theory, DomainAutoData]
+    public void GerarComPagamentoAdiado_Quando_FormaPagamentoCredito_Deve_GuardarARecorrente(
+        [Frozen] Cartao cartao,
+        MesReferencia mesReferencia,
+        Fixture fixture)
+    {
+        fixture.Inject(FormaPagamento.Credito);
+        DespesaRecorrente despesaRecorrente = fixture.Create<DespesaRecorrente>();
+
+        Result<Despesa> result = GeracaoDespesasDoMesService.GerarComPagamentoAdiado(despesaRecorrente, cartao, mesReferencia);
+
+        result.Should().Succeed()
+            .Which.IdDespesaRecorrente.Should().Be(despesaRecorrente.Id);
+    }
+
+    [Theory, DomainAutoData]
+    public void GerarComPagamentoAdiado_Quando_MesReferenciaJaneiro_Deve_OcorrerEmDezembroDoAnoAnterior(
+        [Frozen] DiaOcorrenciaRecorrente diaOcorrencia,
+        [Frozen] DiaVencimentoCartao diaVencimento,
+        [Frozen] Cartao cartao,
+        Fixture fixture)
+    {
+        MesReferencia janeiro = MesReferencia.Criar(mes: 01, ano: 2027).Value;
+        DateOnly dataOcorrenciaEsperada = new DateOnly(2026, 12, diaOcorrencia.Value);
+        DateOnly vencimentoEsperado = new DateOnly(2027, 01, diaVencimento.Value);
+        fixture.Inject(FormaPagamento.Credito);
+        DespesaRecorrente despesaRecorrente = fixture.Create<DespesaRecorrente>();
+
+        Result<Despesa> result = GeracaoDespesasDoMesService.GerarComPagamentoAdiado(despesaRecorrente, cartao, janeiro);
+
+        DespesaAdiada despesa = result.Should().Succeed()
+            .Which.Should().BeOfType<DespesaAdiada>().Subject;
+        despesa.DataOcorrencia.Should().Be(dataOcorrenciaEsperada);
+        despesa.MesReferencia.Should().Be(janeiro);
+        despesa.Pagamento.DataProjetada.Should().Be(vencimentoEsperado);
+    }
 }

@@ -21,6 +21,9 @@ public abstract class Despesa : AggregateRoot<IdDespesa>, IPertenceAoUsuario
     public DateOnly DataOcorrencia { get; protected set; }
     public FormaPagamento FormaPagamento { get; protected set; }
 
+    /// <summary>A recorrente que gerou a despesa, ou nulo quando ela não veio de uma.</summary>
+    public IdDespesaRecorrente? IdDespesaRecorrente { get; protected set; }
+
     protected Despesa(
         IdDespesa id,
         IdUsuario idUsuario,
@@ -28,7 +31,8 @@ public abstract class Despesa : AggregateRoot<IdDespesa>, IPertenceAoUsuario
         TextoObrigatorio descricao,
         IdCategoriaDespesa? idCategoria,
         DateOnly dataOcorrencia,
-        FormaPagamento formaPagamento)
+        FormaPagamento formaPagamento,
+        IdDespesaRecorrente? idDespesaRecorrente)
             : base(id)
     {
         IdUsuario = idUsuario;
@@ -37,5 +41,6 @@ public abstract class Despesa : AggregateRoot<IdDespesa>, IPertenceAoUsuario
         IdCategoria = idCategoria;
         DataOcorrencia = dataOcorrencia;
         FormaPagamento = formaPagamento;
+        IdDespesaRecorrente = idDespesaRecorrente;
     }
 }

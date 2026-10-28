@@ -41,7 +41,10 @@ public static class GeracaoDespesasDoMesService
         return GerarComPagamentoAdiado(recorrente, cartao, mesReferencia);
     }
 
-    /// <summary>A despesa do mês de uma recorrente paga sem cartão: a data e o pagamento ficam no próprio mês.</summary>
+    /// <summary>
+    /// A despesa do mês de uma recorrente paga sem cartão, ainda pendente: a data e o pagamento projetado ficam no
+    /// próprio mês.
+    /// </summary>
     /// <exception cref="ArgumentException">Quando a despesa recorrente é no crédito.</exception>
     public static Result<Despesa> GerarComPagamentoImediato(DespesaRecorrente despesaRecorrente, MesReferencia mesReferencia)
     {
@@ -50,14 +53,15 @@ public static class GeracaoDespesasDoMesService
 
         DateOnly dataOcorrencia = mesReferencia.NoDia(despesaRecorrente.DiaOcorrencia);
         return DespesaSimples
-            .Criar(
+            .Prever(
                 despesaRecorrente.IdUsuario,
                 despesaRecorrente.IdBeneficiario,
                 despesaRecorrente.Descricao,
                 despesaRecorrente.IdCategoria,
                 dataOcorrencia,
                 despesaRecorrente.FormaPagamento,
-                despesaRecorrente.Valor)
+                despesaRecorrente.Valor,
+                despesaRecorrente.Id)
             .Map(despesa => despesa as Despesa);
     }
 
@@ -94,6 +98,7 @@ public static class GeracaoDespesasDoMesService
                 dataOcorrencia,
                 despesaRecorrente.Valor,
                 cartao.Id,
-                cartao.DiaVencimento);
+                cartao.DiaVencimento,
+                despesaRecorrente.Id);
     }
 }
