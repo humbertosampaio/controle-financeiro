@@ -1,4 +1,5 @@
 using ControleFinanceiro.Domain.Importacoes;
+using ControleFinanceiro.WebApi.Endpoints.Beneficiarios.CadastrarLote;
 using ControleFinanceiro.WebApi.Endpoints.Importacoes.PreVisualizarExtrato;
 using ControleFinanceiro.WebApi.Endpoints.Usuarios.Cadastrar;
 using ControleFinanceiro.WebApi.Tests.AutoFixture;
@@ -17,6 +18,10 @@ namespace ControleFinanceiro.WebApi.Tests.Importacoes.PreVisualizarExtrato;
 [Collection(ApiCollection.Nome)]
 public sealed class PreVisualizarExtratoEndpointTests : IAsyncLifetime
 {
+    /// <summary>As contrapartes das saídas do extrato fictício do Mercado Pago, na ordem do arquivo.</summary>
+    private static readonly string[] _contrapartesMercadoPago =
+        ["FULANO FICTICIO", "LOJA FICTICIA LTDA", "CONDOMINIO FICTICIO", "CICRANO FICTICIO", "Clube Ficticio"];
+
     private readonly ApiComPostgresFixture _api;
 
     public PreVisualizarExtratoEndpointTests(ApiComPostgresFixture api)
@@ -54,8 +59,36 @@ public sealed class PreVisualizarExtratoEndpointTests : IAsyncLifetime
 
         resposta.StatusCode.Should().Be(HttpStatusCode.OK);
         PreVisualizarExtratoResponse corpo = (await resposta.Content.ReadFromJsonAsync<PreVisualizarExtratoResponse>())!;
-        corpo.Beneficiarios.Should().Equal("FULANO FICTICIO", "LOJA FICTICIA LTDA", "CONDOMINIO FICTICIO", "CICRANO FICTICIO", "Clube Ficticio");
+        corpo.Beneficiarios.Should().Equal(_contrapartesMercadoPago);
         await DeveEstarSemGravacaoAsync();
+    }
+
+    [Theory, ApiAutoData]
+    public async Task Post_Quando_TextoJaEAliasDoUsuario_Deve_OmitirODaPrevia(CadastrarUsuarioRequest cadastro, ItemBeneficiarioDto existente)
+    {
+        Guid idUsuario = await _api.CadastrarUsuarioAsync(cadastro);
+        Guid idExistente = (await _api.CadastrarBeneficiariosAsync(idUsuario, new() { Itens = [existente] }))[0];
+        string[] resolvidas = [_contrapartesMercadoPago[1], _contrapartesMercadoPago[4]];
+
+        // Uma vira alias do beneficiário existente e a outra de um novo, em outra caixa: a prévia compara o normalizado.
+        await _api.CadastrarBeneficiariosAsync(idUsuario, new()
+        {
+            Itens =
+            [
+                new ItemBeneficiarioDto { IdBeneficiario = idExistente, Alias = resolvidas[0].ToLowerInvariant() },
+                new ItemBeneficiarioDto { Nome = existente.Nome, Alias = resolvidas[1].ToUpperInvariant() },
+            ],
+        });
+
+        using HttpResponseMessage resposta = await PreVisualizarAsync(
+            idUsuario,
+            LayoutArquivoImportacao.MercadoPagoContaCsv,
+            ExtratoContaMercadoPago.Completo(),
+            ExtratoContaMercadoPago.SufixoConta);
+
+        resposta.StatusCode.Should().Be(HttpStatusCode.OK);
+        PreVisualizarExtratoResponse corpo = (await resposta.Content.ReadFromJsonAsync<PreVisualizarExtratoResponse>())!;
+        corpo.Beneficiarios.Should().Equal(_contrapartesMercadoPago.Except(resolvidas));
     }
 
     [Theory, ApiAutoData]
