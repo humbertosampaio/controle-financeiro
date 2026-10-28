@@ -27,7 +27,6 @@ public sealed class RenomearBeneficiarioEndpoint : Endpoint<RenomearBeneficiario
         AllowAnonymous();
     }
 
-    // Não carrega o usuário: um usuário que não existe não tem beneficiário, e cai no mesmo 404.
     public override async Task HandleAsync(RenomearBeneficiarioRequest req, CancellationToken ct)
     {
         Maybe<Beneficiario> beneficiario = await _beneficiarioRepository.ObterAsync(IdBeneficiario.From(req.IdBeneficiario), ct);

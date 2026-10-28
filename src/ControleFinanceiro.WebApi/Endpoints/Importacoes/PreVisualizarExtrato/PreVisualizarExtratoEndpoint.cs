@@ -19,18 +19,15 @@ namespace ControleFinanceiro.WebApi.Endpoints.Importacoes.PreVisualizarExtrato;
 public sealed class PreVisualizarExtratoEndpoint : Endpoint<ImportarExtratoRequest, PreVisualizarExtratoResponse>
 {
     private readonly IUsuarioAtual _usuarioAtual;
-    private readonly IUsuarioRepository _usuarioRepository;
     private readonly IBeneficiarioRepository _beneficiarioRepository;
     private readonly LeituraExtratoService _leituraExtrato;
 
     public PreVisualizarExtratoEndpoint(
         IUsuarioAtual usuarioAtual,
-        IUsuarioRepository usuarioRepository,
         IBeneficiarioRepository beneficiarioRepository,
         LeituraExtratoService leituraExtrato)
     {
         _usuarioAtual = usuarioAtual;
-        _usuarioRepository = usuarioRepository;
         _beneficiarioRepository = beneficiarioRepository;
         _leituraExtrato = leituraExtrato;
     }
@@ -50,9 +47,7 @@ public sealed class PreVisualizarExtratoEndpoint : Endpoint<ImportarExtratoReque
         IdUsuario idUsuario = _usuarioAtual.Id;
         LayoutArquivoImportacao layout = LayoutArquivoImportacao.FromValue(req.Layout);
 
-        await _usuarioRepository.ObterPorIdAsync(idUsuario, ct)
-            .ToResult(Falha.UsuarioNaoEncontrado)
-            .Bind(_ => LerAsync(layout, req, ct))
+        await LerAsync(layout, req, ct)
             .Map(extrato => PreVisualizarAsync(idUsuario, extrato, ct))
             .Match(
                 resposta => Send.OkAsync(resposta, ct),
@@ -81,10 +76,6 @@ public sealed class PreVisualizarExtratoEndpoint : Endpoint<ImportarExtratoReque
     {
         switch (falha)
         {
-            case Falha.NaoEncontrado:
-                await Send.NotFoundAsync(ct);
-                break;
-
             case Falha.Arquivo(string mensagem):
                 AddError(r => r.Arquivo, mensagem);
                 await Send.ErrorsAsync(StatusCodes.Status422UnprocessableEntity, ct);
@@ -96,16 +87,12 @@ public sealed class PreVisualizarExtratoEndpoint : Endpoint<ImportarExtratoReque
     }
 
     /// <summary>
-    /// O que interrompe a prévia, num tipo só para a cadeia: o usuário inexistente e o arquivo que o leitor recusou,
-    /// inclusive pelo saldo que não fecha (mensagem em texto).
+    /// O que interrompe a prévia, num tipo só para a cadeia: o arquivo que o leitor recusou, inclusive pelo saldo que
+    /// não fecha (mensagem em texto).
     /// </summary>
     private abstract record Falha
     {
-        public static readonly Falha UsuarioNaoEncontrado = new NaoEncontrado();
-
         public static Falha ArquivoInvalido(string mensagem) => new Arquivo(mensagem);
-
-        public sealed record NaoEncontrado : Falha;
 
         public sealed record Arquivo(string Mensagem) : Falha;
     }

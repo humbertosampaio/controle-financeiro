@@ -3,7 +3,6 @@ using ControleFinanceiro.Domain.Beneficiarios;
 using ControleFinanceiro.Domain.Services;
 using ControleFinanceiro.Domain.Shared;
 using ControleFinanceiro.Domain.Shared.ValueObjects;
-using ControleFinanceiro.Domain.Usuarios;
 using CSharpFunctionalExtensions;
 using FastEndpoints;
 using Lote = (System.Collections.Generic.IReadOnlyList<ControleFinanceiro.Domain.Beneficiarios.Beneficiario> BeneficiariosDoUsuario, System.Collections.Generic.IReadOnlyList<ControleFinanceiro.Domain.Services.IItemLoteBeneficiarios> Itens);
@@ -19,18 +18,15 @@ namespace ControleFinanceiro.WebApi.Endpoints.Beneficiarios.CadastrarLote;
 public sealed class CadastrarLoteBeneficiariosEndpoint : Endpoint<CadastrarLoteBeneficiariosRequest, CadastrarLoteBeneficiariosResponse>
 {
     private readonly IUsuarioAtual _usuarioAtual;
-    private readonly IUsuarioRepository _usuarioRepository;
     private readonly IBeneficiarioRepository _beneficiarioRepository;
     private readonly IUnitOfWork _unitOfWork;
 
     public CadastrarLoteBeneficiariosEndpoint(
         IUsuarioAtual usuarioAtual,
-        IUsuarioRepository usuarioRepository,
         IBeneficiarioRepository beneficiarioRepository,
         IUnitOfWork unitOfWork)
     {
         _usuarioAtual = usuarioAtual;
-        _usuarioRepository = usuarioRepository;
         _beneficiarioRepository = beneficiarioRepository;
         _unitOfWork = unitOfWork;
     }
@@ -43,9 +39,7 @@ public sealed class CadastrarLoteBeneficiariosEndpoint : Endpoint<CadastrarLoteB
 
     public override async Task HandleAsync(CadastrarLoteBeneficiariosRequest req, CancellationToken ct)
     {
-        await _usuarioRepository.ObterPorIdAsync(_usuarioAtual.Id, ct)
-            .ToResult(Falha.NaoEncontrado)
-            .Bind(_ => LerLoteAsync(req.Itens, ct))
+        await LerLoteAsync(req.Itens, ct)
             .Bind(Resolver)
             .Tap(resolvido => GravarAsync(resolvido.Novos, ct))
             .Match(
@@ -121,8 +115,8 @@ public sealed class CadastrarLoteBeneficiariosEndpoint : Endpoint<CadastrarLoteB
     }
 
     /// <summary>
-    /// O que interrompe o cadastro, num tipo só para a cadeia: o usuário ou o beneficiário de um item que não existe, e
-    /// o erro do domínio.
+    /// O que interrompe o cadastro, num tipo só para a cadeia: o beneficiário de um item que não existe e o erro do
+    /// domínio.
     /// </summary>
     private abstract record Falha
     {

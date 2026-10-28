@@ -27,7 +27,6 @@ public sealed class RemoverAliasCategoriaEndpoint : Endpoint<RemoverAliasCategor
         AllowAnonymous();
     }
 
-    // Não carrega o usuário: um usuário que não existe não tem categoria, e cai no mesmo 404.
     public override async Task HandleAsync(RemoverAliasCategoriaRequest req, CancellationToken ct)
     {
         Maybe<CategoriaDespesa> categoria = await _categoriaRepository.ObterAsync(IdCategoriaDespesa.From(req.IdCategoria), ct);

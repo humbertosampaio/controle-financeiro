@@ -3,7 +3,6 @@ using ControleFinanceiro.Domain.Categorias;
 using ControleFinanceiro.Domain.Services;
 using ControleFinanceiro.Domain.Shared;
 using ControleFinanceiro.Domain.Shared.ValueObjects;
-using ControleFinanceiro.Domain.Usuarios;
 using CSharpFunctionalExtensions;
 using FastEndpoints;
 using Lote = (System.Collections.Generic.IReadOnlyList<ControleFinanceiro.Domain.Categorias.CategoriaDespesa> CategoriasDoUsuario, System.Collections.Generic.IReadOnlyList<ControleFinanceiro.Domain.Services.IItemLoteCategorias> Itens);
@@ -19,18 +18,15 @@ namespace ControleFinanceiro.WebApi.Endpoints.Categorias.CadastrarLote;
 public sealed class CadastrarLoteCategoriasEndpoint : Endpoint<CadastrarLoteCategoriasRequest, CadastrarLoteCategoriasResponse>
 {
     private readonly IUsuarioAtual _usuarioAtual;
-    private readonly IUsuarioRepository _usuarioRepository;
     private readonly ICategoriaDespesaRepository _categoriaRepository;
     private readonly IUnitOfWork _unitOfWork;
 
     public CadastrarLoteCategoriasEndpoint(
         IUsuarioAtual usuarioAtual,
-        IUsuarioRepository usuarioRepository,
         ICategoriaDespesaRepository categoriaRepository,
         IUnitOfWork unitOfWork)
     {
         _usuarioAtual = usuarioAtual;
-        _usuarioRepository = usuarioRepository;
         _categoriaRepository = categoriaRepository;
         _unitOfWork = unitOfWork;
     }
@@ -43,9 +39,7 @@ public sealed class CadastrarLoteCategoriasEndpoint : Endpoint<CadastrarLoteCate
 
     public override async Task HandleAsync(CadastrarLoteCategoriasRequest req, CancellationToken ct)
     {
-        await _usuarioRepository.ObterPorIdAsync(_usuarioAtual.Id, ct)
-            .ToResult(Falha.NaoEncontrado)
-            .Bind(_ => LerLoteAsync(req.Itens, ct))
+        await LerLoteAsync(req.Itens, ct)
             .Bind(Resolver)
             .Tap(resolvido => GravarAsync(resolvido.Novas, ct))
             .Match(
@@ -121,8 +115,8 @@ public sealed class CadastrarLoteCategoriasEndpoint : Endpoint<CadastrarLoteCate
     }
 
     /// <summary>
-    /// O que interrompe o cadastro, num tipo só para a cadeia: o usuário ou a categoria de um item que não existe, e o
-    /// erro do domínio.
+    /// O que interrompe o cadastro, num tipo só para a cadeia: a categoria de um item que não existe e o erro do
+    /// domínio.
     /// </summary>
     private abstract record Falha
     {

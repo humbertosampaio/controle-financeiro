@@ -110,7 +110,7 @@ Use `ThrowExactly<T>()`, e não `Throw<T>()`, que também passa com uma exceçã
 Cada teste de integração sobe uma requisição HTTP e vai ao Postgres. Se cada borda de regra virar um teste de endpoint, a suíte fica lenta à medida que os endpoints chegam. Por isso a integração cobre **só o que depende da API e do banco juntos**:
 
 - a requisição válida gravada e lida de volta;
-- cada status que o endpoint decide (404, 409...), com o campo do erro;
+- cada status que o endpoint decide (404, 409...), com o campo do erro. O 404 do usuário inexistente vem do `UsuarioRotaPreProcessor`, ligado por convenção a todo endpoint com `{idUsuario}` na rota. A ligação em todos eles é conferida no `UsuarioRotaPreProcessorTests`, e o status, nos testes `*_Quando_UsuarioNaoExiste_*` dos endpoints que já os tinham. Endpoint novo com `{idUsuario}` não precisa de um teste desses;
 - **um** 400 com todos os campos inválidos, que prova que o validator está ligado e que cada erro sai no campo certo;
 - o que é risco do mapeamento do EF, visto pela API: entidade nova num agregado carregado, conversão de tipo.
 
