@@ -9,4 +9,6 @@ public interface IBeneficiarioRepository
     Task<Maybe<Beneficiario>> ObterAsync(IdBeneficiario idBeneficiario, CancellationToken cancellationToken);
 
     Task AdicionarAsync(Beneficiario beneficiario, CancellationToken cancellationToken);
+
+    Task AdicionarTodosAsync(IEnumerable<Beneficiario> beneficiarios, CancellationToken cancellationToken);
 }

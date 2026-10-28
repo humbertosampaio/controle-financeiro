@@ -1,4 +1,5 @@
 using ControleFinanceiro.Application.Abstractions;
+using ControleFinanceiro.Domain.Beneficiarios;
 using ControleFinanceiro.Domain.Contas;
 using ControleFinanceiro.Domain.Importacoes;
 using ControleFinanceiro.Domain.Services;
@@ -13,12 +14,13 @@ namespace ControleFinanceiro.WebApi.Endpoints.Importacoes;
 
 /// <summary>
 /// O que a importação de um extrato faz depois de ler o arquivo, em qualquer rota: obtém ou cria a conta, registra a
-/// importação, monta o lote e grava só as transações novas, junto com a conta nova e a importação, num commit só. Nada
-/// é gravado quando o resultado é de erro.
+/// importação, monta o lote, confere que todo texto de beneficiário do arquivo já é alias e grava só as transações
+/// novas, junto com a conta nova e a importação, num commit só. Nada é gravado quando o resultado é de erro.
 /// </summary>
 public sealed class ImportacaoExtratoService
 {
     private readonly IContaRepository _contaRepository;
+    private readonly IBeneficiarioRepository _beneficiarioRepository;
     private readonly ITransacaoRepository _transacaoRepository;
     private readonly IImportacaoRepository _importacaoRepository;
     private readonly TimeProvider _timeProvider;
@@ -26,12 +28,14 @@ public sealed class ImportacaoExtratoService
 
     public ImportacaoExtratoService(
         IContaRepository contaRepository,
+        IBeneficiarioRepository beneficiarioRepository,
         ITransacaoRepository transacaoRepository,
         IImportacaoRepository importacaoRepository,
         TimeProvider timeProvider,
         IUnitOfWork unitOfWork)
     {
         _contaRepository = contaRepository;
+        _beneficiarioRepository = beneficiarioRepository;
         _transacaoRepository = transacaoRepository;
         _importacaoRepository = importacaoRepository;
         _timeProvider = timeProvider;
@@ -49,16 +53,18 @@ public sealed class ImportacaoExtratoService
         CancellationToken ct)
     {
         IReadOnlyList<ContaBancaria> contasDoUsuario = await _contaRepository.ListarAsync(ct);
+        IReadOnlyList<Beneficiario> beneficiariosDoUsuario = await _beneficiarioRepository.ListarAsync(ct);
 
         return await ContaBancariaFactory
             .ObterOuCriar(idUsuario, contasDoUsuario, extrato.Banco, extrato.TipoConta, extrato.SufixoConta)
-            .Bind(conta => MontarLote(idUsuario, layout, extrato, conta))
+            .Bind(conta => MontarLote(idUsuario, beneficiariosDoUsuario, layout, extrato, conta))
             .Map(lote => GravarAsync(extrato, contasDoUsuario, lote, ct));
     }
 
     /// <summary>Registra a importação do arquivo na conta e monta o lote das transações ligadas a ela.</summary>
     private Result<LoteConta, Erro> MontarLote(
         IdUsuario idUsuario,
+        IReadOnlyList<Beneficiario> beneficiariosDoUsuario,
         LayoutArquivoImportacao layout,
         Extrato extrato,
         ContaBancaria conta)
@@ -71,7 +77,7 @@ public sealed class ImportacaoExtratoService
             _timeProvider.GetUtcNow());
 
         return LoteTransacoesFactory
-            .Criar(idUsuario, conta, importacao, extrato.Lancamentos)
+            .Criar(idUsuario, beneficiariosDoUsuario, conta, importacao, extrato.Lancamentos)
             .Map(transacoes => (conta, importacao, transacoes));
     }
 

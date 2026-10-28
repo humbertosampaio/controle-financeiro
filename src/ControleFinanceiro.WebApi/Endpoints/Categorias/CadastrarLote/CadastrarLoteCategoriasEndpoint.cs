@@ -61,13 +61,14 @@ public sealed class CadastrarLoteCategoriasEndpoint : Endpoint<CadastrarLoteCate
 
         foreach (ItemCategoriaDto item in itens)
         {
-            if (item.IdCategoria is not Guid idCategoria)
+            if (item.IdCategoria is not Guid guid)
             {
                 lote.Add(new CategoriaNova((TextoObrigatorio)item.Nome, item.Alias is null ? null : (Alias)item.Alias));
                 continue;
             }
 
-            if (categoriasDoUsuario.FirstOrDefault(c => c.Id == IdCategoriaDespesa.From(idCategoria)) is not CategoriaDespesa categoria)
+            IdCategoriaDespesa idCategoria = IdCategoriaDespesa.From(guid);
+            if (categoriasDoUsuario.FirstOrDefault(c => c.Id == idCategoria) is not CategoriaDespesa categoria)
                 return Falha.NaoEncontrado;
 
             lote.Add(new AliasCategoriaExistente(categoria, (Alias)item.Alias));

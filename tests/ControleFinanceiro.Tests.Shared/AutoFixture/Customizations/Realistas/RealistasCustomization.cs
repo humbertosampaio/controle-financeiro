@@ -4,8 +4,8 @@ using Bogus.DataSets;
 namespace ControleFinanceiro.Tests.Shared.AutoFixture.Customizations.Realistas;
 
 /// <summary>
-/// Troca os valores aleatórios do AutoFixture por valores com cara de dado real: nomes com acento,
-/// rendas e descontos com centavos. Serve aos testes de integração,
+/// Troca os valores aleatórios do AutoFixture por valores com cara de dado real: nomes com acento (de
+/// usuários e de beneficiários), rendas e descontos com centavos. Serve aos testes de integração,
 /// em que o valor atravessa JSON e Postgres e a falha precisa ser legível.
 /// </summary>
 /// <remarks>
@@ -27,7 +27,8 @@ public sealed class RealistasCustomization : CompositeCustomization
     private RealistasCustomization(Random random, Name nomes)
         : base(
             new DescontoSalarialRealistaCustomization(random),
-            new UsuarioRealistaCustomization(random, nomes))
+            new UsuarioRealistaCustomization(random, nomes),
+            new BeneficiarioRealistaCustomization(nomes))
     {
     }
 }

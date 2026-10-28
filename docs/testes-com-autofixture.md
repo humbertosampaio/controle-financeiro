@@ -81,7 +81,7 @@ Use `ThrowExactly<T>()`, e não `Throw<T>()`, que também passa com uma exceçã
 
 ## Customizações realistas (só na integração)
 
-`tests/ControleFinanceiro.Tests.Shared/AutoFixture/Customizations/Realistas/` troca os valores do AutoFixture por valores com cara de dado real: nome completo em pt-BR (com acento), renda entre R$ 1.500 e R$ 30.000 com centavos, descrição de desconto de contracheque. Elas:
+`tests/ControleFinanceiro.Tests.Shared/AutoFixture/Customizations/Realistas/` troca os valores do AutoFixture por valores com cara de dado real: nome completo em pt-BR (com acento) do usuário e do beneficiário, com o alias do beneficiário em maiúsculas, renda entre R$ 1.500 e R$ 30.000 com centavos, descrição de desconto de contracheque. Elas:
 
 - são **opt-in**: o `DomainFixture` não as aplica, porque os testes de domínio testam melhor as bordas com os decimais do `StrictDecimalCustomization`;
 - servem aos testes de integração, em que o valor atravessa JSON e Postgres (acento no caminho UTF-8, centavos no `numeric`) e a falha precisa ser legível;

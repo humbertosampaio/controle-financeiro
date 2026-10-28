@@ -1,5 +1,6 @@
 using ControleFinanceiro.Domain.Importacoes;
 using ControleFinanceiro.Domain.Shared.ValueObjects;
+using ControleFinanceiro.WebApi.Endpoints.Beneficiarios.CadastrarLote;
 using ControleFinanceiro.WebApi.Endpoints.Importacoes.PreVisualizarFatura;
 using ControleFinanceiro.WebApi.Endpoints.Usuarios.AdicionarCartao;
 using ControleFinanceiro.WebApi.Endpoints.Usuarios.Cadastrar;
@@ -16,6 +17,16 @@ namespace ControleFinanceiro.WebApi.Tests.Importacoes.PreVisualizarFatura;
 [Collection(ApiCollection.Nome)]
 public sealed class PreVisualizarFaturaEndpointTests : IAsyncLifetime
 {
+    /// <summary>As descrições distintas das compras da fatura fictícia do C6, na ordem do arquivo.</summary>
+    private static readonly string[] _descricoesC6 =
+    [
+        "MERCADO FICTICIO",
+        "PADARIA EXEMPLO",
+        "LOJA DE EXEMPLO",
+        "SERVICO INTERNACIONAL FICTICIO",
+        "APLICATIVO DE TRANSPORTE FICTICIO",
+    ];
+
     private readonly ApiComPostgresFixture _api;
 
     public PreVisualizarFaturaEndpointTests(ApiComPostgresFixture api)
@@ -37,13 +48,30 @@ public sealed class PreVisualizarFaturaEndpointTests : IAsyncLifetime
         corpo.FinaisCartao.Should().Equal(
             new PreVisualizarFaturaResponse.FinalCartao(FaturaCartaoC6.SufixoFisico, Cadastrado: false, DiaVencimento: null),
             new PreVisualizarFaturaResponse.FinalCartao(FaturaCartaoC6.SufixoVirtual, Cadastrado: false, DiaVencimento: null));
-        corpo.Beneficiarios.Should().Equal(
-            "MERCADO FICTICIO",
-            "PADARIA EXEMPLO",
-            "LOJA DE EXEMPLO",
-            "SERVICO INTERNACIONAL FICTICIO",
-            "APLICATIVO DE TRANSPORTE FICTICIO");
+        corpo.Beneficiarios.Should().Equal(_descricoesC6);
         await DeveEstarSemGravacaoAsync();
+    }
+
+    [Theory, ApiAutoData]
+    public async Task Post_Quando_TextoJaEAliasDoUsuario_Deve_OmitirODaPrevia(CadastrarUsuarioRequest cadastro, ItemBeneficiarioDto existente)
+    {
+        Guid idUsuario = await _api.CadastrarUsuarioAsync(cadastro);
+        Guid idExistente = (await _api.CadastrarBeneficiariosAsync(idUsuario, new() { Itens = [existente] }))[0];
+        string[] resolvidas = [_descricoesC6[1], _descricoesC6[3]];
+
+        // Uma vira alias do beneficiário existente e a outra de um novo, em outra caixa: a prévia compara o normalizado.
+        await _api.CadastrarBeneficiariosAsync(idUsuario, new()
+        {
+            Itens =
+            [
+                new ItemBeneficiarioDto { IdBeneficiario = idExistente, Alias = resolvidas[0].ToLowerInvariant() },
+                new ItemBeneficiarioDto { Nome = existente.Nome, Alias = resolvidas[1].ToLowerInvariant() },
+            ],
+        });
+
+        PreVisualizarFaturaResponse corpo = await PreVisualizarComSucessoAsync(idUsuario, LayoutArquivoImportacao.C6CartaoCsv, FaturaCartaoC6.Completo());
+
+        corpo.Beneficiarios.Should().Equal(_descricoesC6.Except(resolvidas));
     }
 
     [Theory, ApiAutoData]

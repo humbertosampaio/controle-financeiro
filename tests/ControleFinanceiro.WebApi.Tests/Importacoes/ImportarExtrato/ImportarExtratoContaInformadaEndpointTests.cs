@@ -36,6 +36,7 @@ public sealed class ImportarExtratoContaInformadaEndpointTests : IAsyncLifetime
     public async Task Post_Quando_PrimeiroExtratoDaConta_Deve_GravarAContaDePagamentoAsTransacoesEAImportacao(CadastrarUsuarioRequest cadastro)
     {
         Guid idUsuario = await _api.CadastrarUsuarioAsync(cadastro);
+        await ResolverBeneficiariosAsync(idUsuario, ExtratoContaMercadoPago.Completo());
 
         using HttpResponseMessage resposta = await ImportarAsync(idUsuario, ExtratoContaMercadoPago.Completo());
 
@@ -75,6 +76,7 @@ public sealed class ImportarExtratoContaInformadaEndpointTests : IAsyncLifetime
     public async Task Post_Deve_GravarAsTransacoesSemOCpfDaDescricao(CadastrarUsuarioRequest cadastro)
     {
         Guid idUsuario = await _api.CadastrarUsuarioAsync(cadastro);
+        await ResolverBeneficiariosAsync(idUsuario, ExtratoContaMercadoPago.Completo());
 
         await ImportarComSucessoAsync(idUsuario, ExtratoContaMercadoPago.Completo());
 
@@ -89,6 +91,7 @@ public sealed class ImportarExtratoContaInformadaEndpointTests : IAsyncLifetime
     public async Task Post_Quando_ReimportaOMesmoArquivo_Deve_ManterAsTransacoesERegistrarANovaImportacao(CadastrarUsuarioRequest cadastro)
     {
         Guid idUsuario = await _api.CadastrarUsuarioAsync(cadastro);
+        await ResolverBeneficiariosAsync(idUsuario, ExtratoContaMercadoPago.Completo());
         ImportarExtratoResponse primeira = await ImportarComSucessoAsync(idUsuario, ExtratoContaMercadoPago.Completo());
 
         ImportarExtratoResponse segunda = await ImportarComSucessoAsync(idUsuario, ExtratoContaMercadoPago.Completo());
@@ -124,6 +127,32 @@ public sealed class ImportarExtratoContaInformadaEndpointTests : IAsyncLifetime
         resposta.StatusCode.Should().Be(HttpStatusCode.UnprocessableEntity);
         (await resposta.CamposComErroAsync()).Should().Equal("arquivo");
         await DeveEstarSemImportacaoAsync();
+    }
+
+    [Theory, ApiAutoData]
+    public async Task Post_Quando_BeneficiarioSemAlias_Deve_RetornarErroNoArquivoSemGravar(CadastrarUsuarioRequest cadastro)
+    {
+        Guid idUsuario = await _api.CadastrarUsuarioAsync(cadastro);
+
+        using HttpResponseMessage resposta = await ImportarAsync(idUsuario, ExtratoContaMercadoPago.Completo());
+
+        resposta.StatusCode.Should().Be(HttpStatusCode.UnprocessableEntity);
+        (await resposta.CamposComErroAsync()).Should().Equal("arquivo");
+        await DeveEstarSemImportacaoAsync();
+    }
+
+    [Theory, ApiAutoData]
+    public async Task Post_Quando_BeneficiariosResolvidosDepoisDaRecusa_Deve_Importar(CadastrarUsuarioRequest cadastro)
+    {
+        Guid idUsuario = await _api.CadastrarUsuarioAsync(cadastro);
+        using HttpResponseMessage recusa = await ImportarAsync(idUsuario, ExtratoContaMercadoPago.Completo());
+        recusa.StatusCode.Should().Be(HttpStatusCode.UnprocessableEntity);
+        await ResolverBeneficiariosAsync(idUsuario, ExtratoContaMercadoPago.Completo());
+
+        ImportarExtratoResponse corpo = await ImportarComSucessoAsync(idUsuario, ExtratoContaMercadoPago.Completo());
+
+        corpo.Novas.Should().Be(ExtratoContaMercadoPago.QuantidadeLancamentos);
+        (await _api.ObterTodosAsync(db => db.Transacoes)).Should().HaveCount(ExtratoContaMercadoPago.QuantidadeLancamentos);
     }
 
     [Theory, ApiAutoData]
@@ -188,5 +217,14 @@ public sealed class ImportarExtratoContaInformadaEndpointTests : IAsyncLifetime
         (await _api.ObterTodosAsync(db => db.Contas)).Should().BeEmpty();
         (await _api.ObterTodosAsync(db => db.Transacoes)).Should().BeEmpty();
         (await _api.ObterTodosAsync(db => db.Importacoes)).Should().BeEmpty();
+    }
+
+    private Task ResolverBeneficiariosAsync(Guid idUsuario, byte[] arquivo)
+    {
+        return _api.ResolverBeneficiariosDoExtratoAsync(
+            idUsuario,
+            LayoutArquivoImportacao.MercadoPagoContaCsv,
+            arquivo,
+            ExtratoContaMercadoPago.SufixoConta);
     }
 }
