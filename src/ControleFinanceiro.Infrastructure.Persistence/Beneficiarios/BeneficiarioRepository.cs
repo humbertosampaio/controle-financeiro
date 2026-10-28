@@ -21,4 +21,7 @@ internal sealed class BeneficiarioRepository : IBeneficiarioRepository
 
     public async Task AdicionarAsync(Beneficiario beneficiario, CancellationToken cancellationToken) =>
         await _dbSet.AddAsync(beneficiario, cancellationToken);
+
+    public async Task AdicionarTodosAsync(IEnumerable<Beneficiario> beneficiarios, CancellationToken cancellationToken) =>
+        await _dbSet.AddRangeAsync(beneficiarios, cancellationToken);
 }

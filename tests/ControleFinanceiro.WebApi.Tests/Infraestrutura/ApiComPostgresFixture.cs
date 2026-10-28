@@ -1,5 +1,6 @@
 using ControleFinanceiro.AppHost.Resources;
 using ControleFinanceiro.Infrastructure.Persistence;
+using ControleFinanceiro.WebApi.Endpoints.Beneficiarios.CadastrarLote;
 using ControleFinanceiro.WebApi.Endpoints.Categorias.CadastrarLote;
 using ControleFinanceiro.WebApi.Endpoints.Usuarios.AdicionarCartao;
 using ControleFinanceiro.WebApi.Endpoints.Usuarios.Cadastrar;
@@ -107,6 +108,20 @@ public sealed class ApiComPostgresFixture : IAsyncLifetime
         resposta.StatusCode.Should().Be(HttpStatusCode.OK);
         CadastrarLoteCategoriasResponse? corpo = await resposta.Content.ReadFromJsonAsync<CadastrarLoteCategoriasResponse>();
         return corpo!.IdsCategorias;
+    }
+
+    /// <summary>
+    /// Cadastra beneficiários do usuário pela API, conferindo o 200, e devolve o beneficiário de cada item, na ordem dos
+    /// itens.
+    /// </summary>
+    public async Task<IReadOnlyList<Guid>> CadastrarBeneficiariosAsync(Guid idUsuario, CadastrarLoteBeneficiariosRequest beneficiarios)
+    {
+        using HttpResponseMessage resposta = await Client.PostAsJsonAsync(
+            new Uri($"/api/usuarios/{idUsuario}/beneficiarios/lote", UriKind.Relative),
+            beneficiarios);
+        resposta.StatusCode.Should().Be(HttpStatusCode.OK);
+        CadastrarLoteBeneficiariosResponse? corpo = await resposta.Content.ReadFromJsonAsync<CadastrarLoteBeneficiariosResponse>();
+        return corpo!.IdsBeneficiarios;
     }
 
     /// <summary>
