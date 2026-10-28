@@ -16,7 +16,7 @@ public abstract class DespesaInteira : Despesa
         IdBeneficiario idBeneficiario,
         TextoObrigatorio descricao,
         IdCategoriaDespesa idCategoria,
-        DateTimeOffset dataOcorrencia,
+        DateOnly dataOcorrencia,
         FormaPagamento formaPagamento,
         MesReferencia mesReferencia,
         Pagamento pagamento)

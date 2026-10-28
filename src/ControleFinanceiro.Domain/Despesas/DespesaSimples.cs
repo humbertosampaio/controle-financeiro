@@ -14,7 +14,7 @@ public sealed class DespesaSimples : DespesaInteira
         IdBeneficiario idBeneficiario,
         TextoObrigatorio descricao,
         IdCategoriaDespesa idCategoria,
-        DateTimeOffset dataOcorrencia,
+        DateOnly dataOcorrencia,
         FormaPagamento formaPagamento,
         MesReferencia mesReferencia,
         Pagamento pagamento)
@@ -36,7 +36,7 @@ public sealed class DespesaSimples : DespesaInteira
         IdBeneficiario idBeneficiario,
         TextoObrigatorio descricao,
         IdCategoriaDespesa idCategoria,
-        DateTimeOffset dataOcorrencia,
+        DateOnly dataOcorrencia,
         FormaPagamento formaPagamento,
         ReaisPositivo valor)
     {

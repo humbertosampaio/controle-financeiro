@@ -19,7 +19,7 @@ public sealed class DespesaSimplesTests
         IdCategoriaDespesa idCategoria,
         ReaisPositivo valor)
     {
-        DateTimeOffset dataOcorrencia = mesReferencia.Inicio.AddDays(14).ToLocalDateTimeOffset();
+        DateOnly dataOcorrencia = mesReferencia.Inicio.AddDays(14);
 
         Result<DespesaSimples> result = DespesaSimples.Criar(
             idUsuario,
@@ -55,7 +55,7 @@ public sealed class DespesaSimplesTests
         IdCategoriaDespesa idCategoria,
         ReaisPositivo valor)
     {
-        DateTimeOffset dataOcorrencia = mesReferencia.Inicio.AddDays(14).ToLocalDateTimeOffset();
+        DateOnly dataOcorrencia = mesReferencia.Inicio.AddDays(14);
 
         Result<DespesaSimples> result = DespesaSimples.Criar(
             idUsuario,

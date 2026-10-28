@@ -84,7 +84,7 @@ public sealed class GeracaoDespesasDoMesServiceTests
         Fixture fixture)
     {
         MesReferencia mesReferencia = MesReferencia.Criar(mes: 03, ano: 2026).Value;
-        DateTimeOffset dataOcorrenciaEsperada = new DateOnly(2026, 02, diaOcorrencia.Value).ToLocalDateTimeOffset();
+        DateOnly dataOcorrenciaEsperada = new DateOnly(2026, 02, diaOcorrencia.Value);
         fixture.Inject(FormaPagamento.Credito);
         DespesaRecorrente despesaRecorrente = fixture.Create<DespesaRecorrente>();
 
@@ -103,7 +103,7 @@ public sealed class GeracaoDespesasDoMesServiceTests
         Fixture fixture)
     {
         MesReferencia mesReferencia = MesReferencia.Criar(mes: 03, ano: 2026).Value;
-        DateTimeOffset vencimentoEsperado = new DateOnly(2026, 03, diaVencimento.Value).ToLocalDateTimeOffset();
+        DateOnly vencimentoEsperado = new DateOnly(2026, 03, diaVencimento.Value);
         fixture.Inject(FormaPagamento.Credito);
         DespesaRecorrente despesaRecorrente = fixture.Create<DespesaRecorrente>();
 
@@ -164,7 +164,7 @@ public sealed class GeracaoDespesasDoMesServiceTests
         Fixture fixture)
     {
         MesReferencia mesReferencia = MesReferencia.Criar(mes: 03, ano: 2026).Value;
-        DateTimeOffset dataOcorrenciaEsperada = new DateOnly(2026, 03, diaOcorrencia.Value).ToLocalDateTimeOffset();
+        DateOnly dataOcorrenciaEsperada = new DateOnly(2026, 03, diaOcorrencia.Value);
         fixture.Inject(FormaPagamento.Pix);
         DespesaRecorrente despesaRecorrente = fixture.Create<DespesaRecorrente>();
 
@@ -182,7 +182,7 @@ public sealed class GeracaoDespesasDoMesServiceTests
         Fixture fixture)
     {
         MesReferencia mesReferencia = MesReferencia.Criar(mes: 03, ano: 2026).Value;
-        DateTimeOffset dataOcorrenciaEsperada = new DateOnly(2026, 03, diaOcorrencia.Value).ToLocalDateTimeOffset();
+        DateOnly dataOcorrenciaEsperada = new DateOnly(2026, 03, diaOcorrencia.Value);
         fixture.Inject(FormaPagamento.Boleto);
         DespesaRecorrente despesaRecorrente = fixture.Create<DespesaRecorrente>();
 

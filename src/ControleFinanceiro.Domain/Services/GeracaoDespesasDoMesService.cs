@@ -48,7 +48,7 @@ public static class GeracaoDespesasDoMesService
         if (despesaRecorrente.FormaPagamento == FormaPagamento.Credito)
             throw new ArgumentException("A despesa recorrente no crédito precisa do cartão.", nameof(despesaRecorrente));
 
-        DateTimeOffset dataOcorrencia = mesReferencia.NoDia(despesaRecorrente.DiaOcorrencia).ToLocalDateTimeOffset();
+        DateOnly dataOcorrencia = mesReferencia.NoDia(despesaRecorrente.DiaOcorrencia);
         return DespesaSimples
             .Criar(
                 despesaRecorrente.IdUsuario,
@@ -83,9 +83,7 @@ public static class GeracaoDespesasDoMesService
         if (cartao.Id != despesaRecorrente.IdCartao)
             throw new ArgumentException("O cartão não é o da despesa recorrente.", nameof(cartao));
 
-        DateTimeOffset dataOcorrencia = mesReferencia.Anterior()
-            .NoDia(despesaRecorrente.DiaOcorrencia)
-            .ToLocalDateTimeOffset();
+        DateOnly dataOcorrencia = mesReferencia.Anterior().NoDia(despesaRecorrente.DiaOcorrencia);
 
         return DespesaAdiada
             .Criar(
