@@ -2,6 +2,7 @@ using ControleFinanceiro.Domain.Shared;
 using ControleFinanceiro.Infrastructure.Importacao;
 using ControleFinanceiro.Infrastructure.Persistence;
 using ControleFinanceiro.WebApi;
+using ControleFinanceiro.WebApi.Autenticacao;
 using CSharpFunctionalExtensions;
 using FastEndpoints;
 using FastEndpoints.Swagger;
@@ -36,6 +37,8 @@ app.MapDefaultEndpoints()
     .UseFastEndpoints(c =>
     {
         c.Endpoints.RoutePrefix = "api";
+        // O Configurator é um delegate só: outra configuração global de endpoint se compõe aqui dentro.
+        c.Endpoints.Configurator = UsuarioRotaPreProcessor.Aplicar;
         c.Errors.UseProblemDetails();
     });
 
