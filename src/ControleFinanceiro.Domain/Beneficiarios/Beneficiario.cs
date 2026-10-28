@@ -36,15 +36,8 @@ public sealed class Beneficiario : AggregateRoot<IdBeneficiario>, IPertenceAoUsu
     /// Interno pois um alias aponta para um beneficiário só em cada usuário, e só a
     /// <see cref="Services.BeneficiarioFactory"/>, que recebe os beneficiários do usuário, confere isso.
     /// </remarks>
-    /// <param name="alias">Nulo no cadastro manual, sem arquivo.</param>
-    internal static Beneficiario Criar(IdUsuario idUsuario, TextoObrigatorio nome, Alias? alias)
-    {
-        Beneficiario beneficiario = new(IdBeneficiario.FromNewVersion7Guid(), idUsuario, nome);
-        if (alias is not null)
-            beneficiario.AdicionarAlias(alias);
-
-        return beneficiario;
-    }
+    internal static Beneficiario Criar(IdUsuario idUsuario, TextoObrigatorio nome) =>
+        new(IdBeneficiario.FromNewVersion7Guid(), idUsuario, nome);
 
     /// <remarks>
     /// Interno pelo mesmo motivo do <see cref="Criar"/>. O alias que o beneficiário já tem não muda nada.

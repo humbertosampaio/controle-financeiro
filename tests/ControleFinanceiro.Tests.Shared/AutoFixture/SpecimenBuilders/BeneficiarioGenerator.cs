@@ -18,12 +18,10 @@ public sealed class BeneficiarioGenerator : ISpecimenBuilder
         if (request is not Type t || t != typeof(Beneficiario))
             return new NoSpecimen();
 
+        BeneficiarioNovo novo = new(context.Create<TextoObrigatorio>(), context.Create<Alias>());
+
         return BeneficiarioFactory
-            .Criar(
-                context.Create<IdUsuario>(),
-                beneficiariosDoUsuario: [],
-                context.Create<TextoObrigatorio>(),
-                context.Create<Alias>())
-            .Value;
+            .Resolver(context.Create<IdUsuario>(), beneficiariosDoUsuario: [], [novo])
+            .Value[0];
     }
 }
