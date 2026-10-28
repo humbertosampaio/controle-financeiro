@@ -17,7 +17,7 @@ public abstract class Despesa : AggregateRoot<IdDespesa>, IPertenceAoUsuario
     public IdUsuario IdUsuario { get; protected set; }
     public IdBeneficiario IdBeneficiario { get; protected set; }
     public TextoObrigatorio Descricao { get; protected set; }
-    public IdCategoriaDespesa IdCategoria { get; protected set; }
+    public IdCategoriaDespesa? IdCategoria { get; protected set; }
     public DateOnly DataOcorrencia { get; protected set; }
     public FormaPagamento FormaPagamento { get; protected set; }
 
@@ -26,7 +26,7 @@ public abstract class Despesa : AggregateRoot<IdDespesa>, IPertenceAoUsuario
         IdUsuario idUsuario,
         IdBeneficiario idBeneficiario,
         TextoObrigatorio descricao,
-        IdCategoriaDespesa idCategoria,
+        IdCategoriaDespesa? idCategoria,
         DateOnly dataOcorrencia,
         FormaPagamento formaPagamento)
             : base(id)

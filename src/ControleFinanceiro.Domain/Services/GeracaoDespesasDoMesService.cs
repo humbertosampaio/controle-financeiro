@@ -93,6 +93,7 @@ public static class GeracaoDespesasDoMesService
                 despesaRecorrente.IdCategoria,
                 dataOcorrencia,
                 despesaRecorrente.Valor,
+                cartao.Id,
                 cartao.DiaVencimento);
     }
 }

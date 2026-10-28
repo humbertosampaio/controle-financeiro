@@ -14,7 +14,7 @@ public sealed class DespesaParcelada : Despesa
         IdUsuario idUsuario,
         IdBeneficiario idBeneficiario,
         TextoObrigatorio descricao,
-        IdCategoriaDespesa idCategoria,
+        IdCategoriaDespesa? idCategoria,
         DateOnly dataOcorrencia,
         IEnumerable<ParcelaDespesa> parcelas)
         : base(

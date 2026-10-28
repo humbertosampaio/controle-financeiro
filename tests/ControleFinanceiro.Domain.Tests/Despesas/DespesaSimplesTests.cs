@@ -47,6 +47,27 @@ public sealed class DespesaSimplesTests
     }
 
     [Theory, DomainAutoData]
+    public void Criar_Quando_SemCategoria_Deve_RetornarSucessoSemCategoria(
+        IdUsuario idUsuario,
+        IdBeneficiario idBeneficiario,
+        TextoObrigatorio descricao,
+        DateOnly dataOcorrencia,
+        ReaisPositivo valor)
+    {
+        Result<DespesaSimples> result = DespesaSimples.Criar(
+            idUsuario,
+            idBeneficiario,
+            descricao,
+            idCategoria: null,
+            dataOcorrencia,
+            FormaPagamento.Pix,
+            valor);
+
+        result.Should().Succeed()
+            .Which.IdCategoria.Should().BeNull();
+    }
+
+    [Theory, DomainAutoData]
     public void Criar_Quando_FormaPagamentoCredito_Deve_RetornarFalha(
         IdUsuario idUsuario,
         MesReferencia mesReferencia,

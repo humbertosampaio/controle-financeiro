@@ -115,6 +115,22 @@ public sealed class GeracaoDespesasDoMesServiceTests
     }
 
     [Theory, DomainAutoData]
+    public void GerarComPagamentoAdiado_Quando_FormaPagamentoCredito_Deve_GuardarOIdDoCartao(
+        [Frozen] Cartao cartao,
+        MesReferencia mesReferencia,
+        Fixture fixture)
+    {
+        fixture.Inject(FormaPagamento.Credito);
+        DespesaRecorrente despesaRecorrente = fixture.Create<DespesaRecorrente>();
+
+        Result<Despesa> result = GeracaoDespesasDoMesService.GerarComPagamentoAdiado(despesaRecorrente, cartao, mesReferencia);
+
+        result.Should().Succeed()
+            .Which.Should().BeOfType<DespesaAdiada>()
+            .Which.IdCartao.Should().Be(cartao.Id);
+    }
+
+    [Theory, DomainAutoData]
     public void GerarComPagamentoAdiado_Quando_CreditoComCartaoDiferenteDoDaRecorrente_Deve_LancarExcecao(
         MesReferencia mesReferencia,
         Cartao outroCartao,

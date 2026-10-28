@@ -13,7 +13,7 @@ public sealed class DespesaSimples : DespesaInteira
         IdUsuario idUsuario,
         IdBeneficiario idBeneficiario,
         TextoObrigatorio descricao,
-        IdCategoriaDespesa idCategoria,
+        IdCategoriaDespesa? idCategoria,
         DateOnly dataOcorrencia,
         FormaPagamento formaPagamento,
         MesReferencia mesReferencia,
@@ -35,7 +35,7 @@ public sealed class DespesaSimples : DespesaInteira
         IdUsuario idUsuario,
         IdBeneficiario idBeneficiario,
         TextoObrigatorio descricao,
-        IdCategoriaDespesa idCategoria,
+        IdCategoriaDespesa? idCategoria,
         DateOnly dataOcorrencia,
         FormaPagamento formaPagamento,
         ReaisPositivo valor)

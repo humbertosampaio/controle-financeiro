@@ -8,14 +8,17 @@ namespace ControleFinanceiro.Domain.Despesas;
 
 public sealed class DespesaAdiada : DespesaInteira
 {
+    public IdCartao IdCartao { get; private set; }
+
     private DespesaAdiada(
         IdDespesa id,
         IdUsuario idUsuario,
         IdBeneficiario idBeneficiario,
         TextoObrigatorio descricao,
-        IdCategoriaDespesa idCategoria,
+        IdCategoriaDespesa? idCategoria,
         DateOnly dataOcorrencia,
         FormaPagamento formaPagamento,
+        IdCartao idCartao,
         MesReferencia mesReferencia,
         Pagamento pagamento)
         : base(
@@ -29,15 +32,17 @@ public sealed class DespesaAdiada : DespesaInteira
             mesReferencia,
             pagamento)
     {
+        IdCartao = idCartao;
     }
 
     public static DespesaAdiada Criar(
         IdUsuario idUsuario,
         IdBeneficiario idBeneficiario,
         TextoObrigatorio descricao,
-        IdCategoriaDespesa idCategoria,
+        IdCategoriaDespesa? idCategoria,
         DateOnly dataOcorrencia,
         ReaisPositivo valor,
+        IdCartao idCartao,
         DiaVencimentoCartao diaVencimento)
     {
         MesReferencia mesReferenciaOcorrencia = dataOcorrencia;
@@ -52,6 +57,7 @@ public sealed class DespesaAdiada : DespesaInteira
             idCategoria,
             dataOcorrencia,
             FormaPagamento.Credito,
+            idCartao,
             mesReferenciaPagamento,
             pagamento);
     }
