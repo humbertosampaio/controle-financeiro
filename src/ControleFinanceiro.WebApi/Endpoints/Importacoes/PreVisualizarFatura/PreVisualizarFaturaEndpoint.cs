@@ -26,20 +26,17 @@ public sealed class PreVisualizarFaturaEndpoint : Endpoint<PreVisualizarFaturaRe
     public const long TamanhoMaximoFormulario = PreVisualizarFaturaValidator.TamanhoMaximoArquivo + 1024 * 1024;
 
     private readonly IUsuarioAtual _usuarioAtual;
-    private readonly IUsuarioRepository _usuarioRepository;
     private readonly ICartaoRepository _cartaoRepository;
     private readonly IBeneficiarioRepository _beneficiarioRepository;
     private readonly IEnumerable<ILeitorFatura> _leitores;
 
     public PreVisualizarFaturaEndpoint(
         IUsuarioAtual usuarioAtual,
-        IUsuarioRepository usuarioRepository,
         ICartaoRepository cartaoRepository,
         IBeneficiarioRepository beneficiarioRepository,
         IEnumerable<ILeitorFatura> leitores)
     {
         _usuarioAtual = usuarioAtual;
-        _usuarioRepository = usuarioRepository;
         _cartaoRepository = cartaoRepository;
         _beneficiarioRepository = beneficiarioRepository;
         _leitores = leitores;
@@ -61,9 +58,7 @@ public sealed class PreVisualizarFaturaEndpoint : Endpoint<PreVisualizarFaturaRe
         IdUsuario idUsuario = _usuarioAtual.Id;
         LayoutArquivoImportacao layout = LayoutArquivoImportacao.FromValue(req.Layout);
 
-        await _usuarioRepository.ObterPorIdAsync(idUsuario, ct)
-            .ToResult(Falha.UsuarioNaoEncontrado)
-            .Bind(_ => LerAsync(layout, req.Arquivo!, ct))
+        await LerAsync(layout, req.Arquivo!, ct)
             .Map(fatura => PreVisualizarAsync(idUsuario, fatura, ct))
             .Match(
                 resposta => Send.OkAsync(resposta, ct),
@@ -112,10 +107,6 @@ public sealed class PreVisualizarFaturaEndpoint : Endpoint<PreVisualizarFaturaRe
     {
         switch (falha)
         {
-            case Falha.NaoEncontrado:
-                await Send.NotFoundAsync(ct);
-                break;
-
             case Falha.Arquivo(string mensagem):
                 AddError(r => r.Arquivo, mensagem);
                 await Send.ErrorsAsync(StatusCodes.Status422UnprocessableEntity, ct);
@@ -127,16 +118,11 @@ public sealed class PreVisualizarFaturaEndpoint : Endpoint<PreVisualizarFaturaRe
     }
 
     /// <summary>
-    /// O que interrompe a prévia, num tipo só para a cadeia: o usuário inexistente e o arquivo que o leitor recusou
-    /// (mensagem em texto).
+    /// O que interrompe a prévia, num tipo só para a cadeia: o arquivo que o leitor recusou (mensagem em texto).
     /// </summary>
     private abstract record Falha
     {
-        public static readonly Falha UsuarioNaoEncontrado = new NaoEncontrado();
-
         public static Falha ArquivoInvalido(string mensagem) => new Arquivo(mensagem);
-
-        public sealed record NaoEncontrado : Falha;
 
         public sealed record Arquivo(string Mensagem) : Falha;
     }

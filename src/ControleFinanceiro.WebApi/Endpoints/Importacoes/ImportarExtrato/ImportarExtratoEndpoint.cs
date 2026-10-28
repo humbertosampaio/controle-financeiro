@@ -24,18 +24,15 @@ public sealed class ImportarExtratoEndpoint : Endpoint<ImportarExtratoRequest, I
     public const long TamanhoMaximoFormulario = ImportarExtratoValidator.TamanhoMaximoArquivo + 1024 * 1024;
 
     private readonly IUsuarioAtual _usuarioAtual;
-    private readonly IUsuarioRepository _usuarioRepository;
     private readonly LeituraExtratoService _leituraExtrato;
     private readonly ImportacaoExtratoService _importacaoExtrato;
 
     public ImportarExtratoEndpoint(
         IUsuarioAtual usuarioAtual,
-        IUsuarioRepository usuarioRepository,
         LeituraExtratoService leituraExtrato,
         ImportacaoExtratoService importacaoExtrato)
     {
         _usuarioAtual = usuarioAtual;
-        _usuarioRepository = usuarioRepository;
         _leituraExtrato = leituraExtrato;
         _importacaoExtrato = importacaoExtrato;
     }
@@ -56,9 +53,7 @@ public sealed class ImportarExtratoEndpoint : Endpoint<ImportarExtratoRequest, I
         IdUsuario idUsuario = _usuarioAtual.Id;
         LayoutArquivoImportacao layout = LayoutArquivoImportacao.FromValue(req.Layout);
 
-        await _usuarioRepository.ObterPorIdAsync(idUsuario, ct)
-            .ToResult(Falha.UsuarioNaoEncontrado)
-            .Bind(_ => LerAsync(layout, req, ct))
+        await LerAsync(layout, req, ct)
             .Bind(extrato => _importacaoExtrato
                 .ImportarAsync(idUsuario, layout, extrato, ct)
                 .MapError(Falha.DeDominio))
@@ -81,10 +76,6 @@ public sealed class ImportarExtratoEndpoint : Endpoint<ImportarExtratoRequest, I
     {
         switch (falha)
         {
-            case Falha.NaoEncontrado:
-                await Send.NotFoundAsync(ct);
-                break;
-
             case Falha.Arquivo(string mensagem):
                 await EnviarArquivoInvalidoAsync(mensagem, ct);
                 break;
@@ -125,18 +116,14 @@ public sealed class ImportarExtratoEndpoint : Endpoint<ImportarExtratoRequest, I
     }
 
     /// <summary>
-    /// O que interrompe a importação, num tipo só para a cadeia: o usuário inexistente, o arquivo que o leitor recusou,
-    /// inclusive pelo saldo que não fecha (mensagem em texto), e os erros tipados do domínio.
+    /// O que interrompe a importação, num tipo só para a cadeia: o arquivo que o leitor recusou, inclusive pelo saldo
+    /// que não fecha (mensagem em texto), e os erros tipados do domínio.
     /// </summary>
     private abstract record Falha
     {
-        public static readonly Falha UsuarioNaoEncontrado = new NaoEncontrado();
-
         public static Falha ArquivoInvalido(string mensagem) => new Arquivo(mensagem);
 
         public static Falha DeDominio(Erro erro) => new Dominio(erro);
-
-        public sealed record NaoEncontrado : Falha;
 
         public sealed record Arquivo(string Mensagem) : Falha;
 

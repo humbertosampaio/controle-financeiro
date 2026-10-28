@@ -26,7 +26,6 @@ public sealed class AlterarVencimentoCartaoEndpoint : Endpoint<AlterarVencimento
         AllowAnonymous();
     }
 
-    // Não carrega o usuário: um usuário que não existe não tem cartão, e cai no mesmo 404.
     public override async Task HandleAsync(AlterarVencimentoCartaoRequest req, CancellationToken ct)
     {
         Maybe<Cartao> cartao = await _cartaoRepository.ObterAsync(IdCartao.From(req.IdCartao), ct);

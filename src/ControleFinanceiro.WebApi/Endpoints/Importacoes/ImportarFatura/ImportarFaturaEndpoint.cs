@@ -28,7 +28,6 @@ public sealed class ImportarFaturaEndpoint : Endpoint<ImportarFaturaRequest, Imp
     public const long TamanhoMaximoFormulario = ImportarFaturaValidator.TamanhoMaximoArquivo + 1024 * 1024;
 
     private readonly IUsuarioAtual _usuarioAtual;
-    private readonly IUsuarioRepository _usuarioRepository;
     private readonly ICartaoRepository _cartaoRepository;
     private readonly IBeneficiarioRepository _beneficiarioRepository;
     private readonly ITransacaoRepository _transacaoRepository;
@@ -39,7 +38,6 @@ public sealed class ImportarFaturaEndpoint : Endpoint<ImportarFaturaRequest, Imp
 
     public ImportarFaturaEndpoint(
         IUsuarioAtual usuarioAtual,
-        IUsuarioRepository usuarioRepository,
         ICartaoRepository cartaoRepository,
         IBeneficiarioRepository beneficiarioRepository,
         ITransacaoRepository transacaoRepository,
@@ -49,7 +47,6 @@ public sealed class ImportarFaturaEndpoint : Endpoint<ImportarFaturaRequest, Imp
         IUnitOfWork unitOfWork)
     {
         _usuarioAtual = usuarioAtual;
-        _usuarioRepository = usuarioRepository;
         _cartaoRepository = cartaoRepository;
         _beneficiarioRepository = beneficiarioRepository;
         _transacaoRepository = transacaoRepository;
@@ -76,9 +73,7 @@ public sealed class ImportarFaturaEndpoint : Endpoint<ImportarFaturaRequest, Imp
         LayoutArquivoImportacao layout = LayoutArquivoImportacao.FromValue(req.Layout);
         VencimentosCartoesNovos vencimentos = LerVencimentos(req);
 
-        await _usuarioRepository.ObterPorIdAsync(idUsuario, ct)
-            .ToResult(Falha.UsuarioNaoEncontrado)
-            .Bind(_ => LerAsync(layout, req.Arquivo!, ct))
+        await LerAsync(layout, req.Arquivo!, ct)
             .Bind(fatura => ImportarAsync(idUsuario, layout, fatura, vencimentos, ct))
             .Match(
                 resposta => Send.OkAsync(resposta, ct),
@@ -200,10 +195,6 @@ public sealed class ImportarFaturaEndpoint : Endpoint<ImportarFaturaRequest, Imp
     {
         switch (falha)
         {
-            case Falha.NaoEncontrado:
-                await Send.NotFoundAsync(ct);
-                break;
-
             case Falha.Arquivo(string mensagem):
                 AddError(r => r.Arquivo, mensagem);
                 await Send.ErrorsAsync(StatusCodes.Status422UnprocessableEntity, ct);
@@ -226,18 +217,14 @@ public sealed class ImportarFaturaEndpoint : Endpoint<ImportarFaturaRequest, Imp
     }
 
     /// <summary>
-    /// O que interrompe a importação, num tipo só para a cadeia: o usuário inexistente, o arquivo que o leitor recusou
-    /// (mensagem em texto) e os erros tipados do domínio.
+    /// O que interrompe a importação, num tipo só para a cadeia: o arquivo que o leitor recusou (mensagem em texto) e os
+    /// erros tipados do domínio.
     /// </summary>
     private abstract record Falha
     {
-        public static readonly Falha UsuarioNaoEncontrado = new NaoEncontrado();
-
         public static Falha ArquivoInvalido(string mensagem) => new Arquivo(mensagem);
 
         public static Falha DeDominio(Erro erro) => new Dominio(erro);
-
-        public sealed record NaoEncontrado : Falha;
 
         public sealed record Arquivo(string Mensagem) : Falha;
 

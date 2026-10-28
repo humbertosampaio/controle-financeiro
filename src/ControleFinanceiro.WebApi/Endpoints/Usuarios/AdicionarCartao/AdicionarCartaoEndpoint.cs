@@ -12,18 +12,15 @@ namespace ControleFinanceiro.WebApi.Endpoints.Usuarios.AdicionarCartao;
 public sealed class AdicionarCartaoEndpoint : Endpoint<AdicionarCartaoRequest, AdicionarCartaoResponse, AdicionarCartaoMapper>
 {
     private readonly IUsuarioAtual _usuarioAtual;
-    private readonly IUsuarioRepository _usuarioRepository;
     private readonly ICartaoRepository _cartaoRepository;
     private readonly IUnitOfWork _unitOfWork;
 
     public AdicionarCartaoEndpoint(
         IUsuarioAtual usuarioAtual,
-        IUsuarioRepository usuarioRepository,
         ICartaoRepository cartaoRepository,
         IUnitOfWork unitOfWork)
     {
         _usuarioAtual = usuarioAtual;
-        _usuarioRepository = usuarioRepository;
         _cartaoRepository = cartaoRepository;
         _unitOfWork = unitOfWork;
     }
@@ -37,13 +34,6 @@ public sealed class AdicionarCartaoEndpoint : Endpoint<AdicionarCartaoRequest, A
     public override async Task HandleAsync(AdicionarCartaoRequest req, CancellationToken ct)
     {
         IdUsuario idUsuario = _usuarioAtual.Id;
-
-        Maybe<Usuario> usuario = await _usuarioRepository.ObterPorIdAsync(idUsuario, ct);
-        if (usuario.HasNoValue)
-        {
-            await Send.NotFoundAsync(ct);
-            return;
-        }
 
         IReadOnlyList<Cartao> cartoesDoUsuario = await _cartaoRepository.ListarAsync(ct);
 
