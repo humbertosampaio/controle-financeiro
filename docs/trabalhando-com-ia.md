@@ -18,7 +18,7 @@ O [CLAUDE.md](../CLAUDE.md) é carregado sempre e traz só as regras. Este docum
 | 2 | Plano revisado (se não trivial) e publicado na issue, com uma sub-issue por etapa grande | `planejar-issue` |
 | 3 | Numa sessão nova: partir da `main` atualizada, criar `<tipo>/<n>-<slug>` e implementar com commits semânticos | `implementar-issue` |
 | 4 | Gates mecânicos + revisores conforme o diff | `revisar-mudanca` |
-| 5 | Push e PR com `Closes #n` | `abrir-pr` |
+| 5 | Push, PR com `Closes #n` e, com o CI verde, merge com merge commit, sem esperar revisão do PR | `abrir-pr` |
 
 **Quando a tarefa é não trivial:** toca mais de 2 arquivos, ou cria classe, endpoint ou migration, ou integra algo externo. Abaixo disso, não há plano: basta criar a branch e seguir as convenções do CLAUDE.md, na mesma sessão.
 

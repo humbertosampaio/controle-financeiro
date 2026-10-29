@@ -67,10 +67,19 @@ gh pr view --json closingIssuesReferences --jq '.closingIssuesReferences[].numbe
 
 Se vier vazio, o `Closes #n` não foi reconhecido: corrija o corpo com `gh pr edit`.
 
-## 6. Merge (só com o ok do dono do repositório)
+## 6. Esperar o CI e fazer o merge
 
-Depois da aprovação e com o CI verde, o merge é sempre com merge commit (squash e rebase estão desligados no repositório):
+O dono do repositório é o único que trabalha nele e revisa cada commit antes de ele ser feito (a aprovação do comando de commit), então não revisa o PR: a própria sessão espera o CI e faz o merge, sem pedir ok. O auto-merge do GitHub está desligado no repositório; por isso a espera é feita pela sessão, em segundo plano:
 
 ```bash
-gh pr merge <numero> --merge --delete-branch
+gh pr checks <numero> --watch --interval 30
 ```
+
+- **CI verde:** merge com merge commit (squash e rebase estão desligados no repositório), depois volte para a `main` atualizada:
+  ```bash
+  gh pr merge <numero> --merge --delete-branch
+  ```
+- **CI vermelho:** corrija na branch, com commit normal (o PR já está aberto), faça o push e espere de novo.
+- **Conflito com a `main`, ou um comentário de revisão no PR:** pare e pergunte ao dono antes do merge.
+
+Ao fim, confira que a issue foi fechada (`gh issue view <n> --json state`).

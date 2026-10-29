@@ -42,7 +42,7 @@ Discordar de uma regra é motivo para conversar, não para contorná-la no códi
 3. **Plano antes do código** quando a tarefa toca mais de 2 arquivos, cria classe, endpoint ou migration, ou integra algo externo. Use o agente `planejador` ou a skill `planejar-issue` e espere aprovação. **A implementação de um plano roda numa sessão nova**, com o contexto limpo, pela skill `implementar-issue`: ela lê só a issue e o comentário `<!-- plano -->`, cria a branch, tira as dúvidas no chat e registra os desvios do plano na issue.
 4. **Commits em Conventional Commits, em PT-BR**, divididos por assunto: cada commit agrupa mudanças que fazem sentido juntas. Formato `tipo(escopo): Descrição no presente`, ex. `feat(importacao): Lê o extrato OFX da conta do C6`. Referencie a issue no corpo (`Refs #7`).
 5. **Verificação antes do PR**: `dotnet build` e `dotnet test` verdes e o diff relido. Rode a skill `revisar-mudanca`.
-6. **PR com `Closes #N`** no corpo, aberto pela skill `abrir-pr`. Nada vai direto para a `main`.
+6. **PR com `Closes #N`** no corpo, aberto pela skill `abrir-pr`. Nada vai direto para a `main`. O dono revisa cada commit ao aprová-lo, e não o PR: a sessão espera o CI e, verde, faz o merge sozinha, sem pedir ok (o auto-merge do GitHub está desligado).
 7. **Merge com merge commit, nunca squash nem rebase** (o repositório só oferece essa opção). Assim os commits semânticos chegam à `main` e cada PR continua visível: `git log --first-parent main` mostra uma linha por PR. Por isso, antes de abrir o PR, a correção de algo criado na própria branch é dobrada no commit original (`git commit --fixup <sha>` + `git rebase -i --autosquash origin/main`), em vez de virar um commit `fix` solto.
 
 **Exceção: PRs do Dependabot** (`.github/dependabot.yml`) não nascem de issue nem seguem o nome de branch acima. O CI roda neles como em qualquer PR; revise o changelog dos pacotes antes do merge. Atualizações bloqueadas de propósito (FluentAssertions 8+, que é pago; MessagePack 3+) estão justificadas no próprio arquivo.
@@ -95,7 +95,7 @@ Três camadas, descritas em [docs/harness.md](docs/harness.md):
 
 - **Guardrail** (`.claude/settings.json` → `scripts/harness/guardrail.mjs`): bloqueia commit de dados financeiros, secret em arquivo e push na `main`; pede confirmação em git destrutivo, pacote novo e migration.
 - **Agentes** (`.claude/agents/`): `planejador`, `autor-de-testes`, `revisor-dominio`, `revisor-convencoes` e `revisor-privacidade`. Os revisores só reportam.
-- **Skills** (`.claude/skills/`): `planejar-issue` (plano na issue + sub-issues, antes do código), `implementar-issue` (numa sessão nova, a partir do plano publicado), `revisar-mudanca` (gates + revisores) e `abrir-pr` (push + PR vinculado), depois do código.
+- **Skills** (`.claude/skills/`): `planejar-issue` (plano na issue + sub-issues, antes do código), `implementar-issue` (numa sessão nova, a partir do plano publicado), `revisar-mudanca` (gates + revisores) e `abrir-pr` (push + PR vinculado + merge depois do CI verde), depois do código.
 - **Gates** (`.githooks/` + `.github/workflows/ci.yml`): varredura de secrets e de dados no pre-commit, Conventional Commits no commit-msg, bloqueio de push na `main`, testes de unidade e testes de integração afetados (`scripts/harness/testes-afetados.mjs`) no pre-push, build, modelo do EF sem migration pendente e as duas suítes completas no CI. Ative uma vez por clone: `git config core.hooksPath .githooks`.
 
 ## GitHub
