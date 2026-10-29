@@ -2,6 +2,7 @@ using ControleFinanceiro.Application.Abstractions;
 using ControleFinanceiro.Application.Importacoes;
 using ControleFinanceiro.Domain.Beneficiarios;
 using ControleFinanceiro.Domain.Cartoes;
+using ControleFinanceiro.Domain.Categorias;
 using ControleFinanceiro.Domain.Importacoes;
 using ControleFinanceiro.Domain.Services;
 using ControleFinanceiro.Domain.Shared.ValueObjects;
@@ -15,7 +16,8 @@ namespace ControleFinanceiro.WebApi.Endpoints.Importacoes.PreVisualizarFatura;
 
 /// <summary>
 /// Lê a fatura no layout da rota e devolve o que o usuário precisa preencher ou resolver antes de importá-la: os finais
-/// de cartão, marcando os já cadastrados, e os beneficiários novos. Nada é gravado, e o arquivo não fica no servidor.
+/// de cartão, marcando os já cadastrados, os beneficiários novos e as categorias do banco sem alias. Nada é gravado, e
+/// o arquivo não fica no servidor.
 /// </summary>
 public sealed class PreVisualizarFaturaEndpoint : Endpoint<PreVisualizarFaturaRequest, PreVisualizarFaturaResponse>
 {
@@ -28,17 +30,20 @@ public sealed class PreVisualizarFaturaEndpoint : Endpoint<PreVisualizarFaturaRe
     private readonly IUsuarioAtual _usuarioAtual;
     private readonly ICartaoRepository _cartaoRepository;
     private readonly IBeneficiarioRepository _beneficiarioRepository;
+    private readonly ICategoriaDespesaRepository _categoriaDespesaRepository;
     private readonly IEnumerable<ILeitorFatura> _leitores;
 
     public PreVisualizarFaturaEndpoint(
         IUsuarioAtual usuarioAtual,
         ICartaoRepository cartaoRepository,
         IBeneficiarioRepository beneficiarioRepository,
+        ICategoriaDespesaRepository categoriaDespesaRepository,
         IEnumerable<ILeitorFatura> leitores)
     {
         _usuarioAtual = usuarioAtual;
         _cartaoRepository = cartaoRepository;
         _beneficiarioRepository = beneficiarioRepository;
+        _categoriaDespesaRepository = categoriaDespesaRepository;
         _leitores = leitores;
     }
 
@@ -79,15 +84,17 @@ public sealed class PreVisualizarFaturaEndpoint : Endpoint<PreVisualizarFaturaRe
     {
         IReadOnlyList<Cartao> cartoes = await _cartaoRepository.ListarAsync(ct);
         IReadOnlyList<Beneficiario> beneficiarios = await _beneficiarioRepository.ListarAsync(ct);
-        IReadOnlyList<Alias> pendentes = AliasesBeneficiarioPendentes.Listar(
-            idUsuario,
-            beneficiarios,
-            fatura.Lancamentos.Select(l => l.Lancamento),
-            TipoOrigem.Cartao);
+        IReadOnlyList<CategoriaDespesa> categorias = await _categoriaDespesaRepository.ListarAsync(ct);
+        IReadOnlyList<Lancamento> lancamentos = fatura.Lancamentos.Select(l => l.Lancamento).ToArray();
+        IReadOnlyList<Alias> beneficiariosPendentes = AliasesBeneficiarioPendentes.Listar(idUsuario, beneficiarios, lancamentos, TipoOrigem.Cartao);
+        IReadOnlyList<Alias> categoriasPendentes = AliasesCategoriaPendentes.Listar(idUsuario, categorias, lancamentos);
 
         return new PreVisualizarFaturaResponse(
-            fatura.Sufixos.Select(sufixo => LerFinal(idUsuario, cartoes, fatura.Banco, sufixo)).ToList(),
-            pendentes.Select(a => a.TextoOriginal).ToList());
+            fatura.Sufixos
+                .Select(sufixo => LerFinal(idUsuario, cartoes, fatura.Banco, sufixo))
+                .ToArray(),
+            beneficiariosPendentes.Select(a => a.TextoOriginal).ToArray(),
+            categoriasPendentes.Select(a => a.TextoOriginal).ToArray());
     }
 
     private static PreVisualizarFaturaResponse.FinalCartao LerFinal(

@@ -9,9 +9,15 @@ namespace ControleFinanceiro.WebApi.Endpoints.Importacoes.PreVisualizarFatura;
 /// Os textos de beneficiário das compras que ainda não são alias de nenhum beneficiário do usuário, um por forma
 /// normalizada, como apareceram pela primeira vez no arquivo e na ordem dele.
 /// </param>
+/// <param name="CategoriasBanco">
+/// As categorias que o banco deu aos lançamentos, inclusive às entradas e aos estornos, que ainda não são alias de
+/// nenhuma categoria do usuário, uma por forma normalizada, como apareceram pela primeira vez no arquivo e na ordem
+/// dele. Vazia no layout que não traz categoria.
+/// </param>
 public sealed record class PreVisualizarFaturaResponse(
     IReadOnlyList<PreVisualizarFaturaResponse.FinalCartao> FinaisCartao,
-    IReadOnlyList<string> Beneficiarios)
+    IReadOnlyList<string> Beneficiarios,
+    IReadOnlyList<string> CategoriasBanco)
 {
     /// <param name="Cadastrado">Verdadeiro quando o usuário já tem o cartão desse final no banco da fatura.</param>
     /// <param name="DiaVencimento">O dia de vencimento do cartão cadastrado; nulo no cartão que a importação vai criar.</param>
