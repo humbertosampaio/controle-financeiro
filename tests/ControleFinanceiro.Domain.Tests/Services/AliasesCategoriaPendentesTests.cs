@@ -2,10 +2,12 @@ using AutoFixture;
 using AutoFixture.Xunit2;
 using ControleFinanceiro.Domain.Categorias;
 using ControleFinanceiro.Domain.Services;
+using ControleFinanceiro.Domain.Shared;
 using ControleFinanceiro.Domain.Shared.ValueObjects;
 using ControleFinanceiro.Domain.Transacoes;
 using ControleFinanceiro.Domain.Usuarios;
 using ControleFinanceiro.Tests.Shared.AutoFixture.Attributes;
+using CSharpFunctionalExtensions;
 
 namespace ControleFinanceiro.Domain.Tests.Services;
 
@@ -119,6 +121,37 @@ public sealed class AliasesCategoriaPendentesTests
         Action listar = () => AliasesCategoriaPendentes.Listar(idUsuario, [deOutroUsuario], [lancamento]);
 
         listar.Should().ThrowExactly<ArgumentException>().WithParameterName("categoriasDoUsuario");
+    }
+
+    [Theory, DomainAutoData]
+    public void Conferir_Quando_TodosOsTextosSaoAlias_Deve_RetornarSucesso(
+        [Frozen] IdUsuario idUsuario,
+        [Frozen] Alias alias,
+        CategoriaDespesa categoria,
+        Lancamento lancamento)
+    {
+        UnitResult<Erro> result = AliasesCategoriaPendentes.Conferir(
+            idUsuario,
+            [categoria],
+            [ComCategoria(lancamento, alias.TextoOriginal), ComCategoria(lancamento, categoriaBanco: null)]);
+
+        result.Should().Succeed();
+    }
+
+    [Theory, DomainAutoData]
+    public void Conferir_Quando_TextoSemAlias_Deve_RetornarCategoriasBancoNaoResolvidas(
+        [Frozen] IdUsuario idUsuario,
+        [Frozen] Alias alias,
+        CategoriaDespesa categoria,
+        Lancamento lancamento,
+        string semAlias)
+    {
+        UnitResult<Erro> result = AliasesCategoriaPendentes.Conferir(
+            idUsuario,
+            [categoria],
+            [ComCategoria(lancamento, alias.TextoOriginal), ComCategoria(lancamento, semAlias)]);
+
+        result.Should().Fail().Which.Should().Be(ErroCategoriasBancoNaoResolvidas.Instancia);
     }
 
     private static Lancamento ComCategoria(Lancamento lancamento, string? categoriaBanco)

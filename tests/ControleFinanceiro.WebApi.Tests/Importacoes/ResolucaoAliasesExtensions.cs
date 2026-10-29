@@ -45,7 +45,30 @@ internal static class ResolucaoAliasesExtensions
             await api.CadastrarPendentesAsync(idUsuario, previa.Beneficiarios);
         }
 
-        public async Task ResolverCategoriasDaFaturaAsync(Guid idUsuario, LayoutArquivoImportacao layout, byte[] arquivo)
+        public Task ResolverCategoriasDaFaturaAsync(Guid idUsuario, LayoutArquivoImportacao layout, byte[] arquivo)
+        {
+            return api.CadastrarCategoriasPendentesAsync(
+                idUsuario,
+                layout,
+                arquivo,
+                texto => new ItemCategoriaDto { Alias = texto, Nome = texto });
+        }
+
+        /// <summary>Associa cada categoria do banco pendente a uma categoria existente do usuário, como a Outros.</summary>
+        public Task AssociarCategoriasDaFaturaAsync(Guid idUsuario, LayoutArquivoImportacao layout, byte[] arquivo, Guid idCategoria)
+        {
+            return api.CadastrarCategoriasPendentesAsync(
+                idUsuario,
+                layout,
+                arquivo,
+                texto => new ItemCategoriaDto { Alias = texto, IdCategoria = idCategoria });
+        }
+
+        private async Task CadastrarCategoriasPendentesAsync(
+            Guid idUsuario,
+            LayoutArquivoImportacao layout,
+            byte[] arquivo,
+            Func<string, ItemCategoriaDto> item)
         {
             PreVisualizarFaturaResponse previa = await api.PreVisualizarFaturaAsync(idUsuario, layout, arquivo);
             if (previa.CategoriasBanco.Count == 0)
@@ -54,7 +77,7 @@ internal static class ResolucaoAliasesExtensions
             await api.CadastrarCategoriasAsync(idUsuario, new CadastrarLoteCategoriasRequest
             {
                 Itens = previa.CategoriasBanco
-                    .Select(texto => new ItemCategoriaDto { Alias = texto, Nome = texto })
+                    .Select(item)
                     .ToArray(),
             });
         }
