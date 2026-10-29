@@ -1,6 +1,7 @@
 using ControleFinanceiro.Domain.Importacoes;
 using ControleFinanceiro.Domain.Shared.ValueObjects;
 using ControleFinanceiro.WebApi.Endpoints.Beneficiarios.CadastrarLote;
+using ControleFinanceiro.WebApi.Endpoints.Categorias.CadastrarLote;
 using ControleFinanceiro.WebApi.Endpoints.Importacoes.PreVisualizarFatura;
 using ControleFinanceiro.WebApi.Endpoints.Usuarios.AdicionarCartao;
 using ControleFinanceiro.WebApi.Endpoints.Usuarios.Cadastrar;
@@ -26,6 +27,12 @@ public sealed class PreVisualizarFaturaEndpointTests : IAsyncLifetime
         "SERVICO INTERNACIONAL FICTICIO",
         "APLICATIVO DE TRANSPORTE FICTICIO",
     ];
+
+    /// <summary>
+    /// As categorias do banco distintas da fatura fictícia do C6, na ordem do arquivo, inclusive a do estorno; o
+    /// pagamento vem sem categoria.
+    /// </summary>
+    private static readonly string[] _categoriasC6 = ["Supermercado", "Restaurante", "Eletrônicos", "Serviços", "Vestuário", "Transporte"];
 
     private readonly ApiComPostgresFixture _api;
 
@@ -75,6 +82,43 @@ public sealed class PreVisualizarFaturaEndpointTests : IAsyncLifetime
     }
 
     [Theory, ApiAutoData]
+    public async Task Post_Quando_FaturaDoC6SemCategoriasDoUsuario_Deve_TrazerCadaCategoriaDoBancoUmaVezSemGravar(CadastrarUsuarioRequest cadastro)
+    {
+        Guid idUsuario = await _api.CadastrarUsuarioAsync(cadastro);
+
+        PreVisualizarFaturaResponse corpo = await PreVisualizarComSucessoAsync(idUsuario, LayoutArquivoImportacao.C6CartaoCsv, FaturaCartaoC6.Completo());
+
+        corpo.CategoriasBanco.Should().Equal(_categoriasC6);
+        await DeveEstarSemGravacaoAsync();
+    }
+
+    [Theory, ApiAutoData]
+    public async Task Post_Quando_CategoriaJaEAliasDoUsuarioEmOutraGrafia_Deve_OmitirDaPrevia(CadastrarUsuarioRequest cadastro, string nome)
+    {
+        Guid idUsuario = await _api.CadastrarUsuarioAsync(cadastro);
+        await _api.CadastrarCategoriasAsync(idUsuario, new() { Itens = [new ItemCategoriaDto { Nome = nome, Alias = "ELETRONICOS" }] });
+
+        PreVisualizarFaturaResponse corpo = await PreVisualizarComSucessoAsync(idUsuario, LayoutArquivoImportacao.C6CartaoCsv, FaturaCartaoC6.Completo());
+
+        corpo.CategoriasBanco.Should().Equal(_categoriasC6.Except(["Eletrônicos"]));
+    }
+
+    [Theory, ApiAutoData]
+    public async Task Post_Quando_CategoriaEAliasDeOutroUsuario_Deve_ManterNaPrevia(
+        CadastrarUsuarioRequest cadastro,
+        CadastrarUsuarioRequest cadastroOutro,
+        string nome)
+    {
+        Guid idUsuario = await _api.CadastrarUsuarioAsync(cadastro);
+        Guid idOutro = await _api.CadastrarUsuarioAsync(cadastroOutro);
+        await _api.CadastrarCategoriasAsync(idOutro, new() { Itens = [new ItemCategoriaDto { Nome = nome, Alias = _categoriasC6[0] }] });
+
+        PreVisualizarFaturaResponse corpo = await PreVisualizarComSucessoAsync(idUsuario, LayoutArquivoImportacao.C6CartaoCsv, FaturaCartaoC6.Completo());
+
+        corpo.CategoriasBanco.Should().Equal(_categoriasC6);
+    }
+
+    [Theory, ApiAutoData]
     public async Task Post_Quando_FinalJaECartaoDoUsuario_Deve_MarcarOCartaoCadastradoComOVencimento(
         CadastrarUsuarioRequest cadastro,
         AdicionarCartaoRequest cartao)
@@ -105,7 +149,7 @@ public sealed class PreVisualizarFaturaEndpointTests : IAsyncLifetime
     }
 
     [Theory, ApiAutoData]
-    public async Task Post_Quando_FaturaDoMercadoPago_Deve_TrazerOFinalEAsDescricoesDistintasDasCompras(CadastrarUsuarioRequest cadastro)
+    public async Task Post_Quando_FaturaDoMercadoPago_Deve_TrazerOFinalEAsDescricoesDistintasDasComprasSemCategorias(CadastrarUsuarioRequest cadastro)
     {
         Guid idUsuario = await _api.CadastrarUsuarioAsync(cadastro);
 
@@ -116,6 +160,7 @@ public sealed class PreVisualizarFaturaEndpointTests : IAsyncLifetime
 
         corpo.FinaisCartao.Should().Equal(new PreVisualizarFaturaResponse.FinalCartao(FaturaCartaoMercadoPago.Sufixo, Cadastrado: false, DiaVencimento: null));
         corpo.Beneficiarios.Should().Equal("LOJA FICTICIA ELETRO", "PADARIA FICTICIA", "MERCADO FICTICIO", "LIVRARIA \"FICTICIA\"", "CAFE FICTICIO");
+        corpo.CategoriasBanco.Should().BeEmpty();
         await DeveEstarSemGravacaoAsync();
     }
 
@@ -193,5 +238,6 @@ public sealed class PreVisualizarFaturaEndpointTests : IAsyncLifetime
         (await _api.ObterTodosAsync(db => db.Transacoes)).Should().BeEmpty();
         (await _api.ObterTodosAsync(db => db.Importacoes)).Should().BeEmpty();
         (await _api.ObterTodosAsync(db => db.Beneficiarios)).Should().BeEmpty();
+        (await _api.ObterTodosAsync(db => db.Categorias)).Should().ContainSingle().Which.EhOutros.Should().BeTrue();
     }
 }

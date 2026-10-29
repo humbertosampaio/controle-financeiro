@@ -1,5 +1,6 @@
 using ControleFinanceiro.Application.Abstractions;
 using ControleFinanceiro.Domain.Beneficiarios;
+using ControleFinanceiro.Domain.Categorias;
 using ControleFinanceiro.Domain.Contas;
 using ControleFinanceiro.Domain.Importacoes;
 using ControleFinanceiro.Domain.Shared;
@@ -96,6 +97,11 @@ public sealed class ImportarExtratoEndpoint : Endpoint<ImportarExtratoRequest, I
                 break;
 
             case Falha.Dominio(ErroBeneficiariosNaoResolvidos erro):
+                await EnviarArquivoInvalidoAsync(erro.Descricao, ct);
+                break;
+
+            // Nenhum leitor de extrato preenche a categoria do banco hoje; o case evita o 500 num layout futuro que preencha.
+            case Falha.Dominio(ErroCategoriasBancoNaoResolvidas erro):
                 await EnviarArquivoInvalidoAsync(erro.Descricao, ct);
                 break;
 

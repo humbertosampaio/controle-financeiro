@@ -2,6 +2,7 @@ using ControleFinanceiro.Application.Abstractions;
 using ControleFinanceiro.Application.Importacoes;
 using ControleFinanceiro.Domain.Beneficiarios;
 using ControleFinanceiro.Domain.Cartoes;
+using ControleFinanceiro.Domain.Categorias;
 using ControleFinanceiro.Domain.Importacoes;
 using ControleFinanceiro.Domain.Services;
 using ControleFinanceiro.Domain.Shared;
@@ -15,9 +16,9 @@ using LoteCartao = (ControleFinanceiro.Domain.Cartoes.Cartao Cartao, ControleFin
 namespace ControleFinanceiro.WebApi.Endpoints.Importacoes.ImportarFatura;
 
 /// <summary>
-/// Lê a fatura, obtém ou cria um cartão por final, confere que todo texto de beneficiário da fatura já é alias e grava,
-/// de cada cartão, a importação e só as transações novas, junto com os cartões novos, num commit só. Nada é gravado
-/// quando a resposta é de erro.
+/// Lê a fatura, obtém ou cria um cartão por final, confere que todo texto de beneficiário e toda categoria do banco da
+/// fatura já são alias e grava, de cada cartão, a importação e só as transações novas, junto com os cartões novos, num
+/// commit só. Nada é gravado quando a resposta é de erro.
 /// </summary>
 public sealed class ImportarFaturaEndpoint : Endpoint<ImportarFaturaRequest, ImportarFaturaResponse>
 {
@@ -30,6 +31,7 @@ public sealed class ImportarFaturaEndpoint : Endpoint<ImportarFaturaRequest, Imp
     private readonly IUsuarioAtual _usuarioAtual;
     private readonly ICartaoRepository _cartaoRepository;
     private readonly IBeneficiarioRepository _beneficiarioRepository;
+    private readonly ICategoriaDespesaRepository _categoriaDespesaRepository;
     private readonly ITransacaoRepository _transacaoRepository;
     private readonly IImportacaoRepository _importacaoRepository;
     private readonly IEnumerable<ILeitorFatura> _leitores;
@@ -40,6 +42,7 @@ public sealed class ImportarFaturaEndpoint : Endpoint<ImportarFaturaRequest, Imp
         IUsuarioAtual usuarioAtual,
         ICartaoRepository cartaoRepository,
         IBeneficiarioRepository beneficiarioRepository,
+        ICategoriaDespesaRepository categoriaDespesaRepository,
         ITransacaoRepository transacaoRepository,
         IImportacaoRepository importacaoRepository,
         IEnumerable<ILeitorFatura> leitores,
@@ -49,6 +52,7 @@ public sealed class ImportarFaturaEndpoint : Endpoint<ImportarFaturaRequest, Imp
         _usuarioAtual = usuarioAtual;
         _cartaoRepository = cartaoRepository;
         _beneficiarioRepository = beneficiarioRepository;
+        _categoriaDespesaRepository = categoriaDespesaRepository;
         _transacaoRepository = transacaoRepository;
         _importacaoRepository = importacaoRepository;
         _leitores = leitores;
@@ -108,8 +112,9 @@ public sealed class ImportarFaturaEndpoint : Endpoint<ImportarFaturaRequest, Imp
         IReadOnlyList<Cartao> cartoesDoUsuario = await _cartaoRepository.ListarAsync(ct);
         IReadOnlyList<Cartao> cartoes = CartaoFactory.ObterOuCriar(idUsuario, cartoesDoUsuario, fatura.Banco, fatura.Sufixos, vencimentos);
         IReadOnlyList<Beneficiario> beneficiariosDoUsuario = await _beneficiarioRepository.ListarAsync(ct);
+        IReadOnlyList<CategoriaDespesa> categoriasDoUsuario = await _categoriaDespesaRepository.ListarAsync(ct);
 
-        return await MontarLotes(idUsuario, beneficiariosDoUsuario, layout, fatura, cartoes)
+        return await MontarLotes(idUsuario, beneficiariosDoUsuario, categoriasDoUsuario, layout, fatura, cartoes)
             .MapError(Falha.DeDominio)
             .Map(lotes => GravarAsync(cartoesDoUsuario, vencimentos, lotes, ct));
     }
@@ -118,6 +123,7 @@ public sealed class ImportarFaturaEndpoint : Endpoint<ImportarFaturaRequest, Imp
     private Result<IReadOnlyList<LoteCartao>, Erro> MontarLotes(
         IdUsuario idUsuario,
         IReadOnlyList<Beneficiario> beneficiariosDoUsuario,
+        IReadOnlyList<CategoriaDespesa> categoriasDoUsuario,
         LayoutArquivoImportacao layout,
         Fatura fatura,
         IReadOnlyList<Cartao> cartoes)
@@ -127,7 +133,14 @@ public sealed class ImportarFaturaEndpoint : Endpoint<ImportarFaturaRequest, Imp
 
         foreach (Cartao cartao in cartoes)
         {
-            Result<LoteCartao, Erro> lote = MontarLote(idUsuario, beneficiariosDoUsuario, layout, fatura, cartao, importadaEm);
+            Result<LoteCartao, Erro> lote = MontarLote(
+                idUsuario,
+                beneficiariosDoUsuario,
+                categoriasDoUsuario,
+                layout,
+                fatura,
+                cartao,
+                importadaEm);
             if (lote.IsFailure)
                 return lote.Error;
 
@@ -140,6 +153,7 @@ public sealed class ImportarFaturaEndpoint : Endpoint<ImportarFaturaRequest, Imp
     private static Result<LoteCartao, Erro> MontarLote(
         IdUsuario idUsuario,
         IReadOnlyList<Beneficiario> beneficiariosDoUsuario,
+        IReadOnlyList<CategoriaDespesa> categoriasDoUsuario,
         LayoutArquivoImportacao layout,
         Fatura fatura,
         Cartao cartao,
@@ -154,7 +168,7 @@ public sealed class ImportarFaturaEndpoint : Endpoint<ImportarFaturaRequest, Imp
             importadaEm);
 
         return LoteTransacoesFactory
-            .Criar(idUsuario, beneficiariosDoUsuario, cartao, importacao, lancamentos)
+            .Criar(idUsuario, beneficiariosDoUsuario, categoriasDoUsuario, cartao, importacao, lancamentos)
             .Map(transacoes => (cartao, importacao, transacoes));
     }
 
@@ -201,6 +215,11 @@ public sealed class ImportarFaturaEndpoint : Endpoint<ImportarFaturaRequest, Imp
                 break;
 
             case Falha.Dominio(ErroBeneficiariosNaoResolvidos erro):
+                AddError(r => r.Arquivo, erro.Descricao);
+                await Send.ErrorsAsync(StatusCodes.Status422UnprocessableEntity, ct);
+                break;
+
+            case Falha.Dominio(ErroCategoriasBancoNaoResolvidas erro):
                 AddError(r => r.Arquivo, erro.Descricao);
                 await Send.ErrorsAsync(StatusCodes.Status422UnprocessableEntity, ct);
                 break;

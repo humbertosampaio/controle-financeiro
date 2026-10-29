@@ -31,6 +31,34 @@ public sealed class CadastrarLoteCategoriasValidatorTests
     }
 
     [Theory, ApiAutoData]
+    public void Validate_Quando_ItensAcimaDoLimite_Deve_RetornarErroNosItens(Guid idUsuario, ItemCategoriaDto item)
+    {
+        CadastrarLoteCategoriasRequest requisicao = new()
+        {
+            IdUsuario = idUsuario,
+            Itens = Enumerable.Repeat(item, CadastrarLoteCategoriasValidator.TamanhoMaximoLote + 1).ToArray(),
+        };
+
+        TestValidationResult<CadastrarLoteCategoriasRequest> resultado = _sut.TestValidate(requisicao);
+
+        resultado.ShouldHaveValidationErrorFor(r => r.Itens);
+    }
+
+    [Theory, ApiAutoData]
+    public void Validate_Quando_LoteNoLimite_Deve_Passar(Guid idUsuario, ItemCategoriaDto item)
+    {
+        CadastrarLoteCategoriasRequest requisicao = new()
+        {
+            IdUsuario = idUsuario,
+            Itens = Enumerable.Repeat(item, CadastrarLoteCategoriasValidator.TamanhoMaximoLote).ToArray(),
+        };
+
+        TestValidationResult<CadastrarLoteCategoriasRequest> resultado = _sut.TestValidate(requisicao);
+
+        resultado.ShouldNotHaveAnyValidationErrors();
+    }
+
+    [Theory, ApiAutoData]
     public void Validate_Quando_CategoriaExistenteSemAlias_Deve_RetornarErroNoAlias(Guid idUsuario, Guid idCategoria)
     {
         CadastrarLoteCategoriasRequest requisicao = new()
