@@ -60,6 +60,23 @@ public static class CustomValidators
         }
     }
 
+    extension<T>(IRuleBuilder<T, int> ruleBuilder)
+    {
+        /// <summary>O mês de um <see cref="MesReferencia"/>, de 1 a 12.</summary>
+        public IRuleBuilderOptionsConditions<T, int> MustBeMes()
+        {
+            return ruleBuilder
+                .MustBeValueObject(mes => MesReferencia.Criar(mes, ano: 1));
+        }
+
+        /// <summary>O ano de um <see cref="MesReferencia"/>, de 1 a 9999.</summary>
+        public IRuleBuilderOptionsConditions<T, int> MustBeAno()
+        {
+            return ruleBuilder
+                .MustBeValueObject(ano => MesReferencia.Criar(mes: 1, ano));
+        }
+    }
+
     extension<T>(IRuleBuilder<T, string?> ruleBuilder)
     {
         public IRuleBuilderOptionsConditions<T, string?> MustBeTextoObrigatorio()

@@ -2,6 +2,7 @@ using ControleFinanceiro.AppHost.Resources;
 using ControleFinanceiro.Infrastructure.Persistence;
 using ControleFinanceiro.WebApi.Endpoints.Beneficiarios.CadastrarLote;
 using ControleFinanceiro.WebApi.Endpoints.Categorias.CadastrarLote;
+using ControleFinanceiro.WebApi.Endpoints.Despesas.CadastrarRecorrente;
 using ControleFinanceiro.WebApi.Endpoints.Usuarios.AdicionarCartao;
 using ControleFinanceiro.WebApi.Endpoints.Usuarios.Cadastrar;
 using Microsoft.AspNetCore.Hosting;
@@ -122,6 +123,17 @@ public sealed class ApiComPostgresFixture : IAsyncLifetime
         resposta.StatusCode.Should().Be(HttpStatusCode.OK);
         CadastrarLoteBeneficiariosResponse? corpo = await resposta.Content.ReadFromJsonAsync<CadastrarLoteBeneficiariosResponse>();
         return corpo!.IdsBeneficiarios;
+    }
+
+    /// <summary>Cadastra uma despesa recorrente do usuário pela API, conferindo o 201, e devolve o id dela.</summary>
+    public async Task<Guid> CadastrarDespesaRecorrenteAsync(Guid idUsuario, CadastrarDespesaRecorrenteRequest despesaRecorrente)
+    {
+        using HttpResponseMessage resposta = await Client.PostAsJsonAsync(
+            new Uri($"/api/usuarios/{idUsuario}/despesas-recorrentes", UriKind.Relative),
+            despesaRecorrente);
+        resposta.StatusCode.Should().Be(HttpStatusCode.Created);
+        CadastrarDespesaRecorrenteResponse? corpo = await resposta.Content.ReadFromJsonAsync<CadastrarDespesaRecorrenteResponse>();
+        return corpo!.Id;
     }
 
     /// <summary>

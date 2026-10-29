@@ -20,6 +20,23 @@ public sealed class MesReferenciaTests
         value.Fim.Should().Be(new DateOnly(ano, mes, DateTime.DaysInMonth(ano, mes)));
     }
 
+    [Theory, DomainAutoData]
+    public void OperadorExplicito_Quando_MesEAnoValidos_Deve_RetornarInstancia(int ano, [Range(1, 12)] int mes)
+    {
+        MesReferencia result = (MesReferencia)(mes, ano);
+
+        result.Mes.Should().Be(mes);
+        result.Ano.Should().Be(ano);
+    }
+
+    [Theory, DomainAutoData]
+    public void OperadorExplicito_Quando_MesInvalido_Deve_LancarExcecao(int ano)
+    {
+        Func<MesReferencia> act = () => (MesReferencia)(Mes: 13, ano);
+
+        act.Should().ThrowExactly<ResultFailureException>();
+    }
+
     [Theory]
     [InlineDomainAutoData(0)]
     [InlineDomainAutoData(13)]

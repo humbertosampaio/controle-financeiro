@@ -75,6 +75,8 @@ public sealed class MesReferencia : ComparableValueObject
         yield return Inicio;
     }
 
+    public static explicit operator MesReferencia((int Mes, int Ano) referencia) => Criar(referencia.Mes, referencia.Ano).Value;
+
     public static implicit operator MesReferencia(DateTimeOffset referencia) => new(referencia.Month, referencia.Year);
     public static implicit operator MesReferencia(DateOnly referencia) => new(referencia.Month, referencia.Year);
 }
