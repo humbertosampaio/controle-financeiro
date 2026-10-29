@@ -158,6 +158,72 @@ namespace ControleFinanceiro.Infrastructure.Persistence.Migrations
                         });
                 });
 
+            modelBuilder.Entity("ControleFinanceiro.Domain.Despesas.Despesa", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<DateOnly>("DataOcorrencia")
+                        .HasColumnType("date")
+                        .HasColumnName("data_ocorrencia");
+
+                    b.Property<string>("Descricao")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("descricao");
+
+                    b.Property<int>("FormaPagamento")
+                        .HasColumnType("integer")
+                        .HasColumnName("forma_pagamento");
+
+                    b.Property<Guid>("IdBeneficiario")
+                        .HasColumnType("uuid")
+                        .HasColumnName("id_beneficiario");
+
+                    b.Property<Guid?>("IdCategoria")
+                        .HasColumnType("uuid")
+                        .HasColumnName("id_categoria");
+
+                    b.Property<Guid?>("IdDespesaRecorrente")
+                        .HasColumnType("uuid")
+                        .HasColumnName("id_despesa_recorrente");
+
+                    b.Property<Guid>("IdUsuario")
+                        .HasColumnType("uuid")
+                        .HasColumnName("id_usuario");
+
+                    b.Property<string>("tipo")
+                        .IsRequired()
+                        .HasMaxLength(21)
+                        .HasColumnType("character varying(21)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("IdBeneficiario");
+
+                    b.HasIndex("IdCategoria");
+
+                    b.HasIndex("IdDespesaRecorrente");
+
+                    b.HasIndex("IdUsuario");
+
+                    b.ToTable("despesas", null, t =>
+                        {
+                            t.HasCheckConstraint("CK_despesas_cartao", "(tipo = 'adiada') = (id_cartao IS NOT NULL)");
+
+                            t.HasCheckConstraint("CK_despesas_descricao", "btrim(descricao) <> ''");
+
+                            t.HasCheckConstraint("CK_despesas_pagamento", "(status_pagamento = 1) = (data_pagamento_efetiva IS NOT NULL)");
+
+                            t.HasCheckConstraint("CK_despesas_valor", "valor >= 0");
+                        });
+
+                    b.HasDiscriminator<string>("tipo").HasValue("Despesa");
+
+                    b.UseTphMappingStrategy();
+                });
+
             modelBuilder.Entity("ControleFinanceiro.Domain.Despesas.DespesaRecorrente", b =>
                 {
                     b.Property<Guid>("Id")
@@ -430,6 +496,95 @@ namespace ControleFinanceiro.Infrastructure.Persistence.Migrations
                         });
                 });
 
+            modelBuilder.Entity("ControleFinanceiro.Domain.Despesas.DespesaInteira", b =>
+                {
+                    b.HasBaseType("ControleFinanceiro.Domain.Despesas.Despesa");
+
+                    b.Property<DateOnly>("MesReferencia")
+                        .HasColumnType("date")
+                        .HasColumnName("mes_referencia");
+
+                    b.ComplexProperty(typeof(Dictionary<string, object>), "Pagamento", "ControleFinanceiro.Domain.Despesas.DespesaInteira.Pagamento#Pagamento", b1 =>
+                        {
+                            b1.IsRequired();
+
+                            b1.Property<DateOnly?>("DataEfetiva")
+                                .HasColumnType("date")
+                                .HasColumnName("data_pagamento_efetiva");
+
+                            b1.Property<DateOnly?>("DataProjetada")
+                                .HasColumnType("date")
+                                .HasColumnName("data_pagamento_projetada");
+
+                            b1.Property<int>("Status")
+                                .HasColumnType("integer")
+                                .HasColumnName("status_pagamento");
+
+                            b1.Property<decimal>("Valor")
+                                .HasPrecision(14, 2)
+                                .HasColumnType("numeric(14,2)")
+                                .HasColumnName("valor");
+                        });
+
+                    b.HasIndex("IdDespesaRecorrente", "MesReferencia")
+                        .IsUnique();
+
+                    b.ToTable(t =>
+                        {
+                            t.HasCheckConstraint("CK_despesas_cartao", "(tipo = 'adiada') = (id_cartao IS NOT NULL)");
+
+                            t.HasCheckConstraint("CK_despesas_descricao", "btrim(descricao) <> ''");
+
+                            t.HasCheckConstraint("CK_despesas_pagamento", "(status_pagamento = 1) = (data_pagamento_efetiva IS NOT NULL)");
+
+                            t.HasCheckConstraint("CK_despesas_valor", "valor >= 0");
+                        });
+
+                    b.HasDiscriminator().HasValue("DespesaInteira");
+                });
+
+            modelBuilder.Entity("ControleFinanceiro.Domain.Despesas.DespesaAdiada", b =>
+                {
+                    b.HasBaseType("ControleFinanceiro.Domain.Despesas.DespesaInteira");
+
+                    b.Property<Guid>("IdCartao")
+                        .HasColumnType("uuid")
+                        .HasColumnName("id_cartao");
+
+                    b.HasIndex("IdCartao");
+
+                    b.ToTable(t =>
+                        {
+                            t.HasCheckConstraint("CK_despesas_cartao", "(tipo = 'adiada') = (id_cartao IS NOT NULL)");
+
+                            t.HasCheckConstraint("CK_despesas_descricao", "btrim(descricao) <> ''");
+
+                            t.HasCheckConstraint("CK_despesas_pagamento", "(status_pagamento = 1) = (data_pagamento_efetiva IS NOT NULL)");
+
+                            t.HasCheckConstraint("CK_despesas_valor", "valor >= 0");
+                        });
+
+                    b.HasDiscriminator().HasValue("adiada");
+                });
+
+            modelBuilder.Entity("ControleFinanceiro.Domain.Despesas.DespesaSimples", b =>
+                {
+                    b.HasBaseType("ControleFinanceiro.Domain.Despesas.DespesaInteira");
+
+                    b.ToTable(t =>
+                        {
+                            t.HasCheckConstraint("CK_despesas_cartao", "(tipo = 'adiada') = (id_cartao IS NOT NULL)");
+
+                            t.HasCheckConstraint("CK_despesas_descricao", "btrim(descricao) <> ''");
+
+                            t.HasCheckConstraint("CK_despesas_pagamento", "(status_pagamento = 1) = (data_pagamento_efetiva IS NOT NULL)");
+
+                            t.HasCheckConstraint("CK_despesas_valor", "valor >= 0");
+                        });
+
+                    b.HasDiscriminator().HasValue("simples");
+                });
+
             modelBuilder.Entity("ControleFinanceiro.Domain.Beneficiarios.Beneficiario", b =>
                 {
                     b.HasOne("ControleFinanceiro.Domain.Usuarios.Usuario", null)
@@ -578,6 +733,31 @@ namespace ControleFinanceiro.Infrastructure.Persistence.Migrations
                         .IsRequired();
                 });
 
+            modelBuilder.Entity("ControleFinanceiro.Domain.Despesas.Despesa", b =>
+                {
+                    b.HasOne("ControleFinanceiro.Domain.Beneficiarios.Beneficiario", null)
+                        .WithMany()
+                        .HasForeignKey("IdBeneficiario")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+
+                    b.HasOne("ControleFinanceiro.Domain.Categorias.CategoriaDespesa", null)
+                        .WithMany()
+                        .HasForeignKey("IdCategoria")
+                        .OnDelete(DeleteBehavior.NoAction);
+
+                    b.HasOne("ControleFinanceiro.Domain.Despesas.DespesaRecorrente", null)
+                        .WithMany()
+                        .HasForeignKey("IdDespesaRecorrente")
+                        .OnDelete(DeleteBehavior.NoAction);
+
+                    b.HasOne("ControleFinanceiro.Domain.Usuarios.Usuario", null)
+                        .WithMany()
+                        .HasForeignKey("IdUsuario")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
             modelBuilder.Entity("ControleFinanceiro.Domain.Despesas.DespesaRecorrente", b =>
                 {
                     b.HasOne("ControleFinanceiro.Domain.Beneficiarios.Beneficiario", null)
@@ -634,6 +814,15 @@ namespace ControleFinanceiro.Infrastructure.Persistence.Migrations
                         .WithMany("DescontosSalariais")
                         .HasForeignKey("id_usuario")
                         .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("ControleFinanceiro.Domain.Despesas.DespesaAdiada", b =>
+                {
+                    b.HasOne("ControleFinanceiro.Domain.Cartoes.Cartao", null)
+                        .WithMany()
+                        .HasForeignKey("IdCartao")
+                        .OnDelete(DeleteBehavior.NoAction)
                         .IsRequired();
                 });
 

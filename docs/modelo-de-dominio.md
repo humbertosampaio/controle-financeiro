@@ -312,6 +312,7 @@ Estáticos e puros: recebem os agregados e as listas de que precisam, e quem cha
 | `ITransacaoRepository` | `Transacao` (adiciona só as de chave nova e devolve essas mesmas instâncias) |
 | `IImportacaoRepository` | `ImportacaoArquivo` |
 | `IDespesaRecorrenteRepository` | `DespesaRecorrente` (lista as do usuário atual) |
+| `IDespesaRepository` | `Despesa` (lista as do usuário atual num mês de referência, adiciona as geradas) |
 
 ## Value objects
 

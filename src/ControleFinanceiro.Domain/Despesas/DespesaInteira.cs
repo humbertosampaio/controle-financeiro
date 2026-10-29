@@ -7,8 +7,12 @@ namespace ControleFinanceiro.Domain.Despesas;
 
 public abstract class DespesaInteira : Despesa
 {
-    public MesReferencia MesReferencia { get; protected set; }
-    public Pagamento Pagamento { get; protected set; }
+    public MesReferencia MesReferencia { get; protected set; } = null!;
+    public Pagamento Pagamento { get; protected set; } = null!;
+
+    protected DespesaInteira()
+    {
+    }
 
     protected DespesaInteira(
         IdDespesa id,
