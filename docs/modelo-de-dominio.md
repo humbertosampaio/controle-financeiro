@@ -297,7 +297,7 @@ Estáticos e puros: recebem os agregados e as listas de que precisam, e quem cha
 | `ContaBancariaFactory` | Acha a conta do extrato entre as do usuário, ou cria uma. |
 | `DespesaRecorrenteFactory` | Cria a despesa recorrente no crédito (`CriarNoCredito`) ou sem cartão (`CriarSemCartao`), conferindo que não repete beneficiário e descrição de uma recorrente do usuário. |
 | `ImportacaoArquivoFactory` | Registra a importação de um arquivo com o usuário e a origem da própria conta ou do próprio cartão. |
-| `GeracaoDespesasDoMesService` | Gera as despesas de um mês a partir das recorrentes, ligadas a elas: `DespesaSimples` pendente, com o pagamento projetado no dia da ocorrência, ou `DespesaAdiada` com pagamento no vencimento do cartão. |
+| `GeracaoDespesasDoMesService` | Gera as despesas de um mês a partir das recorrentes, ligadas a elas: `DespesaSimples` pendente, com o pagamento projetado no dia da ocorrência, ou `DespesaAdiada` com pagamento no vencimento do cartão. Recebe as despesas do usuário no mês e gera só para as recorrentes que ainda não têm uma, então gerar o mesmo mês de novo não duplica; o índice único `(id_despesa_recorrente, mes_referencia)` é a rede. |
 | `LoteTransacoesFactory` | Confere que a origem é do usuário, que a importação é da mesma origem, que nenhum id de banco se repete no lote e que todo texto de beneficiário já é alias de um beneficiário do usuário; calcula as chaves e cria as transações ligadas à importação. |
 | `ConferenciaSomaPeriodo` | Confere, antes de gravar, que as transações do período (as já gravadas e as novas) somam o mesmo que os lançamentos do extrato. A divergência é aviso. |
 
@@ -312,6 +312,7 @@ Estáticos e puros: recebem os agregados e as listas de que precisam, e quem cha
 | `ITransacaoRepository` | `Transacao` (adiciona só as de chave nova e devolve essas mesmas instâncias) |
 | `IImportacaoRepository` | `ImportacaoArquivo` |
 | `IDespesaRecorrenteRepository` | `DespesaRecorrente` (lista as do usuário atual) |
+| `IDespesaRepository` | `Despesa` (lista as do usuário atual num mês de referência, adiciona as geradas) |
 
 ## Value objects
 

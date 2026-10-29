@@ -16,13 +16,17 @@ public abstract class Despesa : AggregateRoot<IdDespesa>, IPertenceAoUsuario
 {
     public IdUsuario IdUsuario { get; protected set; }
     public IdBeneficiario IdBeneficiario { get; protected set; }
-    public TextoObrigatorio Descricao { get; protected set; }
+    public TextoObrigatorio Descricao { get; protected set; } = null!;
     public IdCategoriaDespesa? IdCategoria { get; protected set; }
     public DateOnly DataOcorrencia { get; protected set; }
-    public FormaPagamento FormaPagamento { get; protected set; }
+    public FormaPagamento FormaPagamento { get; protected set; } = null!;
 
     /// <summary>A recorrente que gerou a despesa, ou nulo quando ela não veio de uma.</summary>
     public IdDespesaRecorrente? IdDespesaRecorrente { get; protected set; }
+
+    protected Despesa()
+    {
+    }
 
     protected Despesa(
         IdDespesa id,

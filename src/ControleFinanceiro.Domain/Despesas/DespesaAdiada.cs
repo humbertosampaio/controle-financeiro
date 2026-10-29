@@ -10,6 +10,10 @@ public sealed class DespesaAdiada : DespesaInteira
 {
     public IdCartao IdCartao { get; private set; }
 
+    private DespesaAdiada()
+    {
+    }
+
     private DespesaAdiada(
         IdDespesa id,
         IdUsuario idUsuario,

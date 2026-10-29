@@ -8,6 +8,10 @@ namespace ControleFinanceiro.Domain.Despesas;
 
 public sealed class DespesaSimples : DespesaInteira
 {
+    private DespesaSimples()
+    {
+    }
+
     private DespesaSimples(
         IdDespesa id,
         IdUsuario idUsuario,

@@ -47,7 +47,8 @@ public static class DependencyInjection
                 .AddTransient<IImportacaoRepository, ImportacaoRepository>()
                 .AddTransient<IBeneficiarioRepository, BeneficiarioRepository>()
                 .AddTransient<ICategoriaDespesaRepository, CategoriaDespesaRepository>()
-                .AddTransient<IDespesaRecorrenteRepository, DespesaRecorrenteRepository>();
+                .AddTransient<IDespesaRecorrenteRepository, DespesaRecorrenteRepository>()
+                .AddTransient<IDespesaRepository, DespesaRepository>();
         }
     }
 }
