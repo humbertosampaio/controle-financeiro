@@ -7,7 +7,7 @@ internal sealed class MesReferenciaConverter : ValueConverter<MesReferencia, Dat
 {
     public MesReferenciaConverter() : base(
         mes => mes.Inicio,
-        data => MesReferencia.Criar(data.Month, data.Year).Value)
+        data => (MesReferencia)data)
     {
     }
 }
