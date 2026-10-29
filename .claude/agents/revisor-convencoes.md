@@ -52,6 +52,16 @@ O build já quebra em parte das regras (IDE0021 em construtor, `TreatWarningsAsE
    - value object se compara, ordena e agrupa inteiro (`OrderBy(p => p.Key)`, `c.Sufixo == sufixo`), sem abrir as propriedades de dentro sem necessidade (`p.Key.Value`): quem decide o que entra na comparação é o `GetEqualityComponents`, e o `SimpleValueObject` já compara pelo `Value`;
    - valor que não depende do elemento da lambda ou do laço é calculado antes dela, e não a cada iteração: `IdBeneficiario idBeneficiario = IdBeneficiario.From(guid);` e depois `FirstOrDefault(b => b.Id == idBeneficiario)`, não `FirstOrDefault(b => b.Id == IdBeneficiario.From(guid))`. Vale para conversão a id ou value object (`From`, `Criar`, cast) e para qualquer expressão invariante, só em `src/**`: nos testes, a legibilidade vale mais que esse ganho, e a conversão pode ficar dentro da lambda (`gravados.Single(b => b.Id == IdBeneficiario.From(id))`).
    - sequência lazy (`IEnumerable<T>` vindo de `Select`, `Where` e afins) lida mais de uma vez é materializada antes (`ToArray()` ou `ToList()`), para a projeção não rodar de novo a cada leitura: `IReadOnlyList<Lancamento> lancamentos = fatura.Lancamentos.Select(l => l.Lancamento).ToArray();` antes de passá-la a dois serviços. Conte as leituras no próprio método e nos métodos que recebem a sequência, e pondere antes de reportar: lida uma vez só, ou com uma projeção trivial sobre poucos itens num caminho de teste, ela pode ficar lazy. Também só em `src/**`.
+   - para materializar uma sequência, `.ToArray()` ou `.ToList()`, não o spread `[.. sequencia]`;
+   - cadeia de métodos (fluent API) que deixaria a linha longa quebra uma chamada por linha, cada uma começando pelo `.` e indentada um nível abaixo da origem, em vez de tudo numa linha só:
+
+     ```csharp
+     Itens = pendentes
+         .Select(texto => new ItemCategoriaDto { Alias = texto, Nome = texto })
+         .ToArray(),
+     ```
+
+     Vale em `src/**` e nos testes. Cadeia curta, que cabe folgada numa linha, fica numa linha.
 
    Se uma delas passar a escapar com frequência, ela sobe para as Convenções do `CLAUDE.md`.
 9. **Conversão explícita no `SimpleValueObject<T>`.** Todo `SimpleValueObject<T>` concreto novo ou alterado no diff tem um `explicit operator` do primitivo para ele, chamando o `Criar`, com as exceções do `CLAUDE.md` (base abstrata, conversão implícita). Aponte também o código do diff que chama `X.Criar(v)` para um valor sabidamente válido, ou para um `Criar` que não falha, onde o cast `(X)v` serviria, e o `.Value` desnecessário onde a conversão implícita do `SimpleValueObject<T>` para o primitivo já basta.
