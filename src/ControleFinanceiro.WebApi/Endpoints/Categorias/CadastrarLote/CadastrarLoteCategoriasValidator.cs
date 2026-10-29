@@ -9,6 +9,12 @@ namespace ControleFinanceiro.WebApi.Endpoints.Categorias.CadastrarLote;
 
 public sealed class CadastrarLoteCategoriasValidator : Validator<CadastrarLoteCategoriasRequest>
 {
+    /// <summary>
+    /// O maior lote aceito: o lote resolve as categorias do banco pendentes de um arquivo, e um arquivo real tem uma
+    /// fração disso de categorias distintas.
+    /// </summary>
+    public const int TamanhoMaximoLote = 500;
+
     public CadastrarLoteCategoriasValidator()
     {
         RuleFor(x => x.IdUsuario)
@@ -16,6 +22,10 @@ public sealed class CadastrarLoteCategoriasValidator : Validator<CadastrarLoteCa
 
         RuleFor(x => x.Itens)
             .NotEmpty();
+
+        RuleFor(x => x.Itens)
+            .Must(itens => itens.Count <= TamanhoMaximoLote)
+            .WithMessage($"O lote deve ter no máximo {TamanhoMaximoLote} itens.");
 
         RuleForEach(x => x.Itens)
             .ChildRules(item =>
