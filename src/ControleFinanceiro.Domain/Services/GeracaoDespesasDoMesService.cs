@@ -7,18 +7,36 @@ namespace ControleFinanceiro.Domain.Services;
 
 /// <summary>
 /// Gera as despesas de um mês a partir das despesas recorrentes: a recorrente guarda o padrão que se repete
-/// todo mês, e cada despesa gerada é a desse padrão num mês de referência.
+/// todo mês, e cada despesa gerada é a desse padrão num mês de referência. Gera só as que faltam: a recorrente que
+/// já tem despesa no mês fica de fora, então gerar o mesmo mês de novo não duplica nada.
 /// </summary>
 public static class GeracaoDespesasDoMesService
 {
     /// <param name="cartoesDoUsuario">Os cartões do usuário, entre eles o de cada recorrente no crédito.</param>
-    /// <exception cref="ArgumentException">Quando o cartão de uma recorrente no crédito não está na lista.</exception>
+    /// <param name="despesasDoMes">As despesas do usuário no mês de referência, geradas ou não por uma recorrente.</param>
+    /// <exception cref="ArgumentException">
+    /// Quando o cartão de uma recorrente no crédito não está na lista, ou uma despesa da lista é de outro usuário ou
+    /// de outro mês.
+    /// </exception>
     public static Result<IReadOnlyList<Despesa>> GerarParaMes(
         IReadOnlyCollection<DespesaRecorrente> recorrentes,
         IReadOnlyCollection<Cartao> cartoesDoUsuario,
+        IReadOnlyCollection<Despesa> despesasDoMes,
         MesReferencia mesReferencia)
     {
+        if (despesasDoMes.Any(d => recorrentes.Any(r => r.IdUsuario != d.IdUsuario)))
+            throw new ArgumentException("A lista traz uma despesa de outro usuário.", nameof(despesasDoMes));
+
+        if (despesasDoMes.OfType<DespesaInteira>().Any(d => d.MesReferencia != mesReferencia))
+            throw new ArgumentException("A lista traz uma despesa de outro mês.", nameof(despesasDoMes));
+
+        HashSet<IdDespesaRecorrente> recorrentesComDespesa = despesasDoMes
+            .Select(d => d.IdDespesaRecorrente)
+            .OfType<IdDespesaRecorrente>()
+            .ToHashSet();
+
         Result<Despesa>[] resultados = recorrentes
+            .Where(recorrente => !recorrentesComDespesa.Contains(recorrente.Id))
             .Select(recorrente => Gerar(recorrente, cartoesDoUsuario, mesReferencia))
             .ToArray();
 

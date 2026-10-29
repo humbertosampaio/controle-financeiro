@@ -1,4 +1,5 @@
 using AutoFixture.Xunit2;
+using ControleFinanceiro.Domain.Beneficiarios;
 using ControleFinanceiro.Domain.Cartoes;
 using ControleFinanceiro.Domain.Despesas;
 using ControleFinanceiro.Domain.Services;
@@ -20,7 +21,8 @@ public sealed class GeracaoDespesasDoMesServiceTests
         fixture.Inject(FormaPagamento.Pix);
         List<DespesaRecorrente> recorrentes = fixture.CreateMany<DespesaRecorrente>().ToList();
 
-        Result<IReadOnlyList<Despesa>> result = GeracaoDespesasDoMesService.GerarParaMes(recorrentes, cartoesDoUsuario: [], mesReferencia);
+        Result<IReadOnlyList<Despesa>> result = GeracaoDespesasDoMesService.GerarParaMes(
+            recorrentes, cartoesDoUsuario: [], despesasDoMes: [], mesReferencia);
 
         IReadOnlyList<Despesa> despesas = result.Should().Succeed().Which;
         despesas.Should().HaveSameCount(recorrentes);
@@ -43,7 +45,7 @@ public sealed class GeracaoDespesasDoMesServiceTests
         List<DespesaRecorrente> recorrentes = fixture.CreateMany<DespesaRecorrente>().ToList();
 
         Result<IReadOnlyList<Despesa>> result = GeracaoDespesasDoMesService.GerarParaMes(
-            recorrentes, [outroCartao, cartao], mesReferencia);
+            recorrentes, [outroCartao, cartao], despesasDoMes: [], mesReferencia);
 
         IReadOnlyList<Despesa> despesas = result.Should().Succeed().Which;
         despesas.Should().HaveSameCount(recorrentes);
@@ -63,7 +65,8 @@ public sealed class GeracaoDespesasDoMesServiceTests
         fixture.Inject(FormaPagamento.Credito);
         DespesaRecorrente recorrente = fixture.Create<DespesaRecorrente>();
 
-        Action act = () => GeracaoDespesasDoMesService.GerarParaMes([recorrente], [outroCartao], mesReferencia);
+        Action act = () => GeracaoDespesasDoMesService.GerarParaMes(
+            [recorrente], [outroCartao], despesasDoMes: [], mesReferencia);
 
         act.Should().ThrowExactly<ArgumentException>();
     }
@@ -71,10 +74,107 @@ public sealed class GeracaoDespesasDoMesServiceTests
     [Theory, DomainAutoData]
     public void GerarParaMes_Quando_SemDespesasRecorrentes_Deve_RetornarListaVazia(MesReferencia mesReferencia)
     {
-        Result<IReadOnlyList<Despesa>> result = GeracaoDespesasDoMesService.GerarParaMes(recorrentes: [], cartoesDoUsuario: [], mesReferencia);
+        Result<IReadOnlyList<Despesa>> result = GeracaoDespesasDoMesService.GerarParaMes(
+            recorrentes: [], cartoesDoUsuario: [], despesasDoMes: [], mesReferencia);
 
         result.Should().Succeed()
             .Which.Should().BeEmpty();
+    }
+
+    [Theory, DomainAutoData]
+    public void GerarParaMes_Quando_RecorrenteJaTemDespesaNoMes_Deve_GerarSoAsQueFaltam(
+        [Frozen] IdUsuario idUsuario,
+        MesReferencia mesReferencia,
+        Fixture fixture)
+    {
+        fixture.Inject(FormaPagamento.Pix);
+        DespesaRecorrente comDespesa = fixture.Create<DespesaRecorrente>();
+        DespesaRecorrente semDespesa = fixture.Create<DespesaRecorrente>();
+        Despesa despesaExistente = GeracaoDespesasDoMesService.GerarComPagamentoImediato(comDespesa, mesReferencia).Value;
+
+        Result<IReadOnlyList<Despesa>> result = GeracaoDespesasDoMesService.GerarParaMes(
+            [comDespesa, semDespesa], cartoesDoUsuario: [], [despesaExistente], mesReferencia);
+
+        Despesa gerada = result.Should().Succeed()
+            .Which.Should().ContainSingle().Subject;
+        gerada.IdDespesaRecorrente.Should().Be(semDespesa.Id);
+        gerada.IdUsuario.Should().Be(idUsuario);
+    }
+
+    [Theory, DomainAutoData]
+    public void GerarParaMes_Quando_DespesaDoMesSemRecorrente_Deve_GerarTodasAsRecorrentes(
+        [Frozen] IdUsuario idUsuario,
+        TextoObrigatorio descricao,
+        IdBeneficiario idBeneficiario,
+        ReaisPositivo valor,
+        MesReferencia mesReferencia,
+        Fixture fixture)
+    {
+        fixture.Inject(FormaPagamento.Pix);
+        List<DespesaRecorrente> recorrentes = fixture.CreateMany<DespesaRecorrente>().ToList();
+        DespesaSimples despesaAvulsa = DespesaSimples
+            .Criar(idUsuario, idBeneficiario, descricao, idCategoria: null, mesReferencia.Inicio, FormaPagamento.Pix, valor)
+            .Value;
+
+        Result<IReadOnlyList<Despesa>> result = GeracaoDespesasDoMesService.GerarParaMes(
+            recorrentes, cartoesDoUsuario: [], [despesaAvulsa], mesReferencia);
+
+        result.Should().Succeed()
+            .Which.Should().HaveSameCount(recorrentes);
+    }
+
+    [Theory, DomainAutoData]
+    public void GerarParaMes_Quando_JaneiroGeradoDeNovoNoCredito_Deve_RetornarListaVazia(
+        [Frozen] Cartao cartao,
+        Fixture fixture)
+    {
+        MesReferencia janeiro = MesReferencia.Criar(mes: 01, ano: 2027).Value;
+        fixture.Inject(FormaPagamento.Credito);
+        List<DespesaRecorrente> recorrentes = fixture.CreateMany<DespesaRecorrente>().ToList();
+        IReadOnlyList<Despesa> geradas = GeracaoDespesasDoMesService.GerarParaMes(
+            recorrentes, [cartao], despesasDoMes: [], janeiro).Value;
+
+        Result<IReadOnlyList<Despesa>> result = GeracaoDespesasDoMesService.GerarParaMes(
+            recorrentes, [cartao], geradas.ToArray(), janeiro);
+
+        result.Should().Succeed()
+            .Which.Should().BeEmpty();
+    }
+
+    [Theory, DomainAutoData]
+    public void GerarParaMes_Quando_DespesaDoMesDeOutroUsuario_Deve_LancarExcecao(
+        IdUsuario outroUsuario,
+        MesReferencia mesReferencia,
+        Fixture fixture)
+    {
+        fixture.Inject(FormaPagamento.Pix);
+        DespesaRecorrente recorrente = fixture.Create<DespesaRecorrente>();
+        fixture.Inject(outroUsuario);
+        DespesaRecorrente recorrenteDeOutroUsuario = fixture.Create<DespesaRecorrente>();
+        Despesa despesaDeOutroUsuario = GeracaoDespesasDoMesService
+            .GerarComPagamentoImediato(recorrenteDeOutroUsuario, mesReferencia)
+            .Value;
+
+        Action act = () => GeracaoDespesasDoMesService.GerarParaMes(
+            [recorrente], cartoesDoUsuario: [], [despesaDeOutroUsuario], mesReferencia);
+
+        act.Should().ThrowExactly<ArgumentException>().WithParameterName("despesasDoMes");
+    }
+
+    [Theory, DomainAutoData]
+    public void GerarParaMes_Quando_DespesaDeOutroMes_Deve_LancarExcecao(
+        MesReferencia mesReferencia,
+        MesReferencia outroMes,
+        Fixture fixture)
+    {
+        fixture.Inject(FormaPagamento.Pix);
+        DespesaRecorrente recorrente = fixture.Create<DespesaRecorrente>();
+        Despesa despesaDeOutroMes = GeracaoDespesasDoMesService.GerarComPagamentoImediato(recorrente, outroMes).Value;
+
+        Action act = () => GeracaoDespesasDoMesService.GerarParaMes(
+            [recorrente], cartoesDoUsuario: [], [despesaDeOutroMes], mesReferencia);
+
+        act.Should().ThrowExactly<ArgumentException>().WithParameterName("despesasDoMes");
     }
 
     [Theory, DomainAutoData]
