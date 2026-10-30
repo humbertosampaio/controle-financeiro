@@ -21,6 +21,7 @@ public class DomainFixture : Fixture
             .Customize(new CnpjCustomization())
             .Customize(new MesReferenciaCustomization())
             .Customize(new DiaVencimentoCartaoCustomization())
+            .Customize(new DiaFechamentoCartaoCustomization())
             .Customize(new SufixoCartaoCustomization())
             .Customize(new VencimentosCartoesNovosCustomization())
             .Customize(new SufixoContaCustomization())
