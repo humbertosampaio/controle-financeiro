@@ -209,26 +209,13 @@ public sealed class DespesaParceladaFactoryTests
         act.Should().ThrowExactly<ArgumentException>().WithParameterName("categoriasDoUsuario");
     }
 
+    // A despesa vem antes do [Frozen]: só o que é pedido depois dele sai do usuário congelado.
     [Theory, DomainAutoData]
     public void CriarDaFatura_Quando_ParceladaDeOutroUsuario_Deve_LancarExcecao(
+        DespesaParcelada deOutroUsuario,
         [Frozen] IdUsuario idUsuario,
-        Cartao cartao,
-        IdBeneficiario idBeneficiario,
-        TextoObrigatorio descricao,
-        ReaisPositivo valor)
+        Cartao cartao)
     {
-        DespesaParcelada deOutroUsuario = DespesaParcelada.Criar(
-            IdUsuario.FromNewVersion7Guid(),
-            idBeneficiario,
-            descricao,
-            idCategoria: null,
-            _dataCompra,
-            valor,
-            cartao.Id,
-            VencimentoFaturaCartao.MesVencimento(cartao, _dataCompra),
-            cartao.DiaVencimento,
-            (Parcela)(1, 2));
-
         Action act = () => CriarDaFatura(idUsuario, cartao, [deOutroUsuario], Compra());
 
         act.Should().ThrowExactly<ArgumentException>().WithParameterName("parceladasDoUsuario");
