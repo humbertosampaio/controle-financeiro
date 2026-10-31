@@ -63,13 +63,13 @@ public sealed class AlterarCategoriaDespesaEndpointTests : IAsyncLifetime
         AlterarCategoriaDespesaRequest requisicao)
     {
         Guid idUsuario = await ImportarFaturaComParceladaAsync(cadastro);
-        DespesaParcelada original = (await ObterParceladasAsync()).Single();
+        DespesaParcelada original = (await _api.ObterParceladasAsync()).Single();
         Guid idCategoria = (await _api.CadastrarCategoriasAsync(idUsuario, categorias))[0];
 
         using HttpResponseMessage resposta = await AlterarAsync(idUsuario, original.Id.Value, requisicao with { IdCategoria = idCategoria });
 
         resposta.StatusCode.Should().Be(HttpStatusCode.NoContent);
-        DespesaParcelada gravada = (await ObterParceladasAsync()).Single();
+        DespesaParcelada gravada = (await _api.ObterParceladasAsync()).Single();
         gravada.IdCategoria.Should().Be(IdCategoriaDespesa.From(idCategoria));
         gravada.Parcelas.Should().BeEquivalentTo(original.Parcelas);
     }
@@ -97,14 +97,14 @@ public sealed class AlterarCategoriaDespesaEndpointTests : IAsyncLifetime
         AlterarCategoriaDespesaRequest requisicao)
     {
         await ImportarFaturaComParceladaAsync(outroCadastro);
-        DespesaParcelada doOutro = (await ObterParceladasAsync()).Single();
+        DespesaParcelada doOutro = (await _api.ObterParceladasAsync()).Single();
         Guid idUsuario = await _api.CadastrarUsuarioAsync(cadastro);
         Guid idCategoria = (await _api.CadastrarCategoriasAsync(idUsuario, categorias))[0];
 
         using HttpResponseMessage resposta = await AlterarAsync(idUsuario, doOutro.Id.Value, requisicao with { IdCategoria = idCategoria });
 
         resposta.StatusCode.Should().Be(HttpStatusCode.NotFound);
-        (await ObterParceladasAsync()).Single().IdCategoria.Should().Be(doOutro.IdCategoria);
+        (await _api.ObterParceladasAsync()).Single().IdCategoria.Should().Be(doOutro.IdCategoria);
     }
 
     [Theory, ApiAutoData]
@@ -113,12 +113,12 @@ public sealed class AlterarCategoriaDespesaEndpointTests : IAsyncLifetime
         AlterarCategoriaDespesaRequest requisicao)
     {
         Guid idUsuario = await ImportarFaturaComParceladaAsync(cadastro);
-        DespesaParcelada original = (await ObterParceladasAsync()).Single();
+        DespesaParcelada original = (await _api.ObterParceladasAsync()).Single();
 
         using HttpResponseMessage resposta = await AlterarAsync(idUsuario, original.Id.Value, requisicao);
 
         resposta.StatusCode.Should().Be(HttpStatusCode.NotFound);
-        (await ObterParceladasAsync()).Single().IdCategoria.Should().Be(original.IdCategoria);
+        (await _api.ObterParceladasAsync()).Single().IdCategoria.Should().Be(original.IdCategoria);
     }
 
     [Theory, ApiAutoData]
@@ -131,12 +131,12 @@ public sealed class AlterarCategoriaDespesaEndpointTests : IAsyncLifetime
         Guid idOutroUsuario = await _api.CadastrarUsuarioAsync(outroCadastro);
         Guid idCategoriaDoOutro = (await _api.CadastrarCategoriasAsync(idOutroUsuario, categoriasDoOutro))[0];
         Guid idUsuario = await ImportarFaturaComParceladaAsync(cadastro);
-        DespesaParcelada original = (await ObterParceladasAsync()).Single();
+        DespesaParcelada original = (await _api.ObterParceladasAsync()).Single();
 
         using HttpResponseMessage resposta = await AlterarAsync(idUsuario, original.Id.Value, requisicao with { IdCategoria = idCategoriaDoOutro });
 
         resposta.StatusCode.Should().Be(HttpStatusCode.NotFound);
-        (await ObterParceladasAsync()).Single().IdCategoria.Should().Be(original.IdCategoria);
+        (await _api.ObterParceladasAsync()).Single().IdCategoria.Should().Be(original.IdCategoria);
     }
 
     [Fact]
@@ -155,8 +155,6 @@ public sealed class AlterarCategoriaDespesaEndpointTests : IAsyncLifetime
 
         return idUsuario;
     }
-
-    private Task<List<DespesaParcelada>> ObterParceladasAsync() => _api.ObterTodosAsync(db => db.Despesas.OfType<DespesaParcelada>());
 
     private Task<HttpResponseMessage> AlterarAsync(Guid idUsuario, Guid idDespesa, AlterarCategoriaDespesaRequest requisicao)
     {

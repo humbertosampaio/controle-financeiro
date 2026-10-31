@@ -83,4 +83,4 @@ build ✅ | unidade ✅ (N) | integração ✅ (N, filtro) | modelo do EF ✅ (o
 <o que nenhum gate ou revisor cobriu>
 ```
 
-Achado CRÍTICO ou ALTO: corrija e rode a revisão de novo antes do `abrir-pr`.
+Todo achado, de qualquer severidade, é corrigido antes do `abrir-pr`, e a revisão roda de novo. Achado que você não pretende atender (mesmo BAIXO, MÉDIO ou contrário a uma decisão fechada no plano): pare, explique ao dono o que o revisor apontou e por que você o ignoraria, e espere a decisão dele. Só ele decide ignorar; não basta citar o achado no PR ou no relato final.

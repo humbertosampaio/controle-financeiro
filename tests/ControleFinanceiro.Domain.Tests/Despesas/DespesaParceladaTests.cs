@@ -1,6 +1,5 @@
 using AutoFixture.Xunit2;
 using ControleFinanceiro.Domain.Cartoes;
-using ControleFinanceiro.Domain.Categorias;
 using ControleFinanceiro.Domain.Despesas;
 using ControleFinanceiro.Domain.Services;
 using ControleFinanceiro.Domain.Shared.ValueObjects;
@@ -112,14 +111,6 @@ public sealed class DespesaParceladaTests
         Maybe<ParcelaDespesa> result = despesa.ParcelaDoMes(despesa.Parcelas[^1].MesReferencia.Posterior());
 
         result.HasNoValue.Should().BeTrue();
-    }
-
-    [Theory, DomainAutoData]
-    public void AlterarCategoria_Deve_TrocarACategoria(DespesaParcelada despesa, IdCategoriaDespesa idCategoria)
-    {
-        despesa.AlterarCategoria(idCategoria);
-
-        despesa.IdCategoria.Should().Be(idCategoria);
     }
 
     private static DespesaParcelada Parcelar(IdUsuario idUsuario, Cartao cartao, int numero, int total)

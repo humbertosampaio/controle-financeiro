@@ -307,7 +307,7 @@ classDiagram
 
 ## Serviços de domínio
 
-Estáticos e puros: recebem os agregados e as listas de que precisam, e quem chama os carrega pelos repositórios. Uma lista com item de outro usuário é erro de quem chama e lança `ArgumentException`.
+Puros, sem infraestrutura: recebem os agregados e as listas de que precisam, e quem chama os carrega pelos repositórios. Uma lista com item de outro usuário é erro de quem chama e lança `ArgumentException`.
 
 | Serviço | O que faz |
 |---|---|
@@ -318,6 +318,7 @@ Estáticos e puros: recebem os agregados e as listas de que precisam, e quem cha
 | `CartaoFactory` | Cria o cartão do usuário, conferindo banco + sufixo entre os cartões dele, ou obtém os cartões dos finais de uma fatura (`ObterDosFinais`), falhando quando falta algum. `ObterDoFinal` acha o cartão de um final, para a prévia da importação. |
 | `ContaBancariaFactory` | Acha a conta do extrato entre as do usuário, ou cria uma. |
 | `DespesaParceladaFactory` | Cria as despesas parceladas que as compras de uma fatura revelam e que o usuário ainda não tem (`CriarDaFatura`), reconhecendo a mesma compra pelo cartão, pela data, pela descrição normalizada e pelo total de parcelas. Só cria, nunca altera. |
+| `AlteracaoCategoriaDespesaService` | Troca a categoria de uma despesa, conferindo que a despesa e a categoria são do mesmo usuário. |
 | `DespesaRecorrenteFactory` | Cria a despesa recorrente no crédito (`CriarNoCredito`) ou sem cartão (`CriarSemCartao`), conferindo que não repete beneficiário e descrição de uma recorrente do usuário. |
 | `ImportacaoArquivoFactory` | Registra a importação de um arquivo com o usuário e a origem da própria conta ou do próprio cartão. |
 | `VencimentoFaturaCartao` | Calcula, pelos dias do cartão, o mês de vencimento da fatura em que cai uma compra (`MesVencimento`) e, na volta, a data da compra que vence num mês pedido (`DataOcorrenciaQueVenceEm`). A compra no dia do fechamento entra na fatura que fecha nesse dia. |
@@ -350,4 +351,4 @@ Cada value object mora na pasta do agregado dono, mesmo quando outro agregado o 
 
 Em `Shared/ValueObjects` ficam só os conceitos sem dono: `Reais` (com sinal, e o zero sempre sem sinal) e `ReaisPositivo` para dinheiro; `TextoObrigatorio`; `MesReferencia`, o calendário do balanço, nos anos de 1 a 9999 que o `DateOnly` representa; `DiaValidoEmTodoMes`, a base dos dias de 1 a 28 que o `MesReferencia` aceita; o SmartEnum `Banco` (código COMPE); `TextoNormalizado`, a forma de um texto usada para comparar (aparado, espaços juntos, sem acentos, em maiúsculas), que o `Alias` e o nome da `CategoriaDespesa` usam; `Alias`, um texto do arquivo com o original, para exibir, e o normalizado, que decide a igualdade; `Alfanumerico`, só as letras e os dígitos ASCII de um texto; `TextoSemDocumentos`, um texto do banco sem os CPFs e CNPJs que ele trazia; e o `Documento` abstrato, com o `Cpf` e o `Cnpj`.
 
-- **Documento**: guardado sem a máscara e em maiúsculas, com os dígitos verificadores conferidos (módulo 11). O `Documento.Criar` escolhe pelo tamanho: 11 caracteres é `Cpf`, e 14 é `Cnpj`. O `Cnpj` segue a regra alfanumérica vigente desde julho de 2026, e o CNPJ só numérico é um caso particular dela. As mensagens de falha não repetem o número. Hoje, o `Cpf` e o `Cnpj` servem ao `TextoSemDocumentos`, que os leitores do Mercado Pago usam para tirar os documentos da descrição e da contraparte antes de elas saírem do leitor.
+- **Documento**: guardado sem a máscara e em maiúsculas, com os dígitos verificadores conferidos (módulo 11). O `Documento.Criar` escolhe pelo tamanho: 11 caracteres é `Cpf`, e 14 é `Cnpj`. O `Cnpj` segue a regra alfanumérica vigente desde julho de 2026, e o CNPJ só numérico é um caso particular dela. As mensagens de falha não repetem o número. O `Cpf` e o `Cnpj` servem ao `TextoSemDocumentos`, que tira os documentos de um texto. Os leitores mantêm os documentos na descrição e na contraparte, que são gravadas e exibidas assim; a limpeza é para o que sair rumo ao modelo.

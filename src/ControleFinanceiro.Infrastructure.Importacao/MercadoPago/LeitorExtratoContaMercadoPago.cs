@@ -33,7 +33,7 @@ namespace ControleFinanceiro.Infrastructure.Importacao.MercadoPago;
 /// e só o aviso da soma do período apontaria a diferença. Nenhum arquivo conferido repete o id.
 /// </para>
 /// <para>
-/// O CPF e o CNPJ que vêm na descrição, colados à contraparte, saem antes de a descrição deixar o leitor. As
+/// O CPF e o CNPJ que vêm na descrição, colados à contraparte, ficam: quem os tira é a saída para o modelo. As
 /// mensagens de falha citam só o número da linha, e a <see cref="CsvHelperException"/>, que traz o registro cru, é
 /// capturada.
 /// </para>
@@ -206,7 +206,7 @@ public sealed partial class LeitorExtratoContaMercadoPago : ILeitorExtratoContaI
     /// <returns>Na falha, o fim da frase que começa com "A linha N do arquivo".</returns>
     private static Result<LancamentoContabilizado> Converter(LinhaExtratoMercadoPago linha)
     {
-        string descricao = (TextoSemDocumentos)linha.Descricao;
+        string descricao = linha.Descricao.Trim();
 
         return Result
             .FailureIf(descricao.Length == 0, "não tem descrição.")
@@ -216,7 +216,7 @@ public sealed partial class LeitorExtratoContaMercadoPago : ILeitorExtratoContaI
             .Map(identidade => Contabilizar(linha, descricao, identidade));
     }
 
-    /// <param name="descricao">Sem CPF nem CNPJ, aparada e não vazia.</param>
+    /// <param name="descricao">Aparada e não vazia.</param>
     private static LancamentoContabilizado Contabilizar(LinhaExtratoMercadoPago linha, string descricao, IdentidadeLancamento identidade)
     {
         (TextoObrigatorio descricaoSemContraparte, string? contraparte) = DescricaoEContraparte(descricao);
@@ -232,7 +232,7 @@ public sealed partial class LeitorExtratoContaMercadoPago : ILeitorExtratoContaI
     /// Nas descrições com um prefixo conhecido, o que vem depois dele é a contraparte. As outras ficam inteiras, sem
     /// contraparte.
     /// </summary>
-    /// <param name="descricao">Sem CPF nem CNPJ, aparada e não vazia.</param>
+    /// <param name="descricao">Aparada e não vazia.</param>
     private static (TextoObrigatorio Descricao, string? Contraparte) DescricaoEContraparte(string descricao)
     {
         string? prefixo = Array.Find(

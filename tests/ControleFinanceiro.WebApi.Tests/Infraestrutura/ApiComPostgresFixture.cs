@@ -1,4 +1,5 @@
 using ControleFinanceiro.AppHost.Resources;
+using ControleFinanceiro.Domain.Despesas;
 using ControleFinanceiro.Infrastructure.Persistence;
 using ControleFinanceiro.WebApi.Endpoints.Beneficiarios.CadastrarLote;
 using ControleFinanceiro.WebApi.Endpoints.Categorias.CadastrarLote;
@@ -159,6 +160,8 @@ public sealed class ApiComPostgresFixture : IAsyncLifetime
             .AsNoTracking()
             .ToListAsync());
     }
+
+    public Task<List<DespesaParcelada>> ObterParceladasAsync() => ObterTodosAsync(db => db.Despesas.OfType<DespesaParcelada>());
 
     /// <summary>
     /// Todos os serviços do tipo <typeparamref name="T"/> registrados no container da API, resolvidos num escopo

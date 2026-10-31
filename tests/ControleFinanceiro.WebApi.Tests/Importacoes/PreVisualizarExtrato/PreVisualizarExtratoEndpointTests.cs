@@ -20,7 +20,7 @@ public sealed class PreVisualizarExtratoEndpointTests : IAsyncLifetime
 {
     /// <summary>As contrapartes das saídas do extrato fictício do Mercado Pago, na ordem do arquivo.</summary>
     private static readonly string[] _contrapartesMercadoPago =
-        ["FULANO FICTICIO", "LOJA FICTICIA LTDA", "CONDOMINIO FICTICIO", "CICRANO FICTICIO", "Clube Ficticio"];
+        ["FULANO FICTICIO", "LOJA FICTICIA LTDA", "CONDOMINIO FICTICIO", "CICRANO FICTICIO 123.456.789-09", "Clube Ficticio"];
 
     private readonly ApiComPostgresFixture _api;
 

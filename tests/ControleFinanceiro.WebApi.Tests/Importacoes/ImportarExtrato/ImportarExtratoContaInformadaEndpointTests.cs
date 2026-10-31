@@ -69,22 +69,19 @@ public sealed class ImportarExtratoContaInformadaEndpointTests : IAsyncLifetime
             t.Origem.Should().Be(OrigemTransacao.DaConta(conta.Id));
         });
         transacoes.Sum(t => t.Valor).Should().Be(ExtratoContaMercadoPago.SomaLancamentos);
-        transacoes.Select(t => t.Contraparte).Should().Contain("BELTRANO FICTICIO");
+        transacoes.Select(t => t.Contraparte).Should().Contain("BELTRANO FICTICIO 12345678909");
     }
 
     [Theory, ApiAutoData]
-    public async Task Post_Deve_GravarAsTransacoesSemOCpfDaDescricao(CadastrarUsuarioRequest cadastro)
+    public async Task Post_Deve_GravarAsTransacoesComOCpfDaContraparte(CadastrarUsuarioRequest cadastro)
     {
         Guid idUsuario = await _api.CadastrarUsuarioAsync(cadastro);
         await ResolverBeneficiariosAsync(idUsuario, ExtratoContaMercadoPago.Completo());
 
         await ImportarComSucessoAsync(idUsuario, ExtratoContaMercadoPago.Completo());
 
-        (await _api.ObterTodosAsync(db => db.Transacoes)).Should().AllSatisfy(t =>
-        {
-            string texto = $"{t.Descricao} {t.Contraparte}";
-            ExtratoContaMercadoPago.CpfFicticio.Should().AllSatisfy(cpf => texto.Should().NotContain(cpf));
-        });
+        IEnumerable<string?> contrapartes = (await _api.ObterTodosAsync(db => db.Transacoes)).Select(t => t.Contraparte);
+        ExtratoContaMercadoPago.CpfFicticio.Should().AllSatisfy(cpf => contrapartes.Should().Contain(c => c != null && c.Contains(cpf)));
     }
 
     [Theory, ApiAutoData]

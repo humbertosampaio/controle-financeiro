@@ -375,7 +375,7 @@ public sealed class ImportarFaturaEndpointTests : IAsyncLifetime
 
         corpo.Cartoes.Select(c => c.DespesasParceladasCriadas).Should().Equal(1, 0);
 
-        DespesaParcelada despesa = (await ObterParceladasAsync()).Should().ContainSingle().Subject;
+        DespesaParcelada despesa = (await _api.ObterParceladasAsync()).Should().ContainSingle().Subject;
         Cartao fisico = (await _api.ObterTodosAsync(db => db.Cartoes)).Single(c => c.Sufixo == FaturaCartaoC6.SufixoFisico);
         Beneficiario beneficiario = (await _api.ObterTodosAsync(db => db.Beneficiarios)).Single(b => b.PossuiAlias((Alias)"LOJA DE EXEMPLO"));
         CategoriaDespesa categoria = (await _api.ObterTodosAsync(db => db.Categorias)).Single(c => c.PossuiAlias((Alias)"Eletrônicos"));
@@ -385,6 +385,17 @@ public sealed class ImportarFaturaEndpointTests : IAsyncLifetime
         despesa.IdBeneficiario.Should().Be(beneficiario.Id);
         despesa.IdCategoria.Should().Be(categoria.Id);
         despesa.DataOcorrencia.Should().Be(FaturaCartaoC6.PrimeiraCompraFisico);
+    }
+
+    [Theory, ApiAutoData]
+    public async Task Post_Deve_GravarAsParcelasDaDespesa(CadastrarUsuarioRequest cadastro)
+    {
+        Guid idUsuario = await _api.CadastrarUsuarioAsync(cadastro);
+        await ResolverPendenciasAsync(idUsuario, FaturaCartaoC6.Completo());
+
+        await ImportarComSucessoAsync(idUsuario, FaturaCartaoC6.Completo());
+
+        DespesaParcelada despesa = (await _api.ObterParceladasAsync()).Should().ContainSingle().Subject;
 
         // O cartão vence no dia 10 e fecha no dia 3: a compra de 15/07/2025 cai na fatura de 08/2025.
         ParcelaDespesa[] parcelas = despesa.Parcelas.OrderBy(p => p.NumeroParcela).ToArray();
@@ -407,7 +418,7 @@ public sealed class ImportarFaturaEndpointTests : IAsyncLifetime
         ImportarFaturaResponse corpo = await ImportarComSucessoAsync(idUsuario, FaturaCartaoC6.Completo());
 
         corpo.Cartoes.Should().OnlyContain(c => c.DespesasParceladasCriadas == 0);
-        (await ObterParceladasAsync()).Should().ContainSingle();
+        (await _api.ObterParceladasAsync()).Should().ContainSingle();
     }
 
     [Theory, ApiAutoData]
@@ -420,7 +431,7 @@ public sealed class ImportarFaturaEndpointTests : IAsyncLifetime
         ImportarFaturaResponse corpo = await ImportarComSucessoAsync(idUsuario, FaturaCartaoC6.ComParcelaSeguinte());
 
         corpo.Cartoes.Should().OnlyContain(c => c.DespesasParceladasCriadas == 0);
-        DespesaParcelada despesa = (await ObterParceladasAsync()).Should().ContainSingle().Subject;
+        DespesaParcelada despesa = (await _api.ObterParceladasAsync()).Should().ContainSingle().Subject;
         despesa.Parcelas.Single(p => p.NumeroParcela == 3).Pagamento.EstaPago.Should().BeFalse();
     }
 
@@ -433,7 +444,7 @@ public sealed class ImportarFaturaEndpointTests : IAsyncLifetime
 
         await ImportarComSucessoAsync(idUsuario, FaturaCartaoC6.Completo());
 
-        DespesaParcelada despesa = (await ObterParceladasAsync()).Should().ContainSingle().Subject;
+        DespesaParcelada despesa = (await _api.ObterParceladasAsync()).Should().ContainSingle().Subject;
         despesa.Parcelas.Where(p => p.Pagamento.EstaPago).Select(p => p.NumeroParcela).Should().BeEquivalentTo([1, 2, 3]);
     }
 
@@ -447,7 +458,7 @@ public sealed class ImportarFaturaEndpointTests : IAsyncLifetime
         await ImportarComSucessoAsync(idUsuario, FaturaCartaoC6.ComCompraParceladaGemea());
 
         corpo.Cartoes[0].DespesasParceladasCriadas.Should().Be(2);
-        (await ObterParceladasAsync()).Should().HaveCount(2);
+        (await _api.ObterParceladasAsync()).Should().HaveCount(2);
     }
 
     [Theory, ApiAutoData]
@@ -461,7 +472,7 @@ public sealed class ImportarFaturaEndpointTests : IAsyncLifetime
         await ImportarComSucessoAsync(idUsuario, FaturaCartaoC6.Completo());
         await ImportarComSucessoAsync(idOutro, FaturaCartaoC6.Completo());
 
-        (await ObterParceladasAsync()).Select(d => d.IdUsuario).Should().BeEquivalentTo([IdUsuario.From(idUsuario), IdUsuario.From(idOutro)]);
+        (await _api.ObterParceladasAsync()).Select(d => d.IdUsuario).Should().BeEquivalentTo([IdUsuario.From(idUsuario), IdUsuario.From(idOutro)]);
     }
 
     [Theory, ApiAutoData]
@@ -498,8 +509,6 @@ public sealed class ImportarFaturaEndpointTests : IAsyncLifetime
         (await resposta.CamposComErroAsync()).Should().BeEquivalentTo("idUsuario", "layout", "arquivo");
         await _api.DeveEstarSemImportacaoAsync();
     }
-
-    private Task<List<DespesaParcelada>> ObterParceladasAsync() => _api.ObterTodosAsync(db => db.Despesas.OfType<DespesaParcelada>());
 
     private Task<HttpResponseMessage> ImportarAsync(Guid idUsuario, byte[] arquivo)
     {

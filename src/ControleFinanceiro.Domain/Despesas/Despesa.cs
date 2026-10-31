@@ -48,5 +48,6 @@ public abstract class Despesa : AggregateRoot<IdDespesa>, IPertenceAoUsuario
         IdDespesaRecorrente = idDespesaRecorrente;
     }
 
-    public void AlterarCategoria(IdCategoriaDespesa idCategoria) => IdCategoria = idCategoria;
+    /// <summary>Interno porque só o <see cref="Services.AlteracaoCategoriaDespesaService"/> confere de quem é a categoria.</summary>
+    internal void AlterarCategoria(IdCategoriaDespesa idCategoria) => IdCategoria = idCategoria;
 }

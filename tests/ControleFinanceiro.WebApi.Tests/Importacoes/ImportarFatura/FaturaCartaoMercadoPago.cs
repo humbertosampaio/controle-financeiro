@@ -21,9 +21,8 @@ internal static class FaturaCartaoMercadoPago
     public static readonly DateOnly PrimeiraData = new(2025, 11, 15);
     public static readonly DateOnly UltimaData = new(2026, 4, 10);
 
-    /// <summary>Os documentos de exemplo e os produtos, que não podem ser gravados.</summary>
-    public static readonly string[] TextosProibidos =
-        ["123.456.789-09", "12345678909", "11.222.333/0001-81", "11222333000181", "12.ABC.345/01DE-35", "Ficticio"];
+    /// <summary>Os produtos de exemplo, que não podem ser gravados.</summary>
+    public static readonly string[] TextosProibidos = ["12.ABC.345/01DE-35", "Ficticio"];
 
     /// <summary>O arquivo como está em disco.</summary>
     public static byte[] Completo() => File.ReadAllBytes(_caminho);

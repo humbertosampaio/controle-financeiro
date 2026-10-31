@@ -34,9 +34,9 @@ Precisar alterar agregados de dois tipos no mesmo caso de uso é sinal de que o 
 
 ## 3. Regras que cruzam agregados
 
-Uma regra que depende de mais de um agregado, como "um cartão por banco e final em cada usuário", não mora em nenhum dos agregados nem no endpoint. Ela mora numa **factory ou serviço de domínio estático e puro**, em `Domain/Services/`:
+Uma regra que depende de mais de um agregado, como "um cartão por banco e final em cada usuário", não mora em nenhum dos agregados nem no endpoint. Ela mora numa **factory ou serviço de domínio puro**, em `Domain/Services/`. Puro quer dizer que ele lida só com agregados e value objects, sem infraestrutura; não precisa ser estático:
 
-- Recebe os agregados e as listas de que precisa e devolve `Result`. É síncrona, não recebe porta e se testa sem mock. Exemplos: `CartaoFactory`, `ContaBancariaFactory`, `DespesaRecorrenteFactory`, `ImportacaoArquivoFactory` e `LoteTransacoesFactory`.
+- Recebe os agregados e as listas de que precisa. Devolve `Result` quando há falha prevista; sem ela, pode devolver o que produziu ou alterar o único agregado que recebe para alterar, como o `AlteracaoCategoriaDespesaService`. É síncrona, não recebe porta e se testa sem mock. Exemplos: `CartaoFactory`, `ContaBancariaFactory`, `DespesaRecorrenteFactory`, `ImportacaoArquivoFactory` e `LoteTransacoesFactory`.
 - Quem chama (o caso de uso, hoje o endpoint) carrega os dados pelos repositórios e passa à factory.
 - Uma lista que traz item de outro usuário é bug de quem chama, não falha prevista: lança `ArgumentException`. O mesmo vale para um argumento que contradiz o estado já conferido, como o cartão errado no `GeracaoDespesasDoMesService.GerarComPagamentoAdiado`.
 - Quando só a factory consegue garantir a regra, o `Criar` do agregado é `internal`, e ela é a única entrada. Os testes passam pela factory, sem `InternalsVisibleTo`, e o AutoFixture ganha um generator que a chama (`CartaoGenerator`). Exemplos: `Cartao.Criar`, `ContaBancaria.Criar`, `DespesaRecorrente.Criar`, `DespesaParcelada.Criar`, `ImportacaoArquivo.Registrar` e `Transacao.Criar`.

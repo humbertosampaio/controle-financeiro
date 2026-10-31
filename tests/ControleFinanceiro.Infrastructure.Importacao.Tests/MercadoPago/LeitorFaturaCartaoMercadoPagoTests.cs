@@ -171,29 +171,42 @@ public sealed class LeitorFaturaCartaoMercadoPagoTests
     }
 
     [Fact]
-    public async Task LerAsync_Deve_TirarOsDocumentosDoVendedorNaContraparte()
+    public async Task LerAsync_Deve_ManterOsDocumentosDoVendedorNaContraparte()
     {
         Fatura fatura = await LerFixtureAsync();
 
         fatura.Lancamentos.Select(l => l.Lancamento.Contraparte).Should().Equal(
-            null, "FULANO FICTICIO", "MERCADO FICTICIO LTDA", null, null, null, null);
+            null,
+            "FULANO FICTICIO 123.456.789-09",
+            "MERCADO FICTICIO LTDA 11.222.333/0001-81",
+            null,
+            null,
+            null,
+            null);
     }
 
     [Fact]
-    public async Task LerAsync_Deve_DeixarOsDocumentosEOsProdutosForaDeTodoLancamento()
+    public async Task LerAsync_Deve_DeixarOsProdutosForaDeTodoLancamento()
     {
         Fatura fatura = await LerFixtureAsync();
 
-        string[] proibidos =
-        [
-            "123.456.789-09", "11.222.333/0001-81", "12.ABC.345/01DE-35", "Ficticio", "2000000000000001",
-        ];
+        string[] proibidos = ["12.ABC.345/01DE-35", "Ficticio", "2000000000000001"];
         fatura.Lancamentos.Should().AllSatisfy(l =>
         {
             Lancamento lancamento = l.Lancamento;
             string?[] textos = [lancamento.Descricao, lancamento.Contraparte, lancamento.CategoriaBanco, .. lancamento.Identidade.Campos];
             textos.Should().NotContain(t => t != null && proibidos.Any(p => t.Contains(p, StringComparison.Ordinal)));
         });
+    }
+
+    [Fact]
+    public async Task LerAsync_Quando_DescricaoSoComDocumento_Deve_ManterODocumentoNaDescricao()
+    {
+        Stream arquivo = ComCampos(LinhaCompraVista, ("descricao_fatura", "123.456.789-09"));
+
+        Result<Fatura> result = await _leitor.LerAsync(arquivo, CancellationToken.None);
+
+        result.Should().Succeed().Which.Lancamentos.Should().Contain(l => l.Lancamento.Descricao == (TextoObrigatorio)"123.456.789-09");
     }
 
     [Theory]
@@ -205,7 +218,6 @@ public sealed class LeitorFaturaCartaoMercadoPagoTests
     [InlineData("cartao_final", "", "não tem o final do cartão com 4 dígitos.")]
     [InlineData("cartao_final", "12A4", "não tem o final do cartão com 4 dígitos.")]
     [InlineData("descricao_fatura", "  ", "não tem descrição.")]
-    [InlineData("descricao_fatura", "123.456.789-09", "não tem descrição.")]
     [InlineData("numero_transacao", " ", "não tem o número da transação.")]
     public async Task LerAsync_Quando_CampoInvalidoNaCompra_Deve_RetornarFalhaSoComONumeroDaLinha(string coluna, string valor, string erro)
     {

@@ -35,9 +35,10 @@ namespace ControleFinanceiro.Infrastructure.Importacao.MercadoPago;
 /// das linhas.
 /// </para>
 /// <para>
-/// O CPF e o CNPJ saem da descrição e do vendedor. Os produtos e o número do pedido não são mapeados, nem o mês de
-/// referência, o vencimento, o fechamento, o valor original da compra e o status. As mensagens de falha citam só o
-/// número da linha, e a <see cref="CsvHelperException"/>, que traz o registro cru, é capturada.
+/// O CPF e o CNPJ da descrição e do vendedor ficam: quem os tira é a saída para o modelo. Os produtos e o número do
+/// pedido não são mapeados, nem o mês de referência, o vencimento, o fechamento, o valor original da compra e o
+/// status. As mensagens de falha citam só o número da linha, e a <see cref="CsvHelperException"/>, que traz o registro
+/// cru, é capturada.
 /// </para>
 /// </remarks>
 public sealed partial class LeitorFaturaCartaoMercadoPago : ILeitorFatura
@@ -155,7 +156,7 @@ public sealed partial class LeitorFaturaCartaoMercadoPago : ILeitorFatura
     /// <returns>Na falha, o fim da frase que começa com "A linha N do arquivo".</returns>
     private static Result<LancamentoLido> Converter(LinhaFaturaMercadoPago linha)
     {
-        string descricao = (TextoSemDocumentos)linha.Descricao;
+        string descricao = linha.Descricao.Trim();
 
         return Result
             .FailureIf(descricao.Length == 0, "não tem descrição.")
@@ -226,7 +227,7 @@ public sealed partial class LeitorFaturaCartaoMercadoPago : ILeitorFatura
     }
 
     /// <param name="linha">Com a data da compra ou a do lançamento.</param>
-    /// <param name="descricao">Sem CPF nem CNPJ, aparada e não vazia.</param>
+    /// <param name="descricao">Aparada e não vazia.</param>
     private static Result<LancamentoLido> Lancar(LinhaFaturaMercadoPago linha, string descricao, ValorSufixoEParcela valorSufixoEParcela)
     {
         return IdentidadeLancamento
@@ -238,7 +239,7 @@ public sealed partial class LeitorFaturaCartaoMercadoPago : ILeitorFatura
                 hora: null,
                 valorSufixoEParcela.Valor,
                 (TextoObrigatorio)descricao,
-                (TextoSemDocumentos)linha.Vendedor,
+                linha.Vendedor,
                 valorSufixoEParcela.Parcela,
                 categoriaBanco: null,
                 identidade))
