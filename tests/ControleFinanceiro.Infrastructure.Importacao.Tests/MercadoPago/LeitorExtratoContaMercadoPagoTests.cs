@@ -72,12 +72,12 @@ public sealed class LeitorExtratoContaMercadoPagoTests
     [Theory]
     [InlineData(0, "Rendimentos", null)]
     [InlineData(1, "Pix enviado", "FULANO FICTICIO")]
-    [InlineData(2, "Pix recebido", "BELTRANO FICTICIO")]
+    [InlineData(2, "Pix recebido", "BELTRANO FICTICIO 12345678909")]
     [InlineData(3, "Pagamento com QR Pix", "LOJA FICTICIA LTDA")]
     [InlineData(4, "Pagamento de conta", "CONDOMINIO FICTICIO")]
     [InlineData(5, "Débito automático Fatura do cartão", null)]
     [InlineData(6, "Dinheiro retirado Reserva", null)]
-    [InlineData(7, "Pix enviado", "CICRANO FICTICIO")]
+    [InlineData(7, "Pix enviado", "CICRANO FICTICIO 123.456.789-09")]
     [InlineData(8, "Pagamento de assinatura", "Clube Ficticio")]
     public async Task LerAsync_Deve_SepararAContraparteDosPrefixosQueATrazem(int posicao, string descricao, string? contraparte)
     {
@@ -89,14 +89,11 @@ public sealed class LeitorExtratoContaMercadoPagoTests
     }
 
     [Fact]
-    public async Task LerAsync_Deve_TirarOCpfSoltoOuFormatadoDaDescricao()
+    public async Task LerAsync_Deve_ManterOCpfDaDescricao()
     {
         Extrato extrato = await LerFixtureAsync();
 
-        extrato.Lancamentos.Should().AllSatisfy(l =>
-        {
-            $"{l.Descricao} {l.Contraparte}".Should().NotContain("12345678909").And.NotContain("123.456.789-09");
-        });
+        extrato.Lancamentos.Should().Contain(l => $"{l.Descricao} {l.Contraparte}".Contains("123.456.789-09"));
     }
 
     [Fact]
@@ -152,12 +149,20 @@ public sealed class LeitorExtratoContaMercadoPagoTests
         result.Should().FailWith("A linha 6 do arquivo não está no layout do extrato da conta do Mercado Pago.");
     }
 
-    [Theory]
-    [InlineData("03-03-2026; ;1000000002;-120,00;1.130,35")]
-    [InlineData("03-03-2026; 123.456.789-09 ;1000000002;-120,00;1.130,35")]
-    public async Task LerAsync_Quando_DescricaoEmBrancoOuSoComCpf_Deve_RetornarFalhaComONumeroDaLinha(string linha)
+    [Fact]
+    public async Task LerAsync_Quando_DescricaoSoComDocumento_Deve_ManterODocumentoNaDescricao()
     {
-        Stream arquivo = _fixture.ComLinha(LinhaSegundoLancamento, linha);
+        Stream arquivo = _fixture.ComLinha(LinhaSegundoLancamento, "03-03-2026; 123.456.789-09 ;1000000002;-120,00;1.130,35");
+
+        Result<Extrato> result = await _leitor.LerAsync(arquivo, _sufixo, CancellationToken.None);
+
+        result.Should().Succeed().Which.Lancamentos.Should().Contain(l => l.Descricao == (TextoObrigatorio)"123.456.789-09");
+    }
+
+    [Fact]
+    public async Task LerAsync_Quando_DescricaoEmBranco_Deve_RetornarFalhaComONumeroDaLinha()
+    {
+        Stream arquivo = _fixture.ComLinha(LinhaSegundoLancamento, "03-03-2026; ;1000000002;-120,00;1.130,35");
 
         Result<Extrato> result = await _leitor.LerAsync(arquivo, _sufixo, CancellationToken.None);
 

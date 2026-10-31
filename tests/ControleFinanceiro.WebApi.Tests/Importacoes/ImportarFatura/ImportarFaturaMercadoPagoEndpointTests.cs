@@ -168,7 +168,7 @@ public sealed class ImportarFaturaMercadoPagoEndpointTests : IAsyncLifetime
     }
 
     [Theory, ApiAutoData]
-    public async Task Post_Deve_DeixarOsDocumentosEOsProdutosForaDoQueEGravado(CadastrarUsuarioRequest cadastro)
+    public async Task Post_Deve_DeixarOsProdutosForaDoQueEGravado(CadastrarUsuarioRequest cadastro)
     {
         Guid idUsuario = await _api.CadastrarUsuarioAsync(cadastro);
         await ResolverPendenciasAsync(idUsuario, FaturaCartaoMercadoPago.Completo());
