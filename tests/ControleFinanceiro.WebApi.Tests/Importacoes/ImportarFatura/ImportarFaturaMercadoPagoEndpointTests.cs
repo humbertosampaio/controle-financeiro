@@ -193,7 +193,7 @@ public sealed class ImportarFaturaMercadoPagoEndpointTests : IAsyncLifetime
         ImportarFaturaResponse corpo = await ImportarComSucessoAsync(idUsuario, FaturaCartaoMercadoPago.Completo());
 
         corpo.Cartoes.Should().ContainSingle().Which.DespesasParceladasCriadas.Should().Be(1);
-        DespesaParcelada despesa = (await ObterParceladasAsync()).Should().ContainSingle().Subject;
+        DespesaParcelada despesa = (await _api.ObterParceladasAsync()).Should().ContainSingle().Subject;
         despesa.IdCategoria.Should().BeNull();
         despesa.DataOcorrencia.Should().Be(FaturaCartaoMercadoPago.PrimeiraData);
         despesa.Parcelas.Should().HaveCount(10).And.OnlyContain(p => p.Pagamento.Valor == (ReaisPositivo)100m);
@@ -209,10 +209,8 @@ public sealed class ImportarFaturaMercadoPagoEndpointTests : IAsyncLifetime
 
         await ImportarComSucessoAsync(idUsuario, FaturaCartaoMercadoPago.ComParcelaSeguinte());
 
-        (await ObterParceladasAsync()).Should().ContainSingle();
+        (await _api.ObterParceladasAsync()).Should().ContainSingle();
     }
-
-    private Task<List<DespesaParcelada>> ObterParceladasAsync() => _api.ObterTodosAsync(db => db.Despesas.OfType<DespesaParcelada>());
 
     private Task<ImportarFaturaResponse> ImportarComSucessoAsync(Guid idUsuario, byte[] arquivo) =>
         _api.ImportarFaturaComSucessoAsync(idUsuario, LayoutArquivoImportacao.MercadoPagoCartaoCsv, arquivo);

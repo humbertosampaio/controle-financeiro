@@ -94,7 +94,7 @@ public sealed class ListarDespesasDoMesEndpointTests : IAsyncLifetime
         CadastrarUsuarioRequest cadastro)
     {
         Guid idUsuario = await ImportarFaturaComParceladaAsync(cadastro);
-        DespesaParcelada parcelada = (await _api.ObterTodosAsync(db => db.Despesas.OfType<DespesaParcelada>())).Single();
+        DespesaParcelada parcelada = (await _api.ObterParceladasAsync()).Single();
         ParcelaDespesa parcelaDoMes = parcelada.Parcelas.Single(p => p.NumeroParcela == numeroEsperado);
 
         using HttpResponseMessage resposta = await ListarAsync(idUsuario, ano, mes);
