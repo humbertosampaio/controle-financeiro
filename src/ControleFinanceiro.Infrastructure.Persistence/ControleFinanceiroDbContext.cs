@@ -48,8 +48,6 @@ public sealed class ControleFinanceiroDbContext : DbContext
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
-        // A DespesaParcelada entra na persistência na #62.
-        modelBuilder.Ignore<DespesaParcelada>();
         modelBuilder.ApplyConfigurationsFromAssembly(_assembly);
         FiltrarPeloUsuarioAtual(modelBuilder);
     }

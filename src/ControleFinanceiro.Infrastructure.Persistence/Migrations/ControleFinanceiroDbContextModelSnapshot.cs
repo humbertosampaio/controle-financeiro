@@ -216,7 +216,7 @@ namespace ControleFinanceiro.Infrastructure.Persistence.Migrations
 
                     b.ToTable("despesas", null, t =>
                         {
-                            t.HasCheckConstraint("CK_despesas_cartao", "(tipo = 'adiada') = (id_cartao IS NOT NULL)");
+                            t.HasCheckConstraint("CK_despesas_cartao", "(tipo IN ('adiada', 'parcelada')) = (id_cartao IS NOT NULL)");
 
                             t.HasCheckConstraint("CK_despesas_descricao", "btrim(descricao) <> ''");
 
@@ -289,6 +289,60 @@ namespace ControleFinanceiro.Infrastructure.Persistence.Migrations
                             t.HasCheckConstraint("CK_despesas_recorrentes_dia_ocorrencia", "dia_ocorrencia BETWEEN 1 AND 28");
 
                             t.HasCheckConstraint("CK_despesas_recorrentes_valor", "valor >= 0");
+                        });
+                });
+
+            modelBuilder.Entity("ControleFinanceiro.Domain.Despesas.ParcelaDespesa", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<DateOnly>("MesReferencia")
+                        .HasColumnType("date")
+                        .HasColumnName("mes_referencia");
+
+                    b.Property<int>("NumeroParcela")
+                        .HasColumnType("integer")
+                        .HasColumnName("numero_parcela");
+
+                    b.Property<Guid>("id_despesa")
+                        .HasColumnType("uuid");
+
+                    b.ComplexProperty(typeof(Dictionary<string, object>), "Pagamento", "ControleFinanceiro.Domain.Despesas.ParcelaDespesa.Pagamento#Pagamento", b1 =>
+                        {
+                            b1.IsRequired();
+
+                            b1.Property<DateOnly?>("DataEfetiva")
+                                .HasColumnType("date")
+                                .HasColumnName("data_pagamento_efetiva");
+
+                            b1.Property<DateOnly?>("DataProjetada")
+                                .HasColumnType("date")
+                                .HasColumnName("data_pagamento_projetada");
+
+                            b1.Property<int>("Status")
+                                .HasColumnType("integer")
+                                .HasColumnName("status_pagamento");
+
+                            b1.Property<decimal>("Valor")
+                                .HasPrecision(14, 2)
+                                .HasColumnType("numeric(14,2)")
+                                .HasColumnName("valor");
+                        });
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("id_despesa", "NumeroParcela")
+                        .IsUnique();
+
+                    b.ToTable("parcelas_despesa", null, t =>
+                        {
+                            t.HasCheckConstraint("CK_parcelas_despesa_numero", "numero_parcela >= 1");
+
+                            t.HasCheckConstraint("CK_parcelas_despesa_pagamento", "(status_pagamento = 1) = (data_pagamento_efetiva IS NOT NULL)");
+
+                            t.HasCheckConstraint("CK_parcelas_despesa_valor", "valor >= 0");
                         });
                 });
 
@@ -537,7 +591,7 @@ namespace ControleFinanceiro.Infrastructure.Persistence.Migrations
 
                     b.ToTable(t =>
                         {
-                            t.HasCheckConstraint("CK_despesas_cartao", "(tipo = 'adiada') = (id_cartao IS NOT NULL)");
+                            t.HasCheckConstraint("CK_despesas_cartao", "(tipo IN ('adiada', 'parcelada')) = (id_cartao IS NOT NULL)");
 
                             t.HasCheckConstraint("CK_despesas_descricao", "btrim(descricao) <> ''");
 
@@ -549,11 +603,12 @@ namespace ControleFinanceiro.Infrastructure.Persistence.Migrations
                     b.HasDiscriminator().HasValue("DespesaInteira");
                 });
 
-            modelBuilder.Entity("ControleFinanceiro.Domain.Despesas.DespesaAdiada", b =>
+            modelBuilder.Entity("ControleFinanceiro.Domain.Despesas.DespesaParcelada", b =>
                 {
-                    b.HasBaseType("ControleFinanceiro.Domain.Despesas.DespesaInteira");
+                    b.HasBaseType("ControleFinanceiro.Domain.Despesas.Despesa");
 
                     b.Property<Guid>("IdCartao")
+                        .ValueGeneratedOnUpdateSometimes()
                         .HasColumnType("uuid")
                         .HasColumnName("id_cartao");
 
@@ -561,7 +616,32 @@ namespace ControleFinanceiro.Infrastructure.Persistence.Migrations
 
                     b.ToTable(t =>
                         {
-                            t.HasCheckConstraint("CK_despesas_cartao", "(tipo = 'adiada') = (id_cartao IS NOT NULL)");
+                            t.HasCheckConstraint("CK_despesas_cartao", "(tipo IN ('adiada', 'parcelada')) = (id_cartao IS NOT NULL)");
+
+                            t.HasCheckConstraint("CK_despesas_descricao", "btrim(descricao) <> ''");
+
+                            t.HasCheckConstraint("CK_despesas_pagamento", "(status_pagamento = 1) = (data_pagamento_efetiva IS NOT NULL)");
+
+                            t.HasCheckConstraint("CK_despesas_valor", "valor >= 0");
+                        });
+
+                    b.HasDiscriminator().HasValue("parcelada");
+                });
+
+            modelBuilder.Entity("ControleFinanceiro.Domain.Despesas.DespesaAdiada", b =>
+                {
+                    b.HasBaseType("ControleFinanceiro.Domain.Despesas.DespesaInteira");
+
+                    b.Property<Guid>("IdCartao")
+                        .ValueGeneratedOnUpdateSometimes()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id_cartao");
+
+                    b.HasIndex("IdCartao");
+
+                    b.ToTable(t =>
+                        {
+                            t.HasCheckConstraint("CK_despesas_cartao", "(tipo IN ('adiada', 'parcelada')) = (id_cartao IS NOT NULL)");
 
                             t.HasCheckConstraint("CK_despesas_descricao", "btrim(descricao) <> ''");
 
@@ -579,7 +659,7 @@ namespace ControleFinanceiro.Infrastructure.Persistence.Migrations
 
                     b.ToTable(t =>
                         {
-                            t.HasCheckConstraint("CK_despesas_cartao", "(tipo = 'adiada') = (id_cartao IS NOT NULL)");
+                            t.HasCheckConstraint("CK_despesas_cartao", "(tipo IN ('adiada', 'parcelada')) = (id_cartao IS NOT NULL)");
 
                             t.HasCheckConstraint("CK_despesas_descricao", "btrim(descricao) <> ''");
 
@@ -790,6 +870,15 @@ namespace ControleFinanceiro.Infrastructure.Persistence.Migrations
                         .IsRequired();
                 });
 
+            modelBuilder.Entity("ControleFinanceiro.Domain.Despesas.ParcelaDespesa", b =>
+                {
+                    b.HasOne("ControleFinanceiro.Domain.Despesas.DespesaParcelada", null)
+                        .WithMany("Parcelas")
+                        .HasForeignKey("id_despesa")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
             modelBuilder.Entity("ControleFinanceiro.Domain.Importacoes.ImportacaoArquivo", b =>
                 {
                     b.HasOne("ControleFinanceiro.Domain.Usuarios.Usuario", null)
@@ -823,6 +912,15 @@ namespace ControleFinanceiro.Infrastructure.Persistence.Migrations
                         .IsRequired();
                 });
 
+            modelBuilder.Entity("ControleFinanceiro.Domain.Despesas.DespesaParcelada", b =>
+                {
+                    b.HasOne("ControleFinanceiro.Domain.Cartoes.Cartao", null)
+                        .WithMany()
+                        .HasForeignKey("IdCartao")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+                });
+
             modelBuilder.Entity("ControleFinanceiro.Domain.Despesas.DespesaAdiada", b =>
                 {
                     b.HasOne("ControleFinanceiro.Domain.Cartoes.Cartao", null)
@@ -835,6 +933,11 @@ namespace ControleFinanceiro.Infrastructure.Persistence.Migrations
             modelBuilder.Entity("ControleFinanceiro.Domain.Usuarios.Usuario", b =>
                 {
                     b.Navigation("DescontosSalariais");
+                });
+
+            modelBuilder.Entity("ControleFinanceiro.Domain.Despesas.DespesaParcelada", b =>
+                {
+                    b.Navigation("Parcelas");
                 });
 #pragma warning restore 612, 618
         }
