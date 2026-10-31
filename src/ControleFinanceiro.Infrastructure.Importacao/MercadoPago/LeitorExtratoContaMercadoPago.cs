@@ -4,8 +4,6 @@ using ControleFinanceiro.Domain.Importacoes;
 using ControleFinanceiro.Domain.Shared.ValueObjects;
 using ControleFinanceiro.Domain.Transacoes;
 using CsvHelper;
-using CsvHelper.Configuration;
-using CsvHelper.TypeConversion;
 using System.Globalization;
 using System.Text;
 using System.Text.RegularExpressions;
@@ -34,7 +32,7 @@ namespace ControleFinanceiro.Infrastructure.Importacao.MercadoPago;
 /// </para>
 /// <para>
 /// O CPF e o CNPJ que vêm na descrição, colados à contraparte, ficam: quem os tira é a saída para o modelo. As
-/// mensagens de falha citam só o número da linha, e a <see cref="CsvHelperException"/>, que traz o registro cru, é
+/// mensagens de falha citam só o número da linha, e a <see cref="CsvFormatException"/>, que pode trazer dados do registro, é
 /// capturada.
 /// </para>
 /// </remarks>
@@ -48,11 +46,11 @@ public sealed partial class LeitorExtratoContaMercadoPago : ILeitorExtratoContaI
     private static readonly string[] _prefixosComContraparte =
         ["Pix enviado", "Pix recebido", "Pagamento com QR Pix", "Pagamento de conta", "Pagamento de assinatura"];
 
-    private static readonly CsvConfiguration _configuracao = new(CultureInfo.InvariantCulture)
-    {
-        Delimiter = Separador.ToString(),
-        DetectColumnCountChanges = true,
-    };
+    private static readonly CsvReaderOptions _opcoes = OpcoesLeituraCsv.Criar(Separador);
+
+    /// <summary>As colunas mapeadas, com a grafia exata: o CsvHelper aceitaria outra caixa e espaços em volta.</summary>
+    private static readonly string[] _colunas =
+        ["RELEASE_DATE", "TRANSACTION_TYPE", "REFERENCE_ID", "TRANSACTION_NET_AMOUNT", "PARTIAL_BALANCE"];
 
     public LayoutArquivoImportacao Layout => LayoutArquivoImportacao.MercadoPagoContaCsv;
 
@@ -138,8 +136,7 @@ public sealed partial class LeitorExtratoContaMercadoPago : ILeitorExtratoContaI
         StreamReader leitor,
         CancellationToken cancellationToken)
     {
-        using CsvReader csv = new(leitor, _configuracao);
-        csv.Context.RegisterClassMap<LinhaExtratoMercadoPagoMap>();
+        using CsvReader csv = CsvReader.Create(leitor, _opcoes);
 
         return await LerColunasAsync(csv)
             .Bind(() => LerLinhasAsync(csv, cancellationToken));
@@ -149,14 +146,15 @@ public sealed partial class LeitorExtratoContaMercadoPago : ILeitorExtratoContaI
     {
         try
         {
-            if (!await csv.ReadAsync())
+            await csv.ReadHeaderAsync();
+            if (csv.Headers.Count == 0)
                 return Result.Failure("O arquivo termina antes das colunas do extrato da conta do Mercado Pago.");
 
-            csv.ReadHeader();
-            csv.ValidateHeader<LinhaExtratoMercadoPago>();
-            return Result.Success();
+            return Result.FailureIf(
+                !_colunas.All(csv.Headers.Contains),
+                $"A linha {LinhasAntesColunas + 1} do arquivo não traz as colunas do extrato da conta do Mercado Pago.");
         }
-        catch (CsvHelperException)
+        catch (CsvFormatException)
         {
             return Result.Failure($"A linha {LinhasAntesColunas + 1} do arquivo não traz as colunas do extrato da conta do Mercado Pago.");
         }
@@ -195,10 +193,10 @@ public sealed partial class LeitorExtratoContaMercadoPago : ILeitorExtratoContaI
         {
             return await csv.ReadAsync() ? csv.GetRecord<LinhaExtratoMercadoPago>() : Maybe<LinhaExtratoMercadoPago>.None;
         }
-        catch (CsvHelperException)
+        catch (CsvFormatException erro)
         {
             return Result.Failure<Maybe<LinhaExtratoMercadoPago>>(
-                $"A linha {NumeroLinha(csv)} do arquivo não está no layout do extrato da conta do Mercado Pago.");
+                $"A linha {LinhasAntesColunas + erro.LineNumber} do arquivo não está no layout do extrato da conta do Mercado Pago.");
         }
     }
 
@@ -244,29 +242,27 @@ public sealed partial class LeitorExtratoContaMercadoPago : ILeitorExtratoContaI
             : ((TextoObrigatorio)descricao[..prefixo.Length], descricao[prefixo.Length..]);
     }
 
-    private static long NumeroLinha(CsvReader csv) => LinhasAntesColunas + csv.Parser.RawRow;
+    private static long NumeroLinha(CsvReader csv) => LinhasAntesColunas + csv.LineNumber;
 
-    private sealed class LinhaExtratoMercadoPago
-    {
-        public DateOnly Data { get; init; }
-        public string Descricao { get; init; } = string.Empty;
-        public string IdReferencia { get; init; } = string.Empty;
-        public decimal Valor { get; init; }
-        public decimal SaldoParcial { get; init; }
-    }
-
-    private sealed class LinhaExtratoMercadoPagoMap : ClassMap<LinhaExtratoMercadoPago>
+    [CsvRecord]
+    internal sealed partial class LinhaExtratoMercadoPago
     {
         private const string FormatoData = "dd-MM-yyyy";
 
-        public LinhaExtratoMercadoPagoMap()
-        {
-            Map(l => l.Data).Name("RELEASE_DATE").TypeConverterOption.Format(FormatoData);
-            Map(l => l.Descricao).Name("TRANSACTION_TYPE");
-            Map(l => l.IdReferencia).Name("REFERENCE_ID");
-            Map(l => l.Valor).Name("TRANSACTION_NET_AMOUNT").TypeConverter<ValorMercadoPagoConverter>();
-            Map(l => l.SaldoParcial).Name("PARTIAL_BALANCE").TypeConverter<ValorMercadoPagoConverter>();
-        }
+        [CsvColumn("RELEASE_DATE"), CsvFormat(FormatoData)]
+        public DateOnly Data { get; init; }
+
+        [CsvColumn("TRANSACTION_TYPE")]
+        public string Descricao { get; init; } = string.Empty;
+
+        [CsvColumn("REFERENCE_ID")]
+        public string IdReferencia { get; init; } = string.Empty;
+
+        [CsvColumn("TRANSACTION_NET_AMOUNT"), CsvConverter(typeof(ValorMercadoPagoConverter))]
+        public decimal Valor { get; init; }
+
+        [CsvColumn("PARTIAL_BALANCE"), CsvConverter(typeof(ValorMercadoPagoConverter))]
+        public decimal SaldoParcial { get; init; }
     }
 
     /// <summary>
@@ -275,7 +271,7 @@ public sealed partial class LeitorExtratoContaMercadoPago : ILeitorExtratoContaI
     /// 4 grupos de milhar (15 dígitos inteiros): com mais, a soma das linhas de um arquivo poderia estourar o
     /// <see cref="decimal"/>.
     /// </summary>
-    private sealed partial class ValorMercadoPagoConverter : DefaultTypeConverter
+    internal sealed partial class ValorMercadoPagoConverter : ICsvConverter<decimal>
     {
         private const NumberStyles Estilo = NumberStyles.AllowLeadingSign | NumberStyles.AllowThousands | NumberStyles.AllowDecimalPoint;
 
@@ -292,10 +288,13 @@ public sealed partial class LeitorExtratoContaMercadoPago : ILeitorExtratoContaI
         /// <param name="texto">Já conferido com o <see cref="EhValor"/>.</param>
         public static decimal Ler(string texto) => decimal.Parse(texto, Estilo, _formato);
 
-        public override object? ConvertFromString(string? text, IReaderRow row, MemberMapData memberMapData)
+        public decimal Read(CsvReader reader, int index)
         {
-            return text is not null && EhValor(text) ? Ler(text) : base.ConvertFromString(text, row, memberMapData);
+            string texto = reader.GetString(index);
+            return EhValor(texto) ? Ler(texto) : throw new FormatException("O valor não está no formato do Mercado Pago.");
         }
+
+        public void Write(CsvWriter writer, decimal value) => throw new NotSupportedException();
 
         [GeneratedRegex(@"^-?[0-9]{1,3}(\.[0-9]{3}){0,4},[0-9]{2}$")]
         private static partial Regex Valor();

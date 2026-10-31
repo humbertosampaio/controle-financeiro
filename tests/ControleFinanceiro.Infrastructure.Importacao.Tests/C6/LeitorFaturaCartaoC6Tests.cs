@@ -192,6 +192,70 @@ public sealed class LeitorFaturaCartaoC6Tests
         result.Should().FailWith("A linha 3 do arquivo não está no layout da fatura do cartão do C6.");
     }
 
+    [Theory]
+    [InlineData("data de compra;Nome no Cartão;Final do Cartão;Categoria;Descrição;Parcela;Valor (em US$);Cotação (em R$);Valor (em R$)")]
+    [InlineData(" Data de Compra;Nome no Cartão;Final do Cartão;Categoria;Descrição;Parcela;Valor (em US$);Cotação (em R$);Valor (em R$)")]
+    public async Task LerAsync_Quando_ColunaComOutraGrafia_Deve_RetornarFalhaComALinhaDasColunas(string colunas)
+    {
+        Stream arquivo = _fixture.ComLinha(LinhaColunas, colunas);
+
+        Result<Fatura> result = await _leitor.LerAsync(arquivo, CancellationToken.None);
+
+        result.Should().FailWith("A linha 1 do arquivo não traz as colunas da fatura do cartão do C6.");
+    }
+
+    [Fact]
+    public async Task LerAsync_Quando_OutroSeparador_Deve_RetornarFalhaComALinhaDasColunas()
+    {
+        Stream arquivo = _fixture.ComLinhas(_fixture.Linhas().Select(l => l.Replace(';', ',')));
+
+        Result<Fatura> result = await _leitor.LerAsync(arquivo, CancellationToken.None);
+
+        result.Should().FailWith("A linha 1 do arquivo não traz as colunas da fatura do cartão do C6.");
+    }
+
+    [Fact]
+    public async Task LerAsync_Quando_LinhaEmBrancoAntesDoErro_Deve_ContarALinhaEmBrancoNoNumeroDaLinha()
+    {
+        List<string> linhas = _fixture.Linhas().ToList();
+        linhas[2] = $"05/03/2026;{TitularFicticio};111;Supermercado;MERCADO FICTICIO;Única;0;0;123.45";
+        linhas.Insert(index: 2, item: string.Empty);
+
+        Result<Fatura> result = await _leitor.LerAsync(_fixture.ComLinhas(linhas), CancellationToken.None);
+
+        result.Should().FailWith("A linha 4 do arquivo não tem o final do cartão com 4 dígitos.");
+    }
+
+    [Fact]
+    public async Task LerAsync_Quando_LinhaDeSeparadorAntesDasColunas_Deve_RetornarFalhaComALinhaDasColunas()
+    {
+        Stream arquivo = _fixture.ComLinhas(_fixture.Linhas().Prepend("sep=;"));
+
+        Result<Fatura> result = await _leitor.LerAsync(arquivo, CancellationToken.None);
+
+        result.Should().FailWith("A linha 1 do arquivo não traz as colunas da fatura do cartão do C6.");
+    }
+
+    [Fact]
+    public async Task LerAsync_Quando_ErroEmRegistroComQuebraDeLinha_Deve_CitarALinhaOndeORegistroComeca()
+    {
+        Stream arquivo = _fixture.ComLinha(numero: 3, $"05/03/2026;{TitularFicticio};111;Supermercado;\"MERCADO\nFICTICIO\";Única;0;0;123.45");
+
+        Result<Fatura> result = await _leitor.LerAsync(arquivo, CancellationToken.None);
+
+        result.Should().FailWith("A linha 3 do arquivo não tem o final do cartão com 4 dígitos.");
+    }
+
+    [Fact]
+    public async Task LerAsync_Quando_LinhaForaDoLayoutComQuebraDeLinha_Deve_CitarALinhaOndeORegistroComeca()
+    {
+        Stream arquivo = _fixture.ComLinha(numero: 3, $"05/03/2026;{TitularFicticio};1111;Supermercado;\"MERCADO\nFICTICIO\";Única;0;0;1,234.56");
+
+        Result<Fatura> result = await _leitor.LerAsync(arquivo, CancellationToken.None);
+
+        result.Should().FailWith("A linha 3 do arquivo não está no layout da fatura do cartão do C6.");
+    }
+
     [Fact]
     public async Task LerAsync_Quando_ColunasDiferentes_Deve_RetornarFalhaComALinhaDasColunas()
     {
