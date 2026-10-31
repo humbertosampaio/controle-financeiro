@@ -85,79 +85,55 @@ public sealed class CartaoFactoryTests
     }
 
     [Theory, DomainAutoData]
-    public void ObterOuCriar_Quando_CartaoDoFinalNoMesmoBanco_Deve_RetornarOCartaoExistenteSemMudarOVencimento(
+    public void ObterDosFinais_Quando_FinaisComCartao_Deve_DevolverUmCartaoPorFinalNaOrdemDosFinais(
         [Frozen] IdUsuario idUsuario,
         [Frozen] Banco banco,
-        [Frozen] SufixoCartao sufixo,
-        Cartao existente,
-        DiaVencimentoCartao outroDia)
+        Cartao primeiro,
+        Cartao segundo)
     {
-        DiaVencimentoCartao vencimentoOriginal = existente.DiaVencimento;
-        VencimentosCartoesNovos vencimentos = VencimentosCartoesNovos.Criar(
-            outroDia, new Dictionary<SufixoCartao, DiaVencimentoCartao> { [sufixo] = outroDia }).Value;
+        Result<IReadOnlyList<Cartao>, Erro> result = CartaoFactory.ObterDosFinais(
+            idUsuario,
+            [segundo, primeiro],
+            banco,
+            [primeiro.Sufixo, segundo.Sufixo, primeiro.Sufixo]);
 
-        IReadOnlyList<Cartao> result = CartaoFactory.ObterOuCriar(idUsuario, [existente], banco, [sufixo], vencimentos);
-
-        result.Should().ContainSingle().Which.Should().BeSameAs(existente);
-        existente.DiaVencimento.Should().Be(vencimentoOriginal);
+        result.Should().Succeed().Which.Should().Equal(primeiro, segundo);
     }
 
     [Theory, DomainAutoData]
-    public void ObterOuCriar_Quando_FinalSemCartao_Deve_CriarOCartaoComOVencimentoDoFinal(
-        IdUsuario idUsuario,
-        Banco banco,
-        SufixoCartao sufixo,
-        [Frozen] DiaVencimentoCartao diaVencimento,
-        VencimentosCartoesNovos vencimentos)
-    {
-        IReadOnlyList<Cartao> result = CartaoFactory.ObterOuCriar(idUsuario, cartoesDoUsuario: [], banco, [sufixo], vencimentos);
-
-        Cartao cartao = result.Should().ContainSingle().Subject;
-        cartao.IdUsuario.Should().Be(idUsuario);
-        cartao.Banco.Should().Be(banco);
-        cartao.Sufixo.Should().Be(sufixo);
-        cartao.DiaVencimento.Should().Be(diaVencimento);
-    }
-
-    [Theory, DomainAutoData]
-    public void ObterOuCriar_Quando_MesmoFinalEmOutroBanco_Deve_CriarUmCartaoNovo(
+    public void ObterDosFinais_Quando_FinalSemCartao_Deve_RetornarFalha(
         [Frozen] IdUsuario idUsuario,
-        [Frozen] SufixoCartao sufixo,
+        [Frozen] Banco banco,
         Cartao existente,
-        VencimentosCartoesNovos vencimentos)
+        SufixoCartao outroSufixo)
+    {
+        Result<IReadOnlyList<Cartao>, Erro> result = CartaoFactory.ObterDosFinais(idUsuario, [existente], banco, [existente.Sufixo, outroSufixo]);
+
+        result.Should().Fail().Which.Should().BeSameAs(ErroCartoesNaoResolvidos.Instancia);
+    }
+
+    [Theory, DomainAutoData]
+    public void ObterDosFinais_Quando_MesmoFinalEmOutroBanco_Deve_RetornarFalha(
+        [Frozen] IdUsuario idUsuario,
+        Cartao existente)
     {
         Banco outroBanco = Banco.List.First(b => b != existente.Banco);
 
-        IReadOnlyList<Cartao> result = CartaoFactory.ObterOuCriar(idUsuario, [existente], outroBanco, [sufixo], vencimentos);
+        Result<IReadOnlyList<Cartao>, Erro> result = CartaoFactory.ObterDosFinais(idUsuario, [existente], outroBanco, [existente.Sufixo]);
 
-        Cartao cartao = result.Should().ContainSingle().Subject;
-        cartao.Should().NotBe(existente);
-        cartao.Banco.Should().Be(outroBanco);
+        result.Should().Fail().Which.Should().BeSameAs(ErroCartoesNaoResolvidos.Instancia);
     }
 
     [Theory, DomainAutoData]
-    public void ObterOuCriar_Quando_FinalRepetido_Deve_DevolverUmCartaoPorFinalNaOrdemDosFinais(
+    public void ObterDosFinais_Quando_ListaComCartaoDeOutroUsuario_Deve_LancarExcecao(
         IdUsuario idUsuario,
-        Banco banco,
-        SufixoCartao primeiro,
-        SufixoCartao segundo,
-        VencimentosCartoesNovos vencimentos)
+        Cartao cartaoDeOutroUsuario)
     {
-        IReadOnlyList<Cartao> result = CartaoFactory.ObterOuCriar(
-            idUsuario, cartoesDoUsuario: [], banco, [primeiro, segundo, primeiro], vencimentos);
-
-        result.Select(c => c.Sufixo).Should().Equal(primeiro, segundo);
-    }
-
-    [Theory, DomainAutoData]
-    public void ObterOuCriar_Quando_ListaComCartaoDeOutroUsuario_Deve_LancarExcecao(
-        IdUsuario idUsuario,
-        Cartao cartaoDeOutroUsuario,
-        Banco banco,
-        SufixoCartao sufixo,
-        VencimentosCartoesNovos vencimentos)
-    {
-        Action act = () => CartaoFactory.ObterOuCriar(idUsuario, [cartaoDeOutroUsuario], banco, [sufixo], vencimentos);
+        Action act = () => CartaoFactory.ObterDosFinais(
+            idUsuario,
+            [cartaoDeOutroUsuario],
+            cartaoDeOutroUsuario.Banco,
+            [cartaoDeOutroUsuario.Sufixo]);
 
         act.Should().ThrowExactly<ArgumentException>();
     }

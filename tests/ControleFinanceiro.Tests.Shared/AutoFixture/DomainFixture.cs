@@ -23,7 +23,6 @@ public class DomainFixture : Fixture
             .Customize(new DiaVencimentoCartaoCustomization())
             .Customize(new DiaFechamentoCartaoCustomization())
             .Customize(new SufixoCartaoCustomization())
-            .Customize(new VencimentosCartoesNovosCustomization())
             .Customize(new SufixoContaCustomization())
             .Customize(new CartaoCustomization())
             .Customize(new BeneficiarioCustomization())

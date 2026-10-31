@@ -23,15 +23,6 @@ public sealed class ImportarFaturaValidatorTests
     }
 
     [Theory, ApiAutoData]
-    public void Validate_Quando_SemDiaVencimentoNemVencimentos_Deve_Passar(ImportarFaturaRequest requisicao)
-    {
-        TestValidationResult<ImportarFaturaRequest> resultado = _sut.TestValidate(
-            requisicao with { DiaVencimento = null, Vencimentos = null });
-
-        resultado.ShouldNotHaveAnyValidationErrors();
-    }
-
-    [Theory, ApiAutoData]
     public void Validate_Quando_IdUsuarioVazio_Deve_RetornarErroNoIdUsuario(ImportarFaturaRequest requisicao)
     {
         TestValidationResult<ImportarFaturaRequest> resultado = _sut.TestValidate(requisicao with { IdUsuario = Guid.Empty });
@@ -83,40 +74,5 @@ public sealed class ImportarFaturaValidatorTests
             requisicao with { Arquivo = ArquivoFormulario.ComTamanho(ImportarFaturaValidator.TamanhoMaximoArquivo + 1) });
 
         resultado.ShouldHaveValidationErrorFor(r => r.Arquivo);
-    }
-
-    [Theory]
-    [InlineApiAutoData(0)]
-    [InlineApiAutoData(29)]
-    public void Validate_Quando_DiaVencimentoForaDe1A28_Deve_RetornarErroNoDiaVencimento(int dia, ImportarFaturaRequest requisicao)
-    {
-        TestValidationResult<ImportarFaturaRequest> resultado = _sut.TestValidate(requisicao with { DiaVencimento = dia });
-
-        resultado.ShouldHaveValidationErrorFor(r => r.DiaVencimento);
-    }
-
-    [Theory]
-    [InlineApiAutoData("123", 10)]
-    [InlineApiAutoData("12A4", 10)]
-    [InlineApiAutoData("1234", 0)]
-    [InlineApiAutoData("1234", 29)]
-    public void Validate_Quando_VencimentoComFinalOuDiaInvalido_Deve_RetornarErroNosVencimentos(
-        string sufixo,
-        int dia,
-        ImportarFaturaRequest requisicao)
-    {
-        TestValidationResult<ImportarFaturaRequest> resultado = _sut.TestValidate(
-            requisicao with { Vencimentos = new Dictionary<string, int> { [sufixo] = dia } });
-
-        resultado.ShouldHaveValidationErrorFor(r => r.Vencimentos);
-    }
-
-    [Theory, ApiAutoData]
-    public void Validate_Quando_VencimentosRepetemOFinalComEspaco_Deve_RetornarErroNosVencimentos(ImportarFaturaRequest requisicao)
-    {
-        TestValidationResult<ImportarFaturaRequest> resultado = _sut.TestValidate(
-            requisicao with { Vencimentos = new Dictionary<string, int> { ["1234"] = 10, [" 1234"] = 20 } });
-
-        resultado.ShouldHaveValidationErrorFor(r => r.Vencimentos);
     }
 }

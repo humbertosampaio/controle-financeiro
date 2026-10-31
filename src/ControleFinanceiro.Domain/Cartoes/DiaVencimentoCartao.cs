@@ -4,11 +4,6 @@ namespace ControleFinanceiro.Domain.Cartoes;
 
 public sealed class DiaVencimentoCartao : DiaValidoEmTodoMes
 {
-    /// <summary>
-    /// O dia do cartão criado sem vencimento informado, como o que aparece pela primeira vez numa fatura.
-    /// </summary>
-    public static readonly DiaVencimentoCartao Padrao = new(Minimo);
-
     private DiaVencimentoCartao(int value) : base(value)
     {
     }

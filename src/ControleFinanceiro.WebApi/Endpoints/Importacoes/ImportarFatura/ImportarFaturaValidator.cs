@@ -1,5 +1,4 @@
 using ControleFinanceiro.Application.Validation;
-using ControleFinanceiro.Domain.Cartoes;
 using ControleFinanceiro.Domain.Importacoes;
 using ControleFinanceiro.Domain.Usuarios;
 using FastEndpoints;
@@ -28,13 +27,5 @@ public sealed class ImportarFaturaValidator : Validator<ImportarFaturaRequest>
             .Must(arquivo => arquivo!.Length <= TamanhoMaximoArquivo)
             .WithMessage($"O arquivo da fatura deve ter no máximo {TamanhoMaximoArquivo / (1024 * 1024)} MB.")
             .When(x => x.Arquivo is not null);
-
-        RuleFor(x => x.DiaVencimento)
-            .MustBeValueObject(dia => DiaVencimentoCartao.Criar(dia!.Value))
-            .When(x => x.DiaVencimento is not null);
-
-        RuleFor(x => x.Vencimentos)
-            .MustBeValueObject(vencimentos => VencimentosFormulario.Ler(diaUnico: null, vencimentos))
-            .When(x => x.Vencimentos is not null);
     }
 }
