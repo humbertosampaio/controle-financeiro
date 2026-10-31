@@ -69,7 +69,7 @@ O comentário do plano não é editado: ele registra o que foi combinado antes d
 
 ## 5. Revisar
 
-Com todos os passos implementados, rode a `revisar-mudanca`. Achado CRÍTICO ou ALTO se corrige antes de seguir; se a correção mudar algo do plano, ela também entra na lista de desvios.
+Com todos os passos implementados, rode a `revisar-mudanca`. Todo achado, de qualquer severidade, se corrige antes de seguir, a não ser que o dono decida ignorá-lo depois de ouvir o achado e o motivo; se a correção mudar algo do plano, ela também entra na lista de desvios.
 
 ## 6. Registrar os desvios do plano
 

@@ -1,6 +1,6 @@
 ---
 name: abrir-pr
-description: Publica a branch do controle-financeiro e abre o PR vinculado à issue (Closes #n) no GitHub. Use só depois que revisar-mudanca passou sem achado crítico ou alto.
+description: Publica a branch do controle-financeiro e abre o PR vinculado à issue (Closes #n) no GitHub. Use só depois que revisar-mudanca passou e todo achado foi corrigido ou dispensado pelo dono.
 ---
 
 # abrir-pr
@@ -10,7 +10,7 @@ Leva a branch revisada até o PR aberto e vinculado.
 ## 1. Pré-condições
 
 - Está numa branch `<tipo>/<n>-<slug>`, não na `main`.
-- `revisar-mudanca` rodou depois do último commit, sem achado CRÍTICO ou ALTO pendente.
+- `revisar-mudanca` rodou depois do último commit, e todo achado, de qualquer severidade, foi corrigido ou o dono decidiu ignorá-lo depois de ouvir o achado e o motivo.
 - Working tree limpo (`git status --short` vazio). Se houver mudança solta, pergunte se ela entra (num commit semântico próprio) ou fica de fora.
 
 Extraia o número da issue do nome da branch. Se a branch não tiver número, **pergunte** qual issue o PR fecha.
