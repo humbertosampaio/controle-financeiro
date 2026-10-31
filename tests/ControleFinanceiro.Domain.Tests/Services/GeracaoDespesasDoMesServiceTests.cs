@@ -4,7 +4,6 @@ using ControleFinanceiro.Domain.Cartoes;
 using ControleFinanceiro.Domain.Despesas;
 using ControleFinanceiro.Domain.Services;
 using ControleFinanceiro.Domain.Shared.ValueObjects;
-using ControleFinanceiro.Domain.Transacoes;
 using ControleFinanceiro.Domain.Usuarios;
 using ControleFinanceiro.Tests.Shared.AutoFixture.Attributes;
 using CSharpFunctionalExtensions;
@@ -60,32 +59,16 @@ public sealed class GeracaoDespesasDoMesServiceTests
     [Theory, DomainAutoData]
     public void GerarParaMes_Quando_ParceladaNaLista_Deve_GerarTodasAsRecorrentes(
         [Frozen] IdUsuario idUsuario,
-        Cartao cartao,
-        IdBeneficiario idBeneficiario,
-        TextoObrigatorio descricao,
-        ReaisPositivo valor,
+        DespesaParcelada parcelada,
         Fixture fixture)
     {
         fixture.Inject(FormaPagamento.Pix);
         List<DespesaRecorrente> recorrentes = fixture.CreateMany<DespesaRecorrente>().ToList();
-        DateOnly dataOcorrencia = new(2026, 03, 15);
-        MesReferencia mesPrimeiraParcela = VencimentoFaturaCartao.MesVencimento(cartao, dataOcorrencia);
-        DespesaParcelada parcelada = DespesaParcelada.Criar(
-            idUsuario,
-            idBeneficiario,
-            descricao,
-            idCategoria: null,
-            dataOcorrencia,
-            valor,
-            cartao.Id,
-            mesPrimeiraParcela,
-            cartao.DiaVencimento,
-            (Parcela)(1, 2));
 
         Result<IReadOnlyList<Despesa>> result = GeracaoDespesasDoMesService.GerarParaMes(
-            recorrentes, cartoesDoUsuario: [], [parcelada], mesPrimeiraParcela);
+            recorrentes, cartoesDoUsuario: [], [parcelada], parcelada.Parcelas[0].MesReferencia);
 
-        result.Should().Succeed().Which.Should().HaveSameCount(recorrentes);
+        result.Should().Succeed().Which.Should().HaveSameCount(recorrentes).And.OnlyContain(d => d.IdUsuario == idUsuario);
     }
 
     [Theory, DomainAutoData]

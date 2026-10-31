@@ -43,11 +43,14 @@ public sealed class DespesaParcelada : Despesa
     /// A compra com todas as parcelas, em meses consecutivos e com o mesmo valor. As anteriores à informada nascem
     /// pagas, e ela e as seguintes, pendentes.
     /// </summary>
+    /// <remarks>
+    /// Interno porque só a <see cref="Services.DespesaParceladaFactory"/>, que recebe as listas do usuário, recusa a
+    /// compra repetida, confere a posse dos itens e calcula o mês da primeira parcela pelos dias do cartão.
+    /// </remarks>
     /// <param name="valor">O valor da parcela informada, o único que o arquivo traz.</param>
     /// <param name="mesPrimeiraParcela">O mês de vencimento da fatura em que a primeira parcela cai.</param>
     /// <param name="parcela">A parcela como o banco a informou.</param>
-    /// <exception cref="ArgumentException">Quando o mês da primeira parcela vem antes do mês da ocorrência.</exception>
-    public static DespesaParcelada Criar(
+    internal static DespesaParcelada Criar(
         IdUsuario idUsuario,
         IdBeneficiario idBeneficiario,
         TextoObrigatorio descricao,
@@ -59,10 +62,6 @@ public sealed class DespesaParcelada : Despesa
         DiaVencimentoCartao diaVencimento,
         Parcela parcela)
     {
-        MesReferencia mesOcorrencia = dataOcorrencia;
-        if (mesPrimeiraParcela < mesOcorrencia)
-            throw new ArgumentException("O mês da primeira parcela vem antes do mês da ocorrência.", nameof(mesPrimeiraParcela));
-
         DespesaParcelada despesa = new(
             IdDespesa.FromNewVersion7Guid(),
             idUsuario,
