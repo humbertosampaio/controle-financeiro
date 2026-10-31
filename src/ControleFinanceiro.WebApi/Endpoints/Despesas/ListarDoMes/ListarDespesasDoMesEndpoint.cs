@@ -4,7 +4,10 @@ using FastEndpoints;
 
 namespace ControleFinanceiro.WebApi.Endpoints.Despesas.ListarDoMes;
 
-/// <summary>As despesas do usuário num mês de referência, geradas ou não por uma recorrente.</summary>
+/// <summary>
+/// As despesas do usuário num mês de referência, geradas ou não por uma recorrente. A parcelada sai com os dados da
+/// parcela daquele mês.
+/// </summary>
 public sealed class ListarDespesasDoMesEndpoint : Endpoint<ListarDespesasDoMesRequest, ListarDespesasDoMesResponse>
 {
     private readonly IDespesaRepository _despesaRepository;
@@ -28,7 +31,7 @@ public sealed class ListarDespesasDoMesEndpoint : Endpoint<ListarDespesasDoMesRe
         ListarDespesasDoMesResponse.Despesa[] despesasResponse = despesas
             .OrderBy(d => d.DataOcorrencia)
             .ThenBy(d => d.Descricao.Value, StringComparer.CurrentCultureIgnoreCase)
-            .Select(Ler)
+            .Select(despesa => Ler(despesa, mesReferencia))
             .ToArray();
 
         await Send.OkAsync(
@@ -36,12 +39,19 @@ public sealed class ListarDespesasDoMesEndpoint : Endpoint<ListarDespesasDoMesRe
             ct);
     }
 
-    /// <exception cref="InvalidOperationException">Quando a despesa não é inteira: a parcelada ainda não é gravada.</exception>
-    private static ListarDespesasDoMesResponse.Despesa Ler(Despesa despesa)
+    /// <exception cref="InvalidOperationException">Quando o tipo da despesa não tem resposta mapeada.</exception>
+    private static ListarDespesasDoMesResponse.Despesa Ler(Despesa despesa, MesReferencia mesReferencia)
     {
-        if (despesa is not DespesaInteira inteira)
-            throw new InvalidOperationException($"Despesa sem resposta mapeada: {despesa.GetType().Name}");
+        return despesa switch
+        {
+            DespesaInteira inteira => Ler(inteira),
+            DespesaParcelada parcelada => Ler(parcelada, parcelada.ParcelaDoMes(mesReferencia).Value),
+            _ => throw new InvalidOperationException($"Despesa sem resposta mapeada: {despesa.GetType().Name}"),
+        };
+    }
 
+    private static ListarDespesasDoMesResponse.Despesa Ler(DespesaInteira inteira)
+    {
         return new(
             inteira.Id,
             inteira.IdBeneficiario,
@@ -54,6 +64,25 @@ public sealed class ListarDespesasDoMesEndpoint : Endpoint<ListarDespesasDoMesRe
             inteira.Pagamento.Valor,
             inteira.Pagamento.Status.Value,
             inteira.Pagamento.DataProjetada,
-            inteira.Pagamento.DataEfetiva);
+            inteira.Pagamento.DataEfetiva,
+            Parcela: null);
+    }
+
+    private static ListarDespesasDoMesResponse.Despesa Ler(DespesaParcelada parcelada, ParcelaDespesa parcela)
+    {
+        return new(
+            parcelada.Id,
+            parcelada.IdBeneficiario,
+            parcelada.Descricao,
+            parcelada.IdCategoria,
+            parcelada.DataOcorrencia,
+            parcelada.FormaPagamento.Value,
+            parcelada.IdCartao,
+            parcelada.IdDespesaRecorrente,
+            parcela.Pagamento.Valor,
+            parcela.Pagamento.Status.Value,
+            parcela.Pagamento.DataProjetada,
+            parcela.Pagamento.DataEfetiva,
+            new ListarDespesasDoMesResponse.ParcelaDoMes(parcela.Id, parcela.NumeroParcela, parcelada.Parcelas.Count));
     }
 }

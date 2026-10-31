@@ -9,6 +9,7 @@ using ControleFinanceiro.WebApi.Endpoints.Despesas.GerarDoMes;
 using ControleFinanceiro.WebApi.Endpoints.Usuarios.AdicionarCartao;
 using ControleFinanceiro.WebApi.Endpoints.Usuarios.Cadastrar;
 using ControleFinanceiro.WebApi.Tests.AutoFixture;
+using ControleFinanceiro.WebApi.Tests.Importacoes.ImportarFatura;
 using ControleFinanceiro.WebApi.Tests.Infraestrutura;
 using System.Net;
 using System.Net.Http.Json;
@@ -58,6 +59,24 @@ public sealed class GerarDespesasDoMesEndpointTests : IAsyncLifetime
         DespesaAdiada noCredito = gravadas.OfType<DespesaAdiada>().Should().ContainSingle().Subject;
         noCredito.IdDespesaRecorrente.Should().Be(IdDespesaRecorrente.From(recorrentes.IdNoCredito));
         noCredito.IdCartao.Should().Be(IdCartao.From(recorrentes.IdCartao));
+    }
+
+    [Theory, ApiAutoData]
+    public async Task Post_Quando_MesTemParcelaDeDespesaParcelada_Deve_GerarAsRecorrentes(
+        CadastrarUsuarioRequest cadastro,
+        CadastrarLoteBeneficiariosRequest beneficiarios,
+        AdicionarCartaoRequest cartao,
+        CadastrarDespesaRecorrenteRequest recorrente)
+    {
+        Recorrentes recorrentes = await CadastrarRecorrentesAsync(cadastro, beneficiarios, cartao, recorrente);
+        await _api.ImportarFaturaC6Async(recorrentes.IdUsuario);
+
+        // A compra parcelada da fatura tem a primeira parcela em 08/2025.
+        using HttpResponseMessage resposta = await GerarAsync(recorrentes.IdUsuario, new GerarDespesasDoMesRequest { Ano = 2025, Mes = 8 });
+
+        resposta.StatusCode.Should().Be(HttpStatusCode.OK);
+        GerarDespesasDoMesResponse? corpo = await resposta.Content.ReadFromJsonAsync<GerarDespesasDoMesResponse>();
+        corpo.Should().Be(new GerarDespesasDoMesResponse(Geradas: 2, JaExistentes: 0));
     }
 
     [Theory, ApiAutoData]
