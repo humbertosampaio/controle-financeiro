@@ -55,6 +55,8 @@ Siga os passos na ordem do plano. Cada passo vira um commit semântico em Conven
 
 Código novo segue o análogo citado no plano. Regra nova tem teste no mesmo commit, ou no seguinte quando o plano separa; use o `autor-de-testes` quando faltar cobertura.
 
+Ao criar uma classe de testes com muitos casos, escreva dois ou três, releia-os com o critério de [cada parâmetro precisa se justificar](../../../docs/testes-com-autofixture.md#cada-parâmetro-precisa-se-justificar) e só então replique o formato nos demais.
+
 ## 4. Quando o plano não fecha com o código
 
 O plano pode errar: um arquivo que não é como ele supôs, uma decisão que o código torna impossível, um caso que ele não previu. Nesses casos, **pergunte no chat, não improvise**:

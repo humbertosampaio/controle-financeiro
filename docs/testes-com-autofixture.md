@@ -20,7 +20,50 @@ Antes de escrever `new` ou chamar um método de fábrica no corpo do teste, veja
 - `OrigemTransacaoCustomization` registra a origem a partir de uma `ContaBancaria`. Com `[Frozen] ContaBancaria conta`, a `OrigemTransacao origem` do mesmo teste aponta para essa conta, sem `OrigemTransacao.DaConta(conta.Id)` no corpo.
 - `[Frozen] Banco banco` e `[Frozen] SufixoConta sufixo` fazem duas `ContaBancaria` pedidas como parâmetro terem o mesmo banco e o mesmo sufixo, em vez de duas chamadas à `ContaBancariaFactory` no corpo do teste.
 
-O teste monta o objeto à mão só quando os valores dele são o assunto do teste: o texto canônico de um hash conhecido, duas contas em bancos **diferentes**, a data e a descrição de um teste de sobreposição.
+O teste monta o objeto à mão só quando todos os valores dele são o assunto do teste, como no texto canônico de um hash conhecido. Quando só alguns são, como em duas contas em bancos **diferentes**, ele declara esses e o resto continua gerado.
+
+### Cada parâmetro precisa se justificar
+
+Para cada parâmetro do teste, pergunte: **ele aparece no assert ou decide o cenário?** Se só serve para montar outro objeto, peça o objeto pronto e mude só o que o caso exige. Não vale só para o primeiro teste: a pergunta se repete a cada caso, porque um formato verboso se replica por toda a classe.
+
+O exemplo abaixo é ilustrativo (`Conciliador` e `Lancamento` não são tipos do repositório). O caso é um lançamento que deve casar com uma despesa de mesma data e descrição. Pedir `data` e `descricao` para montar as duas pontas faz parecer que os valores importam, e obriga o teste a conhecer a criação da despesa:
+
+```csharp
+[Theory, DomainAutoData]
+public void Casar_Quando_DataEDescricaoIguais_Deve_EncontrarDespesa(
+    DateOnly data,
+    TextoObrigatorio descricao,
+    IdUsuario idUsuario,
+    IdBeneficiario idBeneficiario,
+    ReaisPositivo valor,
+    FormaPagamento formaPagamento)
+{
+    DespesaParcelada despesa = CriarDespesa(idUsuario, idBeneficiario, descricao, data, valor, formaPagamento);
+    Lancamento lancamento = new(data, descricao);
+
+    Conciliador.Casar(lancamento, [despesa]).Should().Be(despesa);
+}
+```
+
+**Parta de uma entidade válida e derive dela.** O que importa é as duas pontas terem a mesma data e a mesma descrição, e isso se lê da despesa gerada:
+
+```csharp
+[Theory, DomainAutoData]
+public void Casar_Quando_DataEDescricaoIguais_Deve_EncontrarDespesa(DespesaParcelada despesa)
+{
+    Lancamento lancamento = new(despesa.DataOcorrencia, despesa.Descricao);
+
+    Conciliador.Casar(lancamento, [despesa]).Should().Be(despesa);
+}
+```
+
+**"Os valores são o assunto" justifica declarar só esses valores, não montar o objeto inteiro.** No caso negativo, o assunto é a data diferente, e só ela aparece:
+
+```csharp
+Lancamento lancamento = new(despesa.DataOcorrencia.AddDays(1), despesa.Descricao);
+```
+
+Parâmetro lido pelo teste, inclusive `[Frozen]` lido no arrange ou no assert, passa no critério: ele decide o cenário ou é o que se verifica.
 
 ### Use o atributo mais simples que dê conta
 
