@@ -53,6 +53,7 @@ Observado nas faturas com vencimento em 09/2026 e 10/2026, as primeiras exportad
 - `status` é texto livre do Mago e não serve para regra.
 - Nas compras, `data_lancamento` costuma vir vazia; a data que importa é `data_compra`. No pagamento da fatura é o contrário: vem só a `data_lancamento`, sem cartão, produto nem pedido.
 - Cobrança e crédito ficam em colunas separadas, ambas positivas; o sinal sai do tipo de lançamento.
+- `descricao_fatura` também reconhece a compra parcelada entre faturas: uma descrição diferente na fatura seguinte gera outra despesa.
 - `numero_transacao` vem em todas as linhas e não se repete dentro do arquivo, mas se repete entre faturas: a mesma compra parcelada traz o mesmo número em todas as parcelas. Por isso o leitor reconhece o lançamento pelo número, pela parcela e pelo valor.
 - O pagamento da fatura vem sem `cartao_final`; o leitor o põe no menor final do arquivo.
 - `vendedor` vem vazio, apesar de o prompt pedir.
