@@ -12,8 +12,12 @@ public readonly partial struct IdParcelaDespesa
 public sealed class ParcelaDespesa : Entity<IdParcelaDespesa>
 {
     public int NumeroParcela { get; private set; }
-    public MesReferencia MesReferencia { get; private set; }
-    public Pagamento Pagamento { get; private set; }
+    public MesReferencia MesReferencia { get; private set; } = null!;
+    public Pagamento Pagamento { get; private set; } = null!;
+
+    private ParcelaDespesa()
+    {
+    }
 
     private ParcelaDespesa(
         IdParcelaDespesa id,
@@ -27,12 +31,16 @@ public sealed class ParcelaDespesa : Entity<IdParcelaDespesa>
         Pagamento = pagamento;
     }
 
-    public static Result<ParcelaDespesa> Criar(int numeroParcela, MesReferencia mesReferencia, DiaVencimentoCartao diaVencimento, ReaisPositivo valor)
+    internal static ParcelaDespesa CriarPendente(int numeroParcela, MesReferencia mesReferencia, DiaVencimentoCartao diaVencimento, ReaisPositivo valor)
     {
-        if (numeroParcela <= 0)
-            return Result.Failure<ParcelaDespesa>("Número da parcela deve ser maior que zero.");
-
         Pagamento pagamento = Pagamento.Pendente(valor, mesReferencia.NoDia(diaVencimento));
         return new ParcelaDespesa(IdParcelaDespesa.FromNewVersion7Guid(), numeroParcela, mesReferencia, pagamento);
+    }
+
+    /// <summary>A parcela já paga, com o vencimento projetado como data efetiva, a única data que se conhece dela.</summary>
+    internal static ParcelaDespesa CriarPaga(int numeroParcela, MesReferencia mesReferencia, DiaVencimentoCartao diaVencimento, ReaisPositivo valor)
+    {
+        DateOnly data = mesReferencia.NoDia(diaVencimento);
+        return new ParcelaDespesa(IdParcelaDespesa.FromNewVersion7Guid(), numeroParcela, mesReferencia, Pagamento.Pago(valor, data, data));
     }
 }

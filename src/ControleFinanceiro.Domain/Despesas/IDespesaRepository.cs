@@ -7,5 +7,9 @@ public interface IDespesaRepository
 {
     Task<IReadOnlyList<Despesa>> ListarDoMesAsync(MesReferencia mesReferencia, CancellationToken cancellationToken);
 
+    Task<IReadOnlyList<DespesaParcelada>> ListarParceladasAsync(CancellationToken cancellationToken);
+
+    Task<Maybe<Despesa>> ObterAsync(IdDespesa idDespesa, CancellationToken cancellationToken);
+
     Task AdicionarAsync(IEnumerable<Despesa> despesas, CancellationToken cancellationToken);
 }

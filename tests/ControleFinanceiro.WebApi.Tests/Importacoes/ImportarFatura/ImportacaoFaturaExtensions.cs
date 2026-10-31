@@ -36,10 +36,22 @@ internal static class ImportacaoFaturaExtensions
             return (await resposta.Content.ReadFromJsonAsync<ImportarFaturaResponse>())!;
         }
 
+        /// <summary>A fatura fictícia do C6 importada por um usuário sem pendências, com a parcela 3/10 no final 1111.</summary>
+        public async Task ImportarFaturaC6Async(Guid idUsuario)
+        {
+            LayoutArquivoImportacao layout = LayoutArquivoImportacao.C6CartaoCsv;
+            byte[] arquivo = FaturaCartaoC6.Completo();
+            await api.ResolverCartoesDaFaturaAsync(idUsuario, layout, arquivo);
+            await api.ResolverBeneficiariosDaFaturaAsync(idUsuario, layout, arquivo);
+            await api.ResolverCategoriasDaFaturaAsync(idUsuario, layout, arquivo);
+            await api.ImportarFaturaComSucessoAsync(idUsuario, layout, arquivo);
+        }
+
         public async Task DeveEstarSemImportacaoAsync()
         {
             (await api.ObterTodosAsync(db => db.Transacoes)).Should().BeEmpty();
             (await api.ObterTodosAsync(db => db.Importacoes)).Should().BeEmpty();
+            (await api.ObterTodosAsync(db => db.Despesas)).Should().BeEmpty();
         }
     }
 }

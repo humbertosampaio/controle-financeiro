@@ -43,7 +43,7 @@ Uma regra que depende de mais de um agregado, como "um cartão por banco e final
 - **Um agregado não recebe agregado de outro tipo nos próprios métodos.** A regra que precisa dos dois vai para a factory, que passa ao agregado só o id. A `DespesaRecorrente.Criar` recebe o `IdCartao`; a `DespesaRecorrenteFactory` recebe o `Cartao` e confere que ele é do usuário. Receber uma instância do mesmo tipo é aceito, como a `ImportacaoArquivo.PeriodoNaoImportado`, que lê a importação anterior da mesma origem.
 - Um parâmetro que às vezes é ignorado esconde a regra: prefira uma sobrecarga por caso, com o nome do caso (`GerarComPagamentoImediato` e `GerarComPagamentoAdiado`).
 
-Concorrência: a unicidade garantida pela factory tem um índice único no banco como rede. Duas requisições ao mesmo tempo dão 500 na segunda, e isso é aceito até haver motivo para tratar. A exceção é a `DespesaRecorrente` repetida (mesmo beneficiário e mesma descrição, sem contar caixa, acentos e espaços repetidos): só a factory a recusa, sem índice, e duas requisições ao mesmo tempo podem gravar as duas.
+Concorrência: a unicidade garantida pela factory tem um índice único no banco como rede. Duas requisições ao mesmo tempo dão 500 na segunda, e isso é aceito até haver motivo para tratar. A exceção é a `DespesaRecorrente` repetida (mesmo beneficiário e mesma descrição, sem contar caixa, acentos e espaços repetidos): só a factory a recusa, sem índice, e duas requisições ao mesmo tempo podem gravar as duas. O mesmo vale para a `DespesaParcelada` da mesma compra, recusada só pela `DespesaParceladaFactory`, porque a chave depende de texto normalizado, que não é coluna.
 
 ## 4. Repositórios
 

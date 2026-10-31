@@ -31,4 +31,15 @@ internal static class FaturaCartaoC6
         string conteudo = File.ReadAllText(_caminho, Encoding.UTF8).Replace(ParcelaCompraAntiga, "LOJA DE EXEMPLO;4/10", StringComparison.Ordinal);
         return Encoding.UTF8.GetBytes(conteudo);
     }
+
+    /// <summary>A fatura com duas compras idênticas parceladas: a linha da parcela 3/10 aparece duas vezes.</summary>
+    public static byte[] ComCompraParceladaGemea()
+    {
+        const string QuebraDeLinha = "\r\n";
+        IEnumerable<string> linhas = File.ReadAllText(_caminho, Encoding.UTF8)
+            .Split(QuebraDeLinha)
+            .SelectMany(linha => linha.Contains(ParcelaCompraAntiga, StringComparison.Ordinal) ? [linha, linha] : new[] { linha });
+
+        return Encoding.UTF8.GetBytes(string.Join(QuebraDeLinha, linhas));
+    }
 }

@@ -1,22 +1,31 @@
 using ControleFinanceiro.Domain.Beneficiarios;
+using ControleFinanceiro.Domain.Cartoes;
 using ControleFinanceiro.Domain.Categorias;
 using ControleFinanceiro.Domain.Shared.ValueObjects;
+using ControleFinanceiro.Domain.Transacoes;
 using ControleFinanceiro.Domain.Usuarios;
 
 namespace ControleFinanceiro.Domain.Despesas;
 
 public sealed class DespesaParcelada : Despesa
 {
-    public IReadOnlyList<ParcelaDespesa> Parcelas { get; private set; }
+    private readonly List<ParcelaDespesa> _parcelas = [];
 
-    public DespesaParcelada(
+    public IdCartao IdCartao { get; private set; }
+    public IReadOnlyList<ParcelaDespesa> Parcelas => _parcelas.AsReadOnly();
+
+    private DespesaParcelada()
+    {
+    }
+
+    private DespesaParcelada(
         IdDespesa id,
         IdUsuario idUsuario,
         IdBeneficiario idBeneficiario,
         TextoObrigatorio descricao,
         IdCategoriaDespesa? idCategoria,
         DateOnly dataOcorrencia,
-        IEnumerable<ParcelaDespesa> parcelas)
+        IdCartao idCartao)
         : base(
             id,
             idUsuario,
@@ -27,6 +36,54 @@ public sealed class DespesaParcelada : Despesa
             FormaPagamento.Credito,
             idDespesaRecorrente: null)
     {
-        Parcelas = parcelas.ToArray();
+        IdCartao = idCartao;
     }
+
+    /// <summary>
+    /// A compra com todas as parcelas, em meses consecutivos e com o mesmo valor. As anteriores à informada nascem
+    /// pagas, e ela e as seguintes, pendentes.
+    /// </summary>
+    /// <param name="valor">O valor da parcela informada, o único que o arquivo traz.</param>
+    /// <param name="mesPrimeiraParcela">O mês de vencimento da fatura em que a primeira parcela cai.</param>
+    /// <param name="parcela">A parcela como o banco a informou.</param>
+    /// <exception cref="ArgumentException">Quando o mês da primeira parcela vem antes do mês da ocorrência.</exception>
+    public static DespesaParcelada Criar(
+        IdUsuario idUsuario,
+        IdBeneficiario idBeneficiario,
+        TextoObrigatorio descricao,
+        IdCategoriaDespesa? idCategoria,
+        DateOnly dataOcorrencia,
+        ReaisPositivo valor,
+        IdCartao idCartao,
+        MesReferencia mesPrimeiraParcela,
+        DiaVencimentoCartao diaVencimento,
+        Parcela parcela)
+    {
+        MesReferencia mesOcorrencia = dataOcorrencia;
+        if (mesPrimeiraParcela < mesOcorrencia)
+            throw new ArgumentException("O mês da primeira parcela vem antes do mês da ocorrência.", nameof(mesPrimeiraParcela));
+
+        DespesaParcelada despesa = new(
+            IdDespesa.FromNewVersion7Guid(),
+            idUsuario,
+            idBeneficiario,
+            descricao,
+            idCategoria,
+            dataOcorrencia,
+            idCartao);
+
+        MesReferencia mes = mesPrimeiraParcela;
+        for (int numero = 1; numero <= parcela.Total; numero++)
+        {
+            despesa._parcelas.Add(numero < parcela.Numero
+                ? ParcelaDespesa.CriarPaga(numero, mes, diaVencimento, valor)
+                : ParcelaDespesa.CriarPendente(numero, mes, diaVencimento, valor));
+
+            mes = mes.Posterior();
+        }
+
+        return despesa;
+    }
+
+    public Maybe<ParcelaDespesa> ParcelaDoMes(MesReferencia mesReferencia) => _parcelas.TryFirst(p => p.MesReferencia == mesReferencia);
 }

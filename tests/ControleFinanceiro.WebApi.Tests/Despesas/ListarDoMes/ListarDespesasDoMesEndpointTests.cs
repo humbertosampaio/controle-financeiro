@@ -8,6 +8,7 @@ using ControleFinanceiro.WebApi.Endpoints.Despesas.ListarDoMes;
 using ControleFinanceiro.WebApi.Endpoints.Usuarios.AdicionarCartao;
 using ControleFinanceiro.WebApi.Endpoints.Usuarios.Cadastrar;
 using ControleFinanceiro.WebApi.Tests.AutoFixture;
+using ControleFinanceiro.WebApi.Tests.Importacoes.ImportarFatura;
 using ControleFinanceiro.WebApi.Tests.Infraestrutura;
 using System.Net;
 using System.Net.Http.Json;
@@ -81,6 +82,47 @@ public sealed class ListarDespesasDoMesEndpointTests : IAsyncLifetime
             opcoes => opcoes.Excluding(d => d.Id).WithStrictOrdering());
     }
 
+    // O cartão da fatura vence no dia 10 e fecha no dia 3: a 3/10 de 15/07/2025 tem a primeira parcela em 08/2025.
+    [Theory]
+    [InlineApiAutoData(08, 2025, 1, 1)]
+    [InlineApiAutoData(10, 2025, 3, 0)]
+    public async Task Get_Quando_MesDeUmaParcela_Deve_TrazerOsDadosDaParcelaDoMes(
+        int mes,
+        int ano,
+        int numeroEsperado,
+        int statusEsperado,
+        CadastrarUsuarioRequest cadastro)
+    {
+        Guid idUsuario = await ImportarFaturaComParceladaAsync(cadastro);
+        DespesaParcelada parcelada = (await _api.ObterTodosAsync(db => db.Despesas.OfType<DespesaParcelada>())).Single();
+        ParcelaDespesa parcelaDoMes = parcelada.Parcelas.Single(p => p.NumeroParcela == numeroEsperado);
+
+        using HttpResponseMessage resposta = await ListarAsync(idUsuario, ano, mes);
+
+        resposta.StatusCode.Should().Be(HttpStatusCode.OK);
+        ListarDespesasDoMesResponse? corpo = await resposta.Content.ReadFromJsonAsync<ListarDespesasDoMesResponse>();
+        ListarDespesasDoMesResponse.Despesa despesa = corpo!.Despesas.Should().ContainSingle().Subject;
+        despesa.Id.Should().Be(parcelada.Id.Value);
+        despesa.Parcela.Should().Be(new ListarDespesasDoMesResponse.ParcelaDoMes(parcelaDoMes.Id.Value, numeroEsperado, Total: 10));
+        despesa.IdCartao.Should().Be(parcelada.IdCartao.Value);
+        despesa.FormaPagamento.Should().Be(FormaPagamento.Credito.Value);
+        despesa.Valor.Should().Be(99.90m);
+        despesa.StatusPagamento.Should().Be(statusEsperado);
+        despesa.DataPagamentoProjetada.Should().Be(new DateOnly(ano, mes, 10));
+        despesa.DataPagamentoEfetiva.Should().Be(parcelaDoMes.Pagamento.DataEfetiva);
+    }
+
+    [Theory, ApiAutoData]
+    public async Task Get_Quando_MesForaDasParcelas_Deve_NaoTrazerADespesa(CadastrarUsuarioRequest cadastro)
+    {
+        Guid idUsuario = await ImportarFaturaComParceladaAsync(cadastro);
+
+        using HttpResponseMessage resposta = await ListarAsync(idUsuario, ano: 2026, mes: 6);
+
+        ListarDespesasDoMesResponse? corpo = await resposta.Content.ReadFromJsonAsync<ListarDespesasDoMesResponse>();
+        corpo!.Despesas.Should().BeEmpty();
+    }
+
     [Fact]
     public async Task Get_Quando_RequisicaoInvalida_Deve_RetornarErroEmCadaCampo()
     {
@@ -88,6 +130,14 @@ public sealed class ListarDespesasDoMesEndpointTests : IAsyncLifetime
 
         resposta.StatusCode.Should().Be(HttpStatusCode.BadRequest);
         (await resposta.CamposComErroAsync()).Should().BeEquivalentTo("idUsuario", "ano", "mes");
+    }
+
+    private async Task<Guid> ImportarFaturaComParceladaAsync(CadastrarUsuarioRequest cadastro)
+    {
+        Guid idUsuario = await _api.CadastrarUsuarioAsync(cadastro);
+        await _api.ImportarFaturaC6Async(idUsuario);
+
+        return idUsuario;
     }
 
     /// <summary>A recorrente com um beneficiário cadastrado e a categoria Outros do usuário.</summary>
@@ -123,7 +173,8 @@ public sealed class ListarDespesasDoMesEndpointTests : IAsyncLifetime
             recorrente.Valor,
             StatusPagamento.Pendente.Value,
             dataPagamentoProjetada,
-            DataPagamentoEfetiva: null);
+            DataPagamentoEfetiva: null,
+            Parcela: null);
     }
 
     private async Task GerarAsync(Guid idUsuario, MesReferencia mesReferencia)

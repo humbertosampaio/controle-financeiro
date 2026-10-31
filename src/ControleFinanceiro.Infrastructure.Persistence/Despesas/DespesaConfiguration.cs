@@ -8,13 +8,13 @@ using Microsoft.EntityFrameworkCore.Metadata.Builders;
 namespace ControleFinanceiro.Infrastructure.Persistence.Despesas;
 
 /// <summary>
-/// Uma tabela para toda a hierarquia (TPH), com o tipo na coluna <c>tipo</c>. A <see cref="DespesaParcelada"/> fica
-/// fora do modelo até a #62.
+/// Uma tabela para toda a hierarquia (TPH), com o tipo na coluna <c>tipo</c>.
 /// </summary>
 internal sealed class DespesaConfiguration : IEntityTypeConfiguration<Despesa>
 {
     internal const string TipoSimples = "simples";
     internal const string TipoAdiada = "adiada";
+    internal const string TipoParcelada = "parcelada";
 
     public void Configure(EntityTypeBuilder<Despesa> entity)
     {
@@ -25,7 +25,7 @@ internal sealed class DespesaConfiguration : IEntityTypeConfiguration<Despesa>
             tabela.HasCheckConstraint("CK_despesas_valor", "valor >= 0");
             tabela.HasCheckConstraint(
                 "CK_despesas_cartao",
-                $"(tipo = '{TipoAdiada}') = (id_cartao IS NOT NULL)");
+                $"(tipo IN ('{TipoAdiada}', '{TipoParcelada}')) = (id_cartao IS NOT NULL)");
             tabela.HasCheckConstraint(
                 "CK_despesas_pagamento",
                 $"(status_pagamento = {StatusPagamento.Pago.Value}) = (data_pagamento_efetiva IS NOT NULL)");
@@ -33,7 +33,8 @@ internal sealed class DespesaConfiguration : IEntityTypeConfiguration<Despesa>
 
         entity.HasDiscriminator<string>("tipo")
             .HasValue<DespesaSimples>(TipoSimples)
-            .HasValue<DespesaAdiada>(TipoAdiada);
+            .HasValue<DespesaAdiada>(TipoAdiada)
+            .HasValue<DespesaParcelada>(TipoParcelada);
 
         entity.HasKey(d => d.Id);
 

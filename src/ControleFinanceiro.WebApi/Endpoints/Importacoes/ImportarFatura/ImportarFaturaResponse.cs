@@ -12,5 +12,6 @@ public sealed record class ImportarFaturaResponse(IReadOnlyList<ImportarFaturaRe
         string Sufixo,
         int Lidas,
         int Novas,
-        int JaExistentes);
+        int JaExistentes,
+        int DespesasParceladasCriadas);
 }

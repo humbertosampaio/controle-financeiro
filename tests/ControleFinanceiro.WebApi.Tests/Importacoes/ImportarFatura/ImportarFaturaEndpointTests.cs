@@ -1,4 +1,7 @@
+using ControleFinanceiro.Domain.Beneficiarios;
 using ControleFinanceiro.Domain.Cartoes;
+using ControleFinanceiro.Domain.Categorias;
+using ControleFinanceiro.Domain.Despesas;
 using ControleFinanceiro.Domain.Importacoes;
 using ControleFinanceiro.Domain.Shared.ValueObjects;
 using ControleFinanceiro.Domain.Transacoes;
@@ -363,6 +366,105 @@ public sealed class ImportarFaturaEndpointTests : IAsyncLifetime
     }
 
     [Theory, ApiAutoData]
+    public async Task Post_Deve_CriarADespesaParceladaDaCompra(CadastrarUsuarioRequest cadastro)
+    {
+        Guid idUsuario = await _api.CadastrarUsuarioAsync(cadastro);
+        await ResolverPendenciasAsync(idUsuario, FaturaCartaoC6.Completo());
+
+        ImportarFaturaResponse corpo = await ImportarComSucessoAsync(idUsuario, FaturaCartaoC6.Completo());
+
+        corpo.Cartoes.Select(c => c.DespesasParceladasCriadas).Should().Equal(1, 0);
+
+        DespesaParcelada despesa = (await ObterParceladasAsync()).Should().ContainSingle().Subject;
+        Cartao fisico = (await _api.ObterTodosAsync(db => db.Cartoes)).Single(c => c.Sufixo == FaturaCartaoC6.SufixoFisico);
+        Beneficiario beneficiario = (await _api.ObterTodosAsync(db => db.Beneficiarios)).Single(b => b.PossuiAlias((Alias)"LOJA DE EXEMPLO"));
+        CategoriaDespesa categoria = (await _api.ObterTodosAsync(db => db.Categorias)).Single(c => c.PossuiAlias((Alias)"Eletrônicos"));
+
+        despesa.IdUsuario.Should().Be(IdUsuario.From(idUsuario));
+        despesa.IdCartao.Should().Be(fisico.Id);
+        despesa.IdBeneficiario.Should().Be(beneficiario.Id);
+        despesa.IdCategoria.Should().Be(categoria.Id);
+        despesa.DataOcorrencia.Should().Be(FaturaCartaoC6.PrimeiraCompraFisico);
+
+        // O cartão vence no dia 10 e fecha no dia 3: a compra de 15/07/2025 cai na fatura de 08/2025.
+        ParcelaDespesa[] parcelas = despesa.Parcelas.OrderBy(p => p.NumeroParcela).ToArray();
+        parcelas.Select(p => p.NumeroParcela).Should().Equal(Enumerable.Range(1, 10));
+        parcelas[0].MesReferencia.Should().Be((MesReferencia)(08, 2025));
+        parcelas[0].Pagamento.DataProjetada.Should().Be(new DateOnly(2025, 08, 10));
+        parcelas[9].MesReferencia.Should().Be((MesReferencia)(05, 2026));
+        parcelas.Should().OnlyContain(p => p.Pagamento.Valor == (ReaisPositivo)99.90m);
+        parcelas.Take(2).Should().OnlyContain(p => p.Pagamento.EstaPago);
+        parcelas.Skip(2).Should().OnlyContain(p => !p.Pagamento.EstaPago);
+    }
+
+    [Theory, ApiAutoData]
+    public async Task Post_Quando_Reimportacao_Deve_NaoDuplicarADespesa(CadastrarUsuarioRequest cadastro)
+    {
+        Guid idUsuario = await _api.CadastrarUsuarioAsync(cadastro);
+        await ResolverPendenciasAsync(idUsuario, FaturaCartaoC6.Completo());
+        await ImportarComSucessoAsync(idUsuario, FaturaCartaoC6.Completo());
+
+        ImportarFaturaResponse corpo = await ImportarComSucessoAsync(idUsuario, FaturaCartaoC6.Completo());
+
+        corpo.Cartoes.Should().OnlyContain(c => c.DespesasParceladasCriadas == 0);
+        (await ObterParceladasAsync()).Should().ContainSingle();
+    }
+
+    [Theory, ApiAutoData]
+    public async Task Post_Quando_FaturaSeguinte_Deve_NaoCriarNemAlterarADespesa(CadastrarUsuarioRequest cadastro)
+    {
+        Guid idUsuario = await _api.CadastrarUsuarioAsync(cadastro);
+        await ResolverPendenciasAsync(idUsuario, FaturaCartaoC6.Completo());
+        await ImportarComSucessoAsync(idUsuario, FaturaCartaoC6.Completo());
+
+        ImportarFaturaResponse corpo = await ImportarComSucessoAsync(idUsuario, FaturaCartaoC6.ComParcelaSeguinte());
+
+        corpo.Cartoes.Should().OnlyContain(c => c.DespesasParceladasCriadas == 0);
+        DespesaParcelada despesa = (await ObterParceladasAsync()).Should().ContainSingle().Subject;
+        despesa.Parcelas.Single(p => p.NumeroParcela == 3).Pagamento.EstaPago.Should().BeFalse();
+    }
+
+    [Theory, ApiAutoData]
+    public async Task Post_Quando_FaturasForaDeOrdem_Deve_ManterADespesaDaPrimeiraImportada(CadastrarUsuarioRequest cadastro)
+    {
+        Guid idUsuario = await _api.CadastrarUsuarioAsync(cadastro);
+        await ResolverPendenciasAsync(idUsuario, FaturaCartaoC6.Completo());
+        await ImportarComSucessoAsync(idUsuario, FaturaCartaoC6.ComParcelaSeguinte());
+
+        await ImportarComSucessoAsync(idUsuario, FaturaCartaoC6.Completo());
+
+        DespesaParcelada despesa = (await ObterParceladasAsync()).Should().ContainSingle().Subject;
+        despesa.Parcelas.Where(p => p.Pagamento.EstaPago).Select(p => p.NumeroParcela).Should().BeEquivalentTo([1, 2, 3]);
+    }
+
+    [Theory, ApiAutoData]
+    public async Task Post_Quando_ComprasGemeas_Deve_CriarUmaDespesaParaCadaSemDuplicarNaReimportacao(CadastrarUsuarioRequest cadastro)
+    {
+        Guid idUsuario = await _api.CadastrarUsuarioAsync(cadastro);
+        await ResolverPendenciasAsync(idUsuario, FaturaCartaoC6.Completo());
+
+        ImportarFaturaResponse corpo = await ImportarComSucessoAsync(idUsuario, FaturaCartaoC6.ComCompraParceladaGemea());
+        await ImportarComSucessoAsync(idUsuario, FaturaCartaoC6.ComCompraParceladaGemea());
+
+        corpo.Cartoes[0].DespesasParceladasCriadas.Should().Be(2);
+        (await ObterParceladasAsync()).Should().HaveCount(2);
+    }
+
+    [Theory, ApiAutoData]
+    public async Task Post_Quando_DoisUsuariosComAMesmaFatura_Deve_CriarUmaDespesaParaCada(CadastrarUsuarioRequest cadastro, CadastrarUsuarioRequest outroCadastro)
+    {
+        Guid idUsuario = await _api.CadastrarUsuarioAsync(cadastro);
+        Guid idOutro = await _api.CadastrarUsuarioAsync(outroCadastro);
+        await ResolverPendenciasAsync(idUsuario, FaturaCartaoC6.Completo());
+        await ResolverPendenciasAsync(idOutro, FaturaCartaoC6.Completo());
+
+        await ImportarComSucessoAsync(idUsuario, FaturaCartaoC6.Completo());
+        await ImportarComSucessoAsync(idOutro, FaturaCartaoC6.Completo());
+
+        (await ObterParceladasAsync()).Select(d => d.IdUsuario).Should().BeEquivalentTo([IdUsuario.From(idUsuario), IdUsuario.From(idOutro)]);
+    }
+
+    [Theory, ApiAutoData]
     public async Task Post_Quando_UsuarioNaoExiste_Deve_RetornarNaoEncontradoSemGravar(Guid idUsuario)
     {
         using HttpResponseMessage resposta = await ImportarAsync(idUsuario, FaturaCartaoC6.Completo());
@@ -396,6 +498,8 @@ public sealed class ImportarFaturaEndpointTests : IAsyncLifetime
         (await resposta.CamposComErroAsync()).Should().BeEquivalentTo("idUsuario", "layout", "arquivo");
         await _api.DeveEstarSemImportacaoAsync();
     }
+
+    private Task<List<DespesaParcelada>> ObterParceladasAsync() => _api.ObterTodosAsync(db => db.Despesas.OfType<DespesaParcelada>());
 
     private Task<HttpResponseMessage> ImportarAsync(Guid idUsuario, byte[] arquivo)
     {

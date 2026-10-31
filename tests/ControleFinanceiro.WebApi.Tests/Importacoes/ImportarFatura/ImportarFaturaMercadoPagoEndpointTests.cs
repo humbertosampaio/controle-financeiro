@@ -1,4 +1,5 @@
 using ControleFinanceiro.Domain.Cartoes;
+using ControleFinanceiro.Domain.Despesas;
 using ControleFinanceiro.Domain.Importacoes;
 using ControleFinanceiro.Domain.Shared.ValueObjects;
 using ControleFinanceiro.Domain.Transacoes;
@@ -182,6 +183,36 @@ public sealed class ImportarFaturaMercadoPagoEndpointTests : IAsyncLifetime
                 && FaturaCartaoMercadoPago.TextosProibidos.Any(p => texto.Contains(p, StringComparison.Ordinal)));
         });
     }
+
+    [Theory, ApiAutoData]
+    public async Task Post_Deve_CriarADespesaParceladaSemCategoria(CadastrarUsuarioRequest cadastro)
+    {
+        Guid idUsuario = await _api.CadastrarUsuarioAsync(cadastro);
+        await ResolverPendenciasAsync(idUsuario, FaturaCartaoMercadoPago.Completo());
+
+        ImportarFaturaResponse corpo = await ImportarComSucessoAsync(idUsuario, FaturaCartaoMercadoPago.Completo());
+
+        corpo.Cartoes.Should().ContainSingle().Which.DespesasParceladasCriadas.Should().Be(1);
+        DespesaParcelada despesa = (await ObterParceladasAsync()).Should().ContainSingle().Subject;
+        despesa.IdCategoria.Should().BeNull();
+        despesa.DataOcorrencia.Should().Be(FaturaCartaoMercadoPago.PrimeiraData);
+        despesa.Parcelas.Should().HaveCount(10).And.OnlyContain(p => p.Pagamento.Valor == (ReaisPositivo)100m);
+        despesa.Parcelas.Single(p => p.NumeroParcela == 1).MesReferencia.Should().Be((MesReferencia)(12, 2025));
+    }
+
+    [Theory, ApiAutoData]
+    public async Task Post_Quando_FaturaSeguinte_Deve_NaoDuplicarADespesa(CadastrarUsuarioRequest cadastro)
+    {
+        Guid idUsuario = await _api.CadastrarUsuarioAsync(cadastro);
+        await ResolverPendenciasAsync(idUsuario, FaturaCartaoMercadoPago.Completo());
+        await ImportarComSucessoAsync(idUsuario, FaturaCartaoMercadoPago.Completo());
+
+        await ImportarComSucessoAsync(idUsuario, FaturaCartaoMercadoPago.ComParcelaSeguinte());
+
+        (await ObterParceladasAsync()).Should().ContainSingle();
+    }
+
+    private Task<List<DespesaParcelada>> ObterParceladasAsync() => _api.ObterTodosAsync(db => db.Despesas.OfType<DespesaParcelada>());
 
     private Task<ImportarFaturaResponse> ImportarComSucessoAsync(Guid idUsuario, byte[] arquivo) =>
         _api.ImportarFaturaComSucessoAsync(idUsuario, LayoutArquivoImportacao.MercadoPagoCartaoCsv, arquivo);

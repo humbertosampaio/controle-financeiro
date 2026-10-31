@@ -6,6 +6,7 @@ using ControleFinanceiro.WebApi.Tests.Beneficiarios.Renomear;
 using ControleFinanceiro.WebApi.Tests.Categorias.CadastrarLote;
 using ControleFinanceiro.WebApi.Tests.Categorias.RemoverAlias;
 using ControleFinanceiro.WebApi.Tests.Categorias.Renomear;
+using ControleFinanceiro.WebApi.Tests.Despesas.AlterarCategoria;
 using ControleFinanceiro.WebApi.Tests.Despesas.CadastrarRecorrente;
 using ControleFinanceiro.WebApi.Tests.Despesas.GerarDoMes;
 using ControleFinanceiro.WebApi.Tests.Importacoes.ImportarExtrato;
@@ -39,7 +40,8 @@ public sealed class ApiFixture : DomainFixture
             .Customize(new RenomearBeneficiarioRequestCustomization())
             .Customize(new RemoverAliasBeneficiarioRequestCustomization())
             .Customize(new CadastrarDespesaRecorrenteRequestCustomization())
-            .Customize(new GerarDespesasDoMesRequestCustomization());
+            .Customize(new GerarDespesasDoMesRequestCustomization())
+            .Customize(new AlterarCategoriaDespesaRequestCustomization());
     }
 
     public static new ApiFixture Create() => new();
