@@ -3,18 +3,18 @@ using ControleFinanceiro.Domain.Cartoes;
 using CSharpFunctionalExtensions;
 using FastEndpoints;
 
-namespace ControleFinanceiro.WebApi.Endpoints.Usuarios.AlterarVencimentoCartao;
+namespace ControleFinanceiro.WebApi.Endpoints.Usuarios.AlterarCicloFaturaCartao;
 
 /// <summary>
-/// Troca o dia de vencimento de um cartão do usuário. As despesas já geradas não mudam: o dia novo vale para as
-/// geradas depois.
+/// Troca os dias de vencimento e de fechamento de um cartão do usuário. As despesas já geradas não mudam: os dias novos
+/// valem para as geradas depois.
 /// </summary>
-public sealed class AlterarVencimentoCartaoEndpoint : Endpoint<AlterarVencimentoCartaoRequest>
+public sealed class AlterarCicloFaturaCartaoEndpoint : Endpoint<AlterarCicloFaturaCartaoRequest>
 {
     private readonly ICartaoRepository _cartaoRepository;
     private readonly IUnitOfWork _unitOfWork;
 
-    public AlterarVencimentoCartaoEndpoint(ICartaoRepository cartaoRepository, IUnitOfWork unitOfWork)
+    public AlterarCicloFaturaCartaoEndpoint(ICartaoRepository cartaoRepository, IUnitOfWork unitOfWork)
     {
         _cartaoRepository = cartaoRepository;
         _unitOfWork = unitOfWork;
@@ -22,11 +22,11 @@ public sealed class AlterarVencimentoCartaoEndpoint : Endpoint<AlterarVencimento
 
     public override void Configure()
     {
-        Put("usuarios/{idUsuario}/cartoes/{idCartao}/vencimento");
+        Put("usuarios/{idUsuario}/cartoes/{idCartao}/ciclo-fatura");
         AllowAnonymous();
     }
 
-    public override async Task HandleAsync(AlterarVencimentoCartaoRequest req, CancellationToken ct)
+    public override async Task HandleAsync(AlterarCicloFaturaCartaoRequest req, CancellationToken ct)
     {
         Maybe<Cartao> cartao = await _cartaoRepository.ObterAsync(IdCartao.From(req.IdCartao), ct);
 
@@ -36,7 +36,7 @@ public sealed class AlterarVencimentoCartaoEndpoint : Endpoint<AlterarVencimento
             return;
         }
 
-        cartao.Value.AlterarVencimento((DiaVencimentoCartao)req.DiaVencimento);
+        cartao.Value.AlterarCicloFatura((DiaVencimentoCartao)req.DiaVencimento, (DiaFechamentoCartao)req.DiaFechamento);
         await _unitOfWork.CommitAsync(ct);
 
         await Send.NoContentAsync(ct);

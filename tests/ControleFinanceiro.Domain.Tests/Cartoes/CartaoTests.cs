@@ -6,10 +6,14 @@ namespace ControleFinanceiro.Domain.Tests.Cartoes;
 public sealed class CartaoTests
 {
     [Theory, DomainAutoData]
-    public void AlterarVencimento_Deve_TrocarODiaDeVencimento(Cartao sut, DiaVencimentoCartao outroDia)
+    public void AlterarCicloFatura_Deve_TrocarOsDiasDeVencimentoEDeFechamento(
+        Cartao sut,
+        DiaVencimentoCartao outroVencimento,
+        DiaFechamentoCartao outroFechamento)
     {
-        sut.AlterarVencimento(outroDia);
+        sut.AlterarCicloFatura(outroVencimento, outroFechamento);
 
-        sut.DiaVencimento.Should().Be(outroDia);
+        sut.DiaVencimento.Should().Be(outroVencimento);
+        sut.DiaFechamento.Should().Be(outroFechamento);
     }
 }

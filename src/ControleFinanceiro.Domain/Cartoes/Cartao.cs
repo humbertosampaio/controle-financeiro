@@ -53,8 +53,12 @@ public sealed class Cartao : AggregateRoot<IdCartao>, IPertenceAoUsuario
     }
 
     /// <remarks>
-    /// As despesas já geradas não mudam, porque guardam a data projetada do pagamento: o dia novo vale para as
+    /// As despesas já geradas não mudam, porque guardam a data projetada do pagamento: os dias novos valem para as
     /// geradas depois.
     /// </remarks>
-    public void AlterarVencimento(DiaVencimentoCartao diaVencimento) => DiaVencimento = diaVencimento;
+    public void AlterarCicloFatura(DiaVencimentoCartao diaVencimento, DiaFechamentoCartao diaFechamento)
+    {
+        DiaVencimento = diaVencimento;
+        DiaFechamento = diaFechamento;
+    }
 }

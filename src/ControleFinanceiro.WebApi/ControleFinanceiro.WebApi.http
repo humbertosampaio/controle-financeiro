@@ -34,3 +34,15 @@ Content-Type: application/json
 }
 
 ###
+
+# Troque os ids pelos devolvidos nos cadastros acima.
+PUT {{ControleFinanceiro.WebApi_HostAddress}}/api/usuarios/00000000-0000-0000-0000-000000000000/cartoes/00000000-0000-0000-0000-000000000000/ciclo-fatura
+Accept: application/json
+Content-Type: application/json
+
+{
+  "diaVencimento": 15,
+  "diaFechamento": 8
+}
+
+###

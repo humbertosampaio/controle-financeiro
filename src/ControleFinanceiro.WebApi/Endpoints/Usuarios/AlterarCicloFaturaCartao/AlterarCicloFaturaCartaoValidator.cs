@@ -3,11 +3,11 @@ using ControleFinanceiro.Domain.Cartoes;
 using ControleFinanceiro.Domain.Usuarios;
 using FastEndpoints;
 
-namespace ControleFinanceiro.WebApi.Endpoints.Usuarios.AlterarVencimentoCartao;
+namespace ControleFinanceiro.WebApi.Endpoints.Usuarios.AlterarCicloFaturaCartao;
 
-public sealed class AlterarVencimentoCartaoValidator : Validator<AlterarVencimentoCartaoRequest>
+public sealed class AlterarCicloFaturaCartaoValidator : Validator<AlterarCicloFaturaCartaoRequest>
 {
-    public AlterarVencimentoCartaoValidator()
+    public AlterarCicloFaturaCartaoValidator()
     {
         RuleFor(x => x.IdUsuario)
             .MustBeId(IdUsuario.TryFrom);
@@ -17,5 +17,8 @@ public sealed class AlterarVencimentoCartaoValidator : Validator<AlterarVencimen
 
         RuleFor(x => x.DiaVencimento)
             .MustBeValueObject(DiaVencimentoCartao.Criar);
+
+        RuleFor(x => x.DiaFechamento)
+            .MustBeValueObject(DiaFechamentoCartao.Criar);
     }
 }

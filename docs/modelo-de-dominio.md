@@ -31,7 +31,7 @@ classDiagram
     namespace Cartoes {
         class Cartao {
             <<AggregateRoot>>
-            AlterarVencimento(DiaVencimentoCartao)
+            AlterarCicloFatura(DiaVencimentoCartao, DiaFechamentoCartao)
         }
     }
 
@@ -152,7 +152,7 @@ classDiagram
 ### Invariantes que valem saber
 
 - **Usuario**: `RendaLiquida` = renda bruta − descontos.
-- **Cartao**: um por banco + sufixo em cada usuário. Só nasce pela `CartaoFactory`, que recebe os cartões do usuário: o `Criar` falha com `ErroCartaoJaCadastrado`, e o `ObterDosFinais` devolve o cartão de cada final de uma fatura, ou falha com `ErroCartoesNaoResolvidos`: a importação nunca cria cartão. O índice único da tabela é a rede para duas requisições ao mesmo tempo. O dia de vencimento e o de fechamento são obrigatórios, sem regra entre eles. O vencimento pode ser alterado depois, e o dia novo vale só para as despesas geradas a partir daí: as já geradas guardam a data projetada do pagamento.
+- **Cartao**: um por banco + sufixo em cada usuário. Só nasce pela `CartaoFactory`, que recebe os cartões do usuário: o `Criar` falha com `ErroCartaoJaCadastrado`, e o `ObterDosFinais` devolve o cartão de cada final de uma fatura, ou falha com `ErroCartoesNaoResolvidos`: a importação nunca cria cartão. O índice único da tabela é a rede para duas requisições ao mesmo tempo. O dia de vencimento e o de fechamento são obrigatórios, sem regra entre eles. Os dois podem ser alterados depois, e os dias novos valem só para as despesas geradas a partir daí: as já geradas guardam a data projetada do pagamento.
 - **ContaBancaria**: uma por banco + sufixo em cada usuário, com o apelido padrão "&lt;tipo&gt; &lt;banco&gt; final &lt;sufixo&gt;". Só nasce pela `ContaBancariaFactory.ObterOuCriar`, que devolve a conta existente ou uma nova, e falha com `ErroContaDeOutroTipo` se a conta existe com outro tipo.
 - **Beneficiario**: quem recebeu o dinheiro de uma saída, reconhecido no arquivo só pelos aliases, nunca pelo nome. Pode nascer sem alias (cadastro manual, sem arquivo). Cada alias aponta para um beneficiário só em cada usuário: o beneficiário só nasce e só ganha alias pela `BeneficiarioFactory`, que recebe os beneficiários do usuário: o `Resolver` aplica um lote inteiro ou nada (`BeneficiarioNovo`, com ou sem alias, e `AliasBeneficiarioExistente`) e falha com `ErroAliasBeneficiarioJaAtribuido`. O nome não é único: o usuário o escolhe livremente. O índice único `(id_usuario, texto_normalizado)` é a rede, e por isso o `AliasBeneficiario` guarda o `IdUsuario`. Renomear e remover alias não passam pela factory.
 - **CategoriaDespesa**: categoria de despesa do usuário. Os aliases são as categorias do banco que ele associou a ela; a busca casa só com eles, nunca com o nome. O nome é único em cada usuário, comparado sem caixa, acentos e espaços repetidos, e cada alias aponta para uma categoria só. A categoria só nasce, só ganha alias e só é renomeada pela `CategoriaDespesaFactory`, que recebe as categorias do usuário: o `Resolver` aplica um lote inteiro ou nada (categorias novas, com ou sem alias, e aliases para as existentes) e falha com `ErroCategoriaJaCadastrada` ou `ErroAliasCategoriaJaAtribuido`. O índice único `(id_usuario, texto_normalizado)` dos aliases é a rede. Todo usuário tem a categoria `Outros` (`CategoriaDespesa.NomeOutros`), criada junto com ele pela `CriarOutros`: é achada pelo nome, então não pode ser renomeada (`ErroCategoriaOutrosNaoRenomeavel`). Remover alias não passa pela factory.
