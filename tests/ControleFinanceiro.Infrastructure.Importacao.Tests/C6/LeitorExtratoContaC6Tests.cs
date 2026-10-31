@@ -154,11 +154,11 @@ public sealed class LeitorExtratoContaC6Tests
     [Fact]
     public async Task LerAsync_Quando_ContraparteDoPixSoComDocumento_Deve_ManterODocumentoNaContraparte()
     {
-        Stream arquivo = _fixture.ComLinha(numero: 15, "04/03/2026,04/03/2026,Pix recebido de 123.456.789-09,,12.34,0.00,-240.61");
+        Stream arquivo = _fixture.ComLinha(numero: 15, "04/03/2026,04/03/2026,Pix recebido de 384.716.205-53,,12.34,0.00,-240.61");
 
         Result<Extrato> result = await _leitor.LerAsync(arquivo, CancellationToken.None);
 
-        result.Should().Succeed().Which.Lancamentos.Should().ContainSingle(l => l.Contraparte == "123.456.789-09");
+        result.Should().Succeed().Which.Lancamentos.Should().ContainSingle(l => l.Contraparte == "384.716.205-53");
     }
 
     [Fact]
