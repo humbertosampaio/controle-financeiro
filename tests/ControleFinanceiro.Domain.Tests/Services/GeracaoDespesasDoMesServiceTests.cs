@@ -180,11 +180,9 @@ public sealed class GeracaoDespesasDoMesServiceTests
     [Theory, DomainAutoData]
     public void GerarComPagamentoAdiado_Quando_FormaPagamentoCredito_Deve_RetornarDespesaAdiadaDoUsuarioDaRecorrente(
         [Frozen] Cartao cartao,
-        [Frozen] DiaOcorrenciaRecorrente diaOcorrencia,
+        MesReferencia mesReferencia,
         Fixture fixture)
     {
-        MesReferencia mesReferencia = MesReferencia.Criar(mes: 03, ano: 2026).Value;
-        DateOnly dataOcorrenciaEsperada = new DateOnly(2026, 02, diaOcorrencia.Value);
         fixture.Inject(FormaPagamento.Credito);
         DespesaRecorrente despesaRecorrente = fixture.Create<DespesaRecorrente>();
 
@@ -193,7 +191,6 @@ public sealed class GeracaoDespesasDoMesServiceTests
         DespesaAdiada despesa = result.Should().Succeed()
             .Which.Should().BeOfType<DespesaAdiada>().Subject;
         despesa.IdUsuario.Should().Be(despesaRecorrente.IdUsuario);
-        despesa.DataOcorrencia.Should().Be(dataOcorrenciaEsperada);
     }
 
     [Theory, DomainAutoData]
@@ -342,25 +339,43 @@ public sealed class GeracaoDespesasDoMesServiceTests
             .Which.IdDespesaRecorrente.Should().Be(despesaRecorrente.Id);
     }
 
-    [Theory, DomainAutoData]
-    public void GerarComPagamentoAdiado_Quando_MesReferenciaJaneiro_Deve_OcorrerEmDezembroDoAnoAnterior(
-        [Frozen] DiaOcorrenciaRecorrente diaOcorrencia,
-        [Frozen] DiaVencimentoCartao diaVencimento,
-        [Frozen] Cartao cartao,
+    [Theory]
+    // No próprio mês do pagamento.
+    [InlineDomainAutoData(10, 20, 5, 3, 2026, 2026, 3)]
+    // Um mês antes.
+    [InlineDomainAutoData(10, 20, 11, 3, 2026, 2026, 2)]
+    [InlineDomainAutoData(25, 5, 5, 4, 2026, 2026, 3)]
+    [InlineDomainAutoData(15, 15, 15, 4, 2026, 2026, 3)]
+    // Dois meses antes.
+    [InlineDomainAutoData(25, 5, 26, 4, 2026, 2026, 2)]
+    [InlineDomainAutoData(15, 15, 16, 4, 2026, 2026, 2)]
+    // Na virada do ano.
+    [InlineDomainAutoData(25, 5, 5, 1, 2027, 2026, 12)]
+    [InlineDomainAutoData(25, 5, 26, 2, 2027, 2026, 12)]
+    public void GerarComPagamentoAdiado_Deve_PorAOcorrenciaNaFaturaQueVenceNoMesDeReferencia(
+        int diaFechamento,
+        int diaVencimento,
+        int diaOcorrencia,
+        int mes,
+        int ano,
+        int anoOcorrenciaEsperado,
+        int mesOcorrenciaEsperado,
         Fixture fixture)
     {
-        MesReferencia janeiro = MesReferencia.Criar(mes: 01, ano: 2027).Value;
-        DateOnly dataOcorrenciaEsperada = new DateOnly(2026, 12, diaOcorrencia.Value);
-        DateOnly vencimentoEsperado = new DateOnly(2027, 01, diaVencimento.Value);
+        MesReferencia mesReferencia = (MesReferencia)(mes, ano);
+        fixture.Inject((DiaFechamentoCartao)diaFechamento);
+        fixture.Inject((DiaVencimentoCartao)diaVencimento);
+        fixture.Inject((DiaOcorrenciaRecorrente)diaOcorrencia);
         fixture.Inject(FormaPagamento.Credito);
+        Cartao cartao = fixture.Freeze<Cartao>();
         DespesaRecorrente despesaRecorrente = fixture.Create<DespesaRecorrente>();
 
-        Result<Despesa> result = GeracaoDespesasDoMesService.GerarComPagamentoAdiado(despesaRecorrente, cartao, janeiro);
+        Result<Despesa> result = GeracaoDespesasDoMesService.GerarComPagamentoAdiado(despesaRecorrente, cartao, mesReferencia);
 
         DespesaAdiada despesa = result.Should().Succeed()
             .Which.Should().BeOfType<DespesaAdiada>().Subject;
-        despesa.DataOcorrencia.Should().Be(dataOcorrenciaEsperada);
-        despesa.MesReferencia.Should().Be(janeiro);
-        despesa.Pagamento.DataProjetada.Should().Be(vencimentoEsperado);
+        despesa.DataOcorrencia.Should().Be(new DateOnly(anoOcorrenciaEsperado, mesOcorrenciaEsperado, diaOcorrencia));
+        despesa.MesReferencia.Should().Be(mesReferencia);
+        despesa.Pagamento.DataProjetada.Should().Be(new DateOnly(ano, mes, diaVencimento));
     }
 }

@@ -40,7 +40,9 @@ public sealed class ListarDespesasDoMesEndpointTests : IAsyncLifetime
     {
         Guid idUsuario = await _api.CadastrarUsuarioAsync(cadastro);
         CadastrarDespesaRecorrenteRequest doUsuario = await ComItensDoUsuarioAsync(idUsuario, beneficiarios, recorrente);
-        Guid idCartao = await _api.AdicionarCartaoAsync(idUsuario, cartao);
+        // Com esse ciclo, a ocorrência no dia 5 fica no mês anterior ao do pagamento, antes da despesa no Pix.
+        AdicionarCartaoRequest comCiclo = cartao with { DiaFechamento = 25, DiaVencimento = 10 };
+        Guid idCartao = await _api.AdicionarCartaoAsync(idUsuario, comCiclo);
         CadastrarDespesaRecorrenteRequest noPix = doUsuario with
         {
             Descricao = "Aluguel",
@@ -73,7 +75,7 @@ public sealed class ListarDespesasDoMesEndpointTests : IAsyncLifetime
         DateOnly ocorrenciaNoPix = mesReferencia.NoDia(noPix.DiaOcorrencia).Value;
         corpo!.Despesas.Should().BeEquivalentTo(
             [
-                Esperada(noCredito, ocorrenciaNoCredito, idNoCredito, mesReferencia.NoDia(cartao.DiaVencimento).Value),
+                Esperada(noCredito, ocorrenciaNoCredito, idNoCredito, mesReferencia.NoDia(comCiclo.DiaVencimento).Value),
                 Esperada(noPix, ocorrenciaNoPix, idNoPix, ocorrenciaNoPix),
             ],
             opcoes => opcoes.Excluding(d => d.Id).WithStrictOrdering());

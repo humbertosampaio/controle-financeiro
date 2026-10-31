@@ -84,8 +84,8 @@ public static class GeracaoDespesasDoMesService
     }
 
     /// <summary>
-    /// A despesa do mês de uma recorrente no crédito: a data fica no mês anterior, e o pagamento, no vencimento
-    /// do cartão no mês de referência.
+    /// A despesa do mês de uma recorrente no crédito: o pagamento fica no vencimento do cartão no mês de referência, e
+    /// a data, no mês da compra que cai na fatura desse vencimento, de zero a dois meses antes.
     /// </summary>
     /// <param name="cartao">
     /// O cartão da despesa recorrente. A posse foi conferida na criação da recorrente: outro cartão é erro de
@@ -105,7 +105,7 @@ public static class GeracaoDespesasDoMesService
         if (cartao.Id != despesaRecorrente.IdCartao)
             throw new ArgumentException("O cartão não é o da despesa recorrente.", nameof(cartao));
 
-        DateOnly dataOcorrencia = mesReferencia.Anterior().NoDia(despesaRecorrente.DiaOcorrencia);
+        DateOnly dataOcorrencia = VencimentoFaturaCartao.DataOcorrenciaQueVenceEm(cartao, mesReferencia, despesaRecorrente.DiaOcorrencia);
 
         return DespesaAdiada
             .Criar(
@@ -116,6 +116,7 @@ public static class GeracaoDespesasDoMesService
                 dataOcorrencia,
                 despesaRecorrente.Valor,
                 cartao.Id,
+                mesReferencia,
                 cartao.DiaVencimento,
                 despesaRecorrente.Id);
     }
