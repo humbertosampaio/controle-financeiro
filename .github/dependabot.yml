@@ -20,7 +20,8 @@ updates:
     groups:
       aspire:
         patterns: ["Aspire.*"]
-      # O dotnet-ef (dotnet-tools.json) sobe junto com o EF, para o gate do CI usar a mesma versão.
+      # O dotnet-ef (dotnet-tools.json) deve subir junto com o EF, para o gate do CI usar a mesma
+      # versão, mas o Dependabot pode deixá-lo de fora: confira no PR do grupo.
       microsoft-e-npgsql:
         patterns: ["Microsoft.AspNetCore.*", "Microsoft.EntityFrameworkCore*", "Microsoft.Extensions.*", "Npgsql.*", "dotnet-ef"]
       opentelemetry:

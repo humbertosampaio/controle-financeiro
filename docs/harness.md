@@ -96,7 +96,7 @@ O comando sai com código 1 quando há mudança pendente. Ele usa a `ControleFin
 
 - **`revisar-mudanca`:** roda quando o diff toca `src/ControleFinanceiro.Domain/**` ou `src/ControleFinanceiro.Infrastructure.Persistence/**`.
 - **CI:** roda em todo PR, logo depois do build (leva segundos e pega também a mudança que chega por outro caminho, como a atualização de um pacote).
-- **Versão:** o `dotnet-ef` é ferramenta local, fixada em `dotnet-tools.json` na versão do `Microsoft.EntityFrameworkCore` do `Directory.Packages.props`. O Dependabot atualiza os dois no mesmo grupo (`microsoft-e-npgsql`). Ao subir o EF à mão, suba também o `dotnet-ef` (`dotnet tool update dotnet-ef --version <versão>`).
+- **Versão:** o `dotnet-ef` é ferramenta local, fixada em `dotnet-tools.json` na versão do `Microsoft.EntityFrameworkCore` do `Directory.Packages.props`. O grupo `microsoft-e-npgsql` do Dependabot inclui os dois, mas o PR pode vir só com o EF, e o gate não reprova a diferença (só avisa). Ao subir o EF, à mão ou pelo Dependabot, confira e suba também o `dotnet-ef` (`dotnet tool update dotnet-ef --version <versão>`).
 
 ### Testes de integração afetados
 
