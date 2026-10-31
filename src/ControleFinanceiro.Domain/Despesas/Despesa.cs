@@ -47,4 +47,6 @@ public abstract class Despesa : AggregateRoot<IdDespesa>, IPertenceAoUsuario
         FormaPagamento = formaPagamento;
         IdDespesaRecorrente = idDespesaRecorrente;
     }
+
+    public void AlterarCategoria(IdCategoriaDespesa idCategoria) => IdCategoria = idCategoria;
 }
