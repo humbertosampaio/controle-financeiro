@@ -73,7 +73,7 @@ public sealed class DespesaParceladaTests
     {
         DespesaParcelada result = Parcelar(idUsuario, cartao, numero: 3, total: 10);
 
-        result.Parcelas.Should().OnlyContain(p => p.Pagamento.Valor == (ReaisPositivo)99.90m);
+        result.Parcelas.Should().OnlyContain(p => p.Pagamento.ValorProjetado == (ReaisPositivo)99.90m);
     }
 
     [Theory]

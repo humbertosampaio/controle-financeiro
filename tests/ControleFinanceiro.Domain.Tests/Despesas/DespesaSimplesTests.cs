@@ -43,7 +43,7 @@ public sealed class DespesaSimplesTests
         pagamento.DataProjetada.Should().Be(dataOcorrencia);
         pagamento.DataEfetiva.Should().Be(dataOcorrencia);
         pagamento.Status.Should().Be(StatusPagamento.Pago);
-        pagamento.Valor.Should().Be(valor);
+        pagamento.ValorProjetado.Should().Be(valor);
     }
 
     [Theory, DomainAutoData]
@@ -130,7 +130,7 @@ public sealed class DespesaSimplesTests
         pagamento.DataProjetada.Should().Be(dataOcorrencia);
         pagamento.DataEfetiva.Should().BeNull();
         pagamento.Status.Should().Be(StatusPagamento.Pendente);
-        pagamento.Valor.Should().Be(valor);
+        pagamento.ValorProjetado.Should().Be(valor);
     }
 
     [Theory, DomainAutoData]

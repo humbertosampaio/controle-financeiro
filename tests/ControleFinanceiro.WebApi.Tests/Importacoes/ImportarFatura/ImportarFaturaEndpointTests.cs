@@ -403,7 +403,7 @@ public sealed class ImportarFaturaEndpointTests : IAsyncLifetime
         parcelas[0].MesReferencia.Should().Be((MesReferencia)(08, 2025));
         parcelas[0].Pagamento.DataProjetada.Should().Be(new DateOnly(2025, 08, 10));
         parcelas[9].MesReferencia.Should().Be((MesReferencia)(05, 2026));
-        parcelas.Should().OnlyContain(p => p.Pagamento.Valor == (ReaisPositivo)99.90m);
+        parcelas.Should().OnlyContain(p => p.Pagamento.ValorProjetado == (ReaisPositivo)99.90m);
         parcelas.Take(2).Should().OnlyContain(p => p.Pagamento.EstaPago);
         parcelas.Skip(2).Should().OnlyContain(p => !p.Pagamento.EstaPago);
     }

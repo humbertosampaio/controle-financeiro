@@ -43,7 +43,7 @@ public sealed class DespesaParceladaFactoryTests
         despesa.Parcelas.Should().HaveCount(10);
         despesa.Parcelas[0].MesReferencia.Should().Be(mesPrimeiraParcela);
         despesa.Parcelas[0].Pagamento.DataProjetada.Should().Be(mesPrimeiraParcela.NoDia(cartao.DiaVencimento));
-        despesa.Parcelas.Should().OnlyContain(p => p.Pagamento.Valor == (ReaisPositivo)99.90m);
+        despesa.Parcelas.Should().OnlyContain(p => p.Pagamento.ValorProjetado == (ReaisPositivo)99.90m);
         despesa.Parcelas.Count(p => p.Pagamento.EstaPago).Should().Be(2);
     }
 
@@ -112,7 +112,7 @@ public sealed class DespesaParceladaFactoryTests
 
         result.Should().BeEmpty();
         existente.Parcelas.Count(p => p.Pagamento.EstaPago).Should().Be(2);
-        existente.Parcelas.Should().OnlyContain(p => p.Pagamento.Valor == (ReaisPositivo)99.90m);
+        existente.Parcelas.Should().OnlyContain(p => p.Pagamento.ValorProjetado == (ReaisPositivo)99.90m);
     }
 
     [Theory]

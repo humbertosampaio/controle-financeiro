@@ -15,7 +15,7 @@ internal sealed class DespesaInteiraConfiguration : IEntityTypeConfiguration<Des
         // Complex type, como a origem da transação: o pagamento é um value object sem identidade.
         entity.ComplexProperty(d => d.Pagamento, pagamento =>
         {
-            pagamento.Property(p => p.Valor)
+            pagamento.Property(p => p.ValorProjetado)
                 .HasColumnName("valor");
 
             // O ConfigureSmartEnum do DbContext não alcança as propriedades de complex type.
