@@ -307,7 +307,7 @@ classDiagram
 
 ## Serviços de domínio
 
-Estáticos e puros: recebem os agregados e as listas de que precisam, e quem chama os carrega pelos repositórios. Uma lista com item de outro usuário é erro de quem chama e lança `ArgumentException`.
+Puros, sem infraestrutura: recebem os agregados e as listas de que precisam, e quem chama os carrega pelos repositórios. Uma lista com item de outro usuário é erro de quem chama e lança `ArgumentException`.
 
 | Serviço | O que faz |
 |---|---|
@@ -318,6 +318,7 @@ Estáticos e puros: recebem os agregados e as listas de que precisam, e quem cha
 | `CartaoFactory` | Cria o cartão do usuário, conferindo banco + sufixo entre os cartões dele, ou obtém os cartões dos finais de uma fatura (`ObterDosFinais`), falhando quando falta algum. `ObterDoFinal` acha o cartão de um final, para a prévia da importação. |
 | `ContaBancariaFactory` | Acha a conta do extrato entre as do usuário, ou cria uma. |
 | `DespesaParceladaFactory` | Cria as despesas parceladas que as compras de uma fatura revelam e que o usuário ainda não tem (`CriarDaFatura`), reconhecendo a mesma compra pelo cartão, pela data, pela descrição normalizada e pelo total de parcelas. Só cria, nunca altera. |
+| `AlteracaoCategoriaDespesaService` | Troca a categoria de uma despesa, conferindo que a despesa e a categoria são do mesmo usuário. |
 | `DespesaRecorrenteFactory` | Cria a despesa recorrente no crédito (`CriarNoCredito`) ou sem cartão (`CriarSemCartao`), conferindo que não repete beneficiário e descrição de uma recorrente do usuário. |
 | `ImportacaoArquivoFactory` | Registra a importação de um arquivo com o usuário e a origem da própria conta ou do próprio cartão. |
 | `VencimentoFaturaCartao` | Calcula, pelos dias do cartão, o mês de vencimento da fatura em que cai uma compra (`MesVencimento`) e, na volta, a data da compra que vence num mês pedido (`DataOcorrenciaQueVenceEm`). A compra no dia do fechamento entra na fatura que fecha nesse dia. |

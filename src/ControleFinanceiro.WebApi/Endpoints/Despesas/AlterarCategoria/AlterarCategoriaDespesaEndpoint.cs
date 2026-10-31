@@ -1,6 +1,7 @@
 using ControleFinanceiro.Application.Abstractions;
 using ControleFinanceiro.Domain.Categorias;
 using ControleFinanceiro.Domain.Despesas;
+using ControleFinanceiro.Domain.Services;
 using CSharpFunctionalExtensions;
 using FastEndpoints;
 
@@ -42,7 +43,7 @@ public sealed class AlterarCategoriaDespesaEndpoint : Endpoint<AlterarCategoriaD
             return;
         }
 
-        despesa.Value.AlterarCategoria(categoria.Value.Id);
+        AlteracaoCategoriaDespesaService.Alterar(despesa.Value, categoria.Value);
         await _unitOfWork.CommitAsync(ct);
         await Send.NoContentAsync(ct);
     }
