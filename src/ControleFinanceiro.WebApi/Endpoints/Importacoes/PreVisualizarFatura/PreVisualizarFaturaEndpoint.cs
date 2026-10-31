@@ -106,8 +106,8 @@ public sealed class PreVisualizarFaturaEndpoint : Endpoint<PreVisualizarFaturaRe
         return CartaoFactory
             .ObterDoFinal(idUsuario, cartoes, banco, sufixo)
             .Match(
-                cartao => new PreVisualizarFaturaResponse.FinalCartao(sufixo, Cadastrado: true, cartao.DiaVencimento),
-                () => new PreVisualizarFaturaResponse.FinalCartao(sufixo, Cadastrado: false, DiaVencimento: null));
+                cartao => new PreVisualizarFaturaResponse.FinalCartao(sufixo, Cadastrado: true, cartao.DiaVencimento, cartao.DiaFechamento),
+                () => new PreVisualizarFaturaResponse.FinalCartao(sufixo, Cadastrado: false, DiaVencimento: null, DiaFechamento: null));
     }
 
     private async Task EnviarFalhaAsync(Falha falha, CancellationToken ct)

@@ -42,7 +42,8 @@ public sealed class AdicionarCartaoEndpoint : Endpoint<AdicionarCartaoRequest, A
             cartoesDoUsuario,
             Banco.FromValue(req.Banco),
             (SufixoCartao)req.Sufixo,
-            (DiaVencimentoCartao)req.DiaVencimento);
+            (DiaVencimentoCartao)req.DiaVencimento,
+            (DiaFechamentoCartao)req.DiaFechamento);
 
         if (!criado.TryGetValue(out Cartao? cartao, out Erro? erro))
         {

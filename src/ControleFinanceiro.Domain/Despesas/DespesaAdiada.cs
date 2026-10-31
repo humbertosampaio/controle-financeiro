@@ -41,7 +41,9 @@ public sealed class DespesaAdiada : DespesaInteira
         IdCartao = idCartao;
     }
 
+    /// <param name="mesVencimento">O mês de vencimento da fatura em que a ocorrência cai.</param>
     /// <param name="idDespesaRecorrente">A recorrente que gerou a despesa, ou nulo quando ela não veio de uma.</param>
+    /// <exception cref="ArgumentException">Quando o mês de vencimento vem antes do mês da ocorrência.</exception>
     public static DespesaAdiada Criar(
         IdUsuario idUsuario,
         IdBeneficiario idBeneficiario,
@@ -50,12 +52,15 @@ public sealed class DespesaAdiada : DespesaInteira
         DateOnly dataOcorrencia,
         ReaisPositivo valor,
         IdCartao idCartao,
+        MesReferencia mesVencimento,
         DiaVencimentoCartao diaVencimento,
         IdDespesaRecorrente? idDespesaRecorrente)
     {
-        MesReferencia mesReferenciaOcorrencia = dataOcorrencia;
-        MesReferencia mesReferenciaPagamento = mesReferenciaOcorrencia.Posterior();
-        Pagamento pagamento = Pagamento.Pendente(valor, dataProjetada: mesReferenciaPagamento.NoDia(diaVencimento));
+        MesReferencia mesOcorrencia = dataOcorrencia;
+        if (mesVencimento < mesOcorrencia)
+            throw new ArgumentException("O mês de vencimento vem antes do mês da ocorrência.", nameof(mesVencimento));
+
+        Pagamento pagamento = Pagamento.Pendente(valor, dataProjetada: mesVencimento.NoDia(diaVencimento));
 
         return new DespesaAdiada(
             IdDespesa.FromNewVersion7Guid(),
@@ -67,7 +72,7 @@ public sealed class DespesaAdiada : DespesaInteira
             FormaPagamento.Credito,
             idCartao,
             idDespesaRecorrente,
-            mesReferenciaPagamento,
+            mesVencimento,
             pagamento);
     }
 }

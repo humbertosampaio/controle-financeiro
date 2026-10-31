@@ -10,7 +10,8 @@ O Mago responde no formato que o prompt pedir, então o importador só funciona 
 2. Cole o prompt abaixo, trocando `MM/AAAA` pelo mês de **vencimento** da fatura (ex.: `09/2026`).
 3. Copie só o bloco do CSV da resposta, do cabeçalho até a última linha, e salve em `dados/mercado-pago-cartao-MM-AAAA.csv` (UTF-8), com `MM-AAAA` sendo o mês do **fechamento**, e não o do vencimento que vai no prompt: é o mês que o pagamento da fatura traz no nome ("Fatura de <mês>"). A pasta `dados/` é ignorada pelo git; o arquivo nunca entra no repositório.
 4. Leia a seção "Conferência" da resposta. Se o Mago disser que algum lançamento ou detalhe não pôde ser consultado, ou que os lançamentos não explicam o total, peça de novo antes de importar.
-5. Importe pela rota da fatura (`POST usuarios/{idUsuario}/importacoes/faturas/mercado-pago-cartao-csv`).
+5. Faça a prévia (`POST usuarios/{idUsuario}/importacoes/faturas/mercado-pago-cartao-csv/previa`) e resolva o que ela apontar: o final sem cartão se cadastra com o dia de vencimento e o de fechamento (`POST usuarios/{idUsuario}/cartoes`), porque a importação não cria cartão e recusa o arquivo enquanto faltar algum.
+6. Importe pela rota da fatura (`POST usuarios/{idUsuario}/importacoes/faturas/mercado-pago-cartao-csv`).
 
 ## Prompt
 

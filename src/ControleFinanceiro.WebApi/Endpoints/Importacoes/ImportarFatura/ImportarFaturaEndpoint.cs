@@ -16,9 +16,9 @@ using LoteCartao = (ControleFinanceiro.Domain.Cartoes.Cartao Cartao, ControleFin
 namespace ControleFinanceiro.WebApi.Endpoints.Importacoes.ImportarFatura;
 
 /// <summary>
-/// Lê a fatura, obtém ou cria um cartão por final, confere que todo texto de beneficiário e toda categoria do banco da
-/// fatura já são alias e grava, de cada cartão, a importação e só as transações novas, junto com os cartões novos, num
-/// commit só. Nada é gravado quando a resposta é de erro.
+/// Lê a fatura, confere que todo final já tem cartão e que todo texto de beneficiário e toda categoria do banco já são
+/// alias e grava, de cada cartão, a importação e só as transações novas, num commit só. Nada é gravado quando a
+/// resposta é de erro.
 /// </summary>
 public sealed class ImportarFaturaEndpoint : Endpoint<ImportarFaturaRequest, ImportarFaturaResponse>
 {
@@ -75,20 +75,12 @@ public sealed class ImportarFaturaEndpoint : Endpoint<ImportarFaturaRequest, Imp
     {
         IdUsuario idUsuario = _usuarioAtual.Id;
         LayoutArquivoImportacao layout = LayoutArquivoImportacao.FromValue(req.Layout);
-        VencimentosCartoesNovos vencimentos = LerVencimentos(req);
 
         await LerAsync(layout, req.Arquivo!, ct)
-            .Bind(fatura => ImportarAsync(idUsuario, layout, fatura, vencimentos, ct))
+            .Bind(fatura => ImportarAsync(idUsuario, layout, fatura, ct))
             .Match(
                 resposta => Send.OkAsync(resposta, ct),
                 falha => EnviarFalhaAsync(falha, ct));
-    }
-
-    /// <param name="req">Já validada.</param>
-    private static VencimentosCartoesNovos LerVencimentos(ImportarFaturaRequest req)
-    {
-        DiaVencimentoCartao? diaUnico = req.DiaVencimento is int dia ? (DiaVencimentoCartao)dia : null;
-        return VencimentosFormulario.Ler(diaUnico, req.Vencimentos).Value;
     }
 
     private async Task<Result<Fatura, Falha>> LerAsync(LayoutArquivoImportacao layout, IFormFile arquivo, CancellationToken ct)
@@ -101,22 +93,22 @@ public sealed class ImportarFaturaEndpoint : Endpoint<ImportarFaturaRequest, Imp
             .MapError(Falha.ArquivoInvalido);
     }
 
-    /// <summary>Obtém os cartões e monta o lote de cada um; só grava se nenhum lote falhar.</summary>
+    /// <summary>Obtém os cartões e monta o lote de cada um; só grava se nenhum final ficar sem cartão e nenhum lote falhar.</summary>
     private async Task<Result<ImportarFaturaResponse, Falha>> ImportarAsync(
         IdUsuario idUsuario,
         LayoutArquivoImportacao layout,
         Fatura fatura,
-        VencimentosCartoesNovos vencimentos,
         CancellationToken ct)
     {
         IReadOnlyList<Cartao> cartoesDoUsuario = await _cartaoRepository.ListarAsync(ct);
-        IReadOnlyList<Cartao> cartoes = CartaoFactory.ObterOuCriar(idUsuario, cartoesDoUsuario, fatura.Banco, fatura.Sufixos, vencimentos);
         IReadOnlyList<Beneficiario> beneficiariosDoUsuario = await _beneficiarioRepository.ListarAsync(ct);
         IReadOnlyList<CategoriaDespesa> categoriasDoUsuario = await _categoriaDespesaRepository.ListarAsync(ct);
 
-        return await MontarLotes(idUsuario, beneficiariosDoUsuario, categoriasDoUsuario, layout, fatura, cartoes)
+        return await CartaoFactory
+            .ObterDosFinais(idUsuario, cartoesDoUsuario, fatura.Banco, fatura.Sufixos)
+            .Bind(cartoes => MontarLotes(idUsuario, beneficiariosDoUsuario, categoriasDoUsuario, layout, fatura, cartoes))
             .MapError(Falha.DeDominio)
-            .Map(lotes => GravarAsync(cartoesDoUsuario, vencimentos, lotes, ct));
+            .Map(lotes => GravarAsync(lotes, ct));
     }
 
     /// <summary>Para no primeiro lote que falhar.</summary>
@@ -172,20 +164,12 @@ public sealed class ImportarFaturaEndpoint : Endpoint<ImportarFaturaRequest, Imp
             .Map(transacoes => (cartao, importacao, transacoes));
     }
 
-    private async Task<ImportarFaturaResponse> GravarAsync(
-        IReadOnlyList<Cartao> cartoesDoUsuario,
-        VencimentosCartoesNovos vencimentos,
-        IReadOnlyList<LoteCartao> lotes,
-        CancellationToken ct)
+    private async Task<ImportarFaturaResponse> GravarAsync(IReadOnlyList<LoteCartao> lotes, CancellationToken ct)
     {
         List<ImportarFaturaResponse.CartaoImportado> cartoesImportados = [];
 
         foreach ((Cartao cartao, ImportacaoArquivo importacao, IReadOnlyList<Transacao> transacoes) in lotes)
         {
-            bool cartaoNovo = !cartoesDoUsuario.Contains(cartao);
-            if (cartaoNovo)
-                await _cartaoRepository.AdicionarAsync(cartao, ct);
-
             await _importacaoRepository.AdicionarAsync(importacao, ct);
             IReadOnlyList<Transacao> novas = await _transacaoRepository.AdicionarNovasAsync(transacoes, ct);
 
@@ -193,8 +177,6 @@ public sealed class ImportarFaturaEndpoint : Endpoint<ImportarFaturaRequest, Imp
                 importacao.Id,
                 cartao.Id,
                 cartao.Sufixo,
-                cartaoNovo,
-                cartaoNovo && vencimentos.EhPadrao(cartao.Sufixo),
                 importacao.Lidas,
                 novas.Count,
                 importacao.Lidas - novas.Count));
@@ -211,6 +193,11 @@ public sealed class ImportarFaturaEndpoint : Endpoint<ImportarFaturaRequest, Imp
         {
             case Falha.Arquivo(string mensagem):
                 AddError(r => r.Arquivo, mensagem);
+                await Send.ErrorsAsync(StatusCodes.Status422UnprocessableEntity, ct);
+                break;
+
+            case Falha.Dominio(ErroCartoesNaoResolvidos erro):
+                AddError(r => r.Arquivo, erro.Descricao);
                 await Send.ErrorsAsync(StatusCodes.Status422UnprocessableEntity, ct);
                 break;
 

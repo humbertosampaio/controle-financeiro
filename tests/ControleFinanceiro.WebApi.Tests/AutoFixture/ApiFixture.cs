@@ -12,7 +12,7 @@ using ControleFinanceiro.WebApi.Tests.Importacoes.ImportarExtrato;
 using ControleFinanceiro.WebApi.Tests.Importacoes.ImportarFatura;
 using ControleFinanceiro.WebApi.Tests.Importacoes.PreVisualizarFatura;
 using ControleFinanceiro.WebApi.Tests.Usuarios.AdicionarCartao;
-using ControleFinanceiro.WebApi.Tests.Usuarios.AlterarVencimentoCartao;
+using ControleFinanceiro.WebApi.Tests.Usuarios.AlterarCicloFaturaCartao;
 using ControleFinanceiro.WebApi.Tests.Usuarios.Cadastrar;
 
 namespace ControleFinanceiro.WebApi.Tests.AutoFixture;
@@ -28,7 +28,7 @@ public sealed class ApiFixture : DomainFixture
         this.Customize(new RealistasCustomization())
             .Customize(new CadastrarUsuarioRequestCustomization())
             .Customize(new AdicionarCartaoRequestCustomization())
-            .Customize(new AlterarVencimentoCartaoRequestCustomization())
+            .Customize(new AlterarCicloFaturaCartaoRequestCustomization())
             .Customize(new ImportarExtratoRequestCustomization())
             .Customize(new ImportarFaturaRequestCustomization())
             .Customize(new PreVisualizarFaturaRequestCustomization())

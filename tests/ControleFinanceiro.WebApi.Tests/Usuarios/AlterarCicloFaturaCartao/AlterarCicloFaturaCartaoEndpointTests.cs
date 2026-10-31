@@ -1,20 +1,20 @@
 using ControleFinanceiro.Domain.Cartoes;
 using ControleFinanceiro.WebApi.Endpoints.Usuarios.AdicionarCartao;
-using ControleFinanceiro.WebApi.Endpoints.Usuarios.AlterarVencimentoCartao;
+using ControleFinanceiro.WebApi.Endpoints.Usuarios.AlterarCicloFaturaCartao;
 using ControleFinanceiro.WebApi.Endpoints.Usuarios.Cadastrar;
 using ControleFinanceiro.WebApi.Tests.AutoFixture;
 using ControleFinanceiro.WebApi.Tests.Infraestrutura;
 using System.Net;
 using System.Net.Http.Json;
 
-namespace ControleFinanceiro.WebApi.Tests.Usuarios.AlterarVencimentoCartao;
+namespace ControleFinanceiro.WebApi.Tests.Usuarios.AlterarCicloFaturaCartao;
 
 [Collection(ApiCollection.Nome)]
-public sealed class AlterarVencimentoCartaoEndpointTests : IAsyncLifetime
+public sealed class AlterarCicloFaturaCartaoEndpointTests : IAsyncLifetime
 {
     private readonly ApiComPostgresFixture _api;
 
-    public AlterarVencimentoCartaoEndpointTests(ApiComPostgresFixture api)
+    public AlterarCicloFaturaCartaoEndpointTests(ApiComPostgresFixture api)
     {
         _api = api;
     }
@@ -24,10 +24,10 @@ public sealed class AlterarVencimentoCartaoEndpointTests : IAsyncLifetime
     public Task DisposeAsync() => Task.CompletedTask;
 
     [Theory, ApiAutoData]
-    public async Task Put_Quando_RequisicaoValida_Deve_GravarONovoVencimento(
+    public async Task Put_Quando_RequisicaoValida_Deve_GravarOsNovosDias(
         CadastrarUsuarioRequest cadastro,
         AdicionarCartaoRequest cartao,
-        AlterarVencimentoCartaoRequest requisicao)
+        AlterarCicloFaturaCartaoRequest requisicao)
     {
         Guid idUsuario = await _api.CadastrarUsuarioAsync(cadastro);
         Guid idCartao = await _api.AdicionarCartaoAsync(idUsuario, cartao);
@@ -38,9 +38,11 @@ public sealed class AlterarVencimentoCartaoEndpointTests : IAsyncLifetime
         resposta.StatusCode.Should().Be(HttpStatusCode.NoContent);
         Cartao gravado = await LerCartaoAsync(idCartao);
         gravado.DiaVencimento.Should().Be((DiaVencimentoCartao)requisicao.DiaVencimento);
+        gravado.DiaFechamento.Should().Be((DiaFechamentoCartao)requisicao.DiaFechamento);
         gravado.Should().BeEquivalentTo(original, options => options
             .ComparingByMembers<Cartao>()
-            .Excluding(c => c.DiaVencimento));
+            .Excluding(c => c.DiaVencimento)
+            .Excluding(c => c.DiaFechamento));
     }
 
     [Theory, ApiAutoData]
@@ -48,7 +50,7 @@ public sealed class AlterarVencimentoCartaoEndpointTests : IAsyncLifetime
         CadastrarUsuarioRequest cadastro,
         CadastrarUsuarioRequest outroCadastro,
         AdicionarCartaoRequest cartaoDoOutro,
-        AlterarVencimentoCartaoRequest requisicao)
+        AlterarCicloFaturaCartaoRequest requisicao)
     {
         Guid idOutroUsuario = await _api.CadastrarUsuarioAsync(outroCadastro);
         Guid idCartaoDoOutro = await _api.AdicionarCartaoAsync(idOutroUsuario, cartaoDoOutro);
@@ -64,7 +66,7 @@ public sealed class AlterarVencimentoCartaoEndpointTests : IAsyncLifetime
     public async Task Put_Quando_CartaoNaoExiste_Deve_RetornarNaoEncontrado(
         CadastrarUsuarioRequest cadastro,
         Guid idCartao,
-        AlterarVencimentoCartaoRequest requisicao)
+        AlterarCicloFaturaCartaoRequest requisicao)
     {
         Guid idUsuario = await _api.CadastrarUsuarioAsync(cadastro);
 
@@ -74,20 +76,20 @@ public sealed class AlterarVencimentoCartaoEndpointTests : IAsyncLifetime
     }
 
     [Theory, ApiAutoData]
-    public async Task Put_Quando_RequisicaoInvalida_Deve_RetornarErroEmCadaCampo(AlterarVencimentoCartaoRequest requisicao)
+    public async Task Put_Quando_RequisicaoInvalida_Deve_RetornarErroEmCadaCampo(AlterarCicloFaturaCartaoRequest requisicao)
     {
-        AlterarVencimentoCartaoRequest invalida = requisicao with { DiaVencimento = 0 };
+        AlterarCicloFaturaCartaoRequest invalida = requisicao with { DiaVencimento = 0, DiaFechamento = 29 };
 
         using HttpResponseMessage resposta = await AlterarAsync(Guid.Empty, Guid.Empty, invalida);
 
         resposta.StatusCode.Should().Be(HttpStatusCode.BadRequest);
-        (await resposta.CamposComErroAsync()).Should().BeEquivalentTo("idUsuario", "idCartao", "diaVencimento");
+        (await resposta.CamposComErroAsync()).Should().BeEquivalentTo("idUsuario", "idCartao", "diaVencimento", "diaFechamento");
     }
 
-    private Task<HttpResponseMessage> AlterarAsync(Guid idUsuario, Guid idCartao, AlterarVencimentoCartaoRequest requisicao)
+    private Task<HttpResponseMessage> AlterarAsync(Guid idUsuario, Guid idCartao, AlterarCicloFaturaCartaoRequest requisicao)
     {
         return _api.Client.PutAsJsonAsync(
-            new Uri($"/api/usuarios/{idUsuario}/cartoes/{idCartao}/vencimento", UriKind.Relative),
+            new Uri($"/api/usuarios/{idUsuario}/cartoes/{idCartao}/ciclo-fatura", UriKind.Relative),
             requisicao);
     }
 

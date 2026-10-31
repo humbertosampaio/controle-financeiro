@@ -18,43 +18,45 @@ public static class CartaoFactory
         IReadOnlyCollection<Cartao> cartoesDoUsuario,
         Banco banco,
         SufixoCartao sufixo,
-        DiaVencimentoCartao diaVencimento)
+        DiaVencimentoCartao diaVencimento,
+        DiaFechamentoCartao diaFechamento)
     {
         GarantirDoUsuario(idUsuario, cartoesDoUsuario);
 
         if (DoFinal(cartoesDoUsuario, banco, sufixo).HasValue)
             return new ErroCartaoJaCadastrado(banco, sufixo);
 
-        return Cartao.Criar(idUsuario, banco, sufixo, diaVencimento);
+        return Cartao.Criar(idUsuario, banco, sufixo, diaVencimento, diaFechamento);
     }
 
     /// <summary>
-    /// Devolve um cartão por final distinto, na ordem em que os finais aparecem: o do usuário no mesmo banco, sem
-    /// mudança, ou um novo, com o vencimento que <paramref name="vencimentos"/> dá ao final.
+    /// Devolve um cartão por final distinto, na ordem em que os finais aparecem, ou falha com
+    /// <see cref="ErroCartoesNaoResolvidos"/> quando algum final não tem cartão do usuário no mesmo banco.
     /// </summary>
-    /// <remarks>
-    /// Só os cartões novos precisam ser adicionados ao repositório: quem chama sabe que um cartão é novo porque não
-    /// está na lista que passou (<c>!cartoesDoUsuario.Contains(cartao)</c>).
-    /// </remarks>
     /// <param name="cartoesDoUsuario">Todos os cartões do usuário, e só os dele.</param>
     /// <exception cref="ArgumentException">Quando a lista traz um cartão de outro usuário.</exception>
-    public static IReadOnlyList<Cartao> ObterOuCriar(
+    public static Result<IReadOnlyList<Cartao>, Erro> ObterDosFinais(
         IdUsuario idUsuario,
         IReadOnlyCollection<Cartao> cartoesDoUsuario,
         Banco banco,
-        IEnumerable<SufixoCartao> sufixos,
-        VencimentosCartoesNovos vencimentos)
+        IEnumerable<SufixoCartao> sufixos)
     {
         GarantirDoUsuario(idUsuario, cartoesDoUsuario);
 
-        return sufixos
+        Maybe<Cartao>[] cartoes = sufixos
             .Distinct()
-            .Select(sufixo => DoFinal(cartoesDoUsuario, banco, sufixo)
-                .GetValueOrDefault(() => Cartao.Criar(idUsuario, banco, sufixo, vencimentos.Para(sufixo))))
-            .ToList();
+            .Select(sufixo => DoFinal(cartoesDoUsuario, banco, sufixo))
+            .ToArray();
+
+        if (cartoes.Any(cartao => cartao.HasNoValue))
+            return ErroCartoesNaoResolvidos.Instancia;
+
+        return cartoes
+            .Select(cartao => cartao.Value)
+            .ToArray();
     }
 
-    /// <summary>O cartão do usuário com o final no mesmo banco, o que a importação usa em vez de criar outro.</summary>
+    /// <summary>O cartão do usuário com o final no mesmo banco, o que a prévia usa para marcar os finais já cadastrados.</summary>
     /// <param name="cartoesDoUsuario">Todos os cartões do usuário, e só os dele.</param>
     /// <exception cref="ArgumentException">Quando a lista traz um cartão de outro usuário.</exception>
     public static Maybe<Cartao> ObterDoFinal(

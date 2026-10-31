@@ -20,6 +20,7 @@ public sealed record class PreVisualizarFaturaResponse(
     IReadOnlyList<string> CategoriasBanco)
 {
     /// <param name="Cadastrado">Verdadeiro quando o usuário já tem o cartão desse final no banco da fatura.</param>
-    /// <param name="DiaVencimento">O dia de vencimento do cartão cadastrado; nulo no cartão que a importação vai criar.</param>
-    public sealed record class FinalCartao(string Sufixo, bool Cadastrado, int? DiaVencimento);
+    /// <param name="DiaVencimento">O dia de vencimento do cartão cadastrado; nulo no final sem cartão, que o usuário precisa cadastrar antes de importar.</param>
+    /// <param name="DiaFechamento">O dia de fechamento do cartão cadastrado; nulo no final sem cartão.</param>
+    public sealed record class FinalCartao(string Sufixo, bool Cadastrado, int? DiaVencimento, int? DiaFechamento);
 }

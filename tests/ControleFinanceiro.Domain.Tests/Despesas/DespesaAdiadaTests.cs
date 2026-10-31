@@ -21,8 +21,8 @@ public sealed class DespesaAdiadaTests
     {
         DateOnly dataOcorrencia = new DateOnly(2026, 02, 05);
         DiaVencimentoCartao diaVencimento = (DiaVencimentoCartao)05;
-        MesReferencia mesReferenciaEsperado = MesReferencia.Criar(mes: 03, ano: 2026).Value;
-        DateOnly dataProjetadaPagamentoEsperada = new DateOnly(2026, 03, 05);
+        MesReferencia mesVencimento = MesReferencia.Criar(mes: 04, ano: 2026).Value;
+        DateOnly dataProjetadaPagamentoEsperada = new DateOnly(2026, 04, 05);
 
         DespesaAdiada result = DespesaAdiada.Criar(
             idUsuario,
@@ -32,6 +32,7 @@ public sealed class DespesaAdiadaTests
             dataOcorrencia,
             valor,
             idCartao,
+            mesVencimento,
             diaVencimento,
             idDespesaRecorrente: null);
 
@@ -42,12 +43,36 @@ public sealed class DespesaAdiadaTests
         result.DataOcorrencia.Should().Be(dataOcorrencia);
         result.FormaPagamento.Should().Be(FormaPagamento.Credito);
         result.IdCartao.Should().Be(idCartao);
-        result.MesReferencia.Should().Be(mesReferenciaEsperado);
+        result.MesReferencia.Should().Be(mesVencimento);
 
         Pagamento pagamento = result.Pagamento;
         pagamento.DataProjetada.Should().Be(dataProjetadaPagamentoEsperada);
         pagamento.DataEfetiva.Should().BeNull();
         pagamento.Status.Should().Be(StatusPagamento.Pendente);
         pagamento.Valor.Should().Be(valor);
+    }
+
+    [Theory, DomainAutoData]
+    public void Criar_Quando_MesVencimentoAnteriorAoDaOcorrencia_Deve_LancarExcecao(
+        IdUsuario idUsuario,
+        IdBeneficiario idBeneficiario,
+        TextoObrigatorio descricao,
+        ReaisPositivo valor,
+        IdCartao idCartao,
+        DiaVencimentoCartao diaVencimento)
+    {
+        Action act = () => DespesaAdiada.Criar(
+            idUsuario,
+            idBeneficiario,
+            descricao,
+            idCategoria: null,
+            new DateOnly(2026, 03, 05),
+            valor,
+            idCartao,
+            MesReferencia.Criar(mes: 02, ano: 2026).Value,
+            diaVencimento,
+            idDespesaRecorrente: null);
+
+        act.Should().ThrowExactly<ArgumentException>().WithParameterName("mesVencimento");
     }
 }

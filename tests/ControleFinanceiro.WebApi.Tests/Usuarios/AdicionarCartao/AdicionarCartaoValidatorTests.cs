@@ -6,8 +6,8 @@ using FluentValidation.TestHelper;
 namespace ControleFinanceiro.WebApi.Tests.Usuarios.AdicionarCartao;
 
 /// <summary>
-/// Testes de unidade, sem API nem banco: as regras que o validator acrescenta ao domínio. Sufixo e dia de
-/// vencimento só delegam aos value objects, já testados no domínio; que cada regra está ligada ao campo
+/// Testes de unidade, sem API nem banco: as regras que o validator acrescenta ao domínio. Sufixo e dias de
+/// vencimento e de fechamento só delegam aos value objects, já testados no domínio; que cada regra está ligada ao campo
 /// certo, o teste de integração do endpoint confere.
 /// </summary>
 public sealed class AdicionarCartaoValidatorTests

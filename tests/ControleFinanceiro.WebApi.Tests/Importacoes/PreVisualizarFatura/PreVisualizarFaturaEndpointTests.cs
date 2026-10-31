@@ -53,8 +53,8 @@ public sealed class PreVisualizarFaturaEndpointTests : IAsyncLifetime
         PreVisualizarFaturaResponse corpo = await PreVisualizarComSucessoAsync(idUsuario, LayoutArquivoImportacao.C6CartaoCsv, FaturaCartaoC6.Completo());
 
         corpo.FinaisCartao.Should().Equal(
-            new PreVisualizarFaturaResponse.FinalCartao(FaturaCartaoC6.SufixoFisico, Cadastrado: false, DiaVencimento: null),
-            new PreVisualizarFaturaResponse.FinalCartao(FaturaCartaoC6.SufixoVirtual, Cadastrado: false, DiaVencimento: null));
+            new PreVisualizarFaturaResponse.FinalCartao(FaturaCartaoC6.SufixoFisico, Cadastrado: false, DiaVencimento: null, DiaFechamento: null),
+            new PreVisualizarFaturaResponse.FinalCartao(FaturaCartaoC6.SufixoVirtual, Cadastrado: false, DiaVencimento: null, DiaFechamento: null));
         corpo.Beneficiarios.Should().Equal(_descricoesC6);
         await DeveEstarSemGravacaoAsync();
     }
@@ -119,7 +119,7 @@ public sealed class PreVisualizarFaturaEndpointTests : IAsyncLifetime
     }
 
     [Theory, ApiAutoData]
-    public async Task Post_Quando_FinalJaECartaoDoUsuario_Deve_MarcarOCartaoCadastradoComOVencimento(
+    public async Task Post_Quando_FinalJaECartaoDoUsuario_Deve_MarcarOCartaoCadastradoComOVencimentoEOFechamento(
         CadastrarUsuarioRequest cadastro,
         AdicionarCartaoRequest cartao)
     {
@@ -130,8 +130,8 @@ public sealed class PreVisualizarFaturaEndpointTests : IAsyncLifetime
         PreVisualizarFaturaResponse corpo = await PreVisualizarComSucessoAsync(idUsuario, LayoutArquivoImportacao.C6CartaoCsv, FaturaCartaoC6.Completo());
 
         corpo.FinaisCartao.Should().Equal(
-            new PreVisualizarFaturaResponse.FinalCartao(FaturaCartaoC6.SufixoFisico, Cadastrado: true, fisico.DiaVencimento),
-            new PreVisualizarFaturaResponse.FinalCartao(FaturaCartaoC6.SufixoVirtual, Cadastrado: false, DiaVencimento: null));
+            new PreVisualizarFaturaResponse.FinalCartao(FaturaCartaoC6.SufixoFisico, Cadastrado: true, fisico.DiaVencimento, fisico.DiaFechamento),
+            new PreVisualizarFaturaResponse.FinalCartao(FaturaCartaoC6.SufixoVirtual, Cadastrado: false, DiaVencimento: null, DiaFechamento: null));
         (await _api.ObterTodosAsync(db => db.Cartoes)).Should().ContainSingle();
     }
 
@@ -158,7 +158,7 @@ public sealed class PreVisualizarFaturaEndpointTests : IAsyncLifetime
             LayoutArquivoImportacao.MercadoPagoCartaoCsv,
             FaturaCartaoMercadoPago.Completo());
 
-        corpo.FinaisCartao.Should().Equal(new PreVisualizarFaturaResponse.FinalCartao(FaturaCartaoMercadoPago.Sufixo, Cadastrado: false, DiaVencimento: null));
+        corpo.FinaisCartao.Should().Equal(new PreVisualizarFaturaResponse.FinalCartao(FaturaCartaoMercadoPago.Sufixo, Cadastrado: false, DiaVencimento: null, DiaFechamento: null));
         corpo.Beneficiarios.Should().Equal("LOJA FICTICIA ELETRO", "PADARIA FICTICIA", "MERCADO FICTICIO", "LIVRARIA \"FICTICIA\"", "CAFE FICTICIO");
         corpo.CategoriasBanco.Should().BeEmpty();
         await DeveEstarSemGravacaoAsync();

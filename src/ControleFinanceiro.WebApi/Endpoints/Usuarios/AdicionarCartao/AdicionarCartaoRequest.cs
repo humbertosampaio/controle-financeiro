@@ -10,4 +10,5 @@ public sealed record class AdicionarCartaoRequest
 
     public string? Sufixo { get; init; }
     public int DiaVencimento { get; init; }
+    public int DiaFechamento { get; init; }
 }

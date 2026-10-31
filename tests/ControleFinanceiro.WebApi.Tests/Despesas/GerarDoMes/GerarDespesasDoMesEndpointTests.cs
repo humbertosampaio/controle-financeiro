@@ -61,6 +61,29 @@ public sealed class GerarDespesasDoMesEndpointTests : IAsyncLifetime
     }
 
     [Theory, ApiAutoData]
+    public async Task Post_Quando_RecorrenteNoCredito_Deve_PorAOcorrenciaPeloCicloDaFaturaDoCartao(
+        CadastrarUsuarioRequest cadastro,
+        CadastrarLoteBeneficiariosRequest beneficiarios,
+        AdicionarCartaoRequest cartao,
+        CadastrarDespesaRecorrenteRequest recorrente)
+    {
+        Recorrentes recorrentes = await CadastrarRecorrentesAsync(
+            cadastro,
+            beneficiarios,
+            cartao with { DiaFechamento = 25, DiaVencimento = 5 },
+            recorrente with { DiaOcorrencia = 26 });
+
+        using HttpResponseMessage resposta = await GerarAsync(recorrentes.IdUsuario, new GerarDespesasDoMesRequest { Mes = 4, Ano = 2026 });
+
+        resposta.StatusCode.Should().Be(HttpStatusCode.OK);
+        List<Despesa> gravadas = await _api.ObterTodosAsync(db => db.Despesas);
+        DespesaAdiada noCredito = gravadas.OfType<DespesaAdiada>().Should().ContainSingle().Subject;
+        noCredito.DataOcorrencia.Should().Be(new DateOnly(2026, 2, 26));
+        noCredito.MesReferencia.Should().Be((MesReferencia)(4, 2026));
+        noCredito.Pagamento.DataProjetada.Should().Be(new DateOnly(2026, 4, 5));
+    }
+
+    [Theory, ApiAutoData]
     public async Task Post_Quando_MesJaGerado_Deve_ManterAsMesmasDespesas(
         CadastrarUsuarioRequest cadastro,
         CadastrarLoteBeneficiariosRequest beneficiarios,

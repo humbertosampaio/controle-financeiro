@@ -23,7 +23,8 @@ public sealed class CartaoGenerator : ISpecimenBuilder
                 cartoesDoUsuario: [],
                 context.Create<Banco>(),
                 context.Create<SufixoCartao>(),
-                context.Create<DiaVencimentoCartao>())
+                context.Create<DiaVencimentoCartao>(),
+                context.Create<DiaFechamentoCartao>())
             .Value;
     }
 }
