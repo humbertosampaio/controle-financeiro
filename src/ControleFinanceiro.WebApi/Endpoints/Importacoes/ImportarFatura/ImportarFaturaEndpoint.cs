@@ -3,6 +3,7 @@ using ControleFinanceiro.Application.Importacoes;
 using ControleFinanceiro.Domain.Beneficiarios;
 using ControleFinanceiro.Domain.Cartoes;
 using ControleFinanceiro.Domain.Categorias;
+using ControleFinanceiro.Domain.Despesas;
 using ControleFinanceiro.Domain.Importacoes;
 using ControleFinanceiro.Domain.Services;
 using ControleFinanceiro.Domain.Shared;
@@ -11,14 +12,14 @@ using ControleFinanceiro.Domain.Usuarios;
 using CSharpFunctionalExtensions;
 using FastEndpoints;
 using Microsoft.AspNetCore.Mvc;
-using LoteCartao = (ControleFinanceiro.Domain.Cartoes.Cartao Cartao, ControleFinanceiro.Domain.Importacoes.ImportacaoArquivo Importacao, System.Collections.Generic.IReadOnlyList<ControleFinanceiro.Domain.Transacoes.Transacao> Transacoes);
+using LoteCartao = (ControleFinanceiro.Domain.Cartoes.Cartao Cartao, ControleFinanceiro.Domain.Importacoes.ImportacaoArquivo Importacao, System.Collections.Generic.IReadOnlyList<ControleFinanceiro.Domain.Transacoes.Transacao> Transacoes, System.Collections.Generic.IReadOnlyList<ControleFinanceiro.Domain.Despesas.DespesaParcelada> DespesasParceladas);
 
 namespace ControleFinanceiro.WebApi.Endpoints.Importacoes.ImportarFatura;
 
 /// <summary>
 /// Lê a fatura, confere que todo final já tem cartão e que todo texto de beneficiário e toda categoria do banco já são
-/// alias e grava, de cada cartão, a importação e só as transações novas, num commit só. Nada é gravado quando a
-/// resposta é de erro.
+/// alias e grava, de cada cartão, a importação, só as transações novas e as despesas parceladas que faltam, num commit
+/// só. Nada é gravado quando a resposta é de erro.
 /// </summary>
 public sealed class ImportarFaturaEndpoint : Endpoint<ImportarFaturaRequest, ImportarFaturaResponse>
 {
@@ -32,6 +33,7 @@ public sealed class ImportarFaturaEndpoint : Endpoint<ImportarFaturaRequest, Imp
     private readonly ICartaoRepository _cartaoRepository;
     private readonly IBeneficiarioRepository _beneficiarioRepository;
     private readonly ICategoriaDespesaRepository _categoriaDespesaRepository;
+    private readonly IDespesaRepository _despesaRepository;
     private readonly ITransacaoRepository _transacaoRepository;
     private readonly IImportacaoRepository _importacaoRepository;
     private readonly IEnumerable<ILeitorFatura> _leitores;
@@ -43,6 +45,7 @@ public sealed class ImportarFaturaEndpoint : Endpoint<ImportarFaturaRequest, Imp
         ICartaoRepository cartaoRepository,
         IBeneficiarioRepository beneficiarioRepository,
         ICategoriaDespesaRepository categoriaDespesaRepository,
+        IDespesaRepository despesaRepository,
         ITransacaoRepository transacaoRepository,
         IImportacaoRepository importacaoRepository,
         IEnumerable<ILeitorFatura> leitores,
@@ -53,6 +56,7 @@ public sealed class ImportarFaturaEndpoint : Endpoint<ImportarFaturaRequest, Imp
         _cartaoRepository = cartaoRepository;
         _beneficiarioRepository = beneficiarioRepository;
         _categoriaDespesaRepository = categoriaDespesaRepository;
+        _despesaRepository = despesaRepository;
         _transacaoRepository = transacaoRepository;
         _importacaoRepository = importacaoRepository;
         _leitores = leitores;
@@ -103,10 +107,11 @@ public sealed class ImportarFaturaEndpoint : Endpoint<ImportarFaturaRequest, Imp
         IReadOnlyList<Cartao> cartoesDoUsuario = await _cartaoRepository.ListarAsync(ct);
         IReadOnlyList<Beneficiario> beneficiariosDoUsuario = await _beneficiarioRepository.ListarAsync(ct);
         IReadOnlyList<CategoriaDespesa> categoriasDoUsuario = await _categoriaDespesaRepository.ListarAsync(ct);
+        IReadOnlyList<DespesaParcelada> parceladasDoUsuario = await _despesaRepository.ListarParceladasAsync(ct);
 
         return await CartaoFactory
             .ObterDosFinais(idUsuario, cartoesDoUsuario, fatura.Banco, fatura.Sufixos)
-            .Bind(cartoes => MontarLotes(idUsuario, beneficiariosDoUsuario, categoriasDoUsuario, layout, fatura, cartoes))
+            .Bind(cartoes => MontarLotes(idUsuario, beneficiariosDoUsuario, categoriasDoUsuario, parceladasDoUsuario, layout, fatura, cartoes))
             .MapError(Falha.DeDominio)
             .Map(lotes => GravarAsync(lotes, ct));
     }
@@ -116,6 +121,7 @@ public sealed class ImportarFaturaEndpoint : Endpoint<ImportarFaturaRequest, Imp
         IdUsuario idUsuario,
         IReadOnlyList<Beneficiario> beneficiariosDoUsuario,
         IReadOnlyList<CategoriaDespesa> categoriasDoUsuario,
+        IReadOnlyList<DespesaParcelada> parceladasDoUsuario,
         LayoutArquivoImportacao layout,
         Fatura fatura,
         IReadOnlyList<Cartao> cartoes)
@@ -129,6 +135,7 @@ public sealed class ImportarFaturaEndpoint : Endpoint<ImportarFaturaRequest, Imp
                 idUsuario,
                 beneficiariosDoUsuario,
                 categoriasDoUsuario,
+                parceladasDoUsuario,
                 layout,
                 fatura,
                 cartao,
@@ -146,6 +153,7 @@ public sealed class ImportarFaturaEndpoint : Endpoint<ImportarFaturaRequest, Imp
         IdUsuario idUsuario,
         IReadOnlyList<Beneficiario> beneficiariosDoUsuario,
         IReadOnlyList<CategoriaDespesa> categoriasDoUsuario,
+        IReadOnlyList<DespesaParcelada> parceladasDoUsuario,
         LayoutArquivoImportacao layout,
         Fatura fatura,
         Cartao cartao,
@@ -161,17 +169,29 @@ public sealed class ImportarFaturaEndpoint : Endpoint<ImportarFaturaRequest, Imp
 
         return LoteTransacoesFactory
             .Criar(idUsuario, beneficiariosDoUsuario, categoriasDoUsuario, cartao, importacao, lancamentos)
-            .Map(transacoes => (cartao, importacao, transacoes));
+            .Map(transacoes =>
+            {
+                IReadOnlyList<DespesaParcelada> despesasParceladas = DespesaParceladaFactory.CriarDaFatura(
+                    idUsuario,
+                    beneficiariosDoUsuario,
+                    categoriasDoUsuario,
+                    cartao,
+                    parceladasDoUsuario,
+                    lancamentos);
+
+                return (cartao, importacao, transacoes, despesasParceladas);
+            });
     }
 
     private async Task<ImportarFaturaResponse> GravarAsync(IReadOnlyList<LoteCartao> lotes, CancellationToken ct)
     {
         List<ImportarFaturaResponse.CartaoImportado> cartoesImportados = [];
 
-        foreach ((Cartao cartao, ImportacaoArquivo importacao, IReadOnlyList<Transacao> transacoes) in lotes)
+        foreach ((Cartao cartao, ImportacaoArquivo importacao, IReadOnlyList<Transacao> transacoes, IReadOnlyList<DespesaParcelada> despesasParceladas) in lotes)
         {
             await _importacaoRepository.AdicionarAsync(importacao, ct);
             IReadOnlyList<Transacao> novas = await _transacaoRepository.AdicionarNovasAsync(transacoes, ct);
+            await _despesaRepository.AdicionarAsync(despesasParceladas, ct);
 
             cartoesImportados.Add(new ImportarFaturaResponse.CartaoImportado(
                 importacao.Id,
@@ -179,7 +199,8 @@ public sealed class ImportarFaturaEndpoint : Endpoint<ImportarFaturaRequest, Imp
                 cartao.Sufixo,
                 importacao.Lidas,
                 novas.Count,
-                importacao.Lidas - novas.Count));
+                importacao.Lidas - novas.Count,
+                despesasParceladas.Count));
         }
 
         await _unitOfWork.CommitAsync(ct);
