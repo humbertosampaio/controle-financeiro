@@ -16,27 +16,40 @@ public sealed class Cartao : AggregateRoot<IdCartao>, IPertenceAoUsuario
     public Banco Banco { get; private set; } = null!;
     public SufixoCartao Sufixo { get; private set; } = null!;
     public DiaVencimentoCartao DiaVencimento { get; private set; } = null!;
+    public DiaFechamentoCartao DiaFechamento { get; private set; } = null!;
 
     private Cartao()
     {
     }
 
-    private Cartao(IdCartao id, IdUsuario idUsuario, Banco banco, SufixoCartao sufixo, DiaVencimentoCartao diaVencimento)
+    private Cartao(
+        IdCartao id,
+        IdUsuario idUsuario,
+        Banco banco,
+        SufixoCartao sufixo,
+        DiaVencimentoCartao diaVencimento,
+        DiaFechamentoCartao diaFechamento)
         : base(id)
     {
         IdUsuario = idUsuario;
         Banco = banco;
         Sufixo = sufixo;
         DiaVencimento = diaVencimento;
+        DiaFechamento = diaFechamento;
     }
 
     /// <remarks>
     /// Interno pois o usuário não pode ter dois cartões do mesmo banco com o mesmo final, e só a
     /// <see cref="Services.CartaoFactory"/>, que recebe os cartões do usuário, confere isso.
     /// </remarks>
-    internal static Cartao Criar(IdUsuario idUsuario, Banco banco, SufixoCartao sufixo, DiaVencimentoCartao diaVencimento)
+    internal static Cartao Criar(
+        IdUsuario idUsuario,
+        Banco banco,
+        SufixoCartao sufixo,
+        DiaVencimentoCartao diaVencimento,
+        DiaFechamentoCartao diaFechamento)
     {
-        return new Cartao(IdCartao.FromNewVersion7Guid(), idUsuario, banco, sufixo, diaVencimento);
+        return new Cartao(IdCartao.FromNewVersion7Guid(), idUsuario, banco, sufixo, diaVencimento, diaFechamento);
     }
 
     /// <remarks>

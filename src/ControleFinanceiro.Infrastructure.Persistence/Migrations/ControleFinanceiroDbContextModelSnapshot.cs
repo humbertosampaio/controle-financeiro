@@ -60,6 +60,10 @@ namespace ControleFinanceiro.Infrastructure.Persistence.Migrations
                         .HasColumnType("character varying(3)")
                         .HasColumnName("banco");
 
+                    b.Property<int>("DiaFechamento")
+                        .HasColumnType("integer")
+                        .HasColumnName("dia_fechamento");
+
                     b.Property<int>("DiaVencimento")
                         .HasColumnType("integer")
                         .HasColumnName("dia_vencimento");
@@ -82,6 +86,8 @@ namespace ControleFinanceiro.Infrastructure.Persistence.Migrations
                     b.ToTable("cartoes", null, t =>
                         {
                             t.HasCheckConstraint("CK_cartoes_banco", "banco ~ '^[0-9]{3}$'");
+
+                            t.HasCheckConstraint("CK_cartoes_dia_fechamento", "dia_fechamento BETWEEN 1 AND 28");
 
                             t.HasCheckConstraint("CK_cartoes_dia_vencimento", "dia_vencimento BETWEEN 1 AND 28");
 

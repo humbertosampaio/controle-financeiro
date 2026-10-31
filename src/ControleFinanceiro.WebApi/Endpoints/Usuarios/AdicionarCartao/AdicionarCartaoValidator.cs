@@ -21,5 +21,8 @@ public sealed class AdicionarCartaoValidator : Validator<AdicionarCartaoRequest>
 
         RuleFor(x => x.DiaVencimento)
             .MustBeValueObject(DiaVencimentoCartao.Criar);
+
+        RuleFor(x => x.DiaFechamento)
+            .MustBeValueObject(DiaFechamentoCartao.Criar);
     }
 }

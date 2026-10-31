@@ -17,6 +17,7 @@ internal sealed class AdicionarCartaoRequestCustomization : ICustomization
             Banco = cartao.Banco,
             Sufixo = cartao.Sufixo,
             DiaVencimento = cartao.DiaVencimento,
+            DiaFechamento = cartao.DiaFechamento,
         });
     }
 }

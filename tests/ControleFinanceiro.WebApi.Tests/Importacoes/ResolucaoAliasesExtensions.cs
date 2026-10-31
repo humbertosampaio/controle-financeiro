@@ -53,6 +53,7 @@ internal static class ResolucaoAliasesExtensions
                     Banco = banco,
                     Sufixo = final.Sufixo,
                     DiaVencimento = 10,
+                    DiaFechamento = 3,
                 });
             }
         }

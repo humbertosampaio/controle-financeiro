@@ -16,15 +16,17 @@ public sealed class CartaoFactoryTests
         IdUsuario idUsuario,
         Banco banco,
         SufixoCartao sufixo,
-        DiaVencimentoCartao diaVencimento)
+        DiaVencimentoCartao diaVencimento,
+        DiaFechamentoCartao diaFechamento)
     {
-        Result<Cartao, Erro> result = CartaoFactory.Criar(idUsuario, cartoesDoUsuario: [], banco, sufixo, diaVencimento);
+        Result<Cartao, Erro> result = CartaoFactory.Criar(idUsuario, cartoesDoUsuario: [], banco, sufixo, diaVencimento, diaFechamento);
 
         Cartao cartao = result.Should().Succeed().Subject;
         cartao.IdUsuario.Should().Be(idUsuario);
         cartao.Banco.Should().Be(banco);
         cartao.Sufixo.Should().Be(sufixo);
         cartao.DiaVencimento.Should().Be(diaVencimento);
+        cartao.DiaFechamento.Should().Be(diaFechamento);
     }
 
     [Theory, DomainAutoData]
@@ -33,9 +35,10 @@ public sealed class CartaoFactoryTests
         [Frozen] Banco banco,
         [Frozen] SufixoCartao sufixo,
         Cartao existente,
-        DiaVencimentoCartao diaVencimento)
+        DiaVencimentoCartao diaVencimento,
+        DiaFechamentoCartao diaFechamento)
     {
-        Result<Cartao, Erro> result = CartaoFactory.Criar(idUsuario, [existente], banco, sufixo, diaVencimento);
+        Result<Cartao, Erro> result = CartaoFactory.Criar(idUsuario, [existente], banco, sufixo, diaVencimento, diaFechamento);
 
         result.Should().Fail()
             .Which.Should().BeOfType<ErroCartaoJaCadastrado>()
@@ -47,11 +50,12 @@ public sealed class CartaoFactoryTests
         [Frozen] IdUsuario idUsuario,
         [Frozen] SufixoCartao sufixo,
         Cartao existente,
-        DiaVencimentoCartao diaVencimento)
+        DiaVencimentoCartao diaVencimento,
+        DiaFechamentoCartao diaFechamento)
     {
         Banco outroBanco = Banco.List.First(b => b != existente.Banco);
 
-        Result<Cartao, Erro> result = CartaoFactory.Criar(idUsuario, [existente], outroBanco, sufixo, diaVencimento);
+        Result<Cartao, Erro> result = CartaoFactory.Criar(idUsuario, [existente], outroBanco, sufixo, diaVencimento, diaFechamento);
 
         result.Should().Succeed().Which.Banco.Should().Be(outroBanco);
     }
@@ -62,9 +66,10 @@ public sealed class CartaoFactoryTests
         [Frozen] Banco banco,
         [Frozen] SufixoCartao sufixo,
         Cartao cartaoDeOutroUsuario,
-        DiaVencimentoCartao diaVencimento)
+        DiaVencimentoCartao diaVencimento,
+        DiaFechamentoCartao diaFechamento)
     {
-        Result<Cartao, Erro> result = CartaoFactory.Criar(idUsuario, cartoesDoUsuario: [], banco, sufixo, diaVencimento);
+        Result<Cartao, Erro> result = CartaoFactory.Criar(idUsuario, cartoesDoUsuario: [], banco, sufixo, diaVencimento, diaFechamento);
 
         Cartao cartao = result.Should().Succeed().Subject;
         cartao.Id.Should().NotBe(cartaoDeOutroUsuario.Id);
@@ -77,9 +82,10 @@ public sealed class CartaoFactoryTests
         Cartao cartaoDeOutroUsuario,
         Banco banco,
         SufixoCartao sufixo,
-        DiaVencimentoCartao diaVencimento)
+        DiaVencimentoCartao diaVencimento,
+        DiaFechamentoCartao diaFechamento)
     {
-        Action act = () => CartaoFactory.Criar(idUsuario, [cartaoDeOutroUsuario], banco, sufixo, diaVencimento);
+        Action act = () => CartaoFactory.Criar(idUsuario, [cartaoDeOutroUsuario], banco, sufixo, diaVencimento, diaFechamento);
 
         act.Should().ThrowExactly<ArgumentException>();
     }

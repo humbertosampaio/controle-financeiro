@@ -15,6 +15,7 @@ internal sealed class CartaoConfiguration : IEntityTypeConfiguration<Cartao>
             tabela.HasCheckConstraint("CK_cartoes_banco", "banco ~ '^[0-9]{3}$'");
             tabela.HasCheckConstraint("CK_cartoes_sufixo", "sufixo ~ '^[0-9]{4}$'");
             tabela.HasCheckConstraint("CK_cartoes_dia_vencimento", "dia_vencimento BETWEEN 1 AND 28");
+            tabela.HasCheckConstraint("CK_cartoes_dia_fechamento", "dia_fechamento BETWEEN 1 AND 28");
         });
         entity.HasKey(c => c.Id);
 
@@ -32,6 +33,10 @@ internal sealed class CartaoConfiguration : IEntityTypeConfiguration<Cartao>
         entity.Property(c => c.DiaVencimento)
             .HasColumnName("dia_vencimento")
             .HasConversion(dia => dia.Value, valor => (DiaVencimentoCartao)valor);
+
+        entity.Property(c => c.DiaFechamento)
+            .HasColumnName("dia_fechamento")
+            .HasConversion(dia => dia.Value, valor => (DiaFechamentoCartao)valor);
 
         entity.Property(c => c.IdUsuario)
             .HasColumnName("id_usuario");

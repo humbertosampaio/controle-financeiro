@@ -40,6 +40,7 @@ public sealed class AdicionarCartaoEndpointTests : IAsyncLifetime
         corpo!.Id.Should().Be(gravado.Id);
         gravado.IdUsuario.Should().Be(IdUsuario.From(idUsuario));
         gravado.Banco.Should().BeSameAs(esperado.Banco);
+        gravado.DiaFechamento.Should().Be(esperado.DiaFechamento);
         gravado.Should().BeEquivalentTo(esperado, options => options
             .ComparingByMembers<Cartao>()
             .Excluding(cartao => cartao.Id)
@@ -107,12 +108,28 @@ public sealed class AdicionarCartaoEndpointTests : IAsyncLifetime
     [Theory, ApiAutoData]
     public async Task Post_Quando_RequisicaoInvalida_Deve_RetornarErroEmCadaCampo(AdicionarCartaoRequest requisicao)
     {
-        AdicionarCartaoRequest invalida = requisicao with { Banco = "999", Sufixo = "12a4", DiaVencimento = 0 };
+        AdicionarCartaoRequest invalida = requisicao with { Banco = "999", Sufixo = "12a4", DiaVencimento = 0, DiaFechamento = 29 };
 
         using HttpResponseMessage resposta = await AdicionarAsync(Guid.Empty, invalida);
 
         resposta.StatusCode.Should().Be(HttpStatusCode.BadRequest);
-        (await resposta.CamposComErroAsync()).Should().BeEquivalentTo("idUsuario", "banco", "sufixo", "diaVencimento");
+        (await resposta.CamposComErroAsync()).Should().BeEquivalentTo("idUsuario", "banco", "sufixo", "diaVencimento", "diaFechamento");
+        (await ContarCartoesAsync()).Should().Be(0);
+    }
+
+    [Theory, ApiAutoData]
+    public async Task Post_Quando_SemDiaFechamento_Deve_RetornarErroNoDiaFechamento(
+        CadastrarUsuarioRequest cadastro,
+        AdicionarCartaoRequest requisicao)
+    {
+        Guid idUsuario = await _api.CadastrarUsuarioAsync(cadastro);
+
+        using HttpResponseMessage resposta = await _api.Client.PostAsJsonAsync(
+            new Uri($"/api/usuarios/{idUsuario}/cartoes", UriKind.Relative),
+            new { requisicao.Banco, requisicao.Sufixo, requisicao.DiaVencimento });
+
+        resposta.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+        (await resposta.CamposComErroAsync()).Should().Equal("diaFechamento");
         (await ContarCartoesAsync()).Should().Be(0);
     }
 

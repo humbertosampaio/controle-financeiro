@@ -18,14 +18,15 @@ public static class CartaoFactory
         IReadOnlyCollection<Cartao> cartoesDoUsuario,
         Banco banco,
         SufixoCartao sufixo,
-        DiaVencimentoCartao diaVencimento)
+        DiaVencimentoCartao diaVencimento,
+        DiaFechamentoCartao diaFechamento)
     {
         GarantirDoUsuario(idUsuario, cartoesDoUsuario);
 
         if (DoFinal(cartoesDoUsuario, banco, sufixo).HasValue)
             return new ErroCartaoJaCadastrado(banco, sufixo);
 
-        return Cartao.Criar(idUsuario, banco, sufixo, diaVencimento);
+        return Cartao.Criar(idUsuario, banco, sufixo, diaVencimento, diaFechamento);
     }
 
     /// <summary>

@@ -29,7 +29,8 @@ Content-Type: application/json
 {
   "banco": "336",
   "sufixo": "1234",
-  "diaVencimento": 10
+  "diaVencimento": 10,
+  "diaFechamento": 3
 }
 
 ###
