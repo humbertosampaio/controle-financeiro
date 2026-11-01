@@ -33,7 +33,7 @@ public sealed class DespesaParceladaFactoryTests
             [compra]);
 
         DespesaParcelada despesa = result.Should().ContainSingle().Subject;
-        MesReferencia mesPrimeiraParcela = VencimentoFaturaCartao.MesVencimento(cartao, _dataCompra);
+        MesReferencia mesPrimeiraParcela = cartao.MesVencimento(_dataCompra);
         despesa.IdUsuario.Should().Be(idUsuario);
         despesa.IdBeneficiario.Should().Be(beneficiarios.Single().Id);
         despesa.IdCategoria.Should().Be(categorias.Single().Id);

@@ -94,7 +94,7 @@ public static class DespesaParceladaFactory
             lancamento.Data,
             (ReaisPositivo)decimal.Abs(lancamento.Valor),
             cartao.Id,
-            VencimentoFaturaCartao.MesVencimento(cartao, lancamento.Data),
+            cartao.MesVencimento(lancamento.Data),
             cartao.DiaVencimento,
             lancamento.Parcela!);
     }

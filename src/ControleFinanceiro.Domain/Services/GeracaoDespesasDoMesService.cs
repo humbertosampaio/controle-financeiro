@@ -105,7 +105,7 @@ public static class GeracaoDespesasDoMesService
         if (cartao.Id != despesaRecorrente.IdCartao)
             throw new ArgumentException("O cartão não é o da despesa recorrente.", nameof(cartao));
 
-        DateOnly dataOcorrencia = VencimentoFaturaCartao.DataOcorrenciaQueVenceEm(cartao, mesReferencia, despesaRecorrente.DiaOcorrencia);
+        DateOnly dataOcorrencia = cartao.DataOcorrenciaQueVenceEm(mesReferencia, despesaRecorrente.DiaOcorrencia);
 
         return DespesaAdiada
             .Criar(

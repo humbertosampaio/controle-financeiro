@@ -42,7 +42,7 @@ public sealed class DespesaParceladaTests
     {
         DespesaParcelada result = Parcelar(idUsuario, cartao, numero: 1, total: 12);
 
-        MesReferencia mes = VencimentoFaturaCartao.MesVencimento(cartao, _dataOcorrencia);
+        MesReferencia mes = cartao.MesVencimento(_dataOcorrencia);
         foreach (ParcelaDespesa parcela in result.Parcelas)
         {
             parcela.MesReferencia.Should().Be(mes);
