@@ -18,7 +18,7 @@ Um caso de uso altera agregados de um tipo só e grava com um `CommitAsync`. Ele
 Várias instâncias do mesmo tipo no mesmo caso de uso:
 
 - **Criar várias é livre.** Nenhuma tem estado anterior para disputar, e a regra entre elas (unicidade) fica com a factory e o índice único (seção 3). Exemplo: a geração das despesas do mês a partir das recorrentes.
-- **Alterar várias é permitido quando cada alteração é independente:** a mesma operação aplicada a cada instância, e cada uma fica correta sozinha, mesmo que as outras não mudem. Exemplo: marcar várias despesas como pagas de uma vez.
+- **Alterar várias é permitido quando cada alteração é independente:** a mesma operação aplicada a cada instância, e cada uma fica correta sozinha, mesmo que as outras não mudem. Exemplos: marcar várias despesas como pagas de uma vez, e a conciliação das parcelas, que liga cada transação à sua parcela e só lê as transações.
 - **Alterar instâncias que dependem umas das outras pede justificativa no plano.** Se a operação só fica correta com as duas mudanças juntas, como tirar um alias de um beneficiário e pôr em outro, existe uma regra entre as instâncias que nenhuma delas protege sozinha. Antes de aceitar, tente nesta ordem:
   1. modelar a operação alterando uma instância só. Exemplo: mesclar um beneficiário em outro grava no mesclado o id do destino, e os aliases do mesclado passam a ser lidos como do destino, sem mover nada;
   2. ver se a regra pede um agregado que contenha as instâncias, ou se a segunda pode mudar depois, por evento (seção 6);
@@ -85,6 +85,7 @@ Até lá, uma feature que precise disso para no plano.
 ## 7. Value objects e ids
 
 - **Primitivo com regra vira value object.** Dinheiro é `Reais` (com sinal) ou `ReaisPositivo`, nunca `decimal` solto. O mesmo vale para todo primitivo com formato, faixa, obrigatoriedade ou unidade: o value object valida no `Criar`, que devolve `Result<T>` (`SufixoCartao`, `DiaVencimentoCartao`, `TextoObrigatorio`). O validator do endpoint pode repetir a regra para responder 400, mas chamando o `Criar` (`MustBeValueObject`).
+- **Só é value object o conceito do domínio** com regra na criação, comportamento ou igualdade usada pelo domínio. O dado que só carrega o retorno de uma operação é um `record` simples, com o nome da operação (`ConciliacaoParcelas`).
 - O value object mora **na pasta do agregado dono**, mesmo quando outro agregado o usa; esse outro passa a referenciar o namespace do dono. `Shared/ValueObjects` fica só com os conceitos sem dono, usados por vários agregados (`Reais`, `TextoObrigatorio`, `Banco`, `MesReferencia`).
 - `Shared` não depende de pasta de agregado. Se um tipo de `Shared` precisa aceitar value objects de agregados diferentes, ele recebe uma base comum em `Shared`, como o `DiaValidoEmTodoMes` do `MesReferencia.NoDia`.
 - Ids são structs Vogen sobre `Guid`, gerados no domínio com `FromNewVersion7Guid`, com conversor EF registrado. Sem `Guid` solto na API pública do domínio.
@@ -106,5 +107,5 @@ Responda no plano, para cada conceito novo ou alterado:
 4. Que caso de uso altera agregados de mais de um tipo? Se algum, qual evento substitui a alteração do segundo tipo? (seções 2 e 6)
 5. Que repositório o caso de uso usa, e que consulta não é "me dê o agregado"? (seção 4)
 6. Que falhas são situações de negócio com nome próprio, e quais são entrada inválida? (seção 5)
-7. Que primitivos com regra viram value object, e em que pasta? (seção 7)
+7. Que primitivos com regra viram value object, e em que pasta? Cada tipo novo que herda de `ValueObject` tem regra, comportamento ou igualdade usada pelo domínio? Se não, é um `record`. (seção 7)
 8. Como fica a FK entre os agregados? (seção 8)
