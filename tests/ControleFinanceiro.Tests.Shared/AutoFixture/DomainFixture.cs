@@ -29,6 +29,8 @@ public class DomainFixture : Fixture
             .Customize(new CategoriaDespesaCustomization())
             .Customize(new ContaBancariaCustomization())
             .Customize(new DespesaRecorrenteCustomization())
+            .Customize(new DespesaSimplesCustomization())
+            .Customize(new DespesaAdiadaCustomization())
             .Customize(new DespesaParceladaCustomization())
             .Customize(new ParcelaCustomization())
             .Customize(new LancamentoCustomization())

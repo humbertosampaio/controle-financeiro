@@ -2,6 +2,7 @@ using ControleFinanceiro.Domain.Beneficiarios;
 using ControleFinanceiro.Domain.Categorias;
 using ControleFinanceiro.Domain.Shared;
 using ControleFinanceiro.Domain.Shared.ValueObjects;
+using ControleFinanceiro.Domain.Transacoes;
 using ControleFinanceiro.Domain.Usuarios;
 
 namespace ControleFinanceiro.Domain.Despesas;
@@ -50,4 +51,7 @@ public abstract class Despesa : AggregateRoot<IdDespesa>, IPertenceAoUsuario
 
     /// <summary>Interno porque só o <see cref="Services.AlteracaoCategoriaDespesaService"/> confere de quem é a categoria.</summary>
     internal void AlterarCategoria(IdCategoriaDespesa idCategoria) => IdCategoria = idCategoria;
+
+    /// <summary>Devolve para pendente o que a transação quitou, ou falha com <see cref="ErroTransacaoNaoVinculada"/>.</summary>
+    public abstract UnitResult<Erro> DesfazerVinculo(IdTransacao idTransacao);
 }

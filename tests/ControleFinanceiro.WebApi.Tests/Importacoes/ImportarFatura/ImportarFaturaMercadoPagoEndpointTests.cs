@@ -196,7 +196,7 @@ public sealed class ImportarFaturaMercadoPagoEndpointTests : IAsyncLifetime
         DespesaParcelada despesa = (await _api.ObterParceladasAsync()).Should().ContainSingle().Subject;
         despesa.IdCategoria.Should().BeNull();
         despesa.DataOcorrencia.Should().Be(FaturaCartaoMercadoPago.PrimeiraData);
-        despesa.Parcelas.Should().HaveCount(10).And.OnlyContain(p => p.Pagamento.Valor == (ReaisPositivo)100m);
+        despesa.Parcelas.Should().HaveCount(10).And.OnlyContain(p => p.Pagamento.ValorProjetado == (ReaisPositivo)100m);
         despesa.Parcelas.Single(p => p.NumeroParcela == 1).MesReferencia.Should().Be((MesReferencia)(12, 2025));
     }
 

@@ -10,8 +10,7 @@ namespace ControleFinanceiro.Domain.Services;
 
 /// <summary>
 /// Cria as despesas parceladas que as compras de uma fatura revelam e que o usuário ainda não tem. Só cria, nunca altera
-/// uma despesa existente. A mesma compra é reconhecida pelo cartão, pela data, pela descrição normalizada e pelo total de
-/// parcelas: o valor fica de fora porque parcelas da mesma compra podem ter valores diferentes. Compras gêmeas, com a
+/// uma despesa existente. A mesma compra é reconhecida pela <see cref="ChaveCompraParcelada"/>. Compras gêmeas, com a
 /// mesma chave e o mesmo número na mesma fatura, viram uma despesa cada.
 /// </summary>
 public static class DespesaParceladaFactory
@@ -47,8 +46,8 @@ public static class DespesaParceladaFactory
 
         return lancamentos
             .Where(EhCompraParcelada)
-            .GroupBy(l => (l.Data, Descricao: (TextoNormalizado)l.Descricao, l.Parcela!.Total))
-            .SelectMany(compra => LinhasSemDespesa(compra, compra.Key.Descricao, cartao, parceladasDoUsuario))
+            .GroupBy(l => new ChaveCompraParcelada(cartao.Id, l.Data, (TextoNormalizado)l.Descricao, l.Parcela!.Total))
+            .SelectMany(compra => LinhasSemDespesa(compra, compra.Key, parceladasDoUsuario))
             .Select(lancamento => Criar(idUsuario, beneficiariosDoUsuario, categoriasDoUsuario, cartao, lancamento))
             .ToArray();
     }
@@ -67,21 +66,12 @@ public static class DespesaParceladaFactory
     /// </summary>
     private static IEnumerable<Lancamento> LinhasSemDespesa(
         IEnumerable<Lancamento> compra,
-        TextoNormalizado descricao,
-        Cartao cartao,
+        ChaveCompraParcelada chave,
         IReadOnlyCollection<DespesaParcelada> parceladasDoUsuario)
     {
-        Lancamento[] linhas = compra.ToArray();
-        DateOnly data = linhas[0].Data;
-        int total = linhas[0].Parcela!.Total;
+        int existentes = parceladasDoUsuario.Count(d => d.EhDaCompra(chave));
 
-        int existentes = parceladasDoUsuario.Count(d =>
-            d.IdCartao == cartao.Id
-            && d.DataOcorrencia == data
-            && (TextoNormalizado)d.Descricao == descricao
-            && d.Parcelas.Count == total);
-
-        return linhas
+        return compra
             .GroupBy(l => l.Parcela!.Numero)
             .OrderByDescending(numero => numero.Count())
             .ThenBy(numero => numero.Key)

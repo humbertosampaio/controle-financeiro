@@ -1,6 +1,7 @@
 using ControleFinanceiro.Domain.Contas;
 using ControleFinanceiro.Domain.Importacoes;
 using ControleFinanceiro.Domain.Transacoes;
+using CSharpFunctionalExtensions;
 using Microsoft.EntityFrameworkCore;
 
 namespace ControleFinanceiro.Infrastructure.Persistence.Transacoes;
@@ -18,6 +19,9 @@ internal sealed class TransacaoRepository : ITransacaoRepository
     {
         _dbSet = dbContext.Transacoes;
     }
+
+    public async Task<Maybe<Transacao>> ObterAsync(IdTransacao idTransacao, CancellationToken cancellationToken) =>
+        await _dbSet.FindAsync([idTransacao], cancellationToken);
 
     public async Task<IReadOnlyList<Transacao>> AdicionarNovasAsync(IEnumerable<Transacao> transacoes, CancellationToken cancellationToken)
     {

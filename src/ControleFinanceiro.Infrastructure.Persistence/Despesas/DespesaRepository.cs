@@ -1,5 +1,6 @@
 using ControleFinanceiro.Domain.Despesas;
 using ControleFinanceiro.Domain.Shared.ValueObjects;
+using ControleFinanceiro.Domain.Transacoes;
 using CSharpFunctionalExtensions;
 using Microsoft.EntityFrameworkCore;
 
@@ -27,6 +28,14 @@ internal sealed class DespesaRepository : IDespesaRepository
 
     public async Task<Maybe<Despesa>> ObterAsync(IdDespesa idDespesa, CancellationToken cancellationToken) =>
         await _dbSet.FindAsync([idDespesa], cancellationToken);
+
+    public async Task<Maybe<Despesa>> ObterPelaTransacaoAsync(IdTransacao idTransacao, CancellationToken cancellationToken)
+    {
+        return await _dbSet
+            .Where(d => (d is DespesaInteira && ((DespesaInteira)d).Pagamento.IdTransacao == idTransacao)
+                || (d is DespesaParcelada && ((DespesaParcelada)d).Parcelas.Any(p => p.Pagamento.IdTransacao == idTransacao)))
+            .FirstOrDefaultAsync(cancellationToken);
+    }
 
     public async Task AdicionarAsync(IEnumerable<Despesa> despesas, CancellationToken cancellationToken) =>
         await _dbSet.AddRangeAsync(despesas, cancellationToken);

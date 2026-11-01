@@ -1,5 +1,7 @@
 ﻿using ControleFinanceiro.Domain.Cartoes;
+using ControleFinanceiro.Domain.Shared;
 using ControleFinanceiro.Domain.Shared.ValueObjects;
+using ControleFinanceiro.Domain.Transacoes;
 
 namespace ControleFinanceiro.Domain.Despesas;
 
@@ -43,4 +45,19 @@ public sealed class ParcelaDespesa : Entity<IdParcelaDespesa>
         DateOnly data = mesReferencia.NoDia(diaVencimento);
         return new ParcelaDespesa(IdParcelaDespesa.FromNewVersion7Guid(), numeroParcela, mesReferencia, Pagamento.Pago(valor, data, data));
     }
+
+    /// <summary>
+    /// A data efetiva é o vencimento projetado, a mesma convenção do <see cref="CriarPaga"/>. A parcela que nasceu paga,
+    /// sem transação, aceita o vínculo.
+    /// </summary>
+    internal UnitResult<Erro> QuitarCom(IdTransacao idTransacao, ReaisPositivo valorEfetivo)
+    {
+        if (Pagamento.IdTransacao is not null)
+            return ErroDespesaJaPaga.Instancia;
+
+        Pagamento = Pagamento.QuitarCom(idTransacao, Pagamento.DataProjetada!.Value, valorEfetivo);
+        return UnitResult.Success<Erro>();
+    }
+
+    internal void Reabrir() => Pagamento = Pagamento.Reabrir();
 }

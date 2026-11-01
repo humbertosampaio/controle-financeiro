@@ -49,7 +49,7 @@ public sealed class DespesaAdiadaTests
         pagamento.DataProjetada.Should().Be(dataProjetadaPagamentoEsperada);
         pagamento.DataEfetiva.Should().BeNull();
         pagamento.Status.Should().Be(StatusPagamento.Pendente);
-        pagamento.Valor.Should().Be(valor);
+        pagamento.ValorProjetado.Should().Be(valor);
     }
 
     [Theory, DomainAutoData]
