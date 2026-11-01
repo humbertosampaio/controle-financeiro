@@ -62,6 +62,8 @@ public sealed class Cartao : AggregateRoot<IdCartao>, IPertenceAoUsuario
         DiaFechamento = diaFechamento;
     }
 
+    public bool PossuiBancoESufixo(Banco banco, SufixoCartao sufixo) => Banco == banco && Sufixo == sufixo;
+
     /// <summary>
     /// Liga a data de uma compra ao mês de vencimento da fatura em que ela cai. O dia de fechamento é o último dia de
     /// compras da fatura, e o vencimento cai no mês do fechamento só quando o dia de vencimento é maior que o de

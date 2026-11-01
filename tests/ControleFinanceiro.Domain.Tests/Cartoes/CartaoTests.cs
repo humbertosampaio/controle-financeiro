@@ -94,6 +94,28 @@ public sealed class CartaoTests
         cartao.MesVencimento(dataOcorrencia).Should().Be(mesVencimento);
     }
 
+    [Theory, DomainAutoData]
+    public void PossuiBancoESufixo_Quando_OsDoisIguais_Deve_SerVerdadeiro(Cartao sut)
+    {
+        sut.PossuiBancoESufixo(sut.Banco, sut.Sufixo).Should().BeTrue();
+    }
+
+    [Theory, DomainAutoData]
+    public void PossuiBancoESufixo_Quando_OutroBanco_Deve_SerFalso(Cartao sut)
+    {
+        Banco outroBanco = Banco.List.First(b => b != sut.Banco);
+
+        sut.PossuiBancoESufixo(outroBanco, sut.Sufixo).Should().BeFalse();
+    }
+
+    [Theory, DomainAutoData]
+    public void PossuiBancoESufixo_Quando_OutroSufixo_Deve_SerFalso(Cartao sut)
+    {
+        SufixoCartao outroSufixo = sut.Sufixo == (SufixoCartao)"0000" ? (SufixoCartao)"0001" : (SufixoCartao)"0000";
+
+        sut.PossuiBancoESufixo(sut.Banco, outroSufixo).Should().BeFalse();
+    }
+
     private static Cartao CartaoComDias(Fixture fixture, int diaFechamento, int diaVencimento)
     {
         fixture.Inject((DiaFechamentoCartao)diaFechamento);
