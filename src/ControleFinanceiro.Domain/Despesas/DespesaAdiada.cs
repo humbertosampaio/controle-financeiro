@@ -1,7 +1,9 @@
 using ControleFinanceiro.Domain.Beneficiarios;
 using ControleFinanceiro.Domain.Cartoes;
 using ControleFinanceiro.Domain.Categorias;
+using ControleFinanceiro.Domain.Shared;
 using ControleFinanceiro.Domain.Shared.ValueObjects;
+using ControleFinanceiro.Domain.Transacoes;
 using ControleFinanceiro.Domain.Usuarios;
 
 namespace ControleFinanceiro.Domain.Despesas;
@@ -75,4 +77,10 @@ public sealed class DespesaAdiada : DespesaInteira
             mesVencimento,
             pagamento);
     }
+
+    /// <summary>
+    /// Interno porque só o <see cref="Services.VinculoPagamentoService"/> confere a transação. A data efetiva é o vencimento
+    /// projetado, porque a data da transação é a da compra, e não a do pagamento.
+    /// </summary>
+    internal UnitResult<Erro> QuitarCom(IdTransacao idTransacao, ReaisPositivo valorEfetivo) => Quitar(idTransacao, Pagamento.DataProjetada!.Value, valorEfetivo);
 }

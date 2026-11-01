@@ -1,6 +1,8 @@
 using ControleFinanceiro.Domain.Beneficiarios;
 using ControleFinanceiro.Domain.Categorias;
+using ControleFinanceiro.Domain.Shared;
 using ControleFinanceiro.Domain.Shared.ValueObjects;
+using ControleFinanceiro.Domain.Transacoes;
 using ControleFinanceiro.Domain.Usuarios;
 using static ControleFinanceiro.Domain.Despesas.FormaPagamento;
 
@@ -94,4 +96,7 @@ public sealed class DespesaSimples : DespesaInteira
             mesReferencia: dataOcorrencia,
             pagamento);
     }
+
+    /// <summary>Interno porque só o <see cref="Services.VinculoPagamentoService"/> confere a transação.</summary>
+    internal UnitResult<Erro> QuitarCom(IdTransacao idTransacao, DateOnly dataEfetiva, ReaisPositivo valorEfetivo) => Quitar(idTransacao, dataEfetiva, valorEfetivo);
 }

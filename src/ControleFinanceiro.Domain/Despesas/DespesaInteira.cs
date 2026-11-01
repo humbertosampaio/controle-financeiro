@@ -41,11 +41,8 @@ public abstract class DespesaInteira : Despesa
         Pagamento = pagamento;
     }
 
-    /// <summary>
-    /// Interno porque só o <see cref="Services.VinculoPagamentoService"/> confere a transação. A despesa que nasceu paga,
-    /// sem transação, aceita o vínculo.
-    /// </summary>
-    internal UnitResult<Erro> QuitarCom(IdTransacao idTransacao, DateOnly dataEfetiva, ReaisPositivo valorEfetivo)
+    /// <summary>A despesa que nasceu paga, sem transação, aceita o vínculo.</summary>
+    private protected UnitResult<Erro> Quitar(IdTransacao idTransacao, DateOnly dataEfetiva, ReaisPositivo valorEfetivo)
     {
         if (Pagamento.IdTransacao is not null)
             return ErroDespesaJaPaga.Instancia;
