@@ -46,4 +46,6 @@ public sealed class ContaBancaria : AggregateRoot<IdConta>, IPertenceAoUsuario
         TextoObrigatorio apelido = (TextoObrigatorio)$"{tipo.Name} {banco.Name} final {sufixo}";
         return new ContaBancaria(IdConta.FromNewVersion7Guid(), idUsuario, banco, tipo, sufixo, apelido);
     }
+
+    public bool PossuiBancoESufixo(Banco banco, SufixoConta sufixo) => Banco == banco && Sufixo == sufixo;
 }

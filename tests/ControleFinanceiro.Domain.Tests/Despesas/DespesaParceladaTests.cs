@@ -42,7 +42,7 @@ public sealed class DespesaParceladaTests
     {
         DespesaParcelada result = Parcelar(idUsuario, cartao, numero: 1, total: 12);
 
-        MesReferencia mes = VencimentoFaturaCartao.MesVencimento(cartao, _dataOcorrencia);
+        MesReferencia mes = cartao.MesVencimento(_dataOcorrencia);
         foreach (ParcelaDespesa parcela in result.Parcelas)
         {
             parcela.MesReferencia.Should().Be(mes);
@@ -165,7 +165,7 @@ public sealed class DespesaParceladaTests
 
     private static DespesaParcelada Parcelar(IdUsuario idUsuario, Cartao cartao, int numero, int total)
     {
-        Lancamento compra = Lancamento.Criar(
+        Lancamento compra = Lancamento.DoCartao(
             _dataOcorrencia,
             hora: null,
             valor: -99.90m,
@@ -178,7 +178,7 @@ public sealed class DespesaParceladaTests
         return DespesaParceladaFactory
             .CriarDaFatura(
                 idUsuario,
-                BeneficiariosResolvidos.Dos(idUsuario, [compra], TipoOrigem.Cartao),
+                BeneficiariosResolvidos.Dos(idUsuario, [compra]),
                 categoriasDoUsuario: [],
                 cartao,
                 parceladasDoUsuario: [],

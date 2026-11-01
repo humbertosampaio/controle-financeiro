@@ -3,7 +3,6 @@ using ControleFinanceiro.Domain.Beneficiarios;
 using ControleFinanceiro.Domain.Importacoes;
 using ControleFinanceiro.Domain.Services;
 using ControleFinanceiro.Domain.Shared.ValueObjects;
-using ControleFinanceiro.Domain.Transacoes;
 using ControleFinanceiro.Domain.Usuarios;
 using ControleFinanceiro.WebApi.Endpoints.Importacoes.ImportarExtrato;
 using CSharpFunctionalExtensions;
@@ -67,7 +66,7 @@ public sealed class PreVisualizarExtratoEndpoint : Endpoint<ImportarExtratoReque
     private async Task<PreVisualizarExtratoResponse> PreVisualizarAsync(IdUsuario idUsuario, Extrato extrato, CancellationToken ct)
     {
         IReadOnlyList<Beneficiario> beneficiarios = await _beneficiarioRepository.ListarAsync(ct);
-        IReadOnlyList<Alias> pendentes = AliasesBeneficiarioPendentes.Listar(idUsuario, beneficiarios, extrato.Lancamentos, TipoOrigem.Conta);
+        IReadOnlyList<Alias> pendentes = AliasesBeneficiarioPendentes.Listar(idUsuario, beneficiarios, extrato.Lancamentos);
 
         return new PreVisualizarExtratoResponse(pendentes.Select(a => a.TextoOriginal).ToList());
     }

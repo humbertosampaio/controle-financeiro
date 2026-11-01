@@ -20,6 +20,8 @@ public sealed class ParcelaDespesa : Entity<IdParcelaDespesa>
     /// <summary>Verdadeiro quando uma transação pagou a parcela. A que nasceu paga não tem transação.</summary>
     public bool TemTransacao => Pagamento.IdTransacao is not null;
 
+    public ReaisPositivo ValorProjetado => Pagamento.ValorProjetado;
+
     private ParcelaDespesa()
     {
     }

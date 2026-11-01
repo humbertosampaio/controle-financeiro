@@ -13,10 +13,10 @@ namespace ControleFinanceiro.Domain.Tests.Services;
 internal static class BeneficiariosResolvidos
 {
     /// <returns>Um beneficiário do usuário por texto pendente, com o próprio texto como nome e alias.</returns>
-    public static IReadOnlyList<Beneficiario> Dos(IdUsuario idUsuario, IEnumerable<Lancamento> lancamentos, TipoOrigem tipoOrigem)
+    public static IReadOnlyList<Beneficiario> Dos(IdUsuario idUsuario, IEnumerable<Lancamento> lancamentos)
     {
         IEnumerable<BeneficiarioNovo> novos = AliasesBeneficiarioPendentes
-            .Listar(idUsuario, beneficiariosDoUsuario: [], lancamentos, tipoOrigem)
+            .Listar(idUsuario, beneficiariosDoUsuario: [], lancamentos)
             .Select(alias => new BeneficiarioNovo((TextoObrigatorio)alias.TextoOriginal, alias));
 
         return BeneficiarioFactory.Resolver(idUsuario, beneficiariosDoUsuario: [], novos).Value;

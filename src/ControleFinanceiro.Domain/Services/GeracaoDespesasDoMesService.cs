@@ -63,6 +63,10 @@ public static class GeracaoDespesasDoMesService
     /// A despesa do mês de uma recorrente paga sem cartão, ainda pendente: a data e o pagamento projetado ficam no
     /// próprio mês.
     /// </summary>
+    /// <remarks>
+    /// Lê só a recorrente, mas fica no serviço: movê-lo faria a recorrente criar um agregado de outro tipo, e o par
+    /// <see cref="GerarComPagamentoAdiado"/> precisa ficar aqui porque lê também o cartão.
+    /// </remarks>
     /// <exception cref="ArgumentException">Quando a despesa recorrente é no crédito.</exception>
     public static Result<Despesa> GerarComPagamentoImediato(DespesaRecorrente despesaRecorrente, MesReferencia mesReferencia)
     {
@@ -105,7 +109,7 @@ public static class GeracaoDespesasDoMesService
         if (cartao.Id != despesaRecorrente.IdCartao)
             throw new ArgumentException("O cartão não é o da despesa recorrente.", nameof(cartao));
 
-        DateOnly dataOcorrencia = VencimentoFaturaCartao.DataOcorrenciaQueVenceEm(cartao, mesReferencia, despesaRecorrente.DiaOcorrencia);
+        DateOnly dataOcorrencia = cartao.DataOcorrenciaQueVenceEm(mesReferencia, despesaRecorrente.DiaOcorrencia);
 
         return DespesaAdiada
             .Criar(

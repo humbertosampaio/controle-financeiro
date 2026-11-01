@@ -23,16 +23,14 @@ public static class AliasesBeneficiarioPendentes
     public static IReadOnlyList<Alias> Listar(
         IdUsuario idUsuario,
         IReadOnlyCollection<Beneficiario> beneficiariosDoUsuario,
-        IEnumerable<Lancamento> lancamentos,
-        TipoOrigem tipoOrigem)
+        IEnumerable<Lancamento> lancamentos)
     {
         if (beneficiariosDoUsuario.Any(b => b.IdUsuario != idUsuario))
             throw new ArgumentException("A lista traz um beneficiário de outro usuário.", nameof(beneficiariosDoUsuario));
 
         return lancamentos
-            .Select(l => Alias.Criar(l.TextoBeneficiario(tipoOrigem)))
-            .Where(alias => alias.IsSuccess)
-            .Select(alias => alias.Value)
+            .Select(l => l.AliasTextoBeneficiario)
+            .OfType<Alias>()
             .Distinct()
             .Where(alias => beneficiariosDoUsuario.All(b => !b.PossuiAlias(alias)))
             .ToList();
@@ -44,10 +42,9 @@ public static class AliasesBeneficiarioPendentes
     public static UnitResult<Erro> Conferir(
         IdUsuario idUsuario,
         IReadOnlyCollection<Beneficiario> beneficiariosDoUsuario,
-        IEnumerable<Lancamento> lancamentos,
-        TipoOrigem tipoOrigem)
+        IEnumerable<Lancamento> lancamentos)
     {
-        return Listar(idUsuario, beneficiariosDoUsuario, lancamentos, tipoOrigem).Count == 0
+        return Listar(idUsuario, beneficiariosDoUsuario, lancamentos).Count == 0
             ? UnitResult.Success<Erro>()
             : ErroBeneficiariosNaoResolvidos.Instancia;
     }

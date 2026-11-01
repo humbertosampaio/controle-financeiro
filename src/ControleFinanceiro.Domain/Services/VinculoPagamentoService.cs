@@ -43,13 +43,12 @@ public static class VinculoPagamentoService
         if (transacao.EhParcelada)
             return ErroParcelaIncompativelComDespesa.Instancia;
 
-        if (transacao.Origem.Tipo != TipoOrigem.Conta)
+        if (!transacao.EhOrigemConta)
             return ErroOrigemIncompativelComDespesa.Instancia;
 
         return simples.QuitarCom(transacao.Id, transacao.Data, transacao.ValorAbsoluto);
     }
 
-    /// <remarks>A data efetiva é o vencimento, porque a data da transação é a da compra, e não a do pagamento.</remarks>
     private static UnitResult<Erro> VincularAdiada(Transacao transacao, DespesaAdiada adiada)
     {
         if (transacao.EhParcelada)
@@ -58,7 +57,7 @@ public static class VinculoPagamentoService
         if (transacao.Origem.IdCartao != adiada.IdCartao)
             return ErroOrigemIncompativelComDespesa.Instancia;
 
-        return adiada.QuitarCom(transacao.Id, adiada.Pagamento.DataProjetada!.Value, transacao.ValorAbsoluto);
+        return adiada.QuitarCom(transacao.Id, transacao.ValorAbsoluto);
     }
 
     /// <remarks>O mês da parcela não entra na conferência, para um fechamento deslocado por feriado não impedir o vínculo.</remarks>

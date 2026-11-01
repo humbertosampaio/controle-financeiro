@@ -241,23 +241,24 @@ public sealed class VinculoPagamentoServiceTests
     }
 
     [Theory, VinculoAutoData]
-    public void Vincular_Quando_ParcelaDeContaNaParcelada_Deve_RetornarOrigemIncompativel(
+    public void Vincular_Quando_SaidaDeContaNaParcelada_Deve_RetornarParcelaIncompativel(
         DespesaParcelada despesa,
         TransacoesDeTeste transacoes,
         SaidaDeTeste saida)
     {
-        UnitResult<Erro> result = VinculoPagamentoService.Vincular(transacoes.DaConta(saida.DaCompra(despesa, numero: 3)), despesa, despesaQueUsaATransacao: Maybe<Despesa>.None);
+        UnitResult<Erro> result = VinculoPagamentoService.Vincular(transacoes.DaConta(saida.AVista()), despesa, despesaQueUsaATransacao: Maybe<Despesa>.None);
 
-        result.Should().Fail().Which.Should().Be(ErroOrigemIncompativelComDespesa.Instancia);
+        result.Should().Fail().Which.Should().Be(ErroParcelaIncompativelComDespesa.Instancia);
     }
 
     [Theory, VinculoAutoData]
     public void Vincular_Quando_ParcelaNaSimples_Deve_RetornarParcelaIncompativel(
+        Cartao cartao,
         DespesaSimples despesa,
         TransacoesDeTeste transacoes,
         SaidaDeTeste saida)
     {
-        Transacao transacao = transacoes.DaConta(saida.ComParcela());
+        Transacao transacao = transacoes.DoCartao(cartao, saida.ComParcela());
 
         UnitResult<Erro> result = VinculoPagamentoService.Vincular(transacao, despesa, despesaQueUsaATransacao: Maybe<Despesa>.None);
 
@@ -533,7 +534,7 @@ public sealed class VinculoPagamentoServiceTests
         public Lancamento DaCompra(DateOnly data, TextoObrigatorio descricao, Parcela parcela) => Criar(data, _valor, descricao, parcela);
 
         private Lancamento Criar(DateOnly data, decimal valor, TextoObrigatorio descricao, Parcela? parcela) =>
-            Lancamento.Criar(data, hora: null, valor, descricao, contraparte: null, parcela, categoriaBanco: null, _identidade);
+            Lancamento.DoCartao(data, hora: null, valor, descricao, contraparte: null, parcela, categoriaBanco: null, _identidade);
     }
 
     /// <summary>

@@ -4,6 +4,9 @@ namespace ControleFinanceiro.Tests.Shared.AutoFixture.Customizations.Domain.Shar
 
 internal sealed class FaturaCustomization : ICustomization
 {
-    public void Customize(IFixture fixture) =>
+    public void Customize(IFixture fixture)
+    {
+        fixture.Customizations.Add(new LancamentoFaturaGenerator());
         fixture.Customizations.Add(new FaturaGenerator());
+    }
 }

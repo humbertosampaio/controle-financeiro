@@ -226,7 +226,7 @@ public sealed partial class LeitorFaturaCartaoMercadoPago : ILeitorFatura
             .Composta(linha.NumeroTransacao)
             .MapError(_ => "não tem o número da transação.")
             .Map(identidade => identidade.ComParcela(valorSufixoEParcela.Parcela).ComValor(valorSufixoEParcela.Valor))
-            .Map(identidade => Lancamento.Criar(
+            .Map(identidade => Lancamento.DoCartao(
                 linha.DataCompra ?? linha.DataLancamento.GetValueOrDefault(),
                 hora: null,
                 valorSufixoEParcela.Valor,

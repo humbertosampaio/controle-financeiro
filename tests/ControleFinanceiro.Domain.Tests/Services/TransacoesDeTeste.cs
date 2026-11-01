@@ -5,6 +5,7 @@ using ControleFinanceiro.Domain.Importacoes;
 using ControleFinanceiro.Domain.Services;
 using ControleFinanceiro.Domain.Transacoes;
 using ControleFinanceiro.Domain.Usuarios;
+using ControleFinanceiro.Tests.Shared;
 
 namespace ControleFinanceiro.Domain.Tests.Services;
 
@@ -26,16 +27,20 @@ public sealed class TransacoesDeTeste
         _importadaEm = importadaEm;
     }
 
-    public Transacao DaConta(Lancamento lancamento)
+    /// <param name="linha">Vira uma linha de extrato: os casos de origem incompatível usam a mesma saída na conta e no cartão.</param>
+    public Transacao DaConta(Lancamento linha)
     {
-        IReadOnlyList<Beneficiario> beneficiarios = BeneficiariosResolvidos.Dos(_idUsuario, [lancamento], TipoOrigem.Conta);
+        Lancamento lancamento = linha.NaOrigem(TipoOrigem.Conta);
+        IReadOnlyList<Beneficiario> beneficiarios = BeneficiariosResolvidos.Dos(_idUsuario, [lancamento]);
         ImportacaoArquivo importacao = ImportacaoArquivoFactory.Registrar(_conta, _layout, _periodo, lidas: 1, _importadaEm);
         return LoteTransacoesFactory.Criar(_idUsuario, beneficiarios, categoriasDoUsuario: [], _conta, importacao, [lancamento]).Value.Single();
     }
 
-    public Transacao DoCartao(Cartao cartao, Lancamento lancamento)
+    /// <param name="linha">Vira uma linha de fatura: os casos de origem incompatível usam a mesma saída na conta e no cartão.</param>
+    public Transacao DoCartao(Cartao cartao, Lancamento linha)
     {
-        IReadOnlyList<Beneficiario> beneficiarios = BeneficiariosResolvidos.Dos(_idUsuario, [lancamento], TipoOrigem.Cartao);
+        Lancamento lancamento = linha.NaOrigem(TipoOrigem.Cartao);
+        IReadOnlyList<Beneficiario> beneficiarios = BeneficiariosResolvidos.Dos(_idUsuario, [lancamento]);
         ImportacaoArquivo importacao = ImportacaoArquivoFactory.Registrar(cartao, _layout, _periodo, lidas: 1, _importadaEm);
         return LoteTransacoesFactory.Criar(_idUsuario, beneficiarios, categoriasDoUsuario: [], cartao, importacao, [lancamento]).Value.Single();
     }

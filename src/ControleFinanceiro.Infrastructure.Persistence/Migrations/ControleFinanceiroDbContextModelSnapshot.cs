@@ -516,7 +516,7 @@ namespace ControleFinanceiro.Infrastructure.Persistence.Migrations
 
                             t.HasCheckConstraint("CK_transacoes_origem", "num_nonnulls(id_conta, id_cartao) = 1");
 
-                            t.HasCheckConstraint("CK_transacoes_parcela", "num_nulls(parcela_numero, parcela_total) = 2 OR (num_nulls(parcela_numero, parcela_total) = 0 AND parcela_total >= 2 AND parcela_numero BETWEEN 1 AND parcela_total)");
+                            t.HasCheckConstraint("CK_transacoes_parcela", "num_nulls(parcela_numero, parcela_total) = 2 OR (num_nulls(parcela_numero, parcela_total) = 0 AND parcela_total >= 2 AND parcela_numero BETWEEN 1 AND parcela_total AND id_cartao IS NOT NULL)");
                         });
                 });
 

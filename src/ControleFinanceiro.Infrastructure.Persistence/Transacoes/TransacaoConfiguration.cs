@@ -19,7 +19,7 @@ internal sealed class TransacaoConfiguration : IEntityTypeConfiguration<Transaca
             // com só uma das colunas preenchida daria NULL sem ele.
             tabela.HasCheckConstraint(
                 "CK_transacoes_parcela",
-                "num_nulls(parcela_numero, parcela_total) = 2 OR (num_nulls(parcela_numero, parcela_total) = 0 AND parcela_total >= 2 AND parcela_numero BETWEEN 1 AND parcela_total)");
+                "num_nulls(parcela_numero, parcela_total) = 2 OR (num_nulls(parcela_numero, parcela_total) = 0 AND parcela_total >= 2 AND parcela_numero BETWEEN 1 AND parcela_total AND id_cartao IS NOT NULL)");
         });
 
         entity.HasKey(t => t.Id);

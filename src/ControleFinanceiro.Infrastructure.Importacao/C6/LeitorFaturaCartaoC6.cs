@@ -178,7 +178,7 @@ public sealed partial class LeitorFaturaCartaoC6 : ILeitorFatura
             .ComTexto(linha.Descricao)
             .ComParcela(sufixoEParcela.Parcela);
 
-        Lancamento lancamento = Lancamento.Criar(
+        Lancamento lancamento = Lancamento.DoCartao(
             linha.DataCompra,
             hora: null,
             valor,

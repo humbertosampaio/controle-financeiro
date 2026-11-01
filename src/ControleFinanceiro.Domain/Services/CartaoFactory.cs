@@ -71,7 +71,7 @@ public static class CartaoFactory
 
     private static Maybe<Cartao> DoFinal(IReadOnlyCollection<Cartao> cartoes, Banco banco, SufixoCartao sufixo)
     {
-        return cartoes.TryFirst(c => c.Banco == banco && c.Sufixo == sufixo);
+        return cartoes.TryFirst(c => c.PossuiBancoESufixo(banco, sufixo));
     }
 
     private static void GarantirDoUsuario(IdUsuario idUsuario, IReadOnlyCollection<Cartao> cartoesDoUsuario)

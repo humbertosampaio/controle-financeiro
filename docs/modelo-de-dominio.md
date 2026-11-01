@@ -32,12 +32,16 @@ classDiagram
         class Cartao {
             <<AggregateRoot>>
             AlterarCicloFatura(DiaVencimentoCartao, DiaFechamentoCartao)
+            PossuiBancoESufixo(Banco, SufixoCartao)
+            MesVencimento(dataCompra)
+            DataOcorrenciaQueVenceEm(MesReferencia, DiaValidoEmTodoMes)
         }
     }
 
     namespace Contas {
         class ContaBancaria {
             <<AggregateRoot>>
+            PossuiBancoESufixo(Banco, SufixoConta)
         }
     }
 
@@ -53,10 +57,13 @@ classDiagram
         }
         class DespesaInteira {
             <<abstract>>
+        }
+        class DespesaSimples {
             QuitarCom(IdTransacao, dataEfetiva, valorEfetivo)
         }
-        class DespesaSimples
-        class DespesaAdiada
+        class DespesaAdiada {
+            QuitarCom(IdTransacao, valorEfetivo)
+        }
         class DespesaParcelada {
             Criar(IdUsuario, IdBeneficiario, descricao, IdCategoria, dataOcorrencia, valor, IdCartao, mesPrimeiraParcela, DiaVencimentoCartao, Parcela)
             ParcelaDoMes(MesReferencia)
@@ -66,10 +73,12 @@ classDiagram
         }
         class ParcelaDespesa {
             <<Entity>>
+            ValorProjetado
         }
         class ChaveCompraParcelada {
             <<ValueObject>>
             DaTransacao(Transacao)
+            DoLancamento(IdCartao, Lancamento)
         }
         class ParcelaDaCompra {
             <<ValueObject>>
@@ -109,8 +118,12 @@ classDiagram
     }
 
     namespace Transacoes {
+        class Lancamento {
+            <<ValueObject>>
+        }
         class Transacao {
             <<AggregateRoot>>
+            EhOrigemConta
         }
         class OrigemTransacao {
             <<ValueObject>>
@@ -152,6 +165,7 @@ classDiagram
     ParcelaDaCompra *-- ChaveCompraParcelada
     ParcelaDaCompra ..> Transacao : DaTransacao
     ChaveCompraParcelada ..> Transacao : DaTransacao
+    ChaveCompraParcelada ..> Lancamento : DoLancamento
     Despesa ..> Transacao : IdTransacao (no Pagamento, quando vinculada)
 
     Beneficiario "1" *-- "*" AliasBeneficiario
@@ -176,7 +190,7 @@ classDiagram
 ### Invariantes que valem saber
 
 - **Usuario**: `RendaLiquida` = renda bruta − descontos.
-- **Cartao**: um por banco + sufixo em cada usuário. Só nasce pela `CartaoFactory`, que recebe os cartões do usuário: o `Criar` falha com `ErroCartaoJaCadastrado`, e o `ObterDosFinais` devolve o cartão de cada final de uma fatura, ou falha com `ErroCartoesNaoResolvidos`: a importação nunca cria cartão. O índice único da tabela é a rede para duas requisições ao mesmo tempo. O dia de vencimento e o de fechamento são obrigatórios, sem regra entre eles. Os dois podem ser alterados depois, e os dias novos valem só para as despesas geradas a partir daí: as já geradas e as parcelas já criadas guardam a data projetada do pagamento.
+- **Cartao**: um por banco + sufixo em cada usuário. Só nasce pela `CartaoFactory`, que recebe os cartões do usuário: o `Criar` falha com `ErroCartaoJaCadastrado`, e o `ObterDosFinais` devolve o cartão de cada final de uma fatura, ou falha com `ErroCartoesNaoResolvidos`: a importação nunca cria cartão. O índice único da tabela é a rede para duas requisições ao mesmo tempo. O dia de vencimento e o de fechamento são obrigatórios, sem regra entre eles. Os dois podem ser alterados depois, e os dias novos valem só para as despesas geradas a partir daí: as já geradas e as parcelas já criadas guardam a data projetada do pagamento. O `MesVencimento` calcula, pelos dias do cartão, o mês de vencimento da fatura em que cai uma compra, e o `DataOcorrenciaQueVenceEm` faz a volta: a data da compra que vence num mês pedido. A compra no dia do fechamento entra na fatura que fecha nesse dia.
 - **ContaBancaria**: uma por banco + sufixo em cada usuário, com o apelido padrão "&lt;tipo&gt; &lt;banco&gt; final &lt;sufixo&gt;". Só nasce pela `ContaBancariaFactory.ObterOuCriar`, que devolve a conta existente ou uma nova, e falha com `ErroContaDeOutroTipo` se a conta existe com outro tipo.
 - **Beneficiario**: quem recebeu o dinheiro de uma saída, reconhecido no arquivo só pelos aliases, nunca pelo nome. Pode nascer sem alias (cadastro manual, sem arquivo). Cada alias aponta para um beneficiário só em cada usuário: o beneficiário só nasce e só ganha alias pela `BeneficiarioFactory`, que recebe os beneficiários do usuário: o `Resolver` aplica um lote inteiro ou nada (`BeneficiarioNovo`, com ou sem alias, e `AliasBeneficiarioExistente`) e falha com `ErroAliasBeneficiarioJaAtribuido`. O nome não é único: o usuário o escolhe livremente. O índice único `(id_usuario, texto_normalizado)` é a rede, e por isso o `AliasBeneficiario` guarda o `IdUsuario`. Renomear e remover alias não passam pela factory.
 - **CategoriaDespesa**: categoria de despesa do usuário. Os aliases são as categorias do banco que ele associou a ela; a busca casa só com eles, nunca com o nome. O nome é único em cada usuário, comparado sem caixa, acentos e espaços repetidos, e cada alias aponta para uma categoria só. A categoria só nasce, só ganha alias e só é renomeada pela `CategoriaDespesaFactory`, que recebe as categorias do usuário: o `Resolver` aplica um lote inteiro ou nada (categorias novas, com ou sem alias, e aliases para as existentes) e falha com `ErroCategoriaJaCadastrada` ou `ErroAliasCategoriaJaAtribuido`. O índice único `(id_usuario, texto_normalizado)` dos aliases é a rede. Todo usuário tem a categoria `Outros` (`CategoriaDespesa.NomeOutros`), criada junto com ele pela `CriarOutros`: é achada pelo nome, então não pode ser renomeada (`ErroCategoriaOutrosNaoRenomeavel`). Remover alias não passa pela factory.
@@ -184,9 +198,9 @@ classDiagram
 - **Despesas**: datas sem hora nem fuso (`DateOnly`). Beneficiário obrigatório e categoria opcional (a fatura do Mercado Pago não traz categoria). A gerada por uma recorrente guarda o `IdDespesaRecorrente`. `DespesaSimples` não aceita crédito: o `Criar` a registra paga no dia em que ocorre, e o `Prever` a gera pendente, com o pagamento projetado para esse dia; `DespesaAdiada` é sempre crédito, guarda o `IdCartao` e tem o pagamento pendente no mês de vencimento da fatura em que a ocorrência cai, no dia de vencimento do cartão; `DespesaParcelada` é sempre crédito, só nasce pela `DespesaParceladaFactory`, guarda o `IdCartao` e tem uma `ParcelaDespesa` por mês consecutivo, de 1 ao total, todas com o mesmo valor: as anteriores à parcela informada nascem pagas, com o vencimento projetado como data efetiva, e as demais, pendentes. A `ParcelaDespesa` só é criada pela raiz. A categoria de qualquer despesa pode ser trocada depois, mas não removida.
 - **Vínculo com a transação**: mora no `Pagamento` (`IdTransacao`), da `DespesaInteira` ou da `ParcelaDespesa`, e só a despesa muda: a `Transacao` é apenas lida. Só nasce pelo `VinculoPagamentoService`. Uma saída paga no máximo uma despesa ou parcela, e cada uma é paga por uma transação só. O `Pagamento` guarda o `ValorProjetado` e o `ValorEfetivo`, e valor diferente do projetado é aceito, sem tolerância e sem mudar as parcelas seguintes. O `Pago` sem transação tem o efetivo igual ao projetado, e o que nasceu pago sem transação aceita o vínculo. `DesfazerVinculo` volta para pendente, com os efetivos nulos, inclusive a parcela que nasceu paga. A transação vinculada não pode ser apagada: a FK impede, conferida só no commit para a cascata do usuário funcionar. O `ConciliacaoParcelasService` cria os vínculos das parcelas de uma vez, sempre pelo `VinculoPagamentoService`, e a idempotência vem do estado: só entram transação livre e parcela sem transação. Limitação aceita: conciliar de novo religa um vínculo desfeito, porque a recusa não é registrada (#123). Quem desfaz para trocar gêmeas vincula manualmente em seguida.
 - **ChaveCompraParcelada**: reconhece a mesma compra parcelada entre faturas, por cartão, data, descrição normalizada e total de parcelas. Recebe a descrição já como `TextoNormalizado`. A `DespesaParcelada` não a guarda: o `EhDaCompra` a monta para comparar.
-- **Transacao**: valor com sinal do ponto de vista do usuário (negativo é saída). Só nasce pela `LoteTransacoesFactory`, que confere que a conta ou o cartão é do usuário, que a importação é da mesma origem que todo texto de beneficiário do lote já é alias de um beneficiário do usuário e que toda categoria do banco já é alias de uma categoria dele, e garante a `ChaveDeduplicacao` do lote. A identidade é o `IdTransacao`; a chave só reconhece o lançamento numa reimportação. Guarda a importação que a criou: a reimportação não a recria, então ela fica ligada à primeira importação que a trouxe. O `TextoBeneficiario`, calculado e sem coluna, é o texto do arquivo que diz quem recebeu o dinheiro de uma saída, pela mesma regra do `Lancamento`. O beneficiário é o que tem esse texto como alias, resolvido na leitura: a transação não guarda o id dele.
+- **Transacao**: valor com sinal do ponto de vista do usuário (negativo é saída). Só nasce pela `LoteTransacoesFactory`, que confere que a conta ou o cartão é do usuário, que a importação é da mesma origem, que os lançamentos são do mesmo tipo de origem, que todo texto de beneficiário do lote já é alias de um beneficiário do usuário e que toda categoria do banco já é alias de uma categoria dele, e garante a `ChaveDeduplicacao` do lote. A identidade é o `IdTransacao`; a chave só reconhece o lançamento numa reimportação. Guarda a importação que a criou: a reimportação não a recria, então ela fica ligada à primeira importação que a trouxe. O `TextoBeneficiario`, calculado e sem coluna, é o texto do arquivo que diz quem recebeu o dinheiro de uma saída, pela mesma regra do `Lancamento`. O beneficiário é o que tem esse texto como alias, resolvido na leitura: a transação não guarda o id dele.
 - **OrigemTransacao**: conta ou cartão, nunca os dois; o `Tipo` (`TipoOrigem`) diz qual.
-- **Parcela**: a parcela que o banco informou (`3/10`), com total a partir de 2 e número de 1 ao total. A compra à vista, e a `1/1`, não têm parcela; a `Transacao` diz se é parcelada pelo `EhParcelada`. Não é a `ParcelaDespesa`.
+- **Parcela**: a parcela que o banco informou (`3/10`), com total a partir de 2 e número de 1 ao total. A compra à vista, e a `1/1`, não têm parcela; a `Transacao` diz se é parcelada pelo `EhParcelada`. Só a fatura traz parcela, então a transação com parcela é sempre de um cartão, e o `CK_transacoes_parcela` repete isso no banco. Não é a `ParcelaDespesa`.
 - **ImportacaoArquivo**: só nasce pela `ImportacaoArquivoFactory`, que tira o usuário e a origem da própria conta ou do próprio cartão, antes do lote de transações. Quantas eram novas não fica nela: são as transações ligadas a ela. `PeriodoNaoImportado` aponta o buraco entre a importação anterior da mesma origem e esta.
 
 ### Erros
@@ -231,7 +245,7 @@ O extrato, a fatura e os seus lançamentos são value objects: não têm identid
 
 - **Extrato**: só nasce com os saldos fechando. O `Criar` falha quando um dia contábil traz mais de um saldo, quando falta o saldo de um dia ou quando os lançamentos de um dia não levam o saldo do dia anterior ao saldo do dia. Agrupa pela data contábil; o primeiro dia só serve de base, e os dias contábeis depois do fim do período ficam de fora. As mensagens citam só as datas. O adaptador que conhece o saldo de abertura o passa como o saldo da véspera, e aí o primeiro dia com lançamento também é conferido.
 - **IdentidadeLancamento**: única, pelo identificador do banco que basta sozinho (o `REFERENCE_ID` do extrato do Mercado Pago), ou composta, campo a campo. A composta começa pela data, quando o banco não dá identificador, ou por um identificador do banco que não basta sozinho, como o número que se repete nas parcelas da mesma compra. Só a única não pode se repetir no lote; as compostas iguais se distinguem pelo ordinal da `ChaveDeduplicacao`.
-- **Lancamento**: a linha de extrato ou de fatura que vira transação, com a parcela e a categoria do banco quando o layout as traz; a categoria fica fora da identidade. O `TextoBeneficiario(tipoOrigem)` diz quem recebeu o dinheiro de uma saída: a contraparte na conta e a descrição no cartão; a entrada (inclusive o estorno e o pagamento da fatura) não tem. A prévia da importação o lê antes de existir transação. Duas linhas com os mesmos campos são iguais como valor; quem as distingue é a posição no lote, na `ChaveDeduplicacao`.
+- **Lancamento**: a linha de extrato (`DaConta`) ou de fatura (`DoCartao`) que vira transação, com a parcela e a categoria do banco quando o layout as traz; a categoria e o `TipoOrigem` ficam fora da identidade. O `TextoBeneficiario` diz quem recebeu o dinheiro de uma saída: a contraparte na conta e a descrição no cartão; a entrada (inclusive o estorno e o pagamento da fatura) não tem. A prévia da importação o lê antes de existir transação. O `AliasTextoBeneficiario` e o `AliasCategoriaBanco` são nulos quando o texto falta ou fica vazio depois de normalizado. O `EhCompraParcelada` é a saída com parcela, com alias do beneficiário. Só a fatura traz parcela: o `DaConta` não a recebe. Duas linhas com os mesmos campos são iguais como valor; quem as distingue é a posição no lote, na `ChaveDeduplicacao`.
 - **LancamentoContabilizado**: o lançamento com o dia contábil em que entrou no saldo. A data contábil só serve à conferência de saldo do `Extrato` e não é gravada.
 - **Fatura**: o banco e os lançamentos na ordem do arquivo, com pelo menos um. Separa os lançamentos por final (`Sufixos`, `LancamentosCartao`) e dá o período de cada cartão, da menor à maior data de compra (`PeriodoCartao`). Um final fora da fatura é bug de quem chama.
 - **LancamentoFatura**: o lançamento com o final do cartão que fez a compra. O final só separa os cartões e não é gravado: a transação guarda o id do cartão.
@@ -268,7 +282,14 @@ classDiagram
     }
     class Lancamento {
         <<ValueObject>>
-        TextoBeneficiario(tipoOrigem)
+        DaConta()
+        DoCartao()
+        TipoOrigem
+        ValorAbsoluto
+        TextoBeneficiario
+        AliasTextoBeneficiario
+        AliasCategoriaBanco
+        EhCompraParcelada
     }
     class IdentidadeLancamento {
         <<ValueObject>>
@@ -344,15 +365,14 @@ Puros, sem infraestrutura: recebem os agregados e as listas de que precisam, e q
 | `CategoriaDespesaFactory` | Cria a categoria Outros do usuário (`CriarOutros`), aplica um lote inteiro ou nada de categorias novas e aliases para as existentes (`Resolver`), conferindo o nome e os aliases entre as categorias dele e as do lote, e renomeia uma categoria (`Renomear`), conferindo o nome entre as dele. |
 | `CartaoFactory` | Cria o cartão do usuário, conferindo banco + sufixo entre os cartões dele, ou obtém os cartões dos finais de uma fatura (`ObterDosFinais`), falhando quando falta algum. `ObterDoFinal` acha o cartão de um final, para a prévia da importação. |
 | `ContaBancariaFactory` | Acha a conta do extrato entre as do usuário, ou cria uma. |
-| `DespesaParceladaFactory` | Cria as despesas parceladas que as compras de uma fatura revelam e que o usuário ainda não tem (`CriarDaFatura`), reconhecendo a mesma compra pela `ChaveCompraParcelada`. Só cria, nunca altera. |
+| `DespesaParceladaFactory` | Cria as despesas parceladas que as compras de uma fatura revelam e que o usuário ainda não tem (`CriarDaFatura`), reconhecendo a mesma compra pela `ChaveCompraParcelada`. Recusa o lançamento que não é de fatura. Só cria, nunca altera. |
 | `VinculoPagamentoService` | Registra que uma saída pagou uma despesa ou parcela (`Vincular`), conferindo se a transação já é usada, se é saída, a origem e, na parcelada, a compra pela `ChaveCompraParcelada`. A simples é paga por conta, na data da transação; a adiada e a parcelada, pelo cartão delas, no vencimento projetado, porque a data da transação é a da compra. Beneficiário, janela de data, proximidade de valor e mês da parcela não bloqueiam. |
-| `ConciliacaoParcelasService` | Liga cada saída parcelada sem vínculo, no cartão, à parcela de mesmo número da mesma compra (`Conciliar`), pelo `VinculoPagamentoService`. Entre gêmeas, casa primeiro o valor igual ao projetado e depois a ordem de valor (`EmparelhamentoParcelas`), com desempate pelo id. A transação sem parcela livre conta em `SemParcela` e é tentada de novo na próxima chamada; entrada, valor zero e origem em conta são ignorados. Só vincula: não cria despesa nem altera transação. |
+| `ConciliacaoParcelasService` | Liga cada saída parcelada sem vínculo, no cartão, à parcela de mesmo número da mesma compra (`Conciliar`), pelo `VinculoPagamentoService`. Entre gêmeas, casa primeiro o valor igual ao projetado e depois a ordem de valor (`EmparelhamentoParcelas`), com desempate pelo id. A transação sem parcela livre conta em `SemParcela` e é tentada de novo na próxima chamada; entrada, valor zero e transação sem parcela, como toda a da conta, são ignorados. Só vincula: não cria despesa nem altera transação. |
 | `AlteracaoCategoriaDespesaService` | Troca a categoria de uma despesa, conferindo que a despesa e a categoria são do mesmo usuário. |
 | `DespesaRecorrenteFactory` | Cria a despesa recorrente no crédito (`CriarNoCredito`) ou sem cartão (`CriarSemCartao`), conferindo que não repete beneficiário e descrição de uma recorrente do usuário. |
 | `ImportacaoArquivoFactory` | Registra a importação de um arquivo com o usuário e a origem da própria conta ou do próprio cartão. |
-| `VencimentoFaturaCartao` | Calcula, pelos dias do cartão, o mês de vencimento da fatura em que cai uma compra (`MesVencimento`) e, na volta, a data da compra que vence num mês pedido (`DataOcorrenciaQueVenceEm`). A compra no dia do fechamento entra na fatura que fecha nesse dia. |
-| `GeracaoDespesasDoMesService` | Gera as despesas de um mês a partir das recorrentes, ligadas a elas: `DespesaSimples` pendente, com o pagamento projetado no dia da ocorrência, ou `DespesaAdiada` com pagamento no vencimento do cartão no mês pedido e a ocorrência no mês da compra que cai nessa fatura (`VencimentoFaturaCartao`). Recebe as despesas do usuário no mês e gera só para as recorrentes que ainda não têm uma, então gerar o mesmo mês de novo não duplica; o índice único `(id_despesa_recorrente, mes_referencia)` é a rede. |
-| `LoteTransacoesFactory` | Confere que a origem é do usuário, que a importação é da mesma origem, que nenhum id de banco se repete no lote, que todo texto de beneficiário já é alias de um beneficiário do usuário e que toda categoria do banco já é alias de uma categoria dele; calcula as chaves e cria as transações ligadas à importação. |
+| `GeracaoDespesasDoMesService` | Gera as despesas de um mês a partir das recorrentes, ligadas a elas: `DespesaSimples` pendente, com o pagamento projetado no dia da ocorrência, ou `DespesaAdiada` com pagamento no vencimento do cartão no mês pedido e a ocorrência no mês da compra que cai nessa fatura (`Cartao.DataOcorrenciaQueVenceEm`). Recebe as despesas do usuário no mês e gera só para as recorrentes que ainda não têm uma, então gerar o mesmo mês de novo não duplica; o índice único `(id_despesa_recorrente, mes_referencia)` é a rede. |
+| `LoteTransacoesFactory` | Confere que a origem é do usuário, que a importação é da mesma origem, que os lançamentos são do mesmo tipo de origem, que nenhum id de banco se repete no lote, que todo texto de beneficiário já é alias de um beneficiário do usuário e que toda categoria do banco já é alias de uma categoria dele; calcula as chaves e cria as transações ligadas à importação. |
 | `ConferenciaSomaPeriodo` | Confere, antes de gravar, que as transações do período (as já gravadas e as novas) somam o mesmo que os lançamentos do extrato. A divergência é aviso. |
 
 ## Portas

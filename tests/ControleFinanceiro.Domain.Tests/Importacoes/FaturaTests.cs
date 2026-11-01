@@ -107,7 +107,7 @@ public sealed class FaturaTests
 
     private static Lancamento NaData(Lancamento lancamento, DateOnly data)
     {
-        return Lancamento.Criar(
+        return Lancamento.DoCartao(
             data,
             lancamento.Hora,
             lancamento.Valor,

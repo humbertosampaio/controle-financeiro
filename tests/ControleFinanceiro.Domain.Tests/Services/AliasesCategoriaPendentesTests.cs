@@ -105,7 +105,7 @@ public sealed class AliasesCategoriaPendentesTests
         IdentidadeLancamento identidade,
         string categoriaBanco)
     {
-        Lancamento estorno = Lancamento.Criar(data, hora: null, valor, descricao, contraparte: null, parcela: null, categoriaBanco, identidade);
+        Lancamento estorno = Lancamento.DaConta(data, hora: null, valor, descricao, contraparte: null, categoriaBanco, identidade);
 
         IReadOnlyList<Alias> result = AliasesCategoriaPendentes.Listar(idUsuario, categoriasDoUsuario: [], [estorno]);
 
@@ -156,13 +156,12 @@ public sealed class AliasesCategoriaPendentesTests
 
     private static Lancamento ComCategoria(Lancamento lancamento, string? categoriaBanco)
     {
-        return Lancamento.Criar(
+        return Lancamento.DaConta(
             lancamento.Data,
             lancamento.Hora,
             lancamento.Valor,
             lancamento.Descricao,
             lancamento.Contraparte,
-            lancamento.Parcela,
             categoriaBanco,
             lancamento.Identidade);
     }

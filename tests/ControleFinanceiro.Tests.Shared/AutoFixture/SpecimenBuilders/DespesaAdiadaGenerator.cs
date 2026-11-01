@@ -2,7 +2,6 @@ using AutoFixture.Kernel;
 using ControleFinanceiro.Domain.Beneficiarios;
 using ControleFinanceiro.Domain.Cartoes;
 using ControleFinanceiro.Domain.Despesas;
-using ControleFinanceiro.Domain.Services;
 using ControleFinanceiro.Domain.Shared.ValueObjects;
 
 namespace ControleFinanceiro.Tests.Shared.AutoFixture.SpecimenBuilders;
@@ -30,7 +29,7 @@ public sealed class DespesaAdiadaGenerator : ISpecimenBuilder
             data,
             context.Create<ReaisPositivo>(),
             cartao.Id,
-            VencimentoFaturaCartao.MesVencimento(cartao, data),
+            cartao.MesVencimento(data),
             cartao.DiaVencimento,
             idDespesaRecorrente: null);
     }

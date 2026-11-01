@@ -7,7 +7,8 @@ namespace ControleFinanceiro.Tests.Shared.AutoFixture.SpecimenBuilders;
 /// <summary>
 /// Monta o <see cref="Lancamento"/> com a identidade composta pelos próprios campos, como num layout
 /// sem id externo: dois lançamentos com os mesmos campos têm a mesma identidade. A parcela vem do contexto, e a
-/// categoria do banco fica fora da identidade.
+/// categoria do banco fica fora da identidade. É uma linha de extrato, a não ser que o contexto dê outro
+/// <see cref="TipoOrigem"/>.
 /// </summary>
 public sealed class LancamentoGenerator : ISpecimenBuilder
 {
@@ -31,6 +32,8 @@ public sealed class LancamentoGenerator : ISpecimenBuilder
             .ComTexto(contraparte)
             .ComParcela(parcela);
 
-        return Lancamento.Criar(data, hora, valor, descricao, contraparte, parcela, categoriaBanco, identidade);
+        return context.Create<TipoOrigem>() == TipoOrigem.Cartao
+            ? Lancamento.DoCartao(data, hora, valor, descricao, contraparte, parcela, categoriaBanco, identidade)
+            : Lancamento.DaConta(data, hora, valor, descricao, contraparte, categoriaBanco, identidade);
     }
 }

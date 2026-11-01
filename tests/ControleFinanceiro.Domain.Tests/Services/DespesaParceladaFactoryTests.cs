@@ -7,6 +7,7 @@ using ControleFinanceiro.Domain.Services;
 using ControleFinanceiro.Domain.Shared.ValueObjects;
 using ControleFinanceiro.Domain.Transacoes;
 using ControleFinanceiro.Domain.Usuarios;
+using ControleFinanceiro.Tests.Shared;
 using ControleFinanceiro.Tests.Shared.AutoFixture.Attributes;
 
 namespace ControleFinanceiro.Domain.Tests.Services;
@@ -21,7 +22,7 @@ public sealed class DespesaParceladaFactoryTests
     [Theory, CompraAutoData]
     public void CriarDaFatura_Quando_CompraSemDespesa_Deve_CriarADespesaDoCartao([Frozen] IdUsuario idUsuario, Cartao cartao, Lancamento compra)
     {
-        IReadOnlyList<Beneficiario> beneficiarios = BeneficiariosResolvidos.Dos(idUsuario, [compra], TipoOrigem.Cartao);
+        IReadOnlyList<Beneficiario> beneficiarios = BeneficiariosResolvidos.Dos(idUsuario, [compra]);
         IReadOnlyList<CategoriaDespesa> categorias = CategoriasResolvidas.Dos(idUsuario, [compra]);
 
         IReadOnlyList<DespesaParcelada> result = DespesaParceladaFactory.CriarDaFatura(
@@ -33,7 +34,7 @@ public sealed class DespesaParceladaFactoryTests
             [compra]);
 
         DespesaParcelada despesa = result.Should().ContainSingle().Subject;
-        MesReferencia mesPrimeiraParcela = VencimentoFaturaCartao.MesVencimento(cartao, _dataCompra);
+        MesReferencia mesPrimeiraParcela = cartao.MesVencimento(_dataCompra);
         despesa.IdUsuario.Should().Be(idUsuario);
         despesa.IdBeneficiario.Should().Be(beneficiarios.Single().Id);
         despesa.IdCategoria.Should().Be(categorias.Single().Id);
@@ -221,7 +222,7 @@ public sealed class DespesaParceladaFactoryTests
         IdUsuario outroUsuario = IdUsuario.FromNewVersion7Guid();
         Action act = () => DespesaParceladaFactory.CriarDaFatura(
             idUsuario,
-            BeneficiariosResolvidos.Dos(outroUsuario, [compra], TipoOrigem.Cartao),
+            BeneficiariosResolvidos.Dos(outroUsuario, [compra]),
             CategoriasResolvidas.Dos(idUsuario, [compra]),
             cartao,
             parceladasDoUsuario: [],
@@ -236,7 +237,7 @@ public sealed class DespesaParceladaFactoryTests
         IdUsuario outroUsuario = IdUsuario.FromNewVersion7Guid();
         Action act = () => DespesaParceladaFactory.CriarDaFatura(
             idUsuario,
-            BeneficiariosResolvidos.Dos(idUsuario, [compra], TipoOrigem.Cartao),
+            BeneficiariosResolvidos.Dos(idUsuario, [compra]),
             CategoriasResolvidas.Dos(outroUsuario, [compra]),
             cartao,
             parceladasDoUsuario: [],
@@ -277,7 +278,7 @@ public sealed class DespesaParceladaFactoryTests
     {
         Action act = () => DespesaParceladaFactory.CriarDaFatura(
             idUsuario,
-            BeneficiariosResolvidos.Dos(idUsuario, [compra], TipoOrigem.Cartao),
+            BeneficiariosResolvidos.Dos(idUsuario, [compra]),
             categoriasDoUsuario: [],
             cartao,
             parceladasDoUsuario: [],
@@ -294,11 +295,27 @@ public sealed class DespesaParceladaFactoryTests
     {
         return DespesaParceladaFactory.CriarDaFatura(
             idUsuario,
-            BeneficiariosResolvidos.Dos(idUsuario, lancamentos, TipoOrigem.Cartao),
+            BeneficiariosResolvidos.Dos(idUsuario, lancamentos),
             CategoriasResolvidas.Dos(idUsuario, lancamentos),
             cartao,
             parceladas,
             lancamentos);
+    }
+
+    [Theory, CompraAutoData]
+    public void CriarDaFatura_Quando_LancamentoNaoEhDeFatura_Deve_Lancar([Frozen] IdUsuario idUsuario, Cartao cartao, Lancamento compra)
+    {
+        Lancamento doExtrato = compra.NaOrigem(TipoOrigem.Conta);
+
+        Action act = () => DespesaParceladaFactory.CriarDaFatura(
+            idUsuario,
+            beneficiariosDoUsuario: [],
+            categoriasDoUsuario: [],
+            cartao,
+            parceladasDoUsuario: [],
+            [doExtrato]);
+
+        act.Should().ThrowExactly<ArgumentException>().WithParameterName("lancamentos");
     }
 
     /// <param name="numero">Nulo na compra à vista.</param>
@@ -311,7 +328,7 @@ public sealed class DespesaParceladaFactoryTests
         string descricao = DescricaoCompra,
         string? categoria = CategoriaCompra)
     {
-        return Lancamento.Criar(
+        return Lancamento.DoCartao(
             data ?? _dataCompra,
             hora: null,
             valor,

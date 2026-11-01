@@ -27,7 +27,7 @@ public static class ContaBancariaFactory
         if (contasDoUsuario.Any(c => c.IdUsuario != idUsuario))
             throw new ArgumentException("A lista traz uma conta de outro usuário.", nameof(contasDoUsuario));
 
-        ContaBancaria? existente = contasDoUsuario.FirstOrDefault(c => c.Banco == banco && c.Sufixo == sufixo);
+        ContaBancaria? existente = contasDoUsuario.FirstOrDefault(c => c.PossuiBancoESufixo(banco, sufixo));
         if (existente is null)
             return ContaBancaria.Criar(idUsuario, banco, tipo, sufixo);
 
