@@ -49,7 +49,7 @@ public static class DespesaParceladaFactory
 
         return lancamentos
             .Where(l => l.EhCompraParcelada)
-            .GroupBy(l => new ChaveCompraParcelada(cartao.Id, l.Data, (TextoNormalizado)l.Descricao, l.Parcela!.Total))
+            .GroupBy(l => ChaveCompraParcelada.DoLancamento(cartao.Id, l))
             .SelectMany(compra => LinhasSemDespesa(compra, compra.Key, parceladasDoUsuario))
             .Select(lancamento => Criar(idUsuario, beneficiariosDoUsuario, categoriasDoUsuario, cartao, lancamento))
             .ToArray();
