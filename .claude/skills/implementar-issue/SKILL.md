@@ -57,6 +57,8 @@ Código novo segue o análogo citado no plano. Regra nova tem teste no mesmo com
 
 Ao criar uma classe de testes com muitos casos, escreva dois ou três, releia-os com o critério de [cada parâmetro precisa se justificar](../../../docs/testes-com-autofixture.md#cada-parâmetro-precisa-se-justificar) e só então replique o formato nos demais.
 
+Num passo que cria serviço de domínio, depois de os testes passarem e antes de mostrar o passo, releia cada método privado do serviço com o critério de [o serviço de domínio só orquestra](../../../docs/padroes-de-dominio.md#3-regras-que-cruzam-agregados): se ele lê dados de um agregado só ou mostra um dos sinais listados lá, leve a lógica para o agregado, a entidade, o value object ou um tipo próprio. Um membro que o plano não previa entra na lista de desvios.
+
 ## 4. Quando o plano não fecha com o código
 
 O plano pode errar: um arquivo que não é como ele supôs, uma decisão que o código torna impossível, um caso que ele não previu. Nesses casos, **pergunte no chat, não improvise**:
