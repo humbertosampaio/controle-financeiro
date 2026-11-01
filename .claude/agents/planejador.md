@@ -31,6 +31,7 @@ Lembretes que costumam faltar:
 - Value object novo persistido precisa de `ValueConverter` em `ValueConverters/ValueObjects/`.
 - Entidade nova persistida precisa de `IEntityTypeConfiguration`, `DbSet` e migration.
 - Endpoint FastEndpoints é descoberto sozinho, mas o repositório precisa ser registrado em `DependencyInjection.cs`.
+- Serviço de domínio novo só orquestra (seção 3 do guia): a tabela lista, além do arquivo do serviço, cada entidade e value object que muda, com os membros novos por nome, e os tipos novos que ele chama. Um serviço sem nenhum membro novo fora dele é sinal para rever o desenho.
 
 ### 3. Decisões
 Onde cada peça mora e por quê, citando a seção do `docs/padroes-de-dominio.md` que cada decisão segue. Quando a tarefa toca o domínio, responda o checklist da seção 9 do guia. Lembre também: `Result` para falha previsível, `Reais`/`ReaisPositivo` para dinheiro, porta + adaptador para cada fonte externa (cada formato de extrato é um adaptador da mesma porta), idempotência na importação.
