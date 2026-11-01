@@ -5,6 +5,8 @@ namespace ControleFinanceiro.Domain.Transacoes;
 /// <summary>Enxerga só as transações do usuário atual.</summary>
 public interface ITransacaoRepository
 {
+    Task<Maybe<Transacao>> ObterAsync(IdTransacao idTransacao, CancellationToken cancellationToken);
+
     /// <summary>
     /// Adiciona só as transações cuja chave de deduplicação ainda não está no banco de dados.
     /// </summary>

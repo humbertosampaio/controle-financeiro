@@ -18,7 +18,7 @@ namespace ControleFinanceiro.Infrastructure.Persistence.Migrations
         {
 #pragma warning disable 612, 618
             modelBuilder
-                .HasAnnotation("ProductVersion", "10.0.13")
+                .HasAnnotation("ProductVersion", "10.0.14")
                 .HasAnnotation("Relational:MaxIdentifierLength", 63);
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
@@ -222,7 +222,13 @@ namespace ControleFinanceiro.Infrastructure.Persistence.Migrations
 
                             t.HasCheckConstraint("CK_despesas_pagamento", "(status_pagamento = 1) = (data_pagamento_efetiva IS NOT NULL)");
 
-                            t.HasCheckConstraint("CK_despesas_valor", "valor >= 0");
+                            t.HasCheckConstraint("CK_despesas_pagamento_transacao", "id_transacao_pagamento IS NULL OR status_pagamento = 1");
+
+                            t.HasCheckConstraint("CK_despesas_pagamento_valor_efetivo", "(status_pagamento = 1) = (valor_pagamento_efetivo IS NOT NULL)");
+
+                            t.HasCheckConstraint("CK_despesas_valor_efetivo", "valor_pagamento_efetivo >= 0");
+
+                            t.HasCheckConstraint("CK_despesas_valor_projetado", "valor_pagamento_projetado >= 0");
                         });
 
                     b.HasDiscriminator<string>("tipo").HasValue("Despesa");
@@ -321,14 +327,23 @@ namespace ControleFinanceiro.Infrastructure.Persistence.Migrations
                                 .HasColumnType("date")
                                 .HasColumnName("data_pagamento_projetada");
 
+                            b1.Property<Guid?>("IdTransacao")
+                                .HasColumnType("uuid")
+                                .HasColumnName("id_transacao_pagamento");
+
                             b1.Property<int>("Status")
                                 .HasColumnType("integer")
                                 .HasColumnName("status_pagamento");
 
-                            b1.Property<decimal>("Valor")
+                            b1.Property<decimal?>("ValorEfetivo")
                                 .HasPrecision(14, 2)
                                 .HasColumnType("numeric(14,2)")
-                                .HasColumnName("valor");
+                                .HasColumnName("valor_pagamento_efetivo");
+
+                            b1.Property<decimal>("ValorProjetado")
+                                .HasPrecision(14, 2)
+                                .HasColumnType("numeric(14,2)")
+                                .HasColumnName("valor_pagamento_projetado");
                         });
 
                     b.HasKey("Id");
@@ -342,7 +357,13 @@ namespace ControleFinanceiro.Infrastructure.Persistence.Migrations
 
                             t.HasCheckConstraint("CK_parcelas_despesa_pagamento", "(status_pagamento = 1) = (data_pagamento_efetiva IS NOT NULL)");
 
-                            t.HasCheckConstraint("CK_parcelas_despesa_valor", "valor >= 0");
+                            t.HasCheckConstraint("CK_parcelas_despesa_pagamento_transacao", "id_transacao_pagamento IS NULL OR status_pagamento = 1");
+
+                            t.HasCheckConstraint("CK_parcelas_despesa_pagamento_valor_efetivo", "(status_pagamento = 1) = (valor_pagamento_efetivo IS NOT NULL)");
+
+                            t.HasCheckConstraint("CK_parcelas_despesa_valor_efetivo", "valor_pagamento_efetivo >= 0");
+
+                            t.HasCheckConstraint("CK_parcelas_despesa_valor_projetado", "valor_pagamento_projetado >= 0");
                         });
                 });
 
@@ -576,14 +597,23 @@ namespace ControleFinanceiro.Infrastructure.Persistence.Migrations
                                 .HasColumnType("date")
                                 .HasColumnName("data_pagamento_projetada");
 
+                            b1.Property<Guid?>("IdTransacao")
+                                .HasColumnType("uuid")
+                                .HasColumnName("id_transacao_pagamento");
+
                             b1.Property<int>("Status")
                                 .HasColumnType("integer")
                                 .HasColumnName("status_pagamento");
 
-                            b1.Property<decimal>("Valor")
+                            b1.Property<decimal?>("ValorEfetivo")
                                 .HasPrecision(14, 2)
                                 .HasColumnType("numeric(14,2)")
-                                .HasColumnName("valor");
+                                .HasColumnName("valor_pagamento_efetivo");
+
+                            b1.Property<decimal>("ValorProjetado")
+                                .HasPrecision(14, 2)
+                                .HasColumnType("numeric(14,2)")
+                                .HasColumnName("valor_pagamento_projetado");
                         });
 
                     b.HasIndex("IdDespesaRecorrente", "MesReferencia")
@@ -597,7 +627,13 @@ namespace ControleFinanceiro.Infrastructure.Persistence.Migrations
 
                             t.HasCheckConstraint("CK_despesas_pagamento", "(status_pagamento = 1) = (data_pagamento_efetiva IS NOT NULL)");
 
-                            t.HasCheckConstraint("CK_despesas_valor", "valor >= 0");
+                            t.HasCheckConstraint("CK_despesas_pagamento_transacao", "id_transacao_pagamento IS NULL OR status_pagamento = 1");
+
+                            t.HasCheckConstraint("CK_despesas_pagamento_valor_efetivo", "(status_pagamento = 1) = (valor_pagamento_efetivo IS NOT NULL)");
+
+                            t.HasCheckConstraint("CK_despesas_valor_efetivo", "valor_pagamento_efetivo >= 0");
+
+                            t.HasCheckConstraint("CK_despesas_valor_projetado", "valor_pagamento_projetado >= 0");
                         });
 
                     b.HasDiscriminator().HasValue("DespesaInteira");
@@ -622,7 +658,13 @@ namespace ControleFinanceiro.Infrastructure.Persistence.Migrations
 
                             t.HasCheckConstraint("CK_despesas_pagamento", "(status_pagamento = 1) = (data_pagamento_efetiva IS NOT NULL)");
 
-                            t.HasCheckConstraint("CK_despesas_valor", "valor >= 0");
+                            t.HasCheckConstraint("CK_despesas_pagamento_transacao", "id_transacao_pagamento IS NULL OR status_pagamento = 1");
+
+                            t.HasCheckConstraint("CK_despesas_pagamento_valor_efetivo", "(status_pagamento = 1) = (valor_pagamento_efetivo IS NOT NULL)");
+
+                            t.HasCheckConstraint("CK_despesas_valor_efetivo", "valor_pagamento_efetivo >= 0");
+
+                            t.HasCheckConstraint("CK_despesas_valor_projetado", "valor_pagamento_projetado >= 0");
                         });
 
                     b.HasDiscriminator().HasValue("parcelada");
@@ -647,7 +689,13 @@ namespace ControleFinanceiro.Infrastructure.Persistence.Migrations
 
                             t.HasCheckConstraint("CK_despesas_pagamento", "(status_pagamento = 1) = (data_pagamento_efetiva IS NOT NULL)");
 
-                            t.HasCheckConstraint("CK_despesas_valor", "valor >= 0");
+                            t.HasCheckConstraint("CK_despesas_pagamento_transacao", "id_transacao_pagamento IS NULL OR status_pagamento = 1");
+
+                            t.HasCheckConstraint("CK_despesas_pagamento_valor_efetivo", "(status_pagamento = 1) = (valor_pagamento_efetivo IS NOT NULL)");
+
+                            t.HasCheckConstraint("CK_despesas_valor_efetivo", "valor_pagamento_efetivo >= 0");
+
+                            t.HasCheckConstraint("CK_despesas_valor_projetado", "valor_pagamento_projetado >= 0");
                         });
 
                     b.HasDiscriminator().HasValue("adiada");
@@ -665,7 +713,13 @@ namespace ControleFinanceiro.Infrastructure.Persistence.Migrations
 
                             t.HasCheckConstraint("CK_despesas_pagamento", "(status_pagamento = 1) = (data_pagamento_efetiva IS NOT NULL)");
 
-                            t.HasCheckConstraint("CK_despesas_valor", "valor >= 0");
+                            t.HasCheckConstraint("CK_despesas_pagamento_transacao", "id_transacao_pagamento IS NULL OR status_pagamento = 1");
+
+                            t.HasCheckConstraint("CK_despesas_pagamento_valor_efetivo", "(status_pagamento = 1) = (valor_pagamento_efetivo IS NOT NULL)");
+
+                            t.HasCheckConstraint("CK_despesas_valor_efetivo", "valor_pagamento_efetivo >= 0");
+
+                            t.HasCheckConstraint("CK_despesas_valor_projetado", "valor_pagamento_projetado >= 0");
                         });
 
                     b.HasDiscriminator().HasValue("simples");

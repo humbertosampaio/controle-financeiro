@@ -22,13 +22,20 @@ internal sealed class DespesaConfiguration : IEntityTypeConfiguration<Despesa>
         entity.ToTable("despesas", tabela =>
         {
             tabela.HasCheckConstraint("CK_despesas_descricao", "btrim(descricao) <> ''");
-            tabela.HasCheckConstraint("CK_despesas_valor", "valor >= 0");
+            tabela.HasCheckConstraint("CK_despesas_valor_projetado", "valor_pagamento_projetado >= 0");
+            tabela.HasCheckConstraint("CK_despesas_valor_efetivo", "valor_pagamento_efetivo >= 0");
             tabela.HasCheckConstraint(
                 "CK_despesas_cartao",
                 $"(tipo IN ('{TipoAdiada}', '{TipoParcelada}')) = (id_cartao IS NOT NULL)");
             tabela.HasCheckConstraint(
                 "CK_despesas_pagamento",
                 $"(status_pagamento = {StatusPagamento.Pago.Value}) = (data_pagamento_efetiva IS NOT NULL)");
+            tabela.HasCheckConstraint(
+                "CK_despesas_pagamento_valor_efetivo",
+                $"(status_pagamento = {StatusPagamento.Pago.Value}) = (valor_pagamento_efetivo IS NOT NULL)");
+            tabela.HasCheckConstraint(
+                "CK_despesas_pagamento_transacao",
+                $"id_transacao_pagamento IS NULL OR status_pagamento = {StatusPagamento.Pago.Value}");
         });
 
         entity.HasDiscriminator<string>("tipo")

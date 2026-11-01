@@ -13,10 +13,17 @@ internal sealed class ParcelaDespesaConfiguration : IEntityTypeConfiguration<Par
         entity.ToTable("parcelas_despesa", tabela =>
         {
             tabela.HasCheckConstraint("CK_parcelas_despesa_numero", "numero_parcela >= 1");
-            tabela.HasCheckConstraint("CK_parcelas_despesa_valor", "valor >= 0");
+            tabela.HasCheckConstraint("CK_parcelas_despesa_valor_projetado", "valor_pagamento_projetado >= 0");
+            tabela.HasCheckConstraint("CK_parcelas_despesa_valor_efetivo", "valor_pagamento_efetivo >= 0");
             tabela.HasCheckConstraint(
                 "CK_parcelas_despesa_pagamento",
                 $"(status_pagamento = {StatusPagamento.Pago.Value}) = (data_pagamento_efetiva IS NOT NULL)");
+            tabela.HasCheckConstraint(
+                "CK_parcelas_despesa_pagamento_valor_efetivo",
+                $"(status_pagamento = {StatusPagamento.Pago.Value}) = (valor_pagamento_efetivo IS NOT NULL)");
+            tabela.HasCheckConstraint(
+                "CK_parcelas_despesa_pagamento_transacao",
+                $"id_transacao_pagamento IS NULL OR status_pagamento = {StatusPagamento.Pago.Value}");
         });
         entity.HasKey(p => p.Id);
 
@@ -36,7 +43,14 @@ internal sealed class ParcelaDespesaConfiguration : IEntityTypeConfiguration<Par
         entity.ComplexProperty(p => p.Pagamento, pagamento =>
         {
             pagamento.Property(p => p.ValorProjetado)
-                .HasColumnName("valor");
+                .HasColumnName("valor_pagamento_projetado");
+
+            pagamento.Property(p => p.ValorEfetivo)
+                .HasColumnName("valor_pagamento_efetivo");
+
+            // A FK para transacoes e o índice único vão por SQL na migration, porque o EF não aceita complex type neles.
+            pagamento.Property(p => p.IdTransacao)
+                .HasColumnName("id_transacao_pagamento");
 
             // O ConfigureSmartEnum do DbContext não alcança as propriedades de complex type.
             pagamento.Property(p => p.Status)
