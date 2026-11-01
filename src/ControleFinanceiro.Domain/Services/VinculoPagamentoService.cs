@@ -43,7 +43,7 @@ public static class VinculoPagamentoService
         if (transacao.EhParcelada)
             return ErroParcelaIncompativelComDespesa.Instancia;
 
-        if (transacao.Origem.Tipo != TipoOrigem.Conta)
+        if (!transacao.EhOrigemConta)
             return ErroOrigemIncompativelComDespesa.Instancia;
 
         return simples.QuitarCom(transacao.Id, transacao.Data, transacao.ValorAbsoluto);

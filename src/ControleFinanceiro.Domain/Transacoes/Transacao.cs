@@ -58,6 +58,9 @@ public sealed class Transacao : AggregateRoot<IdTransacao>, IPertenceAoUsuario
     /// <summary>Verdadeiro quando a transação é uma parcela de uma compra parcelada.</summary>
     public bool EhParcelada => Parcela is not null;
 
+    /// <summary>Verdadeiro quando a transação veio do extrato de uma conta, e não da fatura de um cartão.</summary>
+    public bool EhOrigemConta => Origem.Tipo == TipoOrigem.Conta;
+
     /// <summary>
     /// Verdadeiro quando a transação é uma saída parcelada, a única que pode pagar uma parcela. Só a fatura traz parcela,
     /// então ela é sempre de um cartão.
