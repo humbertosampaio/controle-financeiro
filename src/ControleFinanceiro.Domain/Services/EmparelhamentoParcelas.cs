@@ -43,7 +43,7 @@ internal static class EmparelhamentoParcelas
 
     public sealed record Vaga(DespesaParcelada Despesa, ParcelaDespesa Parcela)
     {
-        public ReaisPositivo ValorProjetado => Parcela.Pagamento.ValorProjetado;
+        public ReaisPositivo ValorProjetado => Parcela.ValorProjetado;
     }
 
     public sealed record Vinculo(Transacao Transacao, DespesaParcelada Despesa);
