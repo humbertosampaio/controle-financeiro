@@ -179,6 +179,41 @@ public sealed class LeitorExtratoContaMercadoPagoTests
         result.Should().FailWith("A linha 6 do arquivo não tem o identificador da transação.");
     }
 
+    [Theory]
+    [InlineData("release_date;TRANSACTION_TYPE;REFERENCE_ID;TRANSACTION_NET_AMOUNT;PARTIAL_BALANCE")]
+    [InlineData(" RELEASE_DATE;TRANSACTION_TYPE;REFERENCE_ID;TRANSACTION_NET_AMOUNT;PARTIAL_BALANCE")]
+    public async Task LerAsync_Quando_ColunaComOutraGrafia_Deve_RetornarFalhaComALinhaColunas(string colunas)
+    {
+        Stream arquivo = _fixture.ComLinha(LinhaColunas, colunas);
+
+        Result<Extrato> result = await _leitor.LerAsync(arquivo, _sufixo, CancellationToken.None);
+
+        result.Should().FailWith("A linha 4 do arquivo não traz as colunas do extrato da conta do Mercado Pago.");
+    }
+
+    [Fact]
+    public async Task LerAsync_Quando_LinhaDeSeparadorAntesDasColunas_Deve_RetornarFalhaComALinhaColunas()
+    {
+        List<string> linhas = _fixture.Linhas().ToList();
+        linhas.Insert(index: LinhaColunas - 1, item: "sep=;");
+
+        Result<Extrato> result = await _leitor.LerAsync(_fixture.ComLinhas(linhas), _sufixo, CancellationToken.None);
+
+        result.Should().FailWith("A linha 4 do arquivo não traz as colunas do extrato da conta do Mercado Pago.");
+    }
+
+    [Theory]
+    [InlineData("02-03-2026;\"TIPO\nFICTICIO\";1000000002;abc;1,00", "não está no layout do extrato da conta do Mercado Pago.")]
+    [InlineData("02-03-2026;\" \n \";1000000002;1,00;1,00", "não tem descrição.")]
+    public async Task LerAsync_Quando_ErroEmRegistroComQuebraDeLinha_Deve_CitarALinhaOndeORegistroComeca(string linha, string erro)
+    {
+        Stream arquivo = _fixture.ComLinha(LinhaSegundoLancamento, linha);
+
+        Result<Extrato> result = await _leitor.LerAsync(arquivo, _sufixo, CancellationToken.None);
+
+        result.Should().FailWith($"A linha 6 do arquivo {erro}");
+    }
+
     [Fact]
     public async Task LerAsync_Quando_ColunasDiferentes_Deve_RetornarFalhaComALinhaColunas()
     {

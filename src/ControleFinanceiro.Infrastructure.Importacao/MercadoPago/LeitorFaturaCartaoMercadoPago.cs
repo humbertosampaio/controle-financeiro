@@ -4,8 +4,6 @@ using ControleFinanceiro.Domain.Importacoes;
 using ControleFinanceiro.Domain.Shared.ValueObjects;
 using ControleFinanceiro.Domain.Transacoes;
 using CsvHelper;
-using CsvHelper.Configuration;
-using CsvHelper.TypeConversion;
 using System.Globalization;
 using System.Text;
 using System.Text.RegularExpressions;
@@ -37,8 +35,8 @@ namespace ControleFinanceiro.Infrastructure.Importacao.MercadoPago;
 /// <para>
 /// O CPF e o CNPJ da descrição e do vendedor ficam: quem os tira é a saída para o modelo. Os produtos e o número do
 /// pedido não são mapeados, nem o mês de referência, o vencimento, o fechamento, o valor original da compra e o
-/// status. As mensagens de falha citam só o número da linha, e a <see cref="CsvHelperException"/>, que traz o registro
-/// cru, é capturada.
+/// status. As mensagens de falha citam só o número da linha, e a <see cref="CsvFormatException"/>, que pode trazer dados do
+/// registro, é capturada.
 /// </para>
 /// </remarks>
 public sealed partial class LeitorFaturaCartaoMercadoPago : ILeitorFatura
@@ -60,11 +58,7 @@ public sealed partial class LeitorFaturaCartaoMercadoPago : ILeitorFatura
         ["pagamento_debito_automatico_pos_fechamento"] = new(Credito: true, FinalObrigatorio: false, Parcelado: false),
     };
 
-    private static readonly CsvConfiguration _configuracao = new(CultureInfo.InvariantCulture)
-    {
-        Delimiter = ";",
-        DetectColumnCountChanges = true,
-    };
+    private static readonly CsvReaderOptions _opcoes = OpcoesLeituraCsv.Criar(separador: ';');
 
     public LayoutArquivoImportacao Layout => LayoutArquivoImportacao.MercadoPagoCartaoCsv;
 
@@ -72,8 +66,7 @@ public sealed partial class LeitorFaturaCartaoMercadoPago : ILeitorFatura
     public async Task<Result<Fatura>> LerAsync(Stream arquivo, CancellationToken cancellationToken)
     {
         using StreamReader leitor = new(arquivo, Encoding.UTF8, detectEncodingFromByteOrderMarks: true, leaveOpen: true);
-        using CsvReader csv = new(leitor, _configuracao);
-        csv.Context.RegisterClassMap<LinhaFaturaMercadoPagoMap>();
+        using CsvReader csv = CsvReader.Create(leitor, _opcoes);
 
         return await LerColunasAsync(csv)
             .Bind(() => LerLinhasAsync(csv, cancellationToken))
@@ -82,22 +75,21 @@ public sealed partial class LeitorFaturaCartaoMercadoPago : ILeitorFatura
     }
 
     /// <summary>
-    /// As colunas têm de ser exatamente as do prompt, na ordem: o <c>ValidateHeader</c> do CsvHelper aceitaria colunas
-    /// a mais e em outra ordem.
+    /// As colunas têm de ser exatamente as do prompt, na ordem e com a mesma grafia.
     /// </summary>
     private static async Task<Result> LerColunasAsync(CsvReader csv)
     {
         try
         {
-            if (!await csv.ReadAsync())
+            await csv.ReadHeaderAsync();
+            if (csv.Headers.Count == 0)
                 return Result.Failure("O arquivo termina antes das colunas da fatura do cartão do Mercado Pago.");
 
-            csv.ReadHeader();
             return Result.FailureIf(
-                csv.HeaderRecord is null || !csv.HeaderRecord.SequenceEqual(_colunas, StringComparer.Ordinal),
+                !csv.Headers.SequenceEqual(_colunas, StringComparer.Ordinal),
                 "A linha 1 do arquivo não traz as colunas do prompt da fatura do cartão do Mercado Pago (docs/fatura-mercado-pago.md).");
         }
-        catch (CsvHelperException)
+        catch (CsvFormatException)
         {
             return Result.Failure(
                 "A linha 1 do arquivo não traz as colunas do prompt da fatura do cartão do Mercado Pago (docs/fatura-mercado-pago.md).");
@@ -134,10 +126,10 @@ public sealed partial class LeitorFaturaCartaoMercadoPago : ILeitorFatura
         {
             return await csv.ReadAsync() ? csv.GetRecord<LinhaFaturaMercadoPago>() : Maybe<LinhaFaturaMercadoPago>.None;
         }
-        catch (CsvHelperException)
+        catch (CsvFormatException erro)
         {
             return Result.Failure<Maybe<LinhaFaturaMercadoPago>>(
-                $"A linha {csv.Parser.RawRow} do arquivo não está no layout da fatura do cartão do Mercado Pago.");
+                $"A linha {erro.LineNumber} do arquivo não está no layout da fatura do cartão do Mercado Pago.");
         }
     }
 
@@ -149,7 +141,7 @@ public sealed partial class LeitorFaturaCartaoMercadoPago : ILeitorFatura
 
         return Converter(linha.Value)
             .Map(Maybe.From)
-            .MapError(erro => $"A linha {csv.Parser.RawRow} do arquivo {erro}");
+            .MapError(erro => $"A linha {csv.LineNumber} do arquivo {erro}");
     }
 
     /// <param name="linha">A linha já lida, com as colunas cruas.</param>
@@ -268,41 +260,46 @@ public sealed partial class LeitorFaturaCartaoMercadoPago : ILeitorFatura
     /// <summary>A coluna do valor e se o final do cartão é obrigatório, conforme o código do tipo de lançamento.</summary>
     internal sealed record TipoLancamento(bool Credito, bool FinalObrigatorio, bool Parcelado);
 
-    private sealed class LinhaFaturaMercadoPago
-    {
-        public DateOnly? DataCompra { get; init; }
-        public DateOnly? DataLancamento { get; init; }
-        public string TipoLancamento { get; init; } = string.Empty;
-        public string Descricao { get; init; } = string.Empty;
-        public string Vendedor { get; init; } = string.Empty;
-        public string NumeroTransacao { get; init; } = string.Empty;
-        public string CartaoFinal { get; init; } = string.Empty;
-        public string ParcelaAtual { get; init; } = string.Empty;
-        public string ParcelasTotais { get; init; } = string.Empty;
-        public string Moeda { get; init; } = string.Empty;
-        public decimal? ValorCobrado { get; init; }
-        public decimal? ValorCreditado { get; init; }
-    }
-
-    private sealed class LinhaFaturaMercadoPagoMap : ClassMap<LinhaFaturaMercadoPago>
+    [CsvRecord]
+    internal sealed partial class LinhaFaturaMercadoPago
     {
         private const string FormatoData = "dd/MM/yyyy";
 
-        public LinhaFaturaMercadoPagoMap()
-        {
-            Map(l => l.DataCompra).Name("data_compra").TypeConverterOption.Format(FormatoData);
-            Map(l => l.DataLancamento).Name("data_lancamento").TypeConverterOption.Format(FormatoData);
-            Map(l => l.TipoLancamento).Name("tipo_lancamento");
-            Map(l => l.Descricao).Name("descricao_fatura");
-            Map(l => l.Vendedor).Name("vendedor");
-            Map(l => l.NumeroTransacao).Name("numero_transacao");
-            Map(l => l.CartaoFinal).Name("cartao_final");
-            Map(l => l.ParcelaAtual).Name("parcela_atual");
-            Map(l => l.ParcelasTotais).Name("parcelas_totais");
-            Map(l => l.Moeda).Name("moeda");
-            Map(l => l.ValorCobrado).Name("valor_cobrado_fatura").TypeConverter<ValorFaturaConverter>();
-            Map(l => l.ValorCreditado).Name("valor_creditado_fatura").TypeConverter<ValorFaturaConverter>();
-        }
+        [CsvColumn("data_compra"), CsvFormat(FormatoData)]
+        public DateOnly? DataCompra { get; init; }
+
+        [CsvColumn("data_lancamento"), CsvFormat(FormatoData)]
+        public DateOnly? DataLancamento { get; init; }
+
+        [CsvColumn("tipo_lancamento")]
+        public string TipoLancamento { get; init; } = string.Empty;
+
+        [CsvColumn("descricao_fatura")]
+        public string Descricao { get; init; } = string.Empty;
+
+        [CsvColumn("vendedor")]
+        public string Vendedor { get; init; } = string.Empty;
+
+        [CsvColumn("numero_transacao")]
+        public string NumeroTransacao { get; init; } = string.Empty;
+
+        [CsvColumn("cartao_final")]
+        public string CartaoFinal { get; init; } = string.Empty;
+
+        [CsvColumn("parcela_atual")]
+        public string ParcelaAtual { get; init; } = string.Empty;
+
+        [CsvColumn("parcelas_totais")]
+        public string ParcelasTotais { get; init; } = string.Empty;
+
+        [CsvColumn("moeda")]
+        public string Moeda { get; init; } = string.Empty;
+
+        [CsvColumn("valor_cobrado_fatura"), CsvConverter(typeof(ValorFaturaConverter))]
+        public decimal? ValorCobrado { get; init; }
+
+        [CsvColumn("valor_creditado_fatura"), CsvConverter(typeof(ValorFaturaConverter))]
+        public decimal? ValorCreditado { get; init; }
     }
 
     /// <summary>
@@ -310,20 +307,23 @@ public sealed partial class LeitorFaturaCartaoMercadoPago : ILeitorFatura
     /// inteiros, o mesmo teto do extrato: com mais, a soma das linhas de um arquivo poderia estourar o
     /// <see cref="decimal"/>.
     /// </summary>
-    private sealed partial class ValorFaturaConverter : DefaultTypeConverter
+    internal sealed partial class ValorFaturaConverter : ICsvConverter<decimal?>
     {
         // Próprio, e não a cultura pt-BR, que muda com o sistema e com a versão do ICU.
         private static readonly NumberFormatInfo _formato = new() { NumberDecimalSeparator = "," };
 
-        public override object? ConvertFromString(string? text, IReaderRow row, MemberMapData memberMapData)
+        public decimal? Read(CsvReader reader, int index)
         {
-            if (string.IsNullOrEmpty(text))
+            string texto = reader.GetString(index);
+            if (texto.Length == 0)
                 return null;
 
-            return Valor().IsMatch(text)
-                ? decimal.Parse(text, NumberStyles.AllowDecimalPoint, _formato)
-                : base.ConvertFromString(text, row, memberMapData);
+            return Valor().IsMatch(texto)
+                ? decimal.Parse(texto, NumberStyles.AllowDecimalPoint, _formato)
+                : throw new FormatException("O valor não está no formato do prompt.");
         }
+
+        public void Write(CsvWriter writer, decimal? value) => throw new NotSupportedException();
 
         [GeneratedRegex("^[0-9]{1,15},[0-9]{2}$")]
         private static partial Regex Valor();

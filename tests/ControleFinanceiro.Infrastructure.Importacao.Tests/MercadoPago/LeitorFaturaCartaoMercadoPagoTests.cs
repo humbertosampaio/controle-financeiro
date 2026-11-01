@@ -303,6 +303,36 @@ public sealed class LeitorFaturaCartaoMercadoPagoTests
         result.Should().FailWith("A linha 3 do arquivo não está no layout da fatura do cartão do Mercado Pago.");
     }
 
+    [Fact]
+    public async Task LerAsync_Quando_ColunasEmOutraCaixa_Deve_RetornarFalhaQueCitaOPrompt()
+    {
+        Stream arquivo = _fixture.ComLinha(LinhaColunas, _fixture.Linhas().First().ToUpperInvariant());
+
+        Result<Fatura> result = await _leitor.LerAsync(arquivo, CancellationToken.None);
+
+        result.Should().FailWith("A linha 1 do arquivo não traz as colunas do prompt da fatura do cartão do Mercado Pago (docs/fatura-mercado-pago.md).");
+    }
+
+    [Fact]
+    public async Task LerAsync_Quando_LinhaDeSeparadorAntesDasColunas_Deve_RetornarFalhaQueCitaOPrompt()
+    {
+        Stream arquivo = _fixture.ComLinhas(_fixture.Linhas().Prepend("sep=;"));
+
+        Result<Fatura> result = await _leitor.LerAsync(arquivo, CancellationToken.None);
+
+        result.Should().FailWith("A linha 1 do arquivo não traz as colunas do prompt da fatura do cartão do Mercado Pago (docs/fatura-mercado-pago.md).");
+    }
+
+    [Fact]
+    public async Task LerAsync_Quando_LinhaForaDoLayoutComQuebraDeLinha_Deve_CitarALinhaOndeORegistroComeca()
+    {
+        string comColunaAMais = "\"COLUNA\nA MAIS\";" + _fixture.Linhas().ElementAt(LinhaCompraVista - 1);
+
+        Result<Fatura> result = await _leitor.LerAsync(_fixture.ComLinha(LinhaCompraVista, comColunaAMais), CancellationToken.None);
+
+        result.Should().FailWith("A linha 3 do arquivo não está no layout da fatura do cartão do Mercado Pago.");
+    }
+
     [Theory]
     [InlineData("\"data_compra\";\"descricao_fatura\";\"valor_cobrado_fatura\"")]
     [InlineData("\"vencimento\";\"mes_referencia\";\"fechamento\";\"data_compra\";\"data_lancamento\";\"tipo_lancamento\";\"descricao_fatura\";\"vendedor\";\"produtos\";\"numero_pedido\";\"numero_transacao\";\"cartao_final\";\"parcela_atual\";\"parcelas_totais\";\"moeda\";\"valor_compra_original\";\"valor_cobrado_fatura\";\"valor_creditado_fatura\";\"status\"")]

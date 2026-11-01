@@ -4,7 +4,6 @@ using ControleFinanceiro.Domain.Importacoes;
 using ControleFinanceiro.Domain.Shared.ValueObjects;
 using ControleFinanceiro.Domain.Transacoes;
 using CsvHelper;
-using CsvHelper.Configuration;
 using System.Globalization;
 using System.Text;
 using System.Text.RegularExpressions;
@@ -23,23 +22,24 @@ namespace ControleFinanceiro.Infrastructure.Importacao.C6;
 /// Da conta, só o sufixo sai daqui: o número completo e a agência ficam em variável local.
 /// </para>
 /// <para>
-/// As mensagens de falha citam só o número da linha. A <see cref="CsvHelperException"/> traz o registro
-/// cru, então ela é capturada e trocada por uma mensagem própria.
+/// As mensagens de falha citam só o número da linha. A <see cref="CsvFormatException"/> pode trazer dados do
+/// registro, então ela é capturada e trocada por uma mensagem própria.
 /// </para>
 /// </remarks>
 public sealed partial class LeitorExtratoContaC6 : ILeitorExtrato
 {
     private const int LinhasAntesColunas = 8;
     private const string SeparadorDescricao = " · ";
+    private const string FormatoData = "dd/MM/yyyy";
 
     /// <summary>Títulos de Pix que trazem o nome da contraparte depois do prefixo.</summary>
     private static readonly string[] _prefixosPixComContraparte = ["Pix recebido de", "Pix enviado para", "Devol recebida pix de"];
 
-    private static readonly CsvConfiguration _configuracao = new(CultureInfo.InvariantCulture)
-    {
-        Delimiter = ",",
-        DetectColumnCountChanges = true,
-    };
+    private static readonly CsvReaderOptions _opcoes = OpcoesLeituraCsv.Criar(separador: ',');
+
+    /// <summary>As colunas mapeadas, com a grafia exata: o CsvHelper aceitaria outra caixa e espaços em volta.</summary>
+    private static readonly string[] _colunas =
+        ["Data Lançamento", "Data Contábil", "Título", "Descrição", "Entrada(R$)", "Saída(R$)", "Saldo do Dia(R$)"];
 
     public LayoutArquivoImportacao Layout => LayoutArquivoImportacao.C6ContaCsv;
 
@@ -109,7 +109,7 @@ public sealed partial class LeitorExtratoContaC6 : ILeitorExtrato
     private static Result<DateOnly> LerDataPeriodo(string texto)
     {
         return Result.SuccessIf(
-            DateOnly.TryParseExact(texto, LinhaExtratoC6Map.FormatoData, CultureInfo.InvariantCulture, DateTimeStyles.None, out DateOnly data),
+            DateOnly.TryParseExact(texto, FormatoData, CultureInfo.InvariantCulture, DateTimeStyles.None, out DateOnly data),
             data,
             "O período no cabeçalho do arquivo não tem datas válidas.");
     }
@@ -141,8 +141,7 @@ public sealed partial class LeitorExtratoContaC6 : ILeitorExtrato
         StreamReader leitor,
         CancellationToken cancellationToken)
     {
-        using CsvReader csv = new(leitor, _configuracao);
-        csv.Context.RegisterClassMap<LinhaExtratoC6Map>();
+        using CsvReader csv = CsvReader.Create(leitor, _opcoes);
 
         return await LerColunasAsync(csv)
             .Bind(() => LerLinhasAsync(csv, cancellationToken));
@@ -152,14 +151,15 @@ public sealed partial class LeitorExtratoContaC6 : ILeitorExtrato
     {
         try
         {
-            if (!await csv.ReadAsync())
+            await csv.ReadHeaderAsync();
+            if (csv.Headers.Count == 0)
                 return Result.Failure("O arquivo termina antes das colunas do extrato da conta do C6.");
 
-            csv.ReadHeader();
-            csv.ValidateHeader<LinhaExtratoC6>();
-            return Result.Success();
+            return Result.FailureIf(
+                !_colunas.All(csv.Headers.Contains),
+                $"A linha {LinhasAntesColunas + 1} do arquivo não traz as colunas do extrato da conta do C6.");
         }
-        catch (CsvHelperException)
+        catch (CsvFormatException)
         {
             return Result.Failure($"A linha {LinhasAntesColunas + 1} do arquivo não traz as colunas do extrato da conta do C6.");
         }
@@ -198,9 +198,9 @@ public sealed partial class LeitorExtratoContaC6 : ILeitorExtrato
         {
             return await csv.ReadAsync() ? csv.GetRecord<LinhaExtratoC6>() : Maybe<LinhaExtratoC6>.None;
         }
-        catch (CsvHelperException)
+        catch (CsvFormatException erro)
         {
-            return Result.Failure<Maybe<LinhaExtratoC6>>($"A linha {NumeroLinha(csv)} do arquivo não está no layout do extrato da conta do C6.");
+            return Result.Failure<Maybe<LinhaExtratoC6>>($"A linha {LinhasAntesColunas + erro.LineNumber} do arquivo não está no layout do extrato da conta do C6.");
         }
     }
 
@@ -254,7 +254,7 @@ public sealed partial class LeitorExtratoContaC6 : ILeitorExtrato
         return ((TextoObrigatorio)descricao, contraparte);
     }
 
-    private static long NumeroLinha(CsvReader csv) => LinhasAntesColunas + csv.Parser.RawRow;
+    private static long NumeroLinha(CsvReader csv) => LinhasAntesColunas + csv.LineNumber;
 
     [GeneratedRegex(@"Conta:\s*(?<numero>\S+)")]
     private static partial Regex NumeroConta();
@@ -265,34 +265,29 @@ public sealed partial class LeitorExtratoContaC6 : ILeitorExtrato
     [GeneratedRegex(@"Extrato de (?<inicio>\d{2}/\d{2}/\d{4}) a (?<fim>\d{2}/\d{2}/\d{4})")]
     private static partial Regex Periodo();
 
-    private sealed class LinhaExtratoC6
+    [CsvRecord]
+    internal sealed partial class LinhaExtratoC6
     {
+        [CsvColumn("Data Lançamento"), CsvFormat(FormatoData)]
         public DateOnly DataLancamento { get; init; }
+
+        [CsvColumn("Data Contábil"), CsvFormat(FormatoData)]
         public DateOnly DataContabil { get; init; }
+
+        [CsvColumn("Título")]
         public string Titulo { get; init; } = string.Empty;
+
+        [CsvColumn("Descrição")]
         public string Descricao { get; init; } = string.Empty;
+
+        // Entrada e saída vêm sempre positivas; só o saldo pode ser negativo.
+        [CsvColumn("Entrada(R$)"), CsvConverter(typeof(ValorC6.SemSinalConverter))]
         public decimal Entrada { get; init; }
+
+        [CsvColumn("Saída(R$)"), CsvConverter(typeof(ValorC6.SemSinalConverter))]
         public decimal Saida { get; init; }
+
+        [CsvColumn("Saldo do Dia(R$)"), CsvConverter(typeof(ValorC6.ComSinalConverter))]
         public decimal SaldoDia { get; init; }
-    }
-
-    private sealed class LinhaExtratoC6Map : ClassMap<LinhaExtratoC6>
-    {
-        public const string FormatoData = "dd/MM/yyyy";
-
-        // Entrada e saída vêm sempre positivas; só o saldo pode ser negativo. Nenhuma coluna tem separador de milhar.
-        private const NumberStyles ValorSemSinal = NumberStyles.AllowDecimalPoint;
-        private const NumberStyles ValorComSinal = NumberStyles.AllowLeadingSign | NumberStyles.AllowDecimalPoint;
-
-        public LinhaExtratoC6Map()
-        {
-            Map(l => l.DataLancamento).Name("Data Lançamento").TypeConverterOption.Format(FormatoData);
-            Map(l => l.DataContabil).Name("Data Contábil").TypeConverterOption.Format(FormatoData);
-            Map(l => l.Titulo).Name("Título");
-            Map(l => l.Descricao).Name("Descrição");
-            Map(l => l.Entrada).Name("Entrada(R$)").TypeConverterOption.NumberStyles(ValorSemSinal);
-            Map(l => l.Saida).Name("Saída(R$)").TypeConverterOption.NumberStyles(ValorSemSinal);
-            Map(l => l.SaldoDia).Name("Saldo do Dia(R$)").TypeConverterOption.NumberStyles(ValorComSinal);
-        }
     }
 }

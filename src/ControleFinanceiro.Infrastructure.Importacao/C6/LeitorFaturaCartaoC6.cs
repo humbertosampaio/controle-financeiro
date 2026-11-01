@@ -4,7 +4,6 @@ using ControleFinanceiro.Domain.Importacoes;
 using ControleFinanceiro.Domain.Shared.ValueObjects;
 using ControleFinanceiro.Domain.Transacoes;
 using CsvHelper;
-using CsvHelper.Configuration;
 using System.Globalization;
 using System.Text;
 using System.Text.RegularExpressions;
@@ -22,7 +21,7 @@ namespace ControleFinanceiro.Infrastructure.Importacao.C6;
 /// reais já é o cobrado.
 /// </para>
 /// <para>
-/// As mensagens de falha citam só o número da linha. A <see cref="CsvHelperException"/> traz o registro cru, com o
+/// As mensagens de falha citam só o número da linha. A <see cref="CsvFormatException"/> pode trazer dados do registro, com o
 /// titular, então ela é capturada e trocada por uma mensagem própria.
 /// </para>
 /// </remarks>
@@ -30,11 +29,12 @@ public sealed partial class LeitorFaturaCartaoC6 : ILeitorFatura
 {
     private const string ParcelaUnica = "Única";
 
-    private static readonly CsvConfiguration _configuracao = new(CultureInfo.InvariantCulture)
-    {
-        Delimiter = ";",
-        DetectColumnCountChanges = true,
-    };
+    private const string FormatoData = "dd/MM/yyyy";
+
+    private static readonly CsvReaderOptions _opcoes = OpcoesLeituraCsv.Criar(separador: ';');
+
+    /// <summary>As colunas mapeadas, com a grafia exata: o CsvHelper aceitaria outra caixa e espaços em volta.</summary>
+    private static readonly string[] _colunas = ["Data de Compra", "Final do Cartão", "Categoria", "Descrição", "Parcela", "Valor (em R$)"];
 
     public LayoutArquivoImportacao Layout => LayoutArquivoImportacao.C6CartaoCsv;
 
@@ -42,8 +42,7 @@ public sealed partial class LeitorFaturaCartaoC6 : ILeitorFatura
     public async Task<Result<Fatura>> LerAsync(Stream arquivo, CancellationToken cancellationToken)
     {
         using StreamReader leitor = new(arquivo, Encoding.UTF8, detectEncodingFromByteOrderMarks: true, leaveOpen: true);
-        using CsvReader csv = new(leitor, _configuracao);
-        csv.Context.RegisterClassMap<LinhaFaturaC6Map>();
+        using CsvReader csv = CsvReader.Create(leitor, _opcoes);
 
         return await LerColunasAsync(csv)
             .Bind(() => LerLinhasAsync(csv, cancellationToken))
@@ -54,14 +53,15 @@ public sealed partial class LeitorFaturaCartaoC6 : ILeitorFatura
     {
         try
         {
-            if (!await csv.ReadAsync())
+            await csv.ReadHeaderAsync();
+            if (csv.Headers.Count == 0)
                 return Result.Failure("O arquivo termina antes das colunas da fatura do cartão do C6.");
 
-            csv.ReadHeader();
-            csv.ValidateHeader<LinhaFaturaC6>();
-            return Result.Success();
+            return Result.FailureIf(
+                !_colunas.All(csv.Headers.Contains),
+                "A linha 1 do arquivo não traz as colunas da fatura do cartão do C6.");
         }
-        catch (CsvHelperException)
+        catch (CsvFormatException)
         {
             return Result.Failure("A linha 1 do arquivo não traz as colunas da fatura do cartão do C6.");
         }
@@ -99,7 +99,7 @@ public sealed partial class LeitorFaturaCartaoC6 : ILeitorFatura
 
         return Converter(linha.Value)
             .Map(Maybe.From)
-            .MapError(erro => $"A linha {csv.Parser.RawRow} do arquivo {erro}");
+            .MapError(erro => $"A linha {csv.LineNumber} do arquivo {erro}");
     }
 
     /// <returns>Vazio no fim do arquivo.</returns>
@@ -109,9 +109,9 @@ public sealed partial class LeitorFaturaCartaoC6 : ILeitorFatura
         {
             return await csv.ReadAsync() ? csv.GetRecord<LinhaFaturaC6>() : Maybe<LinhaFaturaC6>.None;
         }
-        catch (CsvHelperException)
+        catch (CsvFormatException erro)
         {
-            return Result.Failure<Maybe<LinhaFaturaC6>>($"A linha {csv.Parser.RawRow} do arquivo não está no layout da fatura do cartão do C6.");
+            return Result.Failure<Maybe<LinhaFaturaC6>>($"A linha {erro.LineNumber} do arquivo não está no layout da fatura do cartão do C6.");
         }
     }
 
@@ -194,31 +194,26 @@ public sealed partial class LeitorFaturaCartaoC6 : ILeitorFatura
     [GeneratedRegex(@"^(?<numero>\d{1,3})/(?<total>\d{1,3})$")]
     private static partial Regex ParcelaNumerada();
 
-    private sealed class LinhaFaturaC6
+    [CsvRecord]
+    internal sealed partial class LinhaFaturaC6
     {
+        [CsvColumn("Data de Compra"), CsvFormat(FormatoData)]
         public DateOnly DataCompra { get; init; }
+
+        [CsvColumn("Final do Cartão")]
         public string FinalCartao { get; init; } = string.Empty;
+
+        [CsvColumn("Categoria")]
         public string Categoria { get; init; } = string.Empty;
+
+        [CsvColumn("Descrição")]
         public string Descricao { get; init; } = string.Empty;
+
+        [CsvColumn("Parcela")]
         public string Parcela { get; init; } = string.Empty;
+
+        // O pagamento e o estorno vêm negativos.
+        [CsvColumn("Valor (em R$)"), CsvConverter(typeof(ValorC6.ComSinalConverter))]
         public decimal Valor { get; init; }
-    }
-
-    private sealed class LinhaFaturaC6Map : ClassMap<LinhaFaturaC6>
-    {
-        private const string FormatoData = "dd/MM/yyyy";
-
-        // O valor em reais vem com ponto decimal e sem separador de milhar; o pagamento e o estorno vêm negativos.
-        private const NumberStyles ValorComSinal = NumberStyles.AllowLeadingSign | NumberStyles.AllowDecimalPoint;
-
-        public LinhaFaturaC6Map()
-        {
-            Map(l => l.DataCompra).Name("Data de Compra").TypeConverterOption.Format(FormatoData);
-            Map(l => l.FinalCartao).Name("Final do Cartão");
-            Map(l => l.Categoria).Name("Categoria");
-            Map(l => l.Descricao).Name("Descrição");
-            Map(l => l.Parcela).Name("Parcela");
-            Map(l => l.Valor).Name("Valor (em R$)").TypeConverterOption.NumberStyles(ValorComSinal);
-        }
     }
 }

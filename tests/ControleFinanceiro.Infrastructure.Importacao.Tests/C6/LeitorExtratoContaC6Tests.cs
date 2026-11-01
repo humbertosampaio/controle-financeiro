@@ -154,11 +154,11 @@ public sealed class LeitorExtratoContaC6Tests
     [Fact]
     public async Task LerAsync_Quando_ContraparteDoPixSoComDocumento_Deve_ManterODocumentoNaContraparte()
     {
-        Stream arquivo = _fixture.ComLinha(numero: 15, "04/03/2026,04/03/2026,Pix recebido de 123.456.789-09,,12.34,0.00,-240.61");
+        Stream arquivo = _fixture.ComLinha(numero: 15, "04/03/2026,04/03/2026,Pix recebido de 384.716.205-53,,12.34,0.00,-240.61");
 
         Result<Extrato> result = await _leitor.LerAsync(arquivo, CancellationToken.None);
 
-        result.Should().Succeed().Which.Lancamentos.Should().ContainSingle(l => l.Contraparte == "123.456.789-09");
+        result.Should().Succeed().Which.Lancamentos.Should().ContainSingle(l => l.Contraparte == "384.716.205-53");
     }
 
     [Fact]
@@ -185,6 +185,53 @@ public sealed class LeitorExtratoContaC6Tests
         Result<Extrato> result = await _leitor.LerAsync(arquivo, CancellationToken.None);
 
         result.Should().FailWith("A linha 13 do arquivo não está no layout do extrato da conta do C6.");
+    }
+
+    [Theory]
+    [InlineData("data lançamento,Data Contábil,Título,Descrição,Entrada(R$),Saída(R$),Saldo do Dia(R$)")]
+    [InlineData(" Data Lançamento,Data Contábil,Título,Descrição,Entrada(R$),Saída(R$),Saldo do Dia(R$)")]
+    public async Task LerAsync_Quando_ColunaComOutraGrafia_Deve_RetornarFalhaComALinhaDasColunas(string colunas)
+    {
+        Stream arquivo = _fixture.ComLinha(LinhaColunas, colunas);
+
+        Result<Extrato> result = await _leitor.LerAsync(arquivo, CancellationToken.None);
+
+        result.Should().FailWith("A linha 9 do arquivo não traz as colunas do extrato da conta do C6.");
+    }
+
+    [Theory]
+    [InlineData("02/03/2026,02/03/2026,TITULO FICTICIO,,-150.00,0.00,-12.50")]
+    [InlineData("02/03/2026,02/03/2026,TITULO FICTICIO,,0.00,-150.00,-12.50")]
+    public async Task LerAsync_Quando_EntradaOuSaidaComSinal_Deve_RetornarFalhaSoComONumeroDaLinha(string linha)
+    {
+        Stream arquivo = _fixture.ComLinha(LinhaPrimeiroLancamento, linha);
+
+        Result<Extrato> result = await _leitor.LerAsync(arquivo, CancellationToken.None);
+
+        result.Should().FailWith("A linha 10 do arquivo não está no layout do extrato da conta do C6.");
+    }
+
+    [Fact]
+    public async Task LerAsync_Quando_LinhaDeSeparadorAntesDasColunas_Deve_RetornarFalhaComALinhaDasColunas()
+    {
+        List<string> linhas = _fixture.Linhas().ToList();
+        linhas.Insert(index: LinhaColunas - 1, item: "sep=,");
+
+        Result<Extrato> result = await _leitor.LerAsync(_fixture.ComLinhas(linhas), CancellationToken.None);
+
+        result.Should().FailWith("A linha 9 do arquivo não traz as colunas do extrato da conta do C6.");
+    }
+
+    [Theory]
+    [InlineData("02/03/2026,02/03/2026,\"TITULO\nFICTICIO\",,-150.00,0.00,-12.50", "não está no layout do extrato da conta do C6.")]
+    [InlineData("02/03/2026,02/03/2026,\" \n \",,150.00,0.00,-12.50", "não tem título.")]
+    public async Task LerAsync_Quando_ErroEmRegistroComQuebraDeLinha_Deve_CitarALinhaOndeORegistroComeca(string linha, string erro)
+    {
+        Stream arquivo = _fixture.ComLinha(LinhaPrimeiroLancamento, linha);
+
+        Result<Extrato> result = await _leitor.LerAsync(arquivo, CancellationToken.None);
+
+        result.Should().FailWith($"A linha 10 do arquivo {erro}");
     }
 
     [Fact]
