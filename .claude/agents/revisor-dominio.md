@@ -45,6 +45,15 @@ Os arquivos `.Designer.cs` e `ModelSnapshot.cs` são gerados pelo EF: não leia.
     - um método de agregado que recebe outro agregado, ou uma regra entre agregados no endpoint ou no repositório (seção 3);
     - um repositório que devolve DTO, projeção, contagem ou existência, ou que recebe outra coisa que não o agregado (seção 4);
     - erro tipado criado só porque uma camada de fora precisa dele, sem ser uma situação de negócio própria (seção 5).
+16. **Serviço de domínio só orquestra** (seção 3 do guia). Em cada serviço ou factory novo ou alterado em `Domain/Services/`, é achado MÉDIO, dizendo para qual agregado, entidade ou tipo novo a lógica deveria ir:
+    - encadeamento que atravessa o agregado, como `d.Parcelas.First(p => p.Numero == n).Pagamento.Valor`;
+    - condição com vários campos de uma só entidade, como `t.Parcela != null && t.Origem.IdCartao != null`;
+    - tupla em `GroupBy`, como `GroupBy(t => (t.Descricao, t.Parcela.Total))`, em vez de um tipo com nome;
+    - o mesmo cálculo em dois serviços (procure com `grep` em `Domain/Services/` o que o diff trouxe);
+    - método privado que lê dados de um agregado só, sem motivo registrado no plano;
+    - algoritmo longo dentro do serviço, em vez de num tipo próprio.
+
+    Ler um campo só ou chamar um método do agregado é o que o serviço deve fazer, e não é achado. Seguir um análogo que ainda concentra essa lógica também não dispensa o achado.
 
 ## Dívidas conhecidas — não reportar
 
