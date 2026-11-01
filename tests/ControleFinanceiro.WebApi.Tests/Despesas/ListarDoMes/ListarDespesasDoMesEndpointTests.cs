@@ -1,5 +1,7 @@
+using AutoFixture.Xunit2;
 using ControleFinanceiro.Domain.Despesas;
 using ControleFinanceiro.Domain.Shared.ValueObjects;
+using ControleFinanceiro.Domain.Transacoes;
 using ControleFinanceiro.Domain.Usuarios;
 using ControleFinanceiro.WebApi.Endpoints.Beneficiarios.CadastrarLote;
 using ControleFinanceiro.WebApi.Endpoints.Despesas.CadastrarRecorrente;
@@ -8,6 +10,8 @@ using ControleFinanceiro.WebApi.Endpoints.Despesas.ListarDoMes;
 using ControleFinanceiro.WebApi.Endpoints.Usuarios.AdicionarCartao;
 using ControleFinanceiro.WebApi.Endpoints.Usuarios.Cadastrar;
 using ControleFinanceiro.WebApi.Tests.AutoFixture;
+using ControleFinanceiro.WebApi.Tests.Despesas.VincularTransacao;
+using ControleFinanceiro.WebApi.Tests.Importacoes.ImportarExtrato;
 using ControleFinanceiro.WebApi.Tests.Importacoes.ImportarFatura;
 using ControleFinanceiro.WebApi.Tests.Infraestrutura;
 using System.Net;
@@ -106,7 +110,7 @@ public sealed class ListarDespesasDoMesEndpointTests : IAsyncLifetime
         despesa.Parcela.Should().Be(new ListarDespesasDoMesResponse.ParcelaDoMes(parcelaDoMes.Id.Value, numeroEsperado, Total: 10));
         despesa.IdCartao.Should().Be(parcelada.IdCartao.Value);
         despesa.FormaPagamento.Should().Be(FormaPagamento.Credito.Value);
-        despesa.Valor.Should().Be(99.90m);
+        despesa.ValorProjetado.Should().Be(99.90m);
         despesa.StatusPagamento.Should().Be(statusEsperado);
         despesa.DataPagamentoProjetada.Should().Be(new DateOnly(ano, mes, 10));
         despesa.DataPagamentoEfetiva.Should().Be(parcelaDoMes.Pagamento.DataEfetiva);
@@ -121,6 +125,50 @@ public sealed class ListarDespesasDoMesEndpointTests : IAsyncLifetime
 
         ListarDespesasDoMesResponse? corpo = await resposta.Content.ReadFromJsonAsync<ListarDespesasDoMesResponse>();
         corpo!.Despesas.Should().BeEmpty();
+    }
+
+    [Theory, ApiAutoData]
+    public async Task Get_Quando_SimplesVinculada_Deve_TrazerOValorEfetivoEATransacao(
+        [Frozen] MesReferencia mesReferencia,
+        CadastrarUsuarioRequest cadastro,
+        CadastrarLoteBeneficiariosRequest beneficiarios,
+        CadastrarDespesaRecorrenteRequest recorrente,
+        GerarDespesasDoMesRequest geracao)
+    {
+        Guid idUsuario = await _api.CadastrarUsuarioAsync(cadastro);
+        await _api.ImportarExtratoC6Async(idUsuario);
+        DespesaSimples despesa = await _api.GerarSimplesAsync(idUsuario, beneficiarios, recorrente, geracao);
+        Transacao transacao = await _api.ObterTransacaoAsync(idUsuario, VinculoExtensions.PixEnviado);
+        await _api.VincularComSucessoAsync(idUsuario, despesa.Id.Value, transacao.Id.Value);
+
+        using HttpResponseMessage resposta = await ListarAsync(idUsuario, mesReferencia.Ano, mesReferencia.Mes);
+
+        ListarDespesasDoMesResponse? corpo = await resposta.Content.ReadFromJsonAsync<ListarDespesasDoMesResponse>();
+        ListarDespesasDoMesResponse.Despesa lida = corpo!.Despesas.Should().ContainSingle().Subject;
+        lida.ValorEfetivo.Should().Be(89.90m);
+        lida.IdTransacao.Should().Be(transacao.Id.Value);
+    }
+
+    [Theory, ApiAutoData]
+    public async Task Get_Quando_ParcelaVinculada_Deve_TrazerOValorEfetivoEATransacaoDaParcelaDoMes(CadastrarUsuarioRequest cadastro)
+    {
+        Guid idUsuario = await ImportarFaturaComParceladaAsync(cadastro);
+        DespesaParcelada parcelada = (await _api.ObterParceladasAsync()).Single();
+        MesReferencia mesDaTerceira = parcelada.Parcelas.Single(p => p.NumeroParcela == 3).MesReferencia;
+        Transacao transacao = await _api.ObterTransacaoAsync(idUsuario, VinculoExtensions.CompraParcelada);
+        await _api.VincularComSucessoAsync(idUsuario, parcelada.Id.Value, transacao.Id.Value);
+
+        using HttpResponseMessage noMes = await ListarAsync(idUsuario, mesDaTerceira.Ano, mesDaTerceira.Mes);
+        using HttpResponseMessage noMesSeguinte = await ListarAsync(idUsuario, mesDaTerceira.Posterior().Ano, mesDaTerceira.Posterior().Mes);
+
+        ListarDespesasDoMesResponse? corpo = await noMes.Content.ReadFromJsonAsync<ListarDespesasDoMesResponse>();
+        ListarDespesasDoMesResponse.Despesa lida = corpo!.Despesas.Should().ContainSingle().Subject;
+        lida.ValorEfetivo.Should().Be(99.90m);
+        lida.IdTransacao.Should().Be(transacao.Id.Value);
+        ListarDespesasDoMesResponse? corpoSeguinte = await noMesSeguinte.Content.ReadFromJsonAsync<ListarDespesasDoMesResponse>();
+        ListarDespesasDoMesResponse.Despesa seguinte = corpoSeguinte!.Despesas.Should().ContainSingle().Subject;
+        seguinte.ValorEfetivo.Should().BeNull();
+        seguinte.IdTransacao.Should().BeNull();
     }
 
     [Fact]
@@ -171,9 +219,11 @@ public sealed class ListarDespesasDoMesEndpointTests : IAsyncLifetime
             recorrente.IdCartao,
             idDespesaRecorrente,
             recorrente.Valor,
+            ValorEfetivo: null,
             StatusPagamento.Pendente.Value,
             dataPagamentoProjetada,
             DataPagamentoEfetiva: null,
+            IdTransacao: null,
             Parcela: null);
     }
 

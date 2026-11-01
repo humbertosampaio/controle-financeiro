@@ -62,9 +62,11 @@ public sealed class ListarDespesasDoMesEndpoint : Endpoint<ListarDespesasDoMesRe
             (inteira as DespesaAdiada)?.IdCartao,
             inteira.IdDespesaRecorrente,
             inteira.Pagamento.ValorProjetado,
+            inteira.Pagamento.ValorEfetivo?.Value,
             inteira.Pagamento.Status.Value,
             inteira.Pagamento.DataProjetada,
             inteira.Pagamento.DataEfetiva,
+            inteira.Pagamento.IdTransacao?.Value,
             Parcela: null);
     }
 
@@ -80,9 +82,11 @@ public sealed class ListarDespesasDoMesEndpoint : Endpoint<ListarDespesasDoMesRe
             parcelada.IdCartao,
             parcelada.IdDespesaRecorrente,
             parcela.Pagamento.ValorProjetado,
+            parcela.Pagamento.ValorEfetivo?.Value,
             parcela.Pagamento.Status.Value,
             parcela.Pagamento.DataProjetada,
             parcela.Pagamento.DataEfetiva,
+            parcela.Pagamento.IdTransacao?.Value,
             new ListarDespesasDoMesResponse.ParcelaDoMes(parcela.Id, parcela.NumeroParcela, parcelada.Parcelas.Count));
     }
 }
