@@ -7,6 +7,9 @@ public interface ITransacaoRepository
 {
     Task<Maybe<Transacao>> ObterAsync(IdTransacao idTransacao, CancellationToken cancellationToken);
 
+    /// <summary>Todas as transações com parcela.</summary>
+    Task<IReadOnlyList<Transacao>> ListarParceladasAsync(CancellationToken cancellationToken);
+
     /// <summary>
     /// Adiciona só as transações cuja chave de deduplicação ainda não está no banco de dados.
     /// </summary>
