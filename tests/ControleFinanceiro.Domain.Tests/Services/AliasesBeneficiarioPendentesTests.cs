@@ -24,7 +24,7 @@ public sealed class AliasesBeneficiarioPendentesTests
     {
         Lancamento[] lancamentos = [Saida(data, valor, descricao, primeira, identidade), Saida(data, valor, descricao, segunda, identidade)];
 
-        IReadOnlyList<Alias> result = AliasesBeneficiarioPendentes.Listar(idUsuario, beneficiariosDoUsuario: [], lancamentos, TipoOrigem.Conta);
+        IReadOnlyList<Alias> result = AliasesBeneficiarioPendentes.Listar(idUsuario, beneficiariosDoUsuario: [], lancamentos);
 
         result.Select(a => a.TextoOriginal).Should().Equal(primeira, segunda);
     }
@@ -41,8 +41,7 @@ public sealed class AliasesBeneficiarioPendentesTests
         IReadOnlyList<Alias> result = AliasesBeneficiarioPendentes.Listar(
             idUsuario,
             beneficiariosDoUsuario: [],
-            [Saida(data, valor, estabelecimento, contraparte, identidade)],
-            TipoOrigem.Cartao);
+            [Lancamento.DoCartao(data, hora: null, -valor.Value, estabelecimento, contraparte, parcela: null, categoriaBanco: null, identidade)]);
 
         result.Should().ContainSingle().Which.TextoOriginal.Should().Be(estabelecimento.Value);
     }
@@ -61,7 +60,7 @@ public sealed class AliasesBeneficiarioPendentesTests
             Saida(data, valor, descricao, "PADARIA  SAO JOAO", identidade),
         ];
 
-        IReadOnlyList<Alias> result = AliasesBeneficiarioPendentes.Listar(idUsuario, beneficiariosDoUsuario: [], lancamentos, TipoOrigem.Conta);
+        IReadOnlyList<Alias> result = AliasesBeneficiarioPendentes.Listar(idUsuario, beneficiariosDoUsuario: [], lancamentos);
 
         result.Should().ContainSingle().Which.TextoOriginal.Should().Be("Padaria São João");
     }
@@ -79,8 +78,7 @@ public sealed class AliasesBeneficiarioPendentesTests
         IReadOnlyList<Alias> result = AliasesBeneficiarioPendentes.Listar(
             idUsuario,
             [beneficiario],
-            [Saida(data, valor, descricao, alias.TextoOriginal, identidade)],
-            TipoOrigem.Conta);
+            [Saida(data, valor, descricao, alias.TextoOriginal, identidade)]);
 
         result.Should().BeEmpty();
     }
@@ -94,9 +92,9 @@ public sealed class AliasesBeneficiarioPendentesTests
         string contraparte,
         IdentidadeLancamento identidade)
     {
-        Lancamento entrada = Lancamento.Criar(data, hora: null, valor, descricao, contraparte, parcela: null, categoriaBanco: null, identidade);
+        Lancamento entrada = Lancamento.DaConta(data, hora: null, valor, descricao, contraparte, categoriaBanco: null, identidade);
 
-        IReadOnlyList<Alias> result = AliasesBeneficiarioPendentes.Listar(idUsuario, beneficiariosDoUsuario: [], [entrada], TipoOrigem.Conta);
+        IReadOnlyList<Alias> result = AliasesBeneficiarioPendentes.Listar(idUsuario, beneficiariosDoUsuario: [], [entrada]);
 
         result.Should().BeEmpty();
     }
@@ -109,9 +107,9 @@ public sealed class AliasesBeneficiarioPendentesTests
         TextoObrigatorio descricao,
         IdentidadeLancamento identidade)
     {
-        Lancamento boleto = Lancamento.Criar(data, hora: null, -valor.Value, descricao, contraparte: null, parcela: null, categoriaBanco: null, identidade);
+        Lancamento boleto = Lancamento.DaConta(data, hora: null, -valor.Value, descricao, contraparte: null, categoriaBanco: null, identidade);
 
-        IReadOnlyList<Alias> result = AliasesBeneficiarioPendentes.Listar(idUsuario, beneficiariosDoUsuario: [], [boleto], TipoOrigem.Conta);
+        IReadOnlyList<Alias> result = AliasesBeneficiarioPendentes.Listar(idUsuario, beneficiariosDoUsuario: [], [boleto]);
 
         result.Should().BeEmpty();
     }
@@ -122,7 +120,7 @@ public sealed class AliasesBeneficiarioPendentesTests
         Beneficiario deOutroUsuario,
         Lancamento lancamento)
     {
-        Action listar = () => AliasesBeneficiarioPendentes.Listar(idUsuario, [deOutroUsuario], [lancamento], TipoOrigem.Conta);
+        Action listar = () => AliasesBeneficiarioPendentes.Listar(idUsuario, [deOutroUsuario], [lancamento]);
 
         listar.Should().ThrowExactly<ArgumentException>().WithParameterName("beneficiariosDoUsuario");
     }
@@ -140,8 +138,7 @@ public sealed class AliasesBeneficiarioPendentesTests
         UnitResult<Erro> result = AliasesBeneficiarioPendentes.Conferir(
             idUsuario,
             [beneficiario],
-            [Saida(data, valor, descricao, alias.TextoOriginal, identidade)],
-            TipoOrigem.Conta);
+            [Saida(data, valor, descricao, alias.TextoOriginal, identidade)]);
 
         result.Should().Succeed();
     }
@@ -159,7 +156,7 @@ public sealed class AliasesBeneficiarioPendentesTests
     {
         Lancamento[] lancamentos = [Saida(data, valor, descricao, alias.TextoOriginal, identidade), Saida(data, valor, descricao, semAlias, identidade)];
 
-        UnitResult<Erro> result = AliasesBeneficiarioPendentes.Conferir(idUsuario, [beneficiario], lancamentos, TipoOrigem.Conta);
+        UnitResult<Erro> result = AliasesBeneficiarioPendentes.Conferir(idUsuario, [beneficiario], lancamentos);
 
         result.Should().Fail().Which.Should().Be(ErroBeneficiariosNaoResolvidos.Instancia);
     }
@@ -173,10 +170,10 @@ public sealed class AliasesBeneficiarioPendentesTests
         string contraparte,
         IdentidadeLancamento identidade)
     {
-        Lancamento entrada = Lancamento.Criar(data, hora: null, valor, descricao, contraparte, parcela: null, categoriaBanco: null, identidade);
-        Lancamento boleto = Lancamento.Criar(data, hora: null, -valor.Value, descricao, contraparte: null, parcela: null, categoriaBanco: null, identidade);
+        Lancamento entrada = Lancamento.DaConta(data, hora: null, valor, descricao, contraparte, categoriaBanco: null, identidade);
+        Lancamento boleto = Lancamento.DaConta(data, hora: null, -valor.Value, descricao, contraparte: null, categoriaBanco: null, identidade);
 
-        UnitResult<Erro> result = AliasesBeneficiarioPendentes.Conferir(idUsuario, beneficiariosDoUsuario: [], [entrada, boleto], TipoOrigem.Conta);
+        UnitResult<Erro> result = AliasesBeneficiarioPendentes.Conferir(idUsuario, beneficiariosDoUsuario: [], [entrada, boleto]);
 
         result.Should().Succeed();
     }
@@ -187,13 +184,13 @@ public sealed class AliasesBeneficiarioPendentesTests
         Beneficiario deOutroUsuario,
         Lancamento lancamento)
     {
-        Action conferir = () => AliasesBeneficiarioPendentes.Conferir(idUsuario, [deOutroUsuario], [lancamento], TipoOrigem.Conta);
+        Action conferir = () => AliasesBeneficiarioPendentes.Conferir(idUsuario, [deOutroUsuario], [lancamento]);
 
         conferir.Should().ThrowExactly<ArgumentException>().WithParameterName("beneficiariosDoUsuario");
     }
 
     private static Lancamento Saida(DateOnly data, ReaisPositivo valor, TextoObrigatorio descricao, string contraparte, IdentidadeLancamento identidade)
     {
-        return Lancamento.Criar(data, hora: null, -valor.Value, descricao, contraparte, parcela: null, categoriaBanco: null, identidade);
+        return Lancamento.DaConta(data, hora: null, -valor.Value, descricao, contraparte, categoriaBanco: null, identidade);
     }
 }

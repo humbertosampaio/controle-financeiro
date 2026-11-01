@@ -256,17 +256,6 @@ public sealed class ConciliacaoParcelasServiceTests
     }
 
     [Theory, ConciliacaoAutoData]
-    public void Conciliar_Quando_TransacaoDaConta_Deve_IgnorarSemContar(CompraDeTeste compra, TransacoesDeTeste transacoes)
-    {
-        DespesaParcelada despesa = compra.Despesas(compra.Parcela()).Single();
-        Transacao transacao = transacoes.DaConta(compra.Parcela());
-
-        ConciliacaoParcelas result = compra.Conciliar([despesa], [transacao]);
-
-        result.Should().Be(new ConciliacaoParcelas(Vinculadas:0, SemParcela:0));
-    }
-
-    [Theory, ConciliacaoAutoData]
     public void Conciliar_Quando_TransacaoAVista_Deve_IgnorarSemContar(CompraDeTeste compra, VinculoPagamentoServiceTests.SaidaDeTeste saida)
     {
         DespesaParcelada despesa = compra.Despesas(compra.Parcela()).Single();
@@ -326,7 +315,7 @@ public sealed class ConciliacaoParcelasServiceTests
         /// <summary>Por padrão, a parcela 3 de 10: a despesa criada dela tem parcelas pagas antes e pendentes depois.</summary>
         public Lancamento Parcela(int numero = 3, int total = 10, decimal valor = -ValorMenor, DateOnly? data = null, TextoObrigatorio? descricao = null)
         {
-            return Lancamento.Criar(
+            return Lancamento.DoCartao(
                 data ?? _data,
                 hora: null,
                 valor,
@@ -340,7 +329,7 @@ public sealed class ConciliacaoParcelasServiceTests
         /// <summary>Uma despesa por lançamento: repetir a mesma chave cria compras gêmeas.</summary>
         public IReadOnlyList<DespesaParcelada> Despesas(params Lancamento[] lancamentos)
         {
-            IReadOnlyList<Beneficiario> beneficiarios = BeneficiariosResolvidos.Dos(_cartao.IdUsuario, lancamentos, TipoOrigem.Cartao);
+            IReadOnlyList<Beneficiario> beneficiarios = BeneficiariosResolvidos.Dos(_cartao.IdUsuario, lancamentos);
             return DespesaParceladaFactory.CriarDaFatura(_cartao.IdUsuario, beneficiarios, categoriasDoUsuario: [], _cartao, parceladasDoUsuario: [], lancamentos);
         }
 

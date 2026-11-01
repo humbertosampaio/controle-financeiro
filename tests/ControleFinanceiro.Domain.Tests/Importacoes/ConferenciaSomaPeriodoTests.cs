@@ -65,8 +65,8 @@ public sealed class ConferenciaSomaPeriodoTests
         TextoObrigatorio descricao)
     {
         DateOnly depoisDoFim = periodo.Fim.AddDays(1);
-        Lancamento foraDoPeriodo = Lancamento.Criar(
-            depoisDoFim, hora: null, valor, descricao, contraparte: null, parcela: null, categoriaBanco: null, IdentidadeLancamento.Composta(depoisDoFim).ComValor(valor).ComTexto(descricao));
+        Lancamento foraDoPeriodo = Lancamento.DaConta(
+            depoisDoFim, hora: null, valor, descricao, contraparte: null, categoriaBanco: null, IdentidadeLancamento.Composta(depoisDoFim).ComValor(valor).ComTexto(descricao));
         Extrato extrato = Extrato.Criar(
             arquivo.Banco,
             arquivo.TipoConta,
@@ -82,7 +82,7 @@ public sealed class ConferenciaSomaPeriodoTests
 
     private static IReadOnlyList<Transacao> Lote(ContaBancaria conta, ImportacaoArquivo importacao, IReadOnlyList<Lancamento> lancamentos)
     {
-        IReadOnlyList<Beneficiario> beneficiarios = BeneficiariosResolvidos.Dos(conta.IdUsuario, lancamentos, TipoOrigem.Conta);
+        IReadOnlyList<Beneficiario> beneficiarios = BeneficiariosResolvidos.Dos(conta.IdUsuario, lancamentos);
         IReadOnlyList<CategoriaDespesa> categorias = CategoriasResolvidas.Dos(conta.IdUsuario, lancamentos);
         return LoteTransacoesFactory.Criar(conta.IdUsuario, beneficiarios, categorias, conta, importacao, lancamentos).Value;
     }
@@ -116,7 +116,7 @@ public sealed class ConferenciaSomaPeriodoTests
         private static Lancamento NoInicio(PeriodoArquivo periodo, Reais valor, TextoObrigatorio descricao)
         {
             IdentidadeLancamento identidade = IdentidadeLancamento.Composta(periodo.Inicio).ComValor(valor).ComTexto(descricao);
-            return Lancamento.Criar(periodo.Inicio, hora: null, valor, descricao, contraparte: null, parcela: null, categoriaBanco: null, identidade);
+            return Lancamento.DaConta(periodo.Inicio, hora: null, valor, descricao, contraparte: null, categoriaBanco: null, identidade);
         }
     }
 }

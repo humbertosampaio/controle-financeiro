@@ -21,8 +21,8 @@ public static class DespesaParceladaFactory
     /// <param name="lancamentos">Os lançamentos da fatura, na ordem do arquivo.</param>
     /// <returns>As despesas que faltam, na ordem em que as compras aparecem no arquivo.</returns>
     /// <exception cref="ArgumentException">
-    /// Quando o cartão ou um item das listas é de outro usuário, ou quando o beneficiário ou a categoria de uma compra não
-    /// está na lista: a <see cref="LoteTransacoesFactory"/> já conferiu os aliases.
+    /// Quando o cartão ou um item das listas é de outro usuário, quando um lançamento não é de fatura, ou quando o beneficiário
+    /// ou a categoria de uma compra não está na lista: a <see cref="LoteTransacoesFactory"/> já conferiu os aliases.
     /// </exception>
     public static IReadOnlyList<DespesaParcelada> CriarDaFatura(
         IdUsuario idUsuario,
@@ -44,6 +44,9 @@ public static class DespesaParceladaFactory
         if (parceladasDoUsuario.Any(d => d.IdUsuario != idUsuario))
             throw new ArgumentException("A lista traz uma despesa de outro usuário.", nameof(parceladasDoUsuario));
 
+        if (lancamentos.Any(l => l.TipoOrigem != TipoOrigem.Cartao))
+            throw new ArgumentException("A lista traz um lançamento que não é de fatura.", nameof(lancamentos));
+
         return lancamentos
             .Where(EhCompraParcelada)
             .GroupBy(l => new ChaveCompraParcelada(cartao.Id, l.Data, (TextoNormalizado)l.Descricao, l.Parcela!.Total))
@@ -55,9 +58,10 @@ public static class DespesaParceladaFactory
     /// <summary>A linha sem texto de beneficiário fica de fora porque a despesa exige um beneficiário.</summary>
     private static bool EhCompraParcelada(Lancamento lancamento)
     {
-        return lancamento.EhSaida
+        return lancamento.TipoOrigem == TipoOrigem.Cartao
+            && lancamento.EhSaida
             && lancamento.Parcela is not null
-            && Alias.Criar(lancamento.TextoBeneficiario(TipoOrigem.Cartao)).IsSuccess;
+            && Alias.Criar(lancamento.TextoBeneficiario).IsSuccess;
     }
 
     /// <summary>
@@ -101,7 +105,7 @@ public static class DespesaParceladaFactory
 
     private static IdBeneficiario IdBeneficiarioDa(IReadOnlyCollection<Beneficiario> beneficiariosDoUsuario, Lancamento lancamento)
     {
-        Alias alias = Alias.Criar(lancamento.TextoBeneficiario(TipoOrigem.Cartao)).Value;
+        Alias alias = Alias.Criar(lancamento.TextoBeneficiario).Value;
         Beneficiario beneficiario = beneficiariosDoUsuario.FirstOrDefault(b => b.PossuiAlias(alias))
             ?? throw new ArgumentException("O beneficiário de uma compra não está na lista.", nameof(beneficiariosDoUsuario));
 

@@ -22,7 +22,8 @@ public static class LoteTransacoesFactory
     /// <param name="categoriasDoUsuario">Todas as categorias do usuário, e só as dele.</param>
     /// <param name="importacao">A importação do arquivo, da mesma conta.</param>
     /// <exception cref="ArgumentException">
-    /// Quando a importação é de outra origem, ou uma das listas traz um beneficiário ou uma categoria de outro usuário.
+    /// Quando a importação é de outra origem, um lançamento é de outro tipo de origem, ou uma das listas traz um beneficiário
+    /// ou uma categoria de outro usuário.
     /// </exception>
     public static Result<IReadOnlyList<Transacao>, Erro> Criar(
         IdUsuario idUsuario,
@@ -47,7 +48,8 @@ public static class LoteTransacoesFactory
     /// <param name="categoriasDoUsuario">Todas as categorias do usuário, e só as dele.</param>
     /// <param name="importacao">A importação do arquivo, do mesmo cartão.</param>
     /// <exception cref="ArgumentException">
-    /// Quando a importação é de outra origem, ou uma das listas traz um beneficiário ou uma categoria de outro usuário.
+    /// Quando a importação é de outra origem, um lançamento é de outro tipo de origem, ou uma das listas traz um beneficiário
+    /// ou uma categoria de outro usuário.
     /// </exception>
     public static Result<IReadOnlyList<Transacao>, Erro> Criar(
         IdUsuario idUsuario,
@@ -88,8 +90,11 @@ public static class LoteTransacoesFactory
         if (importacao.Origem != origem)
             throw new ArgumentException("A importação é de outra origem.", nameof(importacao));
 
+        if (lancamentos.Any(l => l.TipoOrigem != origem.Tipo))
+            throw new ArgumentException("A lista traz um lançamento de outro tipo de origem.", nameof(lancamentos));
+
         return ConferirIdentificadores(lancamentos)
-            .Bind(() => AliasesBeneficiarioPendentes.Conferir(idUsuario, beneficiariosDoUsuario, lancamentos, origem.Tipo))
+            .Bind(() => AliasesBeneficiarioPendentes.Conferir(idUsuario, beneficiariosDoUsuario, lancamentos))
             .Bind(() => AliasesCategoriaPendentes.Conferir(idUsuario, categoriasDoUsuario, lancamentos))
             .Map(() => CriarTransacoes(idUsuario, banco, origem, importacao, lancamentos));
     }

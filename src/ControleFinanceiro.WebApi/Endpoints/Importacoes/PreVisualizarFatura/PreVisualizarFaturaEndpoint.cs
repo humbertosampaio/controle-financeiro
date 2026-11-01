@@ -86,7 +86,7 @@ public sealed class PreVisualizarFaturaEndpoint : Endpoint<PreVisualizarFaturaRe
         IReadOnlyList<Beneficiario> beneficiarios = await _beneficiarioRepository.ListarAsync(ct);
         IReadOnlyList<CategoriaDespesa> categorias = await _categoriaDespesaRepository.ListarAsync(ct);
         IReadOnlyList<Lancamento> lancamentos = fatura.Lancamentos.Select(l => l.Lancamento).ToArray();
-        IReadOnlyList<Alias> beneficiariosPendentes = AliasesBeneficiarioPendentes.Listar(idUsuario, beneficiarios, lancamentos, TipoOrigem.Cartao);
+        IReadOnlyList<Alias> beneficiariosPendentes = AliasesBeneficiarioPendentes.Listar(idUsuario, beneficiarios, lancamentos);
         IReadOnlyList<Alias> categoriasPendentes = AliasesCategoriaPendentes.Listar(idUsuario, categorias, lancamentos);
 
         return new PreVisualizarFaturaResponse(

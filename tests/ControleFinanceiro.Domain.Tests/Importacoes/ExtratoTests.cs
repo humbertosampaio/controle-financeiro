@@ -58,13 +58,12 @@ public sealed class ExtratoTests
     {
         DateOnly sexta = sabado.AddDays(-1);
         DateOnly segunda = sabado.AddDays(2);
-        Lancamento pix = Lancamento.Criar(
+        Lancamento pix = Lancamento.DaConta(
             sabado,
             pixSabado.Hora,
             pixSabado.Valor,
             pixSabado.Descricao,
             pixSabado.Contraparte,
-            pixSabado.Parcela,
             pixSabado.CategoriaBanco,
             pixSabado.Identidade);
 
