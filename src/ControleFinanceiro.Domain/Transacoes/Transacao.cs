@@ -58,6 +58,12 @@ public sealed class Transacao : AggregateRoot<IdTransacao>, IPertenceAoUsuario
     /// <summary>Verdadeiro quando a transação é uma parcela de uma compra parcelada.</summary>
     public bool EhParcelada => Parcela is not null;
 
+    /// <summary>Verdadeiro quando a transação é uma saída parcelada na fatura de um cartão, a única que pode pagar uma parcela.</summary>
+    public bool EhParcelaPagaNoCartao => EhSaida && EhParcelada && Origem.IdCartao is not null;
+
+    /// <summary>O <see cref="Valor"/> sem o sinal.</summary>
+    public ReaisPositivo ValorAbsoluto => (ReaisPositivo)decimal.Abs(Valor);
+
     /// <summary>O texto do arquivo que diz quem recebeu o dinheiro de uma saída, pela regra do <see cref="Lancamento.TextoBeneficiario"/>.</summary>
     public string? TextoBeneficiario => Lancamento.TextoBeneficiarioDe(EhSaida, Descricao, Contraparte, Origem.Tipo);
 

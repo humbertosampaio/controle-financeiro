@@ -17,6 +17,9 @@ public sealed class ParcelaDespesa : Entity<IdParcelaDespesa>
     public MesReferencia MesReferencia { get; private set; } = null!;
     public Pagamento Pagamento { get; private set; } = null!;
 
+    /// <summary>Verdadeiro quando uma transação pagou a parcela. A que nasceu paga não tem transação.</summary>
+    public bool TemTransacao => Pagamento.IdTransacao is not null;
+
     private ParcelaDespesa()
     {
     }
@@ -52,7 +55,7 @@ public sealed class ParcelaDespesa : Entity<IdParcelaDespesa>
     /// </summary>
     internal UnitResult<Erro> QuitarCom(IdTransacao idTransacao, ReaisPositivo valorEfetivo)
     {
-        if (Pagamento.IdTransacao is not null)
+        if (TemTransacao)
             return ErroDespesaJaPaga.Instancia;
 
         Pagamento = Pagamento.QuitarCom(idTransacao, Pagamento.DataProjetada!.Value, valorEfetivo);

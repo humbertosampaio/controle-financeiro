@@ -22,7 +22,7 @@ public sealed class VinculoPagamentoServiceTests
     [Theory, VinculoAutoData]
     public void Vincular_Quando_SimplesESaidaDeConta_Deve_QuitarNaDataDaTransacao(
         DespesaSimples despesa,
-        Transacoes transacoes,
+        TransacoesDeTeste transacoes,
         SaidaDeTeste saida)
     {
         Transacao transacao = transacoes.DaConta(saida.AVista());
@@ -42,7 +42,7 @@ public sealed class VinculoPagamentoServiceTests
     [Theory, VinculoAutoData]
     public void Vincular_Quando_ValorDiferenteDoProjetado_Deve_RegistrarOValorDaTransacao(
         DespesaSimples despesa,
-        Transacoes transacoes,
+        TransacoesDeTeste transacoes,
         SaidaDeTeste saida)
     {
         ReaisPositivo projetado = despesa.Pagamento.ValorProjetado;
@@ -58,7 +58,7 @@ public sealed class VinculoPagamentoServiceTests
     public void Vincular_Quando_AdiadaESaidaDoMesmoCartao_Deve_QuitarNoVencimentoProjetado(
         [Frozen] Cartao cartao,
         DespesaAdiada despesa,
-        Transacoes transacoes,
+        TransacoesDeTeste transacoes,
         SaidaDeTeste saida)
     {
         Transacao transacao = transacoes.DoCartao(cartao, saida.AVista());
@@ -76,7 +76,7 @@ public sealed class VinculoPagamentoServiceTests
     public void Vincular_Quando_ParcelaDaCompra_Deve_QuitarSoAParcelaDoMesmoNumero(
         [Frozen] Cartao cartao,
         DespesaParcelada despesa,
-        Transacoes transacoes,
+        TransacoesDeTeste transacoes,
         SaidaDeTeste saida)
     {
         Transacao transacao = transacoes.DoCartao(cartao, saida.DaCompra(despesa, numero: 3));
@@ -96,7 +96,7 @@ public sealed class VinculoPagamentoServiceTests
     public void Vincular_Quando_ParcelaNasceuPagaSemTransacao_Deve_AceitarOVinculoEManterOVencimento(
         [Frozen] Cartao cartao,
         DespesaParcelada despesa,
-        Transacoes transacoes,
+        TransacoesDeTeste transacoes,
         SaidaDeTeste saida)
     {
         ParcelaDespesa primeira = despesa.Parcelas[0];
@@ -115,7 +115,7 @@ public sealed class VinculoPagamentoServiceTests
     public void Vincular_Quando_TransacaoJaPagaOutraDespesa_Deve_RetornarErroComADespesa(
         DespesaSimples despesa,
         DespesaSimples outra,
-        Transacoes transacoes,
+        TransacoesDeTeste transacoes,
         SaidaDeTeste saida)
     {
         Transacao transacao = transacoes.DaConta(saida.AVista());
@@ -131,7 +131,7 @@ public sealed class VinculoPagamentoServiceTests
     [Theory, VinculoAutoData]
     public void Vincular_Quando_TransacaoJaPagaEstaDespesa_Deve_RetornarErroComADespesa(
         DespesaSimples despesa,
-        Transacoes transacoes,
+        TransacoesDeTeste transacoes,
         SaidaDeTeste saida)
     {
         Transacao transacao = transacoes.DaConta(saida.AVista());
@@ -147,7 +147,7 @@ public sealed class VinculoPagamentoServiceTests
     [Theory, VinculoAutoData]
     public void Vincular_Quando_DespesaJaQuitadaPorOutraTransacao_Deve_RetornarDespesaJaPaga(
         DespesaSimples despesa,
-        Transacoes transacoes,
+        TransacoesDeTeste transacoes,
         SaidaDeTeste saida,
         SaidaDeTeste outraSaida)
     {
@@ -164,7 +164,7 @@ public sealed class VinculoPagamentoServiceTests
     public void Vincular_Quando_ParcelaJaQuitadaPorOutraTransacao_Deve_RetornarDespesaJaPaga(
         [Frozen] Cartao cartao,
         DespesaParcelada despesa,
-        Transacoes transacoes,
+        TransacoesDeTeste transacoes,
         SaidaDeTeste saida,
         SaidaDeTeste outraSaida)
     {
@@ -183,7 +183,7 @@ public sealed class VinculoPagamentoServiceTests
     public void Vincular_Quando_TransacaoNaoEhSaida_Deve_RetornarErro(
         decimal valor,
         DespesaSimples despesa,
-        Transacoes transacoes,
+        TransacoesDeTeste transacoes,
         SaidaDeTeste saida)
     {
         Transacao transacao = transacoes.DaConta(saida.ComValor(valor));
@@ -197,7 +197,7 @@ public sealed class VinculoPagamentoServiceTests
     public void Vincular_Quando_SimplesComSaidaDeCartao_Deve_RetornarOrigemIncompativel(
         Cartao cartao,
         DespesaSimples despesa,
-        Transacoes transacoes,
+        TransacoesDeTeste transacoes,
         SaidaDeTeste saida)
     {
         UnitResult<Erro> result = VinculoPagamentoService.Vincular(transacoes.DoCartao(cartao, saida.AVista()), despesa, despesaQueUsaATransacao: Maybe<Despesa>.None);
@@ -208,7 +208,7 @@ public sealed class VinculoPagamentoServiceTests
     [Theory, VinculoAutoData]
     public void Vincular_Quando_AdiadaComSaidaDeConta_Deve_RetornarOrigemIncompativel(
         DespesaAdiada despesa,
-        Transacoes transacoes,
+        TransacoesDeTeste transacoes,
         SaidaDeTeste saida)
     {
         UnitResult<Erro> result = VinculoPagamentoService.Vincular(transacoes.DaConta(saida.AVista()), despesa, despesaQueUsaATransacao: Maybe<Despesa>.None);
@@ -220,7 +220,7 @@ public sealed class VinculoPagamentoServiceTests
     public void Vincular_Quando_AdiadaComSaidaDeOutroCartao_Deve_RetornarOrigemIncompativel(
         Cartao outroCartao,
         DespesaAdiada despesa,
-        Transacoes transacoes,
+        TransacoesDeTeste transacoes,
         SaidaDeTeste saida)
     {
         UnitResult<Erro> result = VinculoPagamentoService.Vincular(transacoes.DoCartao(outroCartao, saida.AVista()), despesa, despesaQueUsaATransacao: Maybe<Despesa>.None);
@@ -232,7 +232,7 @@ public sealed class VinculoPagamentoServiceTests
     public void Vincular_Quando_ParcelaDeOutroCartao_Deve_RetornarOrigemIncompativel(
         Cartao outroCartao,
         DespesaParcelada despesa,
-        Transacoes transacoes,
+        TransacoesDeTeste transacoes,
         SaidaDeTeste saida)
     {
         UnitResult<Erro> result = VinculoPagamentoService.Vincular(transacoes.DoCartao(outroCartao, saida.DaCompra(despesa, numero: 3)), despesa, despesaQueUsaATransacao: Maybe<Despesa>.None);
@@ -243,7 +243,7 @@ public sealed class VinculoPagamentoServiceTests
     [Theory, VinculoAutoData]
     public void Vincular_Quando_ParcelaDeContaNaParcelada_Deve_RetornarOrigemIncompativel(
         DespesaParcelada despesa,
-        Transacoes transacoes,
+        TransacoesDeTeste transacoes,
         SaidaDeTeste saida)
     {
         UnitResult<Erro> result = VinculoPagamentoService.Vincular(transacoes.DaConta(saida.DaCompra(despesa, numero: 3)), despesa, despesaQueUsaATransacao: Maybe<Despesa>.None);
@@ -254,7 +254,7 @@ public sealed class VinculoPagamentoServiceTests
     [Theory, VinculoAutoData]
     public void Vincular_Quando_ParcelaNaSimples_Deve_RetornarParcelaIncompativel(
         DespesaSimples despesa,
-        Transacoes transacoes,
+        TransacoesDeTeste transacoes,
         SaidaDeTeste saida)
     {
         Transacao transacao = transacoes.DaConta(saida.ComParcela());
@@ -268,7 +268,7 @@ public sealed class VinculoPagamentoServiceTests
     public void Vincular_Quando_ParcelaNaAdiada_Deve_RetornarParcelaIncompativel(
         [Frozen] Cartao cartao,
         DespesaAdiada despesa,
-        Transacoes transacoes,
+        TransacoesDeTeste transacoes,
         SaidaDeTeste saida)
     {
         Transacao transacao = transacoes.DoCartao(cartao, saida.ComParcela());
@@ -282,7 +282,7 @@ public sealed class VinculoPagamentoServiceTests
     public void Vincular_Quando_SemParcelaNaParcelada_Deve_RetornarParcelaIncompativel(
         [Frozen] Cartao cartao,
         DespesaParcelada despesa,
-        Transacoes transacoes,
+        TransacoesDeTeste transacoes,
         SaidaDeTeste saida)
     {
         UnitResult<Erro> result = VinculoPagamentoService.Vincular(transacoes.DoCartao(cartao, saida.AVista()), despesa, despesaQueUsaATransacao: Maybe<Despesa>.None);
@@ -294,7 +294,7 @@ public sealed class VinculoPagamentoServiceTests
     public void Vincular_Quando_ParcelaDeOutraData_Deve_RetornarParcelaIncompativel(
         [Frozen] Cartao cartao,
         DespesaParcelada despesa,
-        Transacoes transacoes,
+        TransacoesDeTeste transacoes,
         SaidaDeTeste saida)
     {
         Lancamento compra = saida.DaCompra(despesa.DataOcorrencia.AddDays(1), despesa.Descricao, (Parcela)(3, despesa.Parcelas.Count));
@@ -308,7 +308,7 @@ public sealed class VinculoPagamentoServiceTests
     public void Vincular_Quando_ParcelaDeOutraDescricao_Deve_RetornarParcelaIncompativel(
         [Frozen] Cartao cartao,
         DespesaParcelada despesa,
-        Transacoes transacoes,
+        TransacoesDeTeste transacoes,
         SaidaDeTeste saida,
         TextoObrigatorio outraDescricao)
     {
@@ -323,7 +323,7 @@ public sealed class VinculoPagamentoServiceTests
     public void Vincular_Quando_ParcelaDeOutroTotal_Deve_RetornarParcelaIncompativel(
         [Frozen] Cartao cartao,
         DespesaParcelada despesa,
-        Transacoes transacoes,
+        TransacoesDeTeste transacoes,
         SaidaDeTeste saida)
     {
         Lancamento compra = saida.DaCompra(despesa.DataOcorrencia, despesa.Descricao, (Parcela)(3, despesa.Parcelas.Count + 2));
@@ -337,7 +337,7 @@ public sealed class VinculoPagamentoServiceTests
     public void Vincular_Quando_TransacaoDeOutroUsuario_Deve_LancarExcecao(
         DespesaAdiada despesa,
         [Frozen] IdUsuario outroUsuario,
-        Transacoes transacoes,
+        TransacoesDeTeste transacoes,
         SaidaDeTeste saida)
     {
         Transacao transacao = transacoes.DaConta(saida.AVista());
@@ -353,7 +353,7 @@ public sealed class VinculoPagamentoServiceTests
         DespesaAdiada deOutroUsuario,
         [Frozen] IdUsuario idUsuario,
         DespesaSimples despesa,
-        Transacoes transacoes,
+        TransacoesDeTeste transacoes,
         SaidaDeTeste saida)
     {
         deOutroUsuario.IdUsuario.Should().NotBe(idUsuario);
@@ -367,7 +367,7 @@ public sealed class VinculoPagamentoServiceTests
     [Theory, VinculoAutoData]
     public void DesfazerVinculo_Quando_SimplesVinculada_Deve_VoltarParaPendente(
         DespesaSimples despesa,
-        Transacoes transacoes,
+        TransacoesDeTeste transacoes,
         SaidaDeTeste saida)
     {
         Pagamento original = despesa.Pagamento;
@@ -384,7 +384,7 @@ public sealed class VinculoPagamentoServiceTests
     public void DesfazerVinculo_Quando_AdiadaVinculada_Deve_VoltarParaPendente(
         [Frozen] Cartao cartao,
         DespesaAdiada despesa,
-        Transacoes transacoes,
+        TransacoesDeTeste transacoes,
         SaidaDeTeste saida)
     {
         Pagamento original = despesa.Pagamento;
@@ -401,7 +401,7 @@ public sealed class VinculoPagamentoServiceTests
     public void DesfazerVinculo_Quando_ParcelaVinculada_Deve_VoltarSoElaParaPendente(
         [Frozen] Cartao cartao,
         DespesaParcelada despesa,
-        Transacoes transacoes,
+        TransacoesDeTeste transacoes,
         SaidaDeTeste saida)
     {
         Pagamento[] originais = despesa.Parcelas.Select(p => p.Pagamento).ToArray();
@@ -418,7 +418,7 @@ public sealed class VinculoPagamentoServiceTests
     public void DesfazerVinculo_Quando_ParcelaNasceuPaga_Deve_LevarAPendente(
         [Frozen] Cartao cartao,
         DespesaParcelada despesa,
-        Transacoes transacoes,
+        TransacoesDeTeste transacoes,
         SaidaDeTeste saida)
     {
         Transacao transacao = transacoes.DoCartao(cartao, saida.DaCompra(despesa, numero: 1));
@@ -453,7 +453,7 @@ public sealed class VinculoPagamentoServiceTests
     [Theory, VinculoAutoData]
     public void DesfazerVinculo_Quando_InteiraPagaPorOutraTransacao_Deve_RetornarNaoVinculadaEContinuarPaga(
         DespesaSimples despesa,
-        Transacoes transacoes,
+        TransacoesDeTeste transacoes,
         SaidaDeTeste saida,
         IdTransacao outraTransacao)
     {
@@ -470,7 +470,7 @@ public sealed class VinculoPagamentoServiceTests
     public void DesfazerVinculo_Quando_ParcelaPagaPorOutraTransacao_Deve_RetornarNaoVinculadaEContinuarPaga(
         [Frozen] Cartao cartao,
         DespesaParcelada despesa,
-        Transacoes transacoes,
+        TransacoesDeTeste transacoes,
         SaidaDeTeste saida,
         IdTransacao outraTransacao)
     {
@@ -486,7 +486,7 @@ public sealed class VinculoPagamentoServiceTests
     [Theory, VinculoAutoData]
     public void Vincular_Quando_InteiraNasceuPagaSemTransacao_Deve_AceitarOVinculo(
         DespesaSimples modelo,
-        Transacoes transacoes,
+        TransacoesDeTeste transacoes,
         SaidaDeTeste saida)
     {
         // O fixture entrega a despesa pendente: aqui a mesma despesa nasce paga, pelo Criar.
@@ -534,39 +534,6 @@ public sealed class VinculoPagamentoServiceTests
 
         private Lancamento Criar(DateOnly data, decimal valor, TextoObrigatorio descricao, Parcela? parcela) =>
             Lancamento.Criar(data, hora: null, valor, descricao, contraparte: null, parcela, categoriaBanco: null, _identidade);
-    }
-
-    /// <summary>Cria as transações pela <see cref="LoteTransacoesFactory"/>, a única entrada, do usuário que o fixture der.</summary>
-    public sealed class Transacoes
-    {
-        private readonly IdUsuario _idUsuario;
-        private readonly ContaBancaria _conta;
-        private readonly LayoutArquivoImportacao _layout;
-        private readonly PeriodoArquivo _periodo;
-        private readonly DateTimeOffset _importadaEm;
-
-        public Transacoes(IdUsuario idUsuario, ContaBancaria conta, LayoutArquivoImportacao layout, PeriodoArquivo periodo, DateTimeOffset importadaEm)
-        {
-            _idUsuario = idUsuario;
-            _conta = conta;
-            _layout = layout;
-            _periodo = periodo;
-            _importadaEm = importadaEm;
-        }
-
-        public Transacao DaConta(Lancamento lancamento)
-        {
-            IReadOnlyList<Beneficiario> beneficiarios = BeneficiariosResolvidos.Dos(_idUsuario, [lancamento], TipoOrigem.Conta);
-            ImportacaoArquivo importacao = ImportacaoArquivoFactory.Registrar(_conta, _layout, _periodo, lidas: 1, _importadaEm);
-            return LoteTransacoesFactory.Criar(_idUsuario, beneficiarios, categoriasDoUsuario: [], _conta, importacao, [lancamento]).Value.Single();
-        }
-
-        public Transacao DoCartao(Cartao cartao, Lancamento lancamento)
-        {
-            IReadOnlyList<Beneficiario> beneficiarios = BeneficiariosResolvidos.Dos(_idUsuario, [lancamento], TipoOrigem.Cartao);
-            ImportacaoArquivo importacao = ImportacaoArquivoFactory.Registrar(cartao, _layout, _periodo, lidas: 1, _importadaEm);
-            return LoteTransacoesFactory.Criar(_idUsuario, beneficiarios, categoriasDoUsuario: [], cartao, importacao, [lancamento]).Value.Single();
-        }
     }
 
     /// <summary>
