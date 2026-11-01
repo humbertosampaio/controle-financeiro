@@ -38,6 +38,7 @@ O build já quebra em parte das regras (IDE0021 em construtor, `TreatWarningsAsE
 5. **Testes com AutoFixture**, conforme o guia:
    - o que o teste não verifica vem do AutoFixture; objeto montado no corpo do teste quando poderia vir como parâmetro é achado;
    - parâmetro que só serve para montar outro objeto, sem aparecer no assert nem decidir o cenário, é achado BAIXO: o teste pede o objeto pronto e muda só o que o caso exige, derivando os valores dele (`new(despesa.DataOcorrencia, despesa.Descricao)`). Parâmetro lido pelo teste como parte do cenário ou do que se verifica, inclusive `[Frozen]`, não é achado;
+   - montagem que esconde o cenário é achado BAIXO, com o critério da legibilidade (fácil entender o cenário e o que cada variável representa): `Register` que monta entidade do domínio pede generator em `Tests.Shared`, como o `DespesaParceladaGenerator`, salvo o `Register` curto que só escolhe a variante do cenário da classe, como o `ImportacaoDoCartaoAutoDataAttribute`; helper que recebe e repassa os campos de um objeto pede um tipo; mais de um `Register` num AutoData privado pede reavaliação. A customização de request da integração, que monta o DTO a partir da entidade, não é achado;
    - `[Frozen]` em vez de `fixture.Inject` sempre que der, e o parâmetro congelado é lido pelo teste;
    - sem `[Frozen] T _` que só existe para congelar;
    - o atributo mais simples que dê conta (`[AutoData]` ou `[InlineData]` quando nenhuma customização do domínio é usada);

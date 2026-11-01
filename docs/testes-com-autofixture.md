@@ -65,6 +65,14 @@ Lancamento lancamento = new(despesa.DataOcorrencia.AddDays(1), despesa.Descricao
 
 Parâmetro lido pelo teste, inclusive `[Frozen]` lido no arrange ou no assert, passa no critério: ele decide o cenário ou é o que se verifica.
 
+### Sinais de que o teste precisa de outra montagem
+
+Já decidido que o teste tem valor, o critério é a legibilidade: deve ser fácil entender o cenário e o que cada variável representa. Um AutoData privado declara só o cenário da classe, como congelar o usuário ou fixar a parcela. Um `Register` grande, com vários `fixture.Create<T>`, não deixa claro o que se quer representar. Três sinais pedem outra montagem:
+
+- **`Register` que monta entidade do domínio pede um generator compartilhado** em `Tests.Shared`, como o `DespesaParceladaGenerator`: outros testes vão pedir a mesma entidade, e o `[Frozen]` chega até ela. Fica no atributo o `Register` curto que só escolhe a variante do cenário da classe, como o `ImportacaoDoCartaoAutoDataAttribute`, que troca a conta pelo cartão.
+- **Helper que recebe e repassa os campos de um objeto pede um tipo.** `NovoLancamento(saida.Data, saida.Valor, saida.Identidade)` (ilustrativo) diz que esses campos andam juntos: eles viram um tipo de teste, montado pelo construtor, e o teste passa a pedir esse tipo. Se o tipo só monta cenários, ele fica nos testes, e não no domínio.
+- **Mais de um `Register` num AutoData privado pede reavaliação.** Antes de seguir, veja se cada um deles não é um dos casos acima.
+
 ### Use o atributo mais simples que dê conta
 
 `[DomainAutoData]` instancia e aplica todas as customizações do domínio a cada caso. Quando o teste não precisa de nenhuma delas, use o `[AutoData]` ou o `[InlineAutoData]` do `AutoFixture.Xunit2`, e o `[InlineData]` do xUnit quando nada for gerado.
