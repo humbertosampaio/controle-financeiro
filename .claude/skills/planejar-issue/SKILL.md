@@ -31,6 +31,7 @@ Use o agente `planejador` com o número e o resumo da issue. Revise o que ele de
 - cita arquivos reais do repositório?
 - a seção de privacidade diz o que sai da máquina?
 - cada passo da ordem de execução é verificável e vira um commit semântico?
+- com serviço de domínio novo, a tabela de arquivos (e a seção "Arquivos" da sub-issue) lista os membros novos nas entidades e nos value objects, por nome, e não só o arquivo do serviço? O item 9 do checklist do `docs/padroes-de-dominio.md` está respondido?
 
 ## 3. Mostrar e esperar aprovação
 

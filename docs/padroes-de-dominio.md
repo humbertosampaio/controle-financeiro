@@ -43,6 +43,21 @@ Uma regra que depende de mais de um agregado, como "um cartão por banco e final
 - **Um agregado não recebe agregado de outro tipo nos próprios métodos.** A regra que precisa dos dois vai para a factory, que passa ao agregado só o id. A `DespesaRecorrente.Criar` recebe o `IdCartao`; a `DespesaRecorrenteFactory` recebe o `Cartao` e confere que ele é do usuário. Receber uma instância do mesmo tipo é aceito, como a `ImportacaoArquivo.PeriodoNaoImportado`, que lê a importação anterior da mesma origem.
 - Um parâmetro que às vezes é ignorado esconde a regra: prefira uma sobrecarga por caso, com o nome do caso (`GerarComPagamentoImediato` e `GerarComPagamentoAdiado`).
 
+**O serviço de domínio só orquestra.** Ele fica com o que depende de mais de um agregado e pergunta o resto a quem tem os dados:
+
+- Pergunta sobre um único agregado (condição sobre os campos dele, busca nas entidades internas, valor derivado) mora no agregado, ou na entidade interna ou no value object dele.
+- Conceito composto usado como chave vira tipo com nome.
+- Algoritmo longo vai para um tipo próprio, que o serviço chama.
+
+Sinais de que a lógica está no lugar errado, para conferir em cada método do serviço:
+
+- encadeamento que atravessa o agregado, como `d.Parcelas.First(p => p.Numero == n).Pagamento.Valor`;
+- condição com vários campos de uma só entidade, como `t.Parcela != null && t.Origem.IdCartao != null`;
+- tupla em `GroupBy`, como `GroupBy(t => (t.Descricao, t.Parcela.Total))`;
+- o mesmo cálculo repetido em dois serviços.
+
+Exemplo: a conciliação das parcelas da fatura (#116). O serviço confere o dono das listas, separa as candidatas, agrupa e vincula; se a transação é parcela paga no cartão e se a despesa é daquela compra são perguntas à transação e à despesa parcelada, a chave da compra é um tipo com nome e o emparelhamento é um tipo próprio. Um análogo que ainda concentra essa lógica não é motivo para repeti-la.
+
 Concorrência: a unicidade garantida pela factory tem um índice único no banco como rede. Duas requisições ao mesmo tempo dão 500 na segunda, e isso é aceito até haver motivo para tratar. A exceção é a `DespesaRecorrente` repetida (mesmo beneficiário e mesma descrição, sem contar caixa, acentos e espaços repetidos): só a factory a recusa, sem índice, e duas requisições ao mesmo tempo podem gravar as duas. O mesmo vale para a `DespesaParcelada` da mesma compra, recusada só pela `DespesaParceladaFactory`, porque a chave depende de texto normalizado, que não é coluna.
 
 O vínculo entre transação e despesa tem um índice único por tabela (`despesas` e `parcelas_despesa`), e não um só entre as duas. Eles bastam porque os conjuntos são disjuntos: transação com parcela só paga parcela, e transação sem parcela só paga despesa inteira, então o mesmo id não aparece nas duas tabelas por um caminho válido. Quem recusa a transação já usada é o `VinculoPagamentoService`.
@@ -108,3 +123,4 @@ Responda no plano, para cada conceito novo ou alterado:
 6. Que falhas são situações de negócio com nome próprio, e quais são entrada inválida? (seção 5)
 7. Que primitivos com regra viram value object, e em que pasta? (seção 7)
 8. Como fica a FK entre os agregados? (seção 8)
+9. Para cada método privado do serviço planejado: ele lê dados de um agregado só? Se lê, por que não mora lá? (seção 3)
