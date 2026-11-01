@@ -1,6 +1,5 @@
 using ControleFinanceiro.Domain.Despesas;
 using ControleFinanceiro.Domain.Shared;
-using ControleFinanceiro.Domain.Shared.ValueObjects;
 using ControleFinanceiro.Domain.Transacoes;
 
 namespace ControleFinanceiro.Domain.Services;
@@ -47,7 +46,7 @@ public static class VinculoPagamentoService
         if (transacao.Origem.Tipo != TipoOrigem.Conta)
             return ErroOrigemIncompativelComDespesa.Instancia;
 
-        return simples.QuitarCom(transacao.Id, transacao.Data, ValorEfetivo(transacao));
+        return simples.QuitarCom(transacao.Id, transacao.Data, transacao.ValorAbsoluto);
     }
 
     /// <remarks>A data efetiva é o vencimento, porque a data da transação é a da compra, e não a do pagamento.</remarks>
@@ -59,7 +58,7 @@ public static class VinculoPagamentoService
         if (transacao.Origem.IdCartao != adiada.IdCartao)
             return ErroOrigemIncompativelComDespesa.Instancia;
 
-        return adiada.QuitarCom(transacao.Id, adiada.Pagamento.DataProjetada!.Value, ValorEfetivo(transacao));
+        return adiada.QuitarCom(transacao.Id, adiada.Pagamento.DataProjetada!.Value, transacao.ValorAbsoluto);
     }
 
     /// <remarks>O mês da parcela não entra na conferência, para um fechamento deslocado por feriado não impedir o vínculo.</remarks>
@@ -71,11 +70,9 @@ public static class VinculoPagamentoService
         if (transacao.Origem.IdCartao != parcelada.IdCartao)
             return ErroOrigemIncompativelComDespesa.Instancia;
 
-        if (!parcelada.EhDaCompra(new ChaveCompraParcelada(parcelada.IdCartao, transacao.Data, (TextoNormalizado)transacao.Descricao, parcela.Total)))
+        if (!parcelada.EhDaCompra(ChaveCompraParcelada.DaTransacao(transacao)))
             return ErroParcelaIncompativelComDespesa.Instancia;
 
-        return parcelada.QuitarParcela(parcela, transacao.Id, ValorEfetivo(transacao));
+        return parcelada.QuitarParcela(parcela, transacao.Id, transacao.ValorAbsoluto);
     }
-
-    private static ReaisPositivo ValorEfetivo(Transacao transacao) => (ReaisPositivo)decimal.Abs(transacao.Valor);
 }

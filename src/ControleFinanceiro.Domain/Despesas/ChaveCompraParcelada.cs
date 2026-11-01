@@ -1,5 +1,6 @@
 using ControleFinanceiro.Domain.Cartoes;
 using ControleFinanceiro.Domain.Shared.ValueObjects;
+using ControleFinanceiro.Domain.Transacoes;
 
 namespace ControleFinanceiro.Domain.Despesas;
 
@@ -21,6 +22,10 @@ public sealed class ChaveCompraParcelada : ValueObject
         Descricao = descricao;
         TotalParcelas = totalParcelas;
     }
+
+    /// <param name="transacao">Uma transação parcelada no cartão, o que quem chama já conferiu.</param>
+    internal static ChaveCompraParcelada DaTransacao(Transacao transacao) =>
+        new(transacao.Origem.IdCartao!.Value, transacao.Data, (TextoNormalizado)transacao.Descricao, transacao.Parcela!.Total);
 
     protected override IEnumerable<object?> GetEqualityComponents()
     {

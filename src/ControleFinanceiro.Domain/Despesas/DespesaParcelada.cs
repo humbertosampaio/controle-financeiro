@@ -15,6 +15,10 @@ public sealed class DespesaParcelada : Despesa
     public IdCartao IdCartao { get; private set; }
     public IReadOnlyList<ParcelaDespesa> Parcelas => _parcelas.AsReadOnly();
 
+    /// <summary>As transações que pagaram alguma parcela.</summary>
+    public IEnumerable<IdTransacao> TransacoesVinculadas =>
+        _parcelas.Select(p => p.Pagamento.IdTransacao).OfType<IdTransacao>();
+
     private DespesaParcelada()
     {
     }
@@ -87,13 +91,16 @@ public sealed class DespesaParcelada : Despesa
 
     public Maybe<ParcelaDespesa> ParcelaDoMes(MesReferencia mesReferencia) => _parcelas.TryFirst(p => p.MesReferencia == mesReferencia);
 
+    /// <param name="numero">Um número até o total de parcelas da compra.</param>
+    internal ParcelaDespesa ParcelaNumero(int numero) => _parcelas.First(p => p.NumeroParcela == numero);
+
     public bool EhDaCompra(ChaveCompraParcelada chave) =>
         chave == new ChaveCompraParcelada(IdCartao, DataOcorrencia, (TextoNormalizado)Descricao, _parcelas.Count);
 
     /// <summary>Interno porque só o <see cref="Services.VinculoPagamentoService"/> confere que a transação é desta compra.</summary>
     /// <param name="parcela">A parcela como o banco a informou, de uma compra com o mesmo total.</param>
     internal UnitResult<Erro> QuitarParcela(Parcela parcela, IdTransacao idTransacao, ReaisPositivo valorEfetivo) =>
-        _parcelas.First(p => p.NumeroParcela == parcela.Numero).QuitarCom(idTransacao, valorEfetivo);
+        ParcelaNumero(parcela.Numero).QuitarCom(idTransacao, valorEfetivo);
 
     public override UnitResult<Erro> DesfazerVinculo(IdTransacao idTransacao)
     {

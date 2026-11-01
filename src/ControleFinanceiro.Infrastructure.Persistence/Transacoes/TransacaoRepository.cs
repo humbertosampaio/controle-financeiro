@@ -23,6 +23,9 @@ internal sealed class TransacaoRepository : ITransacaoRepository
     public async Task<Maybe<Transacao>> ObterAsync(IdTransacao idTransacao, CancellationToken cancellationToken) =>
         await _dbSet.FindAsync([idTransacao], cancellationToken);
 
+    public async Task<IReadOnlyList<Transacao>> ListarParceladasAsync(CancellationToken cancellationToken) =>
+        await _dbSet.Where(t => t.Parcela != null).ToListAsync(cancellationToken);
+
     public async Task<IReadOnlyList<Transacao>> AdicionarNovasAsync(IEnumerable<Transacao> transacoes, CancellationToken cancellationToken)
     {
         List<Transacao> lote = transacoes.ToList();
