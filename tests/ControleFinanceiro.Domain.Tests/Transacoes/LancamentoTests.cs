@@ -7,6 +7,8 @@ namespace ControleFinanceiro.Domain.Tests.Transacoes;
 
 public sealed class LancamentoTests
 {
+    private const string TextoQueNormalizaParaVazio = "\u0301";
+
     [Theory]
     [InlineDomainAutoData(null)]
     [InlineDomainAutoData("")]
@@ -232,6 +234,125 @@ public sealed class LancamentoTests
     }
 
     [Theory, DomainAutoData]
+    public void AliasTextoBeneficiario_Quando_SaidaNoCartao_Deve_RetornarOAliasDaDescricao(Lancamento lancamento, ReaisPositivo valor)
+    {
+        Lancamento compra = NoCartao(lancamento, -valor.Value);
+
+        compra.AliasTextoBeneficiario.Should().Be((Alias)lancamento.Descricao.Value);
+    }
+
+    [Theory, DomainAutoData]
+    public void AliasTextoBeneficiario_Quando_SaidaNaConta_Deve_RetornarOAliasDaContraparte(Lancamento lancamento, ReaisPositivo valor, string contraparte)
+    {
+        Lancamento saida = NaConta(lancamento, -valor.Value, contraparte: contraparte);
+
+        saida.AliasTextoBeneficiario.Should().Be((Alias)contraparte);
+    }
+
+    [Theory, DomainAutoData]
+    public void AliasTextoBeneficiario_Quando_SaidaNaContaSemContraparte_Deve_RetornarNulo(Lancamento lancamento, ReaisPositivo valor)
+    {
+        Lancamento boleto = NaConta(lancamento, -valor.Value);
+
+        boleto.AliasTextoBeneficiario.Should().BeNull();
+    }
+
+    [Theory, DomainAutoData]
+    public void AliasTextoBeneficiario_Quando_Entrada_Deve_RetornarNulo(Lancamento lancamento, ReaisPositivo valor)
+    {
+        Lancamento entrada = NoCartao(lancamento, valor);
+
+        entrada.AliasTextoBeneficiario.Should().BeNull();
+    }
+
+    [Theory, DomainAutoData]
+    public void AliasTextoBeneficiario_Quando_ValorZero_Deve_RetornarNulo(Lancamento lancamento)
+    {
+        Lancamento zerado = NoCartao(lancamento, valor: 0m);
+
+        zerado.AliasTextoBeneficiario.Should().BeNull();
+    }
+
+    [Theory, DomainAutoData]
+    public void AliasTextoBeneficiario_Quando_DescricaoNormalizaParaVazio_Deve_RetornarNulo(Lancamento lancamento, ReaisPositivo valor)
+    {
+        Lancamento compra = NoCartao(lancamento, -valor.Value, descricao: (TextoObrigatorio)TextoQueNormalizaParaVazio);
+
+        compra.AliasTextoBeneficiario.Should().BeNull();
+    }
+
+    [Theory]
+    [InlineDomainAutoData(-10)]
+    [InlineDomainAutoData(10)]
+    public void AliasCategoriaBanco_Quando_TemCategoria_Deve_RetornarOAliasEmSaidaEEntrada(decimal valor, Lancamento lancamento, string categoriaBanco)
+    {
+        Lancamento comCategoria = NoCartao(lancamento, valor, categoriaBanco: categoriaBanco);
+
+        comCategoria.AliasCategoriaBanco.Should().Be((Alias)categoriaBanco);
+    }
+
+    [Theory, DomainAutoData]
+    public void AliasCategoriaBanco_Quando_SemCategoria_Deve_RetornarNulo(Lancamento lancamento)
+    {
+        Lancamento semCategoria = NoCartao(lancamento, lancamento.Valor);
+
+        semCategoria.AliasCategoriaBanco.Should().BeNull();
+    }
+
+    [Theory, DomainAutoData]
+    public void AliasCategoriaBanco_Quando_TextoNormalizaParaVazio_Deve_RetornarNulo(Lancamento lancamento)
+    {
+        Lancamento comCategoria = NoCartao(lancamento, lancamento.Valor, categoriaBanco: TextoQueNormalizaParaVazio);
+
+        comCategoria.AliasCategoriaBanco.Should().BeNull();
+    }
+
+    [Theory, DomainAutoData]
+    public void EhCompraParcelada_Quando_SaidaComParcelaNaFatura_Deve_SerVerdadeiro(Lancamento lancamento, ReaisPositivo valor, Parcela parcela)
+    {
+        Lancamento compra = NoCartao(lancamento, -valor.Value, parcela: parcela);
+
+        compra.EhCompraParcelada.Should().BeTrue();
+    }
+
+    [Theory, DomainAutoData]
+    public void EhCompraParcelada_Quando_AVista_Deve_SerFalso(Lancamento lancamento, ReaisPositivo valor)
+    {
+        Lancamento compra = NoCartao(lancamento, -valor.Value);
+
+        compra.EhCompraParcelada.Should().BeFalse();
+    }
+
+    [Theory]
+    [InlineDomainAutoData(10)]
+    [InlineDomainAutoData(0)]
+    public void EhCompraParcelada_Quando_NaoEhSaida_Deve_SerFalso(decimal valor, Lancamento lancamento, Parcela parcela)
+    {
+        Lancamento naoSaida = NoCartao(lancamento, valor, parcela: parcela);
+
+        naoSaida.EhCompraParcelada.Should().BeFalse();
+    }
+
+    [Theory, DomainAutoData]
+    public void EhCompraParcelada_Quando_DescricaoNormalizaParaVazio_Deve_SerFalso(Lancamento lancamento, ReaisPositivo valor, Parcela parcela)
+    {
+        Lancamento compra = NoCartao(lancamento, -valor.Value, descricao: (TextoObrigatorio)TextoQueNormalizaParaVazio, parcela: parcela);
+
+        compra.EhCompraParcelada.Should().BeFalse();
+    }
+
+    [Theory]
+    [InlineDomainAutoData(-10.5, 10.5)]
+    [InlineDomainAutoData(10.5, 10.5)]
+    [InlineDomainAutoData(0, 0)]
+    public void ValorAbsoluto_Deve_SerOValorSemOSinal(decimal valor, decimal esperado, Lancamento lancamento)
+    {
+        Lancamento result = NoCartao(lancamento, valor);
+
+        result.ValorAbsoluto.Should().Be((ReaisPositivo)esperado);
+    }
+
+    [Theory, DomainAutoData]
     public void DaConta_Deve_TerOTipoDeOrigemConta(DateOnly data, Reais valor, TextoObrigatorio descricao, IdentidadeLancamento identidade)
     {
         Lancamento result = Lancamento.DaConta(data, hora: null, valor, descricao, contraparte: null, categoriaBanco: null, identidade);
@@ -255,4 +376,20 @@ public sealed class LancamentoTests
         noCartao.Should().NotBe(lancamento);
     }
 
+    /// <summary>A linha de fatura com o valor pedido e, além da descrição, só os campos opcionais que o caso informa.</summary>
+    private static Lancamento NoCartao(
+        Lancamento lancamento,
+        Reais valor,
+        TextoObrigatorio? descricao = null,
+        Parcela? parcela = null,
+        string? categoriaBanco = null)
+    {
+        return Lancamento.DoCartao(lancamento.Data, lancamento.Hora, valor, descricao ?? lancamento.Descricao, contraparte: null, parcela, categoriaBanco, lancamento.Identidade);
+    }
+
+    /// <summary>A linha de extrato com o valor pedido e só os campos opcionais que o caso informa.</summary>
+    private static Lancamento NaConta(Lancamento lancamento, Reais valor, string? contraparte = null)
+    {
+        return Lancamento.DaConta(lancamento.Data, lancamento.Hora, valor, lancamento.Descricao, contraparte, categoriaBanco: null, lancamento.Identidade);
+    }
 }

@@ -29,9 +29,8 @@ public static class AliasesBeneficiarioPendentes
             throw new ArgumentException("A lista traz um beneficiário de outro usuário.", nameof(beneficiariosDoUsuario));
 
         return lancamentos
-            .Select(l => Alias.Criar(l.TextoBeneficiario))
-            .Where(alias => alias.IsSuccess)
-            .Select(alias => alias.Value)
+            .Select(l => l.AliasTextoBeneficiario)
+            .OfType<Alias>()
             .Distinct()
             .Where(alias => beneficiariosDoUsuario.All(b => !b.PossuiAlias(alias)))
             .ToList();

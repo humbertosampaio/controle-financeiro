@@ -48,20 +48,11 @@ public static class DespesaParceladaFactory
             throw new ArgumentException("A lista traz um lançamento que não é de fatura.", nameof(lancamentos));
 
         return lancamentos
-            .Where(EhCompraParcelada)
+            .Where(l => l.EhCompraParcelada)
             .GroupBy(l => new ChaveCompraParcelada(cartao.Id, l.Data, (TextoNormalizado)l.Descricao, l.Parcela!.Total))
             .SelectMany(compra => LinhasSemDespesa(compra, compra.Key, parceladasDoUsuario))
             .Select(lancamento => Criar(idUsuario, beneficiariosDoUsuario, categoriasDoUsuario, cartao, lancamento))
             .ToArray();
-    }
-
-    /// <summary>A linha sem texto de beneficiário fica de fora porque a despesa exige um beneficiário.</summary>
-    private static bool EhCompraParcelada(Lancamento lancamento)
-    {
-        return lancamento.TipoOrigem == TipoOrigem.Cartao
-            && lancamento.EhSaida
-            && lancamento.Parcela is not null
-            && Alias.Criar(lancamento.TextoBeneficiario).IsSuccess;
     }
 
     /// <summary>
@@ -96,7 +87,7 @@ public static class DespesaParceladaFactory
             lancamento.Descricao,
             IdCategoriaDa(categoriasDoUsuario, lancamento),
             lancamento.Data,
-            (ReaisPositivo)decimal.Abs(lancamento.Valor),
+            lancamento.ValorAbsoluto,
             cartao.Id,
             cartao.MesVencimento(lancamento.Data),
             cartao.DiaVencimento,
@@ -105,7 +96,7 @@ public static class DespesaParceladaFactory
 
     private static IdBeneficiario IdBeneficiarioDa(IReadOnlyCollection<Beneficiario> beneficiariosDoUsuario, Lancamento lancamento)
     {
-        Alias alias = Alias.Criar(lancamento.TextoBeneficiario).Value;
+        Alias alias = lancamento.AliasTextoBeneficiario!;
         Beneficiario beneficiario = beneficiariosDoUsuario.FirstOrDefault(b => b.PossuiAlias(alias))
             ?? throw new ArgumentException("O beneficiário de uma compra não está na lista.", nameof(beneficiariosDoUsuario));
 
@@ -115,11 +106,10 @@ public static class DespesaParceladaFactory
     /// <returns>Nulo quando o banco não dá categoria à compra.</returns>
     private static IdCategoriaDespesa? IdCategoriaDa(IReadOnlyCollection<CategoriaDespesa> categoriasDoUsuario, Lancamento lancamento)
     {
-        Result<Alias> alias = Alias.Criar(lancamento.CategoriaBanco);
-        if (alias.IsFailure)
+        if (lancamento.AliasCategoriaBanco is not Alias alias)
             return null;
 
-        CategoriaDespesa categoria = categoriasDoUsuario.FirstOrDefault(c => c.PossuiAlias(alias.Value))
+        CategoriaDespesa categoria = categoriasDoUsuario.FirstOrDefault(c => c.PossuiAlias(alias))
             ?? throw new ArgumentException("A categoria de uma compra não está na lista.", nameof(categoriasDoUsuario));
 
         return categoria.Id;

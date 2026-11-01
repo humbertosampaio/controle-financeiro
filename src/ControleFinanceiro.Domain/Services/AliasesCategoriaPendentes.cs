@@ -29,9 +29,8 @@ public static class AliasesCategoriaPendentes
             throw new ArgumentException("A lista traz uma categoria de outro usuário.", nameof(categoriasDoUsuario));
 
         return lancamentos
-            .Select(l => Alias.Criar(l.CategoriaBanco))
-            .Where(alias => alias.IsSuccess)
-            .Select(alias => alias.Value)
+            .Select(l => l.AliasCategoriaBanco)
+            .OfType<Alias>()
             .Distinct()
             .Where(alias => categoriasDoUsuario.All(c => !c.PossuiAlias(alias)))
             .ToList();
