@@ -113,6 +113,56 @@ public sealed class DespesaParceladaTests
         result.HasNoValue.Should().BeTrue();
     }
 
+    [Theory, DomainAutoData]
+    public void EhDaCompra_Quando_MesmaChave_Deve_RetornarTrueSemContarCaixaEAcentos([Frozen] IdUsuario idUsuario, Cartao cartao)
+    {
+        DespesaParcelada despesa = Parcelar(idUsuario, cartao, numero: 3, total: 10);
+
+        ChaveCompraParcelada chave = new(cartao.Id, _dataOcorrencia, (TextoNormalizado)(TextoObrigatorio)"Lója de  Exemplo", totalParcelas: 10);
+
+        despesa.EhDaCompra(chave).Should().BeTrue();
+    }
+
+    [Theory, DomainAutoData]
+    public void EhDaCompra_Quando_OutroCartao_Deve_RetornarFalse([Frozen] IdUsuario idUsuario, Cartao cartao, IdCartao outroCartao)
+    {
+        DespesaParcelada despesa = Parcelar(idUsuario, cartao, numero: 3, total: 10);
+
+        ChaveCompraParcelada chave = new(outroCartao, _dataOcorrencia, (TextoNormalizado)despesa.Descricao, totalParcelas: 10);
+
+        despesa.EhDaCompra(chave).Should().BeFalse();
+    }
+
+    [Theory, DomainAutoData]
+    public void EhDaCompra_Quando_OutraData_Deve_RetornarFalse([Frozen] IdUsuario idUsuario, Cartao cartao)
+    {
+        DespesaParcelada despesa = Parcelar(idUsuario, cartao, numero: 3, total: 10);
+
+        ChaveCompraParcelada chave = new(cartao.Id, _dataOcorrencia.AddDays(1), (TextoNormalizado)despesa.Descricao, totalParcelas: 10);
+
+        despesa.EhDaCompra(chave).Should().BeFalse();
+    }
+
+    [Theory, DomainAutoData]
+    public void EhDaCompra_Quando_OutraDescricao_Deve_RetornarFalse([Frozen] IdUsuario idUsuario, Cartao cartao, TextoObrigatorio outraDescricao)
+    {
+        DespesaParcelada despesa = Parcelar(idUsuario, cartao, numero: 3, total: 10);
+
+        ChaveCompraParcelada chave = new(cartao.Id, _dataOcorrencia, (TextoNormalizado)outraDescricao, totalParcelas: 10);
+
+        despesa.EhDaCompra(chave).Should().BeFalse();
+    }
+
+    [Theory, DomainAutoData]
+    public void EhDaCompra_Quando_OutroTotal_Deve_RetornarFalse([Frozen] IdUsuario idUsuario, Cartao cartao)
+    {
+        DespesaParcelada despesa = Parcelar(idUsuario, cartao, numero: 3, total: 10);
+
+        ChaveCompraParcelada chave = new(cartao.Id, _dataOcorrencia, (TextoNormalizado)despesa.Descricao, totalParcelas: 12);
+
+        despesa.EhDaCompra(chave).Should().BeFalse();
+    }
+
     private static DespesaParcelada Parcelar(IdUsuario idUsuario, Cartao cartao, int numero, int total)
     {
         Lancamento compra = Lancamento.Criar(

@@ -1,6 +1,7 @@
 using ControleFinanceiro.Domain.Beneficiarios;
 using ControleFinanceiro.Domain.Cartoes;
 using ControleFinanceiro.Domain.Categorias;
+using ControleFinanceiro.Domain.Shared;
 using ControleFinanceiro.Domain.Shared.ValueObjects;
 using ControleFinanceiro.Domain.Transacoes;
 using ControleFinanceiro.Domain.Usuarios;
@@ -85,4 +86,22 @@ public sealed class DespesaParcelada : Despesa
     }
 
     public Maybe<ParcelaDespesa> ParcelaDoMes(MesReferencia mesReferencia) => _parcelas.TryFirst(p => p.MesReferencia == mesReferencia);
+
+    public bool EhDaCompra(ChaveCompraParcelada chave) =>
+        chave == new ChaveCompraParcelada(IdCartao, DataOcorrencia, (TextoNormalizado)Descricao, _parcelas.Count);
+
+    /// <summary>Interno porque só o <see cref="Services.VinculoPagamentoService"/> confere que a transação é desta compra.</summary>
+    /// <param name="parcela">A parcela como o banco a informou, de uma compra com o mesmo total.</param>
+    internal UnitResult<Erro> QuitarParcela(Parcela parcela, IdTransacao idTransacao, ReaisPositivo valorEfetivo) =>
+        _parcelas.First(p => p.NumeroParcela == parcela.Numero).QuitarCom(idTransacao, valorEfetivo);
+
+    public override UnitResult<Erro> DesfazerVinculo(IdTransacao idTransacao)
+    {
+        ParcelaDespesa? parcela = _parcelas.Find(p => p.Pagamento.IdTransacao == idTransacao);
+        if (parcela is null)
+            return ErroTransacaoNaoVinculada.Instancia;
+
+        parcela.Reabrir();
+        return UnitResult.Success<Erro>();
+    }
 }
