@@ -66,7 +66,7 @@ O build já quebra em parte das regras (IDE0021 em construtor, `TreatWarningsAsE
      Vale em `src/**` e nos testes. Cadeia curta, que cabe folgada numa linha, fica numa linha.
 
    Se uma delas passar a escapar com frequência, ela sobe para as Convenções do `CLAUDE.md`.
-9. **Conversão explícita no `SimpleValueObject<T>`.** Todo `SimpleValueObject<T>` concreto novo ou alterado no diff tem um `explicit operator` do primitivo para ele, chamando o `Criar`, com as exceções do `CLAUDE.md` (base abstrata, conversão implícita). Aponte também o código do diff que chama `X.Criar(v)` para um valor sabidamente válido, ou para um `Criar` que não falha, onde o cast `(X)v` serviria, e o `.Value` desnecessário onde a conversão implícita do `SimpleValueObject<T>` para o primitivo já basta.
+9. **Conversão explícita no `SimpleValueObject<T>`.** Todo `SimpleValueObject<T>` concreto novo ou alterado no diff tem um `explicit operator` do primitivo para ele, chamando o `Criar`, com as exceções do `CLAUDE.md` (base abstrata, conversão implícita). Aponte também o código do diff que chama `X.Criar(v)` para um valor sabidamente válido, ou para um `Criar` que não falha, onde o cast `(X)v` serviria, e o `.Value` desnecessário onde a conversão implícita do `SimpleValueObject<T>` para o primitivo já basta. Duas conversões explícitas seguidas (`(X)(string)y`) são achado, a não ser que a passagem pelo tipo do meio seja o assunto do código. Avalie você mesmo qual é a forma melhor e traga-a como sugestão, em vez de devolver a pergunta: em geral, um `explicit operator` direto de `Y` para `X`.
 
 ## Severidade
 

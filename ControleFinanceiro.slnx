@@ -24,6 +24,7 @@
     <Project Path="src/ControleFinanceiro.Infrastructure.Persistence/ControleFinanceiro.Infrastructure.Persistence.csproj" Id="4901dbea-652e-4786-8aff-06b5e5cd6a43" />
   </Folder>
   <Folder Name="/tests/">
+    <Project Path="tests/ControleFinanceiro.SaidaModelo.Tests/ControleFinanceiro.SaidaModelo.Tests.csproj" />
     <Project Path="tests/ControleFinanceiro.Tests.Shared/ControleFinanceiro.Tests.Shared.csproj" Id="205cb089-cfc9-40a1-9b0c-cffcfe4ee92a" />
   </Folder>
   <Folder Name="/tests/1. Presentation/">

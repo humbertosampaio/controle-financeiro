@@ -10,6 +10,7 @@ using ControleFinanceiro.Domain.Shared.ValueObjects;
 using ControleFinanceiro.Domain.Transacoes;
 using ControleFinanceiro.Domain.Usuarios;
 using ControleFinanceiro.Tests.Shared.AutoFixture.Attributes;
+using ControleFinanceiro.Tests.Shared;
 using CSharpFunctionalExtensions;
 
 namespace ControleFinanceiro.Domain.Tests.Services;

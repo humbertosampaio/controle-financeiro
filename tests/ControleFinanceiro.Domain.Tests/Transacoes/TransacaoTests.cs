@@ -1,5 +1,4 @@
 using ControleFinanceiro.Domain.Cartoes;
-using ControleFinanceiro.Domain.Tests.Services;
 using ControleFinanceiro.Domain.Transacoes;
 using ControleFinanceiro.Domain.Usuarios;
 using ControleFinanceiro.Tests.Shared;
