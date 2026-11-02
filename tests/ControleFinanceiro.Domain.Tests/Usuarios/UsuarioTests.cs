@@ -7,6 +7,14 @@ namespace ControleFinanceiro.Domain.Tests.Usuarios;
 public sealed class UsuarioTests
 {
     [Theory, DomainAutoData]
+    public void Criar_Deve_GuardarOsDescontosSalariais(TextoObrigatorio nome, ReaisPositivo rendaBruta, DescontoSalarial primeiro, DescontoSalarial segundo)
+    {
+        Usuario sut = Usuario.Criar(nome, rendaBruta, [primeiro, segundo]);
+
+        sut.DescontosSalariais.Should().Equal(primeiro, segundo);
+    }
+
+    [Theory, DomainAutoData]
     public void RendaLiquida_Quando_SemDescontos_Deve_RetornarRendaBruta(TextoObrigatorio nome, ReaisPositivo rendaBruta)
     {
         Usuario sut = Usuario.Criar(nome, rendaBruta, descontosSalariais: []);

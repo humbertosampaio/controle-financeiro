@@ -6,6 +6,14 @@ namespace ControleFinanceiro.Domain.Tests.Shared;
 public sealed class ErroTests
 {
     [Theory, AutoData]
+    public void ToString_Deve_TrazerOCodigoEADescricao(string codigo, string descricao)
+    {
+        Erro sut = new UmErro(codigo, descricao);
+
+        sut.ToString().Should().Be($"{codigo}: {descricao}");
+    }
+
+    [Theory, AutoData]
     public void Equals_Quando_MesmoTipoEDescricoesDiferentes_Deve_RetornarTrue(string codigo, string descricao, string outraDescricao)
     {
         Erro erro = new UmErro(codigo, descricao);
