@@ -5,9 +5,10 @@ using ControleFinanceiro.Domain.Contas;
 using ControleFinanceiro.Domain.Importacoes;
 using ControleFinanceiro.Domain.Services;
 using ControleFinanceiro.Domain.Shared.ValueObjects;
-using ControleFinanceiro.Domain.Tests.Services;
 using ControleFinanceiro.Domain.Transacoes;
 using ControleFinanceiro.Tests.Shared.AutoFixture.Attributes;
+using ControleFinanceiro.Domain.Tests.Services;
+using ControleFinanceiro.Tests.Shared;
 using CSharpFunctionalExtensions;
 using System.Globalization;
 

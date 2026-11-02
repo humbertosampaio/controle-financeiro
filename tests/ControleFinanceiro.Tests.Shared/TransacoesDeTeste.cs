@@ -5,9 +5,8 @@ using ControleFinanceiro.Domain.Importacoes;
 using ControleFinanceiro.Domain.Services;
 using ControleFinanceiro.Domain.Transacoes;
 using ControleFinanceiro.Domain.Usuarios;
-using ControleFinanceiro.Tests.Shared;
 
-namespace ControleFinanceiro.Domain.Tests.Services;
+namespace ControleFinanceiro.Tests.Shared;
 
 /// <summary>Cria as transações pela <see cref="LoteTransacoesFactory"/>, a única entrada, do usuário que o fixture der.</summary>
 public sealed class TransacoesDeTeste
