@@ -5,6 +5,8 @@
 //
 // Uso: node scripts/harness/testes-afetados.mjs <arquivo>...   (ou a lista no stdin, um por linha)
 // Saída: vazia (nenhum teste de integração), "todos" ou o valor do --filter do dotnet test.
+//
+// Com --mcp, responde pela suíte do servidor MCP, que não tem espelho: "todos" ou vazia.
 
 import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
@@ -34,6 +36,29 @@ const afetamTodos = [
   "tests/Directory.Build.props",
   "Directory.Packages.props",
 ];
+
+// Mudança aqui pode quebrar o servidor MCP, que usa o domínio e a persistência, mas não a WebApi nem a Importacao.
+const afetamMcp = [
+  "src/ControleFinanceiro.Mcp/",
+  "tests/ControleFinanceiro.Mcp.Tests/",
+  "src/ControleFinanceiro.Domain/",
+  "src/ControleFinanceiro.Application/",
+  "src/ControleFinanceiro.Infrastructure.Persistence/",
+  "src/ControleFinanceiro.AppHost/Resources/", // imagem do Postgres
+  "tests/ControleFinanceiro.Tests.Shared/",
+  "tests/Directory.Build.props",
+  "Directory.Packages.props",
+];
+
+/**
+ * @param {string[]} arquivos caminhos relativos à raiz do repositório
+ * @returns {boolean} se a suíte do servidor MCP precisa rodar
+ */
+export function mcpAfetado(arquivos) {
+  return arquivos
+    .map((bruto) => bruto.trim().replaceAll("\\", "/"))
+    .some((arquivo) => afetamMcp.some((prefixo) => arquivo.startsWith(prefixo)));
+}
 
 /**
  * @param {string[]} arquivos caminhos relativos à raiz do repositório
@@ -69,9 +94,13 @@ export function filtroDotnet(namespaces) {
 }
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const argumentos = process.argv.slice(2);
+  const argumentos = process.argv.slice(2).filter((argumento) => argumento !== "--mcp");
   const arquivos = argumentos.length ? argumentos : readFileSync(0, "utf8").split("\n");
-  const resultado = testesAfetados(arquivos);
-  if (resultado === "todos") console.log("todos");
-  else if (resultado !== "nenhum") console.log(filtroDotnet(resultado));
+  if (process.argv.includes("--mcp")) {
+    if (mcpAfetado(arquivos)) console.log("todos");
+  } else {
+    const resultado = testesAfetados(arquivos);
+    if (resultado === "todos") console.log("todos");
+    else if (resultado !== "nenhum") console.log(filtroDotnet(resultado));
+  }
 }

@@ -9,6 +9,7 @@
   <Folder Name="/src/" />
   <Folder Name="/src/1. Presentation/">
     <Project Path="src/ControleFinanceiro.AppHost/ControleFinanceiro.AppHost.csproj" />
+    <Project Path="src/ControleFinanceiro.Mcp/ControleFinanceiro.Mcp.csproj" />
     <Project Path="src/ControleFinanceiro.ServiceDefaults/ControleFinanceiro.ServiceDefaults.csproj" />
     <Project Path="src/ControleFinanceiro.WebApi/ControleFinanceiro.WebApi.csproj" />
   </Folder>
@@ -26,6 +27,7 @@
     <Project Path="tests/ControleFinanceiro.Tests.Shared/ControleFinanceiro.Tests.Shared.csproj" Id="205cb089-cfc9-40a1-9b0c-cffcfe4ee92a" />
   </Folder>
   <Folder Name="/tests/1. Presentation/">
+    <Project Path="tests/ControleFinanceiro.Mcp.Tests/ControleFinanceiro.Mcp.Tests.csproj" />
     <Project Path="tests/ControleFinanceiro.WebApi.Tests/ControleFinanceiro.WebApi.Tests.csproj" />
   </Folder>
   <Folder Name="/tests/3. Domain/">

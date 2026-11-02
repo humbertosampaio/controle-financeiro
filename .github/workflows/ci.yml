@@ -29,11 +29,15 @@ jobs:
           dotnet ef migrations has-pending-model-changes --project src/ControleFinanceiro.Infrastructure.Persistence --no-build
 
       - name: Testes de unidade
-        run: dotnet test ControleFinanceiro.slnx --no-build --nologo --filter "FullyQualifiedName!~ControleFinanceiro.WebApi.Tests"
+        run: dotnet test ControleFinanceiro.slnx --no-build --nologo --filter "FullyQualifiedName!~ControleFinanceiro.WebApi.Tests&FullyQualifiedName!~ControleFinanceiro.Mcp.Tests"
 
       # Suíte completa, com Postgres do Testcontainers: o ubuntu-latest já tem Docker.
       - name: Testes de integração
         run: dotnet test tests/ControleFinanceiro.WebApi.Tests --no-build --nologo
+
+      # Sobe o processo real do servidor, com Postgres do Testcontainers.
+      - name: Testes do servidor MCP
+        run: dotnet test tests/ControleFinanceiro.Mcp.Tests --no-build --nologo
 
   harness:
     runs-on: ubuntu-latest

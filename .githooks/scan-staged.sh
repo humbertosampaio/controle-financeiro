@@ -51,9 +51,10 @@ for f in $files; do
   echo "$texto" | grep -qE 'sk-ant-[A-Za-z0-9_-]{20,}' && erro "$f: parece conter uma chave da Anthropic"
   echo "$texto" | grep -qE 'gh[pousr]_[A-Za-z0-9]{30,}|github_pat_[A-Za-z0-9_]{30,}' && erro "$f: parece conter um token do GitHub"
   echo "$texto" | grep -qE -- '-----BEGIN [A-Z ]*PRIVATE KEY-----' && erro "$f: parece conter uma chave privada"
-  case "$f" in
-    *appsettings*.json)
-      echo "$texto" | grep -qiE 'Password[[:space:]]*=[[:space:]]*[^;"[:space:]]+' && erro "$f: senha em appsettings (use User Secrets)" ;;
+  # O Windows não diferencia maiúsculas no nome do arquivo.
+  case "$(printf '%s' "$f" | tr '[:upper:]' '[:lower:]')" in
+    *appsettings*.json|.mcp.json|*/.mcp.json)
+      echo "$texto" | grep -qiE '(Password|Pwd|PSW)[[:space:]]*=[[:space:]]*[^;"[:space:]]+|PGPASSWORD"[[:space:]]*:[[:space:]]*"[^"]+' && erro "$f: senha em appsettings ou .mcp.json (use User Secrets)" ;;
   esac
 done
 
