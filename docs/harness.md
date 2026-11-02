@@ -37,7 +37,7 @@ Hook `PreToolUse` do Claude Code em `Bash`, `PowerShell`, `Write`, `Edit` e `Not
 | push na `main`, explícito ou a partir dela | `dotnet add/remove package` |
 | `dotnet user-secrets list` (imprime secrets) | `dotnet ef database drop/update`, `migrations remove` |
 | secret no comando ou no conteúdo escrito | apagar container ou volume do Docker |
-| senha em `appsettings*.json` | escrever migration, `.gitignore`, `Directory.Packages.props` |
+| senha em `appsettings*.json` ou `.mcp.json` | escrever migration, `.gitignore`, `Directory.Packages.props` |
 | escrever dentro de `dados/` | escrever no próprio harness (`.claude/settings*.json`, `.githooks/`, `scripts/harness/`, CI) |
 
 **deny vence ask:** um secret indo para um arquivo guardado bloqueia, não vira pergunta.
@@ -76,10 +76,10 @@ git config core.hooksPath .githooks
 
 | Gate | O que confere |
 |---|---|
-| `pre-commit` | `scan-staged.sh`: arquivo de `dados/`, extrato fora de Fixtures, chave da Anthropic, token do GitHub, chave privada, senha em appsettings |
+| `pre-commit` | `scan-staged.sh`: arquivo de `dados/`, extrato fora de Fixtures, chave da Anthropic, token do GitHub, chave privada, senha em appsettings ou `.mcp.json` |
 | `commit-msg` | Conventional Commits em PT-BR, descrição com maiúscula e sem ponto final |
-| `pre-push` | nada vai para a `main`; branch `<tipo>/<issue>-<slug>` ou `dependabot/...` (para ajustar um PR do Dependabot, como acompanhar no código a versão que ele subiu); testes do guardrail e de `testes-afetados.mjs`; build; testes de unidade; testes de integração dos endpoints afetados (precisa do Docker) |
-| CI (`ci.yml`) | build; modelo do EF sem migration pendente; testes de unidade; suíte de integração completa; testes do guardrail e de `testes-afetados.mjs`; varredura dos arquivos do PR |
+| `pre-push` | nada vai para a `main`; branch `<tipo>/<issue>-<slug>` ou `dependabot/...` (para ajustar um PR do Dependabot, como acompanhar no código a versão que ele subiu); testes do guardrail e de `testes-afetados.mjs`; build; testes de unidade; testes de integração dos endpoints afetados e do servidor MCP, se afetado (precisam do Docker) |
+| CI (`ci.yml`) | build; modelo do EF sem migration pendente; testes de unidade; suíte de integração completa; suíte do servidor MCP; testes do guardrail e de `testes-afetados.mjs`; varredura dos arquivos do PR |
 
 O `pre-push` não imprime nada quando passa. A saída de cada etapa vai para um log temporário (`%TEMP%\pre-push.XXXXXX`), apagado no sucesso. Na falha, o hook diz qual etapa falhou e mostra no stderr cada teste que falhou com a mensagem do erro (ou as últimas 30 linhas do log, num erro de build, por exemplo), além do caminho do log completo, que fica guardado até ser apagado à mão. Assim uma falha intermitente deixa rastro mesmo que a próxima rodada passe.
 
@@ -106,9 +106,11 @@ A suíte de integração sobe um Postgres no Docker, então o `pre-push` não a 
 |---|---|
 | `src/ControleFinanceiro.WebApi/Endpoints/<Area>/<Acao>/` ou `tests/ControleFinanceiro.WebApi.Tests/<Area>/<Acao>/` | só os de `ControleFinanceiro.WebApi.Tests.<Area>.<Acao>` |
 | Domain e Application (regras de value object e validators compartilhados mudam a resposta dos endpoints), Importacao (o leitor de cada layout decide o que a importação grava), Persistence (migrations incluídas), o resto da WebApi, a imagem do Postgres, a infraestrutura dos testes, `Directory.Packages.props` | todos |
-| qualquer outro (testes de unidade, docs, harness) | nenhum |
+| qualquer outro (testes de unidade, servidor MCP, docs, harness) | nenhum |
 
-O `pre-push` compara com o que o remoto já tem ou, numa branch nova, com a `origin/main`. Sem base para comparar, roda todos. Se for preciso rodar integração e o Docker estiver parado, o push falha avisando. O CI roda a suíte inteira em todo PR.
+A suíte do servidor MCP não tem espelho e roda inteira ou não roda. Com `--mcp`, o script imprime `todos` quando o diff toca o próprio servidor ou os testes dele, Domain, Application, Persistence, a imagem do Postgres, `tests/ControleFinanceiro.Tests.Shared`, `tests/Directory.Build.props` ou `Directory.Packages.props`, e nada nos demais casos.
+
+O `pre-push` compara com o que o remoto já tem ou, numa branch nova, com a `origin/main`. Sem base para comparar, roda todos, nas duas suítes. Se for preciso rodar uma delas e o Docker estiver parado, o push falha avisando. O CI roda as duas suítes inteiras em todo PR.
 
 ```bash
 git diff --name-only origin/main...HEAD | node scripts/harness/testes-afetados.mjs

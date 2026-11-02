@@ -15,11 +15,13 @@ Organizador financeiro pessoal: importa extratos e faturas de vários bancos, ca
 | `src/ControleFinanceiro.Infrastructure.Importacao` | Leitores de extrato e fatura, um adaptador por layout | Application |
 | `src/ControleFinanceiro.Infrastructure.Persistence` | EF Core + Postgres, repositórios, migrations | Domain, Application |
 | `src/ControleFinanceiro.WebApi` | Endpoints FastEndpoints | Application, Persistence |
+| `src/ControleFinanceiro.Mcp` | Servidor MCP local por stdio, iniciado pelo cliente MCP | Application, Persistence |
 | `src/ControleFinanceiro.AppHost` | Aspire: sobe o Postgres e a API localmente | WebApi |
 | `src/ControleFinanceiro.ServiceDefaults` | Telemetria e health checks do Aspire | — |
 | `tests/ControleFinanceiro.Domain.Tests` | Testes de domínio (xUnit + AutoFixture + FluentAssertions) | Domain |
 | `tests/ControleFinanceiro.Infrastructure.Importacao.Tests` | Testes dos leitores de extrato com arquivos fictícios em `Fixtures/` | Importacao, Tests.Shared |
 | `tests/ControleFinanceiro.WebApi.Tests` | Testes de integração dos endpoints: API em memória + Postgres do Testcontainers (precisa do Docker) | WebApi, Tests.Shared |
+| `tests/ControleFinanceiro.Mcp.Tests` | Testes do servidor MCP: processo real + Postgres do Testcontainers (precisa do Docker) | Mcp, Tests.Shared |
 | `tests/ControleFinanceiro.Tests.Shared` | Customizações do AutoFixture compartilhadas | Domain |
 
 ## Regras invioláveis
@@ -76,12 +78,15 @@ Detalhes, template de pedido e checklist: [docs/trabalhando-com-ia.md](docs/trab
 dotnet build ControleFinanceiro.slnx
 dotnet test ControleFinanceiro.slnx                   # unidade + integração (precisa do Docker)
 dotnet test tests/ControleFinanceiro.WebApi.Tests --filter "FullyQualifiedName~ControleFinanceiro.WebApi.Tests.Usuarios.Cadastrar."   # um endpoint
+dotnet test tests/ControleFinanceiro.Mcp.Tests        # servidor MCP (precisa do Docker)
 dotnet run --project src/ControleFinanceiro.AppHost   # Postgres + API; dashboard do Aspire no console
 pwsh scripts/CoverageReport.ps1                       # relatório de cobertura em coveragereport/
 node scripts/harness/guardrail.test.mjs               # testes do guardrail
 dotnet tool restore                                   # dotnet-ef local, na versão do EF (dotnet-tools.json)
 dotnet ef migrations has-pending-model-changes --project src/ControleFinanceiro.Infrastructure.Persistence   # modelo mudou sem migration?
 ```
+
+O servidor MCP não abre porta nem sobe pelo AppHost: quem o inicia é o cliente MCP. Antes de usá-lo, com o Postgres de pé, defina a conexão dele: `dotnet user-secrets set "ConnectionStrings:controlefinanceiro" "<conexão>" --project src/ControleFinanceiro.Mcp`. Variável de ambiente vence o secret, mas a conexão com senha fica só no User Secret, nunca no `env` de um `.mcp.json`.
 
 Os testes de integração e o `pre-push` precisam do **Docker** rodando: sem ele, a suíte de integração falha (não é pulada). A cobertura (`CoverageReport.ps1`) também.
 
@@ -96,7 +101,7 @@ Três camadas, descritas em [docs/harness.md](docs/harness.md):
 - **Guardrail** (`.claude/settings.json` → `scripts/harness/guardrail.mjs`): bloqueia commit de dados financeiros, secret em arquivo e push na `main`; pede confirmação em git destrutivo, pacote novo e migration.
 - **Agentes** (`.claude/agents/`): `planejador`, `autor-de-testes`, `revisor-dominio`, `revisor-convencoes` e `revisor-privacidade`. Os revisores só reportam.
 - **Skills** (`.claude/skills/`): `planejar-issue` (plano na issue + sub-issues, antes do código), `implementar-issue` (numa sessão nova, a partir do plano publicado), `revisar-mudanca` (gates + revisores) e `abrir-pr` (push + PR vinculado + merge depois do CI verde), depois do código.
-- **Gates** (`.githooks/` + `.github/workflows/ci.yml`): varredura de secrets e de dados no pre-commit, Conventional Commits no commit-msg, bloqueio de push na `main`, testes de unidade e testes de integração afetados (`scripts/harness/testes-afetados.mjs`) no pre-push, build, modelo do EF sem migration pendente e as duas suítes completas no CI. Ative uma vez por clone: `git config core.hooksPath .githooks`.
+- **Gates** (`.githooks/` + `.github/workflows/ci.yml`): varredura de secrets e de dados no pre-commit, Conventional Commits no commit-msg, bloqueio de push na `main`, testes de unidade e testes de integração e do servidor MCP afetados (`scripts/harness/testes-afetados.mjs`) no pre-push, build, modelo do EF sem migration pendente e as três suítes completas no CI. Ative uma vez por clone: `git config core.hooksPath .githooks`.
 
 ## GitHub
 
