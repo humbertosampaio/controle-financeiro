@@ -3,7 +3,7 @@ using ControleFinanceiro.Domain.Shared.ValueObjects;
 namespace ControleFinanceiro.Domain.Tests.Shared.ValueObjects;
 
 /// <summary>Os documentos são os exemplos de teste conhecidos do CPF e do CNPJ.</summary>
-public sealed class TextoSemDocumentosTests
+public sealed class DocumentoMascaradoTests
 {
     [Theory]
     [InlineData("FULANO FICTICIO 12345678909", "FULANO FICTICIO")]
@@ -21,7 +21,7 @@ public sealed class TextoSemDocumentosTests
     [InlineData("123.456.789-09 LOJA FICTICIA 11.222.333/0001-81", "LOJA FICTICIA")]
     public void Criar_Quando_DocumentoNoTexto_Deve_TirarODocumentoEOEspacoAntes(string texto, string esperado)
     {
-        TextoSemDocumentos result = TextoSemDocumentos.Criar(texto);
+        DocumentoMascarado result = DocumentoMascarado.Criar(texto);
 
         result.Value.Should().Be(esperado);
     }
@@ -32,7 +32,7 @@ public sealed class TextoSemDocumentosTests
     [InlineData("PEDIDO 1234567890912")]
     public void Criar_Quando_NumeroQueNaoEDocumento_Deve_ManterONumero(string texto)
     {
-        TextoSemDocumentos result = TextoSemDocumentos.Criar(texto);
+        DocumentoMascarado result = DocumentoMascarado.Criar(texto);
 
         result.Value.Should().Be(texto);
     }
@@ -43,7 +43,7 @@ public sealed class TextoSemDocumentosTests
     [InlineData("", "")]
     public void Criar_Deve_ApararOTexto(string texto, string esperado)
     {
-        TextoSemDocumentos result = TextoSemDocumentos.Criar(texto);
+        DocumentoMascarado result = DocumentoMascarado.Criar(texto);
 
         result.Value.Should().Be(esperado);
     }
@@ -51,7 +51,7 @@ public sealed class TextoSemDocumentosTests
     [Fact]
     public void Criar_Quando_Nulo_Deve_RetornarTextoVazio()
     {
-        TextoSemDocumentos result = TextoSemDocumentos.Criar(texto: null);
+        DocumentoMascarado result = DocumentoMascarado.Criar(texto: null);
 
         result.Value.Should().BeEmpty();
     }
@@ -59,8 +59,8 @@ public sealed class TextoSemDocumentosTests
     [Fact]
     public void OperadorExplicito_Deve_TirarOsDocumentosComoOCriar()
     {
-        TextoSemDocumentos result = (TextoSemDocumentos)"LOJA FICTICIA 11.222.333/0001-81";
+        DocumentoMascarado result = (DocumentoMascarado)"LOJA FICTICIA 11.222.333/0001-81";
 
-        result.Should().Be(TextoSemDocumentos.Criar("LOJA FICTICIA"));
+        result.Should().Be(DocumentoMascarado.Criar("LOJA FICTICIA"));
     }
 }

@@ -11,27 +11,27 @@ namespace ControleFinanceiro.Domain.Shared.ValueObjects;
 /// Um número com a forma de um documento, mas com os verificadores errados, fica: não é documento, e pode ser parte
 /// do texto, como um número de pedido.
 /// </remarks>
-public sealed partial class TextoSemDocumentos : SimpleValueObject<string>
+public sealed partial class DocumentoMascarado : SimpleValueObject<string>
 {
-    private TextoSemDocumentos(string value) : base(value)
+    private DocumentoMascarado(string value) : base(value)
     {
     }
 
     /// <param name="texto">Nulo vira um texto vazio.</param>
-    public static TextoSemDocumentos Criar(string? texto)
+    public static DocumentoMascarado Criar(string? texto)
     {
         if (texto is null)
-            return new TextoSemDocumentos(string.Empty);
+            return new DocumentoMascarado(string.Empty);
 
         string semCnpjNumerico = CandidatoCnpjNumerico().Replace(texto, candidato => TirarSe(candidato, numero => Cnpj.Criar(numero).IsSuccess));
         string semCnpj = CandidatoCnpj().Replace(semCnpjNumerico, candidato => TirarSe(candidato, numero => Cnpj.Criar(numero).IsSuccess));
         string semCpf = CandidatoCpf().Replace(semCnpj, candidato => TirarSe(candidato, numero => Cpf.Criar(numero).IsSuccess));
         string semCpfMascarado = CandidatoCpfMascarado().Replace(semCpf, candidato => TirarSe(candidato, numero => numero.Contains('*')));
 
-        return new TextoSemDocumentos(semCpfMascarado.Trim());
+        return new DocumentoMascarado(semCpfMascarado.Trim());
     }
 
-    public static explicit operator TextoSemDocumentos(string? texto) => Criar(texto);
+    public static explicit operator DocumentoMascarado(string? texto) => Criar(texto);
 
     /// <returns>Vazio quando o documento do <paramref name="candidato"/> é tirado; senão, o candidato como veio.</returns>
     private static string TirarSe(Match candidato, Func<string, bool> tirar)

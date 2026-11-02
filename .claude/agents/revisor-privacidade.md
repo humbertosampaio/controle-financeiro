@@ -32,7 +32,7 @@ Chave da Anthropic (`sk-ant-`), token do GitHub (`ghp_`, `gho_`, `github_pat_`),
 ### 3. O que vai para o modelo (ALTO)
 - Toda chamada à API da Anthropic e toda ferramenta MCP: quais campos de transação saem? O mínimo é descrição, valor e data. Cada campo a mais precisa de justificativa no PR.
 - Proibido sair: número de conta e agência, CPF/CNPJ, nome do titular, saldo total da conta (a menos que a ferramenta seja justamente de saldo e isso esteja decidido), `FITID`/`REFNUM` crus, `chave_deduplicacao`.
-- O banco guarda CPF e CNPJ na descrição e na contraparte da transação, nos aliases, na descrição da despesa e, às vezes, no nome do beneficiário: todo campo desses que sai para o modelo passa antes pelo `TextoSemDocumentos`. Cobre quando uma ferramenta devolve agregado, `Lancamento`, `Alias` ou response da WebApi, e rastreie o campo desde a origem, porque a exposição pode nascer fora do diff.
+- O banco guarda CPF e CNPJ na descrição e na contraparte da transação, nos aliases, na descrição da despesa e, às vezes, no nome do beneficiário: todo campo desses que sai para o modelo passa antes pelo `DocumentoMascarado`. Cobre quando uma ferramenta devolve agregado, `Lancamento`, `Alias` ou response da WebApi, e rastreie o campo desde a origem, porque a exposição pode nascer fora do diff.
 - Telemetria com texto do arquivo: `EnableSensitiveDataLogging`, `Include Error Detail`, instrumentação de EF ou Npgsql com SQL, captura de corpo de requisição, texto do arquivo em rota ou query, mensagem de erro que o repita.
 - Log que imprime transação inteira, prompt ou resposta do modelo com dados reais.
 
