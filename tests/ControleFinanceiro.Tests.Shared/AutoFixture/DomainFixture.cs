@@ -19,6 +19,7 @@ public class DomainFixture : Fixture
             .Customize(new ReaisPositivoCustomization())
             .Customize(new CpfCustomization())
             .Customize(new CnpjCustomization())
+            .Customize(new CnpjNumericoCustomization())
             .Customize(new MesReferenciaCustomization())
             .Customize(new DiaVencimentoCartaoCustomization())
             .Customize(new DiaFechamentoCartaoCustomization())
