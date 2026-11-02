@@ -80,7 +80,7 @@ git config core.hooksPath .githooks
 | `commit-msg` | Conventional Commits em PT-BR, descrição com maiúscula e sem ponto final |
 | `pre-push` | nada vai para a `main`; branch `<tipo>/<issue>-<slug>` ou `dependabot/...` (para ajustar um PR do Dependabot, como acompanhar no código a versão que ele subiu); testes do guardrail e de `testes-afetados.mjs`; build; testes de unidade; testes de integração dos endpoints afetados e do servidor MCP, se afetado (precisam do Docker) |
 | Teste de arquitetura (`SaidaModeloArquiteturaTests`) | quem fala com o modelo só devolve `ISaidaModelo` (a exceção é a `VerificacaoServidor`, só com o estado do banco), não usa agregados, responses da WebApi, SQL direto, prompts, resources nem os outros canais do SDK, e projeto novo em `src/` precisa ser classificado; roda na suíte de unidade, no `pre-push` e no CI |
-| CI (`ci.yml`) | build; modelo do EF sem migration pendente; testes de unidade; suíte de integração completa; suíte do servidor MCP; testes do guardrail e de `testes-afetados.mjs`; varredura dos arquivos do PR |
+| CI (`ci.yml`) | build; modelo do EF sem migration pendente; testes de unidade; cobertura mínima do domínio; suíte de integração completa; suíte do servidor MCP; testes do guardrail e de `testes-afetados.mjs`; varredura dos arquivos do PR |
 
 O `pre-push` não imprime nada quando passa. A saída de cada etapa vai para um log temporário (`%TEMP%\pre-push.XXXXXX`), apagado no sucesso. Na falha, o hook diz qual etapa falhou e mostra no stderr cada teste que falhou com a mensagem do erro (ou as últimas 30 linhas do log, num erro de build, por exemplo), além do caminho do log completo, que fica guardado até ser apagado à mão. Assim uma falha intermitente deixa rastro mesmo que a próxima rodada passe.
 
@@ -98,6 +98,18 @@ O comando sai com código 1 quando há mudança pendente. Ele usa a `ControleFin
 - **`revisar-mudanca`:** roda quando o diff toca `src/ControleFinanceiro.Domain/**` ou `src/ControleFinanceiro.Infrastructure.Persistence/**`.
 - **CI:** roda em todo PR, logo depois do build (leva segundos e pega também a mudança que chega por outro caminho, como a atualização de um pacote).
 - **Versão:** o `dotnet-ef` é ferramenta local, fixada em `dotnet-tools.json` na versão do `Microsoft.EntityFrameworkCore` do `Directory.Packages.props`. O grupo `microsoft-e-npgsql` do Dependabot inclui os dois, mas o PR pode vir só com o EF, e o gate não reprova a diferença (só avisa). Ao subir o EF, à mão ou pelo Dependabot, confira e suba também o `dotnet-ef` (`dotnet tool update dotnet-ef --version <versão>`).
+
+### Cobertura mínima do domínio
+
+O CI falha quando a cobertura do `ControleFinanceiro.Domain`, medida só por `tests/ControleFinanceiro.Domain.Tests`, fica abaixo de 95% de linhas ou de 95% de branches. As outras suítes não contam, porque os testes de integração passam pelo código sem necessariamente verificar as regras. Não há mínimo global: as migrations são a maior parte das linhas medidas.
+
+Quem confere é o `coverlet.msbuild`, configurado em `ControleFinanceiro.Domain.Tests.csproj` e ligado pelo CI com `-p:CollectCoverage=true`. A saída mostra os valores medidos e o mínimo descumprido. Se o Domain ficar fora da medição, a cobertura sai 0% e o gate reprova. Ele roda só no CI, fora do `pre-push`, onde `Domain.Tests` segue sem cobertura. O `coverlet.collector` continua no projeto para o relatório local do `CoverageReport.ps1`.
+
+```bash
+dotnet test tests/ControleFinanceiro.Domain.Tests -p:CollectCoverage=true -p:CoverletOutput=<diretório temporário>/
+```
+
+**Como subir o mínimo:** edite `Threshold` no `ControleFinanceiro.Domain.Tests.csproj`, deixando 1 a 2 pontos de folga em relação ao valor que o log do CI mostra, porque o AutoFixture gera dados aleatórios e os branches cobertos podem variar entre execuções. O mínimo sobe aos poucos e não baixa: se um PR reprovar por um branch coberto só por sorte, o conserto é um teste determinístico para esse branch.
 
 ### Testes de integração afetados
 
