@@ -105,6 +105,42 @@ public sealed class FaturaTests
         act.Should().ThrowExactly<ArgumentException>().WithParameterName("sufixo");
     }
 
+    [Theory, DomainAutoData]
+    public void Equals_Quando_MesmosCampos_Deve_SerIgual(Fatura fatura)
+    {
+        Fatura outra = Fatura.Criar(fatura.Banco, fatura.Lancamentos).Value;
+
+        outra.Should().Be(fatura);
+    }
+
+    [Theory, DomainAutoData]
+    public void Equals_Quando_OutroBanco_Deve_SerDiferente(Fatura fatura)
+    {
+        Banco outroBanco = Banco.List.First(banco => banco != fatura.Banco);
+
+        Fatura outra = Fatura.Criar(outroBanco, fatura.Lancamentos).Value;
+
+        outra.Should().NotBe(fatura);
+    }
+
+    [Theory, DomainAutoData]
+    public void Equals_Quando_LancamentoAMais_Deve_SerDiferente(Fatura fatura, LancamentoFatura aMais)
+    {
+        Fatura outra = Fatura.Criar(fatura.Banco, fatura.Lancamentos.Append(aMais)).Value;
+
+        outra.Should().NotBe(fatura);
+    }
+
+    [Theory, DomainAutoData]
+    public void Equals_Quando_LancamentosEmOutraOrdem_Deve_SerDiferente(Banco banco, LancamentoFatura primeiro, LancamentoFatura segundo)
+    {
+        Fatura fatura = Fatura.Criar(banco, [primeiro, segundo]).Value;
+
+        Fatura outra = Fatura.Criar(banco, [segundo, primeiro]).Value;
+
+        outra.Should().NotBe(fatura);
+    }
+
     private static Lancamento NaData(Lancamento lancamento, DateOnly data)
     {
         return Lancamento.DoCartao(

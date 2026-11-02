@@ -28,8 +28,13 @@ jobs:
           dotnet tool restore
           dotnet ef migrations has-pending-model-changes --project src/ControleFinanceiro.Infrastructure.Persistence --no-build
 
+      # Domain.Tests fica de fora porque roda no passo seguinte, com cobertura.
       - name: Testes de unidade
-        run: dotnet test ControleFinanceiro.slnx --no-build --nologo --filter "FullyQualifiedName!~ControleFinanceiro.WebApi.Tests&FullyQualifiedName!~ControleFinanceiro.Mcp.Tests"
+        run: dotnet test ControleFinanceiro.slnx --no-build --nologo --filter "FullyQualifiedName!~ControleFinanceiro.WebApi.Tests&FullyQualifiedName!~ControleFinanceiro.Mcp.Tests&FullyQualifiedName!~ControleFinanceiro.Domain.Tests"
+
+      # Falha abaixo do mínimo definido em ControleFinanceiro.Domain.Tests.csproj.
+      - name: Testes do domínio com cobertura mínima
+        run: dotnet test tests/ControleFinanceiro.Domain.Tests --no-build --nologo -p:CollectCoverage=true -p:CoverletOutput="${{ runner.temp }}/cobertura-dominio/"
 
       # Suíte completa, com Postgres do Testcontainers: o ubuntu-latest já tem Docker.
       - name: Testes de integração

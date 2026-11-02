@@ -104,7 +104,7 @@ Três camadas, descritas em [docs/harness.md](docs/harness.md):
 - **Guardrail** (`.claude/settings.json` → `scripts/harness/guardrail.mjs`): bloqueia commit de dados financeiros, secret em arquivo e push na `main`; pede confirmação em git destrutivo, pacote novo e migration.
 - **Agentes** (`.claude/agents/`): `planejador`, `autor-de-testes`, `revisor-dominio`, `revisor-convencoes` e `revisor-privacidade`. Os revisores só reportam.
 - **Skills** (`.claude/skills/`): `planejar-issue` (plano na issue + sub-issues, antes do código), `implementar-issue` (numa sessão nova, a partir do plano publicado), `revisar-mudanca` (gates + revisores) e `abrir-pr` (push + PR vinculado + merge depois do CI verde), depois do código.
-- **Gates** (`.githooks/` + `.github/workflows/ci.yml`): varredura de secrets e de dados no pre-commit, Conventional Commits no commit-msg, bloqueio de push na `main`, testes de unidade e testes de integração e do servidor MCP afetados (`scripts/harness/testes-afetados.mjs`) no pre-push, build, modelo do EF sem migration pendente e as três suítes completas no CI. Ative uma vez por clone: `git config core.hooksPath .githooks`.
+- **Gates** (`.githooks/` + `.github/workflows/ci.yml`): varredura de secrets e de dados no pre-commit, Conventional Commits no commit-msg, bloqueio de push na `main`, testes de unidade e testes de integração e do servidor MCP afetados (`scripts/harness/testes-afetados.mjs`) no pre-push, build, modelo do EF sem migration pendente, as três suítes completas e a cobertura mínima do domínio (`coverlet.msbuild`; como subir o mínimo está em `docs/harness.md`) no CI. Ative uma vez por clone: `git config core.hooksPath .githooks`.
 
 ## GitHub
 
