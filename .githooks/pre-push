@@ -4,7 +4,7 @@
 #   2. nome da branch no padrão <tipo>/<issue>-<slug> (ou dependabot/..., para ajustar um PR dele)
 #   3. o guardrail e o script de testes afetados continuam íntegros
 #   4. build e testes de unidade
-#   5. testes de integração dos endpoints afetados pelo push (precisam do Docker)
+#   5. testes de integração dos endpoints afetados pelo push e do servidor MCP, se afetado (precisam do Docker)
 
 raiz=$(git rev-parse --show-toplevel)
 zero=0000000000000000000000000000000000000000
@@ -70,15 +70,17 @@ dotnet build "$raiz/ControleFinanceiro.slnx" --nologo -v q >"$log" 2>&1 ||
 
 # O logger em minimal imprime cada teste que falhou com a mensagem; o -v q sozinho só daria o nome.
 dotnet test "$raiz/ControleFinanceiro.slnx" --no-build --nologo -v q --logger "console;verbosity=minimal" \
-  --filter "FullyQualifiedName!~ControleFinanceiro.WebApi.Tests" >"$log" 2>&1 ||
-  falhou "Os testes de unidade falharam: rode dotnet test ControleFinanceiro.slnx --filter \"FullyQualifiedName!~ControleFinanceiro.WebApi.Tests\""
+  --filter "FullyQualifiedName!~ControleFinanceiro.WebApi.Tests&FullyQualifiedName!~ControleFinanceiro.Mcp.Tests" >"$log" 2>&1 ||
+  falhou "Os testes de unidade falharam: rode dotnet test ControleFinanceiro.slnx --filter \"FullyQualifiedName!~ControleFinanceiro.WebApi.Tests&FullyQualifiedName!~ControleFinanceiro.Mcp.Tests\""
 
 if [ -n "$sem_base" ]; then
   filtro=todos
+  filtro_mcp=todos
 else
   filtro=$(printf '%s\n' "$alterados" | node "$raiz/scripts/harness/testes-afetados.mjs")
+  filtro_mcp=$(printf '%s\n' "$alterados" | node "$raiz/scripts/harness/testes-afetados.mjs" --mcp)
 fi
-[ -z "$filtro" ] && exit 0
+[ -z "$filtro" ] && [ -z "$filtro_mcp" ] && exit 0
 
 docker info >/dev/null 2>&1 || {
   echo "Este push altera código coberto por testes de integração, e eles precisam do Docker: inicie o Docker e tente de novo." >&2
@@ -89,9 +91,14 @@ projeto="$raiz/tests/ControleFinanceiro.WebApi.Tests"
 if [ "$filtro" = "todos" ]; then
   dotnet test "$projeto" --no-build --nologo -v q --logger "console;verbosity=minimal" >"$log" 2>&1 ||
     falhou "Os testes de integração falharam: rode dotnet test tests/ControleFinanceiro.WebApi.Tests"
-else
+elif [ -n "$filtro" ]; then
   dotnet test "$projeto" --no-build --nologo -v q --logger "console;verbosity=minimal" --filter "$filtro" >"$log" 2>&1 ||
     falhou "Os testes de integração afetados falharam: rode dotnet test tests/ControleFinanceiro.WebApi.Tests --filter \"$filtro\""
+fi
+
+if [ -n "$filtro_mcp" ]; then
+  dotnet test "$raiz/tests/ControleFinanceiro.Mcp.Tests" --no-build --nologo -v q --logger "console;verbosity=minimal" >"$log" 2>&1 ||
+    falhou "Os testes do servidor MCP falharam: rode dotnet test tests/ControleFinanceiro.Mcp.Tests"
 fi
 
 exit 0

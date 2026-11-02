@@ -130,8 +130,8 @@ export function checkWrite(filePath, content) {
     return deny(`O conteúdo contém o que parece ser um(a) ${secret}. Use User Secrets; em teste, monte o valor por concatenação.`);
   }
 
-  if (/appsettings[^/]*\.json$/i.test(path) && /Password\s*=\s*[^;"\s]+/i.test(content ?? "")) {
-    return deny("Senha em appsettings. Connection string com senha vai para User Secrets (dotnet user-secrets set).");
+  if (/(appsettings[^/]*|(^|\/)\.mcp)\.json$/i.test(path) && /(Password|Pwd|PSW)\s*=\s*[^;"\s]+|PGPASSWORD"\s*:\s*"[^"]+/i.test(content ?? "")) {
+    return deny("Senha em appsettings ou .mcp.json. Connection string com senha vai para User Secrets (dotnet user-secrets set).");
   }
 
   if (DADOS_DIR.test(path)) {

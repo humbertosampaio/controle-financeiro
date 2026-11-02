@@ -6,7 +6,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { execFileSync } from "node:child_process";
-import { filtroDotnet, testesAfetados } from "./testes-afetados.mjs";
+import { filtroDotnet, mcpAfetado, testesAfetados } from "./testes-afetados.mjs";
 
 const casos = [
   // endpoint: só a pasta espelhada
@@ -40,6 +40,9 @@ const casos = [
   [["tests/ControleFinanceiro.Domain.Tests/Usuarios/UsuarioTests.cs"], "nenhum"],
   [["tests/ControleFinanceiro.Infrastructure.Importacao.Tests/C6/LeitorExtratoContaC6Tests.cs"], "nenhum"],
   [["docs/harness.md", "CLAUDE.md", ".githooks/pre-push"], "nenhum"],
+  // o servidor MCP tem suíte própria: não aciona a da WebApi
+  [["src/ControleFinanceiro.Mcp/Program.cs"], "nenhum"],
+  [["tests/ControleFinanceiro.Mcp.Tests/Servidor/ServidorMcpTests.cs"], "nenhum"],
   [[], "nenhum"],
   [["", "  "], "nenhum"],
 ];
@@ -55,6 +58,43 @@ test("filtro do dotnet test não pega ação de nome parecido", () => {
     filtroDotnet(["ControleFinanceiro.WebApi.Tests.Despesas.Vincular", "ControleFinanceiro.WebApi.Tests.Usuarios.Cadastrar"]),
     "FullyQualifiedName~ControleFinanceiro.WebApi.Tests.Despesas.Vincular.|FullyQualifiedName~ControleFinanceiro.WebApi.Tests.Usuarios.Cadastrar.",
   );
+});
+
+test("arquivos alterados → suíte do servidor MCP", () => {
+  const acionam = [
+    "src/ControleFinanceiro.Mcp/Program.cs",
+    "src\\ControleFinanceiro.Mcp\\Ferramentas\\VerificarServidorFerramenta.cs",
+    "tests/ControleFinanceiro.Mcp.Tests/Servidor/ServidorMcpTests.cs",
+    "src/ControleFinanceiro.Domain/Shared/ValueObjects/SufixoCartao.cs",
+    "src/ControleFinanceiro.Application/Abstractions/IUsuarioAtual.cs",
+    "src/ControleFinanceiro.Infrastructure.Persistence/Migrations/20260323041817_Initial.cs",
+    "src/ControleFinanceiro.AppHost/Resources/postgres.Dockerfile",
+    "tests/ControleFinanceiro.Tests.Shared/AutoFixture/DomainFixture.cs",
+    "tests/Directory.Build.props",
+    "Directory.Packages.props",
+  ];
+  for (const arquivo of acionam) assert.equal(mcpAfetado([arquivo]), true, arquivo);
+
+  const naoAcionam = [
+    "src/ControleFinanceiro.Infrastructure.Importacao/C6/LeitorExtratoContaC6.cs",
+    "src/ControleFinanceiro.WebApi/Program.cs",
+    "tests/ControleFinanceiro.WebApi.Tests/Infraestrutura/ApiComPostgresFixture.cs",
+    "docs/harness.md",
+    "",
+  ];
+  for (const arquivo of naoAcionam) assert.equal(mcpAfetado([arquivo]), false, arquivo);
+});
+
+test("linha de comando com --mcp imprime todos ou nada", () => {
+  const script = "scripts/harness/testes-afetados.mjs";
+  const porArgumento = execFileSync("node", [script, "--mcp", "src/ControleFinanceiro.Mcp/Program.cs"], { encoding: "utf8" });
+  assert.equal(porArgumento.trim(), "todos");
+
+  const porStdin = execFileSync("node", [script, "--mcp"], { input: "src/ControleFinanceiro.Domain/A.cs\n", encoding: "utf8" });
+  assert.equal(porStdin.trim(), "todos");
+
+  const nenhum = execFileSync("node", [script, "--mcp"], { input: "docs/harness.md\n", encoding: "utf8" });
+  assert.equal(nenhum, "");
 });
 
 test("linha de comando lê argumentos ou stdin", () => {

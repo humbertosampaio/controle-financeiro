@@ -101,6 +101,14 @@ const writeCases = [
   ["docs/setup.md", `token: ${tokenGitHub}`, "deny"],
   ["deploy/key.pem", chavePrivada, "deny"],
   ["src/ControleFinanceiro.WebApi/appsettings.Development.json", "{\"ConnectionStrings\":{\"db\":\"Host=x;Password=segredo\"}}", "deny"],
+  [".mcp.json", "{\"env\":{\"ConnectionStrings__controlefinanceiro\":\"Host=x;Password=segredo\"}}", "deny"],
+  ["sub/.mcp.json", "{\"env\":{\"c\":\"Host=x;Password=segredo\"}}", "deny"],
+  ["sub\\.mcp.json", "{\"env\":{\"c\":\"Host=x;Password=segredo\"}}", "deny"],
+  [".MCP.json", "{\"env\":{\"c\":\"Host=x;Password=segredo\"}}", "deny"],
+  [".mcp.json", "{\"env\":{\"c\":\"Host=x;Pwd=segredo\"}}", "deny"],
+  [".mcp.json", "{\"env\":{\"c\":\"Host=x;PSW=segredo\"}}", "deny"],
+  [".mcp.json", "{\"env\":{\"PGPASSWORD\":\"segredo\"}}", "deny"],
+  ["src/ControleFinanceiro.WebApi/appsettings.json", "{\"c\":\"Host=x;Pwd=segredo\"}", "deny"],
   ["dados/c6-extrato-2026-09.csv", "Data;Valor", "deny"],
   ["D:\\Git\\controle-financeiro\\dados\\novo.ofx", "<OFX>", "deny"],
   // ask
@@ -117,6 +125,8 @@ const writeCases = [
   ["tests/ControleFinanceiro.Importacao.Tests/Fixtures/c6-extrato.csv", "Data;Valor\n01/09/2026;10.00", "allow"],
   ["tests\\ControleFinanceiro.Importacao.Tests\\Fixtures\\c6.ofx", "<OFX>", "allow"],
   ["src/ControleFinanceiro.WebApi/appsettings.Development.json", "{\"Logging\":{}}", "allow"],
+  [".mcp.json", "{\"env\":{\"c\":\"Host=x\"}}", "allow"],
+  ["foo.mcp.json", "{\"env\":{\"c\":\"Host=x;Password=segredo\"}}", "allow"],
   ["docs/trabalhando-com-ia.md", "Use `dotnet user-secrets set` para a senha.", "allow"],
   ["CLAUDE.md", "Chave da Anthropic começa com sk-ant-, guardada em User Secrets.", "allow"],
 ];
