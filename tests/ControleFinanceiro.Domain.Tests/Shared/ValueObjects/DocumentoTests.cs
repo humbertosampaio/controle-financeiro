@@ -63,4 +63,12 @@ public sealed class DocumentoTests
 
         result.Should().Succeed().Which.Should().Be(cnpj);
     }
+
+    [Theory, DomainAutoData]
+    public void ConversaoExplicita_Quando_NumeroValido_Deve_RetornarODocumento(Cpf cpf)
+    {
+        Documento result = (Documento)cpf.Value;
+
+        result.Should().Be(cpf);
+    }
 }
