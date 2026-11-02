@@ -9,6 +9,7 @@
   <Folder Name="/src/" />
   <Folder Name="/src/1. Presentation/">
     <Project Path="src/ControleFinanceiro.AppHost/ControleFinanceiro.AppHost.csproj" />
+    <Project Path="src/ControleFinanceiro.Mcp/ControleFinanceiro.Mcp.csproj" />
     <Project Path="src/ControleFinanceiro.ServiceDefaults/ControleFinanceiro.ServiceDefaults.csproj" />
     <Project Path="src/ControleFinanceiro.WebApi/ControleFinanceiro.WebApi.csproj" />
   </Folder>
