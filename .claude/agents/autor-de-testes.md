@@ -31,6 +31,7 @@ Depois, **leia [docs/testes-com-autofixture.md](../../docs/testes-com-autofixtur
 | Endpoint da API | `tests/ControleFinanceiro.WebApi.Tests/<Area>/<Acao>/`, espelhando `src/ControleFinanceiro.WebApi/Endpoints/<Area>/<Acao>/` | `[Collection(ApiCollection.Nome)]`, `ResetarBancoAsync()` no `InitializeAsync`, `[Theory, ApiAutoData]`, leitura de volta com `ConsultarAsync` |
 | Servidor MCP | `tests/ControleFinanceiro.Mcp.Tests/Servidor/` | `[Collection(ServidorMcpCollection.Nome)]`, processo real do servidor pelo `ClienteMcp` da `ServidorMcpFixture`, `[Fact]` quando não há entrada gerada |
 | Validator do endpoint (regra que não é de value object) | mesma pasta do teste do endpoint, `<Acao>ValidatorTests` | Unidade: sem `ApiCollection`, `[Theory, ApiAutoData]`, `TestValidate` do FluentValidation |
+| Tipo de saída para o modelo e fronteira da saída | `tests/ControleFinanceiro.SaidaModelo.Tests/Tipos/` para o payload, `Arquitetura/` para as regras | Sem Docker, `[Theory, DomainAutoData]`, `.ParaModelo().Serializar()` e comparação como JSON; regra nova vista falhando antes |
 | Customização do AutoFixture | `tests/ControleFinanceiro.Tests.Shared/AutoFixture/` | Uma por value object com regra, e uma para o tipo que vários testes montariam à mão |
 | Customização de request | na pasta do teste do endpoint, registrada no `ApiFixture` | `fixture.Register((Entidade e) => new XRequest { ... })` |
 | Importador de extrato | projeto de testes da importação | Fixture fictícia em `Fixtures/` |

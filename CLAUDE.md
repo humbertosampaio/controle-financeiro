@@ -11,7 +11,7 @@ Organizador financeiro pessoal: importa extratos e faturas de vários bancos, ca
 | Projeto | Papel | Depende de |
 |---|---|---|
 | `src/ControleFinanceiro.Domain` | Agregados, value objects, serviços de domínio | nada de infraestrutura |
-| `src/ControleFinanceiro.Application` | Portas (`IUnitOfWork`), validação de entrada | Domain |
+| `src/ControleFinanceiro.Application` | Portas (`IUnitOfWork`), validação de entrada, tipos de saída para o modelo (`SaidaModelo/`) | Domain |
 | `src/ControleFinanceiro.Infrastructure.Importacao` | Leitores de extrato e fatura, um adaptador por layout | Application |
 | `src/ControleFinanceiro.Infrastructure.Persistence` | EF Core + Postgres, repositórios, migrations | Domain, Application |
 | `src/ControleFinanceiro.WebApi` | Endpoints FastEndpoints | Application, Persistence |
@@ -22,6 +22,7 @@ Organizador financeiro pessoal: importa extratos e faturas de vários bancos, ca
 | `tests/ControleFinanceiro.Infrastructure.Importacao.Tests` | Testes dos leitores de extrato com arquivos fictícios em `Fixtures/` | Importacao, Tests.Shared |
 | `tests/ControleFinanceiro.WebApi.Tests` | Testes de integração dos endpoints: API em memória + Postgres do Testcontainers (precisa do Docker) | WebApi, Tests.Shared |
 | `tests/ControleFinanceiro.Mcp.Tests` | Testes do servidor MCP: processo real + Postgres do Testcontainers (precisa do Docker) | Mcp, Tests.Shared |
+| `tests/ControleFinanceiro.SaidaModelo.Tests` | Payload dos tipos de saída para o modelo e regras de arquitetura da fronteira (ArchUnitNET); sem Docker | Mcp, Tests.Shared |
 | `tests/ControleFinanceiro.Tests.Shared` | Customizações do AutoFixture compartilhadas | Domain |
 
 ## Regras invioláveis
@@ -30,7 +31,7 @@ Discordar de uma regra é motivo para conversar, não para contorná-la no códi
 
 1. **Dados financeiros reais nunca entram no git.** Extratos e faturas ficam em `dados/` (ignorada), assim como `*.ofx`, `*.csv`, `*.xlsx` e bancos locais. Teste usa arquivo fictício em `tests/**/Fixtures/`, com o mesmo layout e nenhum dado real. Não copie trechos de `dados/` para código, teste, issue, PR ou commit.
 2. **Secrets ficam em User Secrets**, nunca em `appsettings*.json`, código ou docs. Isso vale para a senha do Postgres, a chave da Anthropic e as credenciais da Pluggy.
-3. **O modelo recebe o mínimo.** Quando o agente ou o MCP mandam transações para o Claude, vão só descrição, valor e data (e o que mais for indispensável, justificado no PR). Nada de número de conta, agência, CPF, CNPJ ou nome de titular. O banco e a tela guardam os documentos que vêm na descrição e na contraparte da transação, nos aliases, na descrição da despesa e, às vezes, no nome do beneficiário; é a saída para o modelo que os tira, com o `DocumentoMascarado`.
+3. **O modelo recebe o mínimo.** Quando o agente ou o MCP mandam transações para o Claude, vão só descrição, valor e data (e o que mais for indispensável, justificado no PR). Número de conta e agência em campo próprio nunca saem. O banco e a tela guardam os documentos que vêm na descrição e na contraparte da transação, nos aliases, na descrição da despesa e, às vezes, no nome do beneficiário; é a saída para o modelo que troca os de verificadores válidos, com o `DocumentoMascarado`. Isso reduz a exposição, sem garantir: no texto livre, outras formas de documento, conta ou e-mail podem sair, e é um risco aceito por ser uma ferramenta de um usuário só. Tudo que sai para o modelo é um tipo de `Application/SaidaModelo` (`ISaidaModelo`), que só aceita texto mascarado, com uma exceção: o estado do banco na `VerificacaoServidor`, que não traz dado do usuário; e o `SaidaModeloArquiteturaTests` impede quem fala com o modelo de contorná-los.
 4. **O domínio não conhece infraestrutura.** `ControleFinanceiro.Domain` não referencia EF Core, ASP.NET nem Npgsql. Mapeamento fica em `IEntityTypeConfiguration` na Persistence.
 5. **Falha previsível é `Result`, não exceção** (CSharpFunctionalExtensions). Exceção fica para erro de sistema.
 6. **Ids fortemente tipados** com Vogen, gerados no domínio (`FromNewVersion7Guid`). Sem `Guid` solto na API pública do domínio.
