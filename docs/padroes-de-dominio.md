@@ -100,7 +100,13 @@ Até lá, uma feature que precise disso para no plano.
 ## 7. Value objects e ids
 
 - **Primitivo com regra vira value object.** Dinheiro é `Reais` (com sinal) ou `ReaisPositivo`, nunca `decimal` solto. O mesmo vale para todo primitivo com formato, faixa, obrigatoriedade ou unidade: o value object valida no `Criar`, que devolve `Result<T>` (`SufixoCartao`, `DiaVencimentoCartao`, `TextoObrigatorio`). O validator do endpoint pode repetir a regra para responder 400, mas chamando o `Criar` (`MustBeValueObject`).
-- **Só é value object o conceito do domínio** com regra na criação, comportamento ou igualdade usada pelo domínio. O dado que só carrega o retorno de uma operação é um `record` simples, com o nome da operação (`ConciliacaoParcelas`).
+- **A forma do tipo vem do conceito, não de onde ele nasce.** Todo tipo novo no Domain passa pelas perguntas abaixo, em ordem, e a primeira que responder "sim" decide. Isso vale também para o tipo que nasce como retorno de um serviço: ser devolvido por um método não o torna um `record`.
+  1. Tem identidade que continua a mesma enquanto os atributos mudam? É **entidade**: raiz quando é carregada e gravada sozinha ou referenciada de fora, interna quando só a raiz a alcança (seção 1).
+  2. É um conjunto fechado de casos conhecidos? É **SmartEnum** (`FormaPagamento`, `StatusPagamento`).
+  3. É uma ideia que o negócio nomeia (aparece no produto, na issue ou na fala do dono) e se compara pelo valor? É **value object**, mesmo sem `Criar` que falhe. Ele declara as invariantes no tipo (`ReaisPositivo` onde o valor não pode ser negativo, construtor `internal` quando só um serviço o monta certo) e as derivações como membros (`BalancoMensal.SaldoPrevisto`). O primitivo com regra, do item anterior, é o caso mais simples.
+  4. É só o relato do que uma chamada fez, sem sentido fora dela? É um **`record`** simples, com o nome da operação (`ConciliacaoParcelas`, que conta as transações vinculadas e as que ficaram sem parcela).
+
+  O sinal de forma errada é um tipo com nome de conceito do produto modelado como `record` "de retorno", como primitivo ou como tupla. Na dúvida entre o value object e o `record`, pergunte se alguém falaria do conceito sem citar a operação que o produziu: do balanço do mês, sim; das 3 transações vinculadas na última conciliação, não.
 - O value object mora **na pasta do agregado dono**, mesmo quando outro agregado o usa; esse outro passa a referenciar o namespace do dono. `Shared/ValueObjects` fica só com os conceitos sem dono, usados por vários agregados (`Reais`, `TextoObrigatorio`, `Banco`, `MesReferencia`).
 - `Shared` não depende de pasta de agregado. Se um tipo de `Shared` precisa aceitar value objects de agregados diferentes, ele recebe uma base comum em `Shared`, como o `DiaValidoEmTodoMes` do `MesReferencia.NoDia`.
 - Ids são structs Vogen sobre `Guid`, gerados no domínio com `FromNewVersion7Guid`, com conversor EF registrado. Sem `Guid` solto na API pública do domínio.
@@ -122,6 +128,6 @@ Responda no plano, para cada conceito novo ou alterado:
 4. Que caso de uso altera agregados de mais de um tipo? Se algum, qual evento substitui a alteração do segundo tipo? (seções 2 e 6)
 5. Que repositório o caso de uso usa, e que consulta não é "me dê o agregado"? (seção 4)
 6. Que falhas são situações de negócio com nome próprio, e quais são entrada inválida? (seção 5)
-7. Que primitivos com regra viram value object, e em que pasta? Cada tipo novo que herda de `ValueObject` tem regra, comportamento ou igualdade usada pelo domínio? Se não, é um `record`. (seção 7)
+7. Que forma tem cada tipo novo do Domain, inclusive o que só é devolvido por um serviço? Responda numa tabela "Tipo | Forma | Por quê", com a forma escolhida pelas perguntas da seção 7 (entidade, SmartEnum, value object ou `record`) e a pasta. Que primitivos com regra viram value object? (seção 7)
 8. Como fica a FK entre os agregados? (seção 8)
 9. Para cada método privado do serviço planejado: ele lê dados de um agregado só? Se lê, por que não mora lá? (seção 3)

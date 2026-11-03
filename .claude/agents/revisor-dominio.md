@@ -54,6 +54,12 @@ Os arquivos `.Designer.cs` e `ModelSnapshot.cs` são gerados pelo EF: não leia.
     - algoritmo longo dentro do serviço, em vez de num tipo próprio.
 
     Ler um campo só ou chamar um método do agregado é o que o serviço deve fazer, e não é achado. Seguir um análogo que ainda concentra essa lógica também não dispensa o achado.
+17. **Forma do tipo segue o conceito** (seção 7 do guia, "a forma do tipo vem do conceito"). Para cada tipo novo ou alterado no Domain, aplique as perguntas em ordem e compare com a forma do código. É achado MÉDIO, dizendo a forma que o critério dá e por quê:
+    - um conceito que o negócio nomeia (no produto, na issue ou no plano) modelado como `record` "de retorno", primitivo ou tupla, em vez de value object;
+    - um value object sem as invariantes que o conceito tem declaradas no tipo, como total que não pode ser negativo em `Reais` em vez de `ReaisPositivo`;
+    - uma entidade sem identidade própria, ou um conjunto fechado de casos em `string` ou `int` em vez de SmartEnum.
+
+    Ter seguido o plano não dispensa o achado: a forma só é decisão do dono quando está em "Decisões fechadas".
 
 ## Dívidas conhecidas — não reportar
 
