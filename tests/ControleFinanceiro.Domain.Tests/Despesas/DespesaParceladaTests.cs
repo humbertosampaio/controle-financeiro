@@ -5,8 +5,8 @@ using ControleFinanceiro.Domain.Services;
 using ControleFinanceiro.Domain.Shared.ValueObjects;
 using ControleFinanceiro.Domain.Transacoes;
 using ControleFinanceiro.Domain.Usuarios;
-using ControleFinanceiro.Tests.Shared.AutoFixture.Attributes;
 using ControleFinanceiro.Tests.Shared;
+using ControleFinanceiro.Tests.Shared.AutoFixture.Attributes;
 using CSharpFunctionalExtensions;
 
 namespace ControleFinanceiro.Domain.Tests.Despesas;
@@ -111,6 +111,24 @@ public sealed class DespesaParceladaTests
         Maybe<ParcelaDespesa> result = despesa.ParcelaDoMes(despesa.Parcelas[^1].MesReferencia.Posterior());
 
         result.HasNoValue.Should().BeTrue();
+    }
+
+    [Theory, DomainAutoData]
+    public void PagamentoDoMes_Quando_HaParcelaNoMes_Deve_RetornarOPagamentoDaParcela(DespesaParcelada despesa)
+    {
+        ParcelaDespesa ultima = despesa.Parcelas[^1];
+
+        Maybe<Pagamento> result = despesa.PagamentoDoMes(ultima.MesReferencia);
+
+        result.Should().HaveValue(ultima.Pagamento);
+    }
+
+    [Theory, DomainAutoData]
+    public void PagamentoDoMes_Quando_NaoHaParcelaNoMes_Deve_RetornarVazio(DespesaParcelada despesa)
+    {
+        Maybe<Pagamento> result = despesa.PagamentoDoMes(despesa.Parcelas[^1].MesReferencia.Posterior());
+
+        result.Should().HaveNoValue();
     }
 
     [Theory, DomainAutoData]

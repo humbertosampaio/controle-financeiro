@@ -59,4 +59,7 @@ public abstract class DespesaInteira : Despesa
         Pagamento = Pagamento.Reabrir();
         return UnitResult.Success<Erro>();
     }
+
+    public override Maybe<Pagamento> PagamentoDoMes(MesReferencia mesReferencia) =>
+        MesReferencia == mesReferencia ? Pagamento : Maybe<Pagamento>.None;
 }
