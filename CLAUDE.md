@@ -89,7 +89,14 @@ dotnet tool restore                                   # dotnet-ef local, na vers
 dotnet ef migrations has-pending-model-changes --project src/ControleFinanceiro.Infrastructure.Persistence   # modelo mudou sem migration?
 ```
 
-O servidor MCP não abre porta nem sobe pelo AppHost: quem o inicia é o cliente MCP. Antes de usá-lo, com o Postgres de pé, defina a conexão dele: `dotnet user-secrets set "ConnectionStrings:controlefinanceiro" "<conexão>" --project src/ControleFinanceiro.Mcp`. Variável de ambiente vence o secret, mas a conexão com senha fica só no User Secret, nunca no `env` de um `.mcp.json`.
+O servidor MCP não abre porta nem sobe pelo AppHost: quem o inicia é o cliente MCP. Antes de usá-lo, com o Postgres de pé, defina a conexão dele e o usuário cujos dados as ferramentas leem:
+
+```bash
+dotnet user-secrets set "ConnectionStrings:controlefinanceiro" "<conexão>" --project src/ControleFinanceiro.Mcp
+dotnet user-secrets set "Mcp:IdUsuario" "<id do usuário>" --project src/ControleFinanceiro.Mcp
+```
+
+Variável de ambiente vence o secret, mas a conexão com senha fica só no User Secret, nunca no `env` de um `.mcp.json`. Sem o `Mcp:IdUsuario`, só o `verificar_servidor` responde: as ferramentas de leitura falham.
 
 Os testes de integração e o `pre-push` precisam do **Docker** rodando: sem ele, a suíte de integração falha (não é pulada). A cobertura (`CoverageReport.ps1`) também.
 

@@ -17,7 +17,7 @@ public static class DependencyInjection
                 .WithStdioServerTransport()
                 .WithTools<VerificarServidorFerramenta>();
 
-            return services.AddScoped<IUsuarioAtual, UsuarioAtualNaoDefinido>();
+            return services.AddScoped<IUsuarioAtual, UsuarioAtualConfigurado>();
         }
     }
 }
