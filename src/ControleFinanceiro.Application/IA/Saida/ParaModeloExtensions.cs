@@ -3,7 +3,7 @@ using ControleFinanceiro.Domain.Despesas;
 using ControleFinanceiro.Domain.Shared.ValueObjects;
 using ControleFinanceiro.Domain.Transacoes;
 
-namespace ControleFinanceiro.Application.SaidaModelo;
+namespace ControleFinanceiro.Application.IA.Saida;
 
 public static class ParaModeloExtensions
 {

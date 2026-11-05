@@ -2,7 +2,7 @@ using System.Text.Json.Serialization;
 using ControleFinanceiro.Domain.Beneficiarios;
 using ControleFinanceiro.Domain.Shared.ValueObjects;
 
-namespace ControleFinanceiro.Application.SaidaModelo;
+namespace ControleFinanceiro.Application.IA.Saida;
 
 /// <summary>O que o modelo vê de um beneficiário: quem ele é e como aparece nos arquivos.</summary>
 public sealed record BeneficiarioParaModelo : ISaidaModelo

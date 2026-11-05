@@ -1,7 +1,7 @@
 using System.Text.Json.Serialization;
 using ControleFinanceiro.Domain.Shared.ValueObjects;
 
-namespace ControleFinanceiro.Application.SaidaModelo;
+namespace ControleFinanceiro.Application.IA.Saida;
 
 /// <summary>As despesas fixas de um mês, ou só o erro que impediu de listá-las.</summary>
 public sealed record DespesasFixasDoMesParaModelo : ISaidaModelo

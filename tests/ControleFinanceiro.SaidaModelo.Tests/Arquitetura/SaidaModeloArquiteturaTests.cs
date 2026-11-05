@@ -1,5 +1,5 @@
 using ArchUnitNET.xUnit;
-using ControleFinanceiro.Application.SaidaModelo;
+using ControleFinanceiro.Application.IA.Saida;
 using ControleFinanceiro.Domain.Shared.ValueObjects;
 using ControleFinanceiro.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;

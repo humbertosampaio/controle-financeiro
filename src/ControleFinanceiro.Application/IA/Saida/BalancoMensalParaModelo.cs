@@ -1,7 +1,7 @@
 using System.Text.Json.Serialization;
 using ControleFinanceiro.Domain.Shared.ValueObjects;
 
-namespace ControleFinanceiro.Application.SaidaModelo;
+namespace ControleFinanceiro.Application.IA.Saida;
 
 /// <summary>O balanço de um mês, só com totais, ou só o erro que impediu de calculá-lo.</summary>
 public sealed record BalancoMensalParaModelo : ISaidaModelo

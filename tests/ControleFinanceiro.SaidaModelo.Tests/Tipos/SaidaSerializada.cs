@@ -1,6 +1,6 @@
 using System.Text.Json;
 using System.Text.Json.Nodes;
-using ControleFinanceiro.Application.SaidaModelo;
+using ControleFinanceiro.Application.IA.Saida;
 using ModelContextProtocol;
 
 namespace ControleFinanceiro.SaidaModelo.Tests.Tipos;

@@ -1,5 +1,5 @@
 using ControleFinanceiro.Application.Abstractions;
-using ControleFinanceiro.Application.SaidaModelo;
+using ControleFinanceiro.Application.IA.Saida;
 using ControleFinanceiro.Domain.Despesas;
 using ControleFinanceiro.Domain.Services;
 using ControleFinanceiro.Domain.Shared.ValueObjects;
@@ -7,7 +7,7 @@ using ControleFinanceiro.Domain.Transacoes;
 using ControleFinanceiro.Domain.Usuarios;
 using CSharpFunctionalExtensions;
 
-namespace ControleFinanceiro.Application.Leituras;
+namespace ControleFinanceiro.Application.IA.Leituras;
 
 /// <summary>
 /// As leituras que vão ao modelo, já como tipos de saída: quem fala com o modelo chama este serviço e não toca nos

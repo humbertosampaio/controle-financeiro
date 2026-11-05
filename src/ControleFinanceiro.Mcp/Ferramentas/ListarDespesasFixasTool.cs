@@ -1,6 +1,6 @@
 using System.ComponentModel;
-using ControleFinanceiro.Application.Leituras;
-using ControleFinanceiro.Application.SaidaModelo;
+using ControleFinanceiro.Application.IA.Leituras;
+using ControleFinanceiro.Application.IA.Saida;
 using ModelContextProtocol.Server;
 
 namespace ControleFinanceiro.Mcp.Ferramentas;

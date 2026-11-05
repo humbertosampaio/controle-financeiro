@@ -1,4 +1,4 @@
-namespace ControleFinanceiro.Application.SaidaModelo;
+namespace ControleFinanceiro.Application.IA.Saida;
 
 /// <summary>
 /// Marca o que pode sair para o modelo. Quem o implementa só aceita texto como

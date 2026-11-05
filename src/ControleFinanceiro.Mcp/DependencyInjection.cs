@@ -1,5 +1,5 @@
 using ControleFinanceiro.Application.Abstractions;
-using ControleFinanceiro.Application.Leituras;
+using ControleFinanceiro.Application.IA.Leituras;
 using ControleFinanceiro.Mcp.Autenticacao;
 using ControleFinanceiro.Mcp.Ferramentas;
 using Microsoft.Extensions.DependencyInjection;

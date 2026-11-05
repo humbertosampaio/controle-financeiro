@@ -1,5 +1,5 @@
 using System.Text.Json.Nodes;
-using ControleFinanceiro.Application.SaidaModelo;
+using ControleFinanceiro.Application.IA.Saida;
 
 namespace ControleFinanceiro.SaidaModelo.Tests.Tipos;
 

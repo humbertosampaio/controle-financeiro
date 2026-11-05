@@ -2,7 +2,7 @@ using System.Text.Json.Serialization;
 using ControleFinanceiro.Domain.Despesas;
 using ControleFinanceiro.Domain.Shared.ValueObjects;
 
-namespace ControleFinanceiro.Application.SaidaModelo;
+namespace ControleFinanceiro.Application.IA.Saida;
 
 /// <summary>O que o modelo vê de uma despesa recorrente num mês, com a despesa que ela gerou nele, quando já gerou.</summary>
 public sealed record DespesaFixaParaModelo : ISaidaModelo

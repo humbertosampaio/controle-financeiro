@@ -1,7 +1,7 @@
 using System.Text.Json.Serialization;
 using ControleFinanceiro.Domain.Shared.ValueObjects;
 
-namespace ControleFinanceiro.Application.SaidaModelo;
+namespace ControleFinanceiro.Application.IA.Saida;
 
 /// <summary>
 /// Uma falha prevista, com mensagem fixa que diz ao modelo o que corrigir. Nunca repete a entrada nem o erro de quem

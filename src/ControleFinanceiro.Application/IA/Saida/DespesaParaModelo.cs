@@ -2,7 +2,7 @@ using System.Text.Json.Serialization;
 using ControleFinanceiro.Domain.Despesas;
 using ControleFinanceiro.Domain.Shared.ValueObjects;
 
-namespace ControleFinanceiro.Application.SaidaModelo;
+namespace ControleFinanceiro.Application.IA.Saida;
 
 /// <summary>
 /// O que o modelo vê de uma despesa, de qualquer tipo, num mês: o alvo de um vínculo. O valor e o status são os do
