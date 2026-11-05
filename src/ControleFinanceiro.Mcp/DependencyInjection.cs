@@ -16,10 +16,10 @@ public static class DependencyInjection
             services
                 .AddMcpServer()
                 .WithStdioServerTransport()
-                .WithTools<VerificarServidorFerramenta>()
-                .WithTools<ListarTransacoesFerramenta>()
-                .WithTools<ListarDespesasFixasFerramenta>()
-                .WithTools<BalancoMensalFerramenta>();
+                .WithTools<VerificarServidorTool>()
+                .WithTools<ListarTransacoesTool>()
+                .WithTools<ListarDespesasFixasTool>()
+                .WithTools<BalancoMensalTool>();
 
             return services
                 .AddScoped<IUsuarioAtual, UsuarioAtualConfigurado>()

@@ -16,14 +16,14 @@ using ModelContextProtocol.Protocol;
 namespace ControleFinanceiro.Mcp.Tests.Ferramentas;
 
 [Collection(ServidorMcpCollection.Nome)]
-public sealed class ListarTransacoesFerramentaTests : IAsyncLifetime
+public sealed class ListarTransacoesToolTests : IAsyncLifetime
 {
     private const string NomeFerramenta = "listar_transacoes";
 
     private readonly ServidorMcpFixture _servidor;
     private readonly BancoDeTeste _banco;
 
-    public ListarTransacoesFerramentaTests(ServidorMcpFixture servidor)
+    public ListarTransacoesToolTests(ServidorMcpFixture servidor)
     {
         _servidor = servidor;
         _banco = new BancoDeTeste(servidor);

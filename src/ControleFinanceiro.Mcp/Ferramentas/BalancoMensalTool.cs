@@ -6,7 +6,7 @@ using ModelContextProtocol.Server;
 namespace ControleFinanceiro.Mcp.Ferramentas;
 
 [McpServerToolType]
-internal sealed class BalancoMensalFerramenta
+internal sealed class BalancoMensalTool
 {
     [McpServerTool(Name = "balanco_mensal", ReadOnly = true)]
     [Description("Mostra o balanço de um mês: a renda líquida atual, o total já pago e o total pendente das despesas do mês e o saldo previsto (renda líquida menos pago e pendente). A renda é a de hoje, também para meses passados.")]

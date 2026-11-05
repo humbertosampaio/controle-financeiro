@@ -6,7 +6,7 @@ using ModelContextProtocol.Server;
 namespace ControleFinanceiro.Mcp.Ferramentas;
 
 [McpServerToolType]
-internal sealed class VerificarServidorFerramenta
+internal sealed class VerificarServidorTool
 {
     [McpServerTool(Name = "verificar_servidor", ReadOnly = true)]
     [Description("Verifica se o servidor do Controle Financeiro está de pé e consegue acessar o banco de dados.")]

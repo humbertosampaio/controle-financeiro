@@ -14,14 +14,14 @@ using ModelContextProtocol.Protocol;
 namespace ControleFinanceiro.Mcp.Tests.Ferramentas;
 
 [Collection(ServidorMcpCollection.Nome)]
-public sealed class ListarDespesasFixasFerramentaTests : IAsyncLifetime
+public sealed class ListarDespesasFixasToolTests : IAsyncLifetime
 {
     private const string NomeFerramenta = "listar_despesas_fixas";
 
     private readonly ServidorMcpFixture _servidor;
     private readonly BancoDeTeste _banco;
 
-    public ListarDespesasFixasFerramentaTests(ServidorMcpFixture servidor)
+    public ListarDespesasFixasToolTests(ServidorMcpFixture servidor)
     {
         _servidor = servidor;
         _banco = new BancoDeTeste(servidor);

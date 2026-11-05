@@ -6,7 +6,7 @@ using ModelContextProtocol.Server;
 namespace ControleFinanceiro.Mcp.Ferramentas;
 
 [McpServerToolType]
-internal sealed class ListarTransacoesFerramenta
+internal sealed class ListarTransacoesTool
 {
     [McpServerTool(Name = "listar_transacoes", ReadOnly = true)]
     [Description("Lista as transações de um mês, das contas e dos cartões, em ordem de data: id, data, valor (negativo é saída), descrição e contraparte.")]

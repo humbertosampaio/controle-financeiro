@@ -105,8 +105,8 @@ public sealed class SaidaModeloArquiteturaTests
     public void QuemFalaComOModelo_Deve_UsarODbContextSoNaVerificacaoDoServidor()
     {
         TiposDeQuemFala()
-            .And().DoNotHaveFullName("ControleFinanceiro.Mcp.Ferramentas.VerificarServidorFerramenta")
-            .And().DoNotHaveFullName("ControleFinanceiro.Mcp.Ferramentas.VerificarServidorFerramenta+<Verificar>d__0")
+            .And().DoNotHaveFullName("ControleFinanceiro.Mcp.Ferramentas.VerificarServidorTool")
+            .And().DoNotHaveFullName("ControleFinanceiro.Mcp.Ferramentas.VerificarServidorTool+<Verificar>d__0")
             .Should().NotDependOnAny(typeof(ControleFinanceiroDbContext))
             .Check(_arquitetura);
     }
