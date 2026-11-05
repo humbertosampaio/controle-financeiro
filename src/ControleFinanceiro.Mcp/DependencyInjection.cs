@@ -18,7 +18,8 @@ public static class DependencyInjection
                 .WithStdioServerTransport()
                 .WithTools<VerificarServidorFerramenta>()
                 .WithTools<ListarTransacoesFerramenta>()
-                .WithTools<ListarDespesasFixasFerramenta>();
+                .WithTools<ListarDespesasFixasFerramenta>()
+                .WithTools<BalancoMensalFerramenta>();
 
             return services
                 .AddScoped<IUsuarioAtual, UsuarioAtualConfigurado>()

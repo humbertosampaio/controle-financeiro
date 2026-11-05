@@ -29,7 +29,9 @@ public sealed class ServidorMcpTests
     {
         IList<McpClientTool> ferramentas = await _fixture.ClienteMcp.ListToolsAsync();
 
-        ferramentas.Select(ferramenta => ferramenta.Name).Should().BeEquivalentTo(NomeFerramenta, "listar_transacoes", "listar_despesas_fixas");
+        ferramentas
+            .Select(ferramenta => ferramenta.Name)
+            .Should().BeEquivalentTo(NomeFerramenta, "listar_transacoes", "listar_despesas_fixas", "balanco_mensal");
     }
 
     [Fact]
