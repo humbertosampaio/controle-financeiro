@@ -385,7 +385,7 @@ Puros, sem infraestrutura: recebem os agregados e as listas de que precisam, e q
 | `IBeneficiarioRepository` | `Beneficiario` (lista os do usuário atual, obtém um dele) |
 | `ICartaoRepository` | `Cartao` (lista os do usuário, obtém um do usuário) |
 | `IContaRepository` | `ContaBancaria` (lista as do usuário) |
-| `ITransacaoRepository` | `Transacao` (obtém uma pelo id, lista as com parcela, adiciona só as de chave nova e devolve essas mesmas instâncias) |
+| `ITransacaoRepository` | `Transacao` (obtém uma pelo id, lista as com parcela, lista as de um mês em ordem de data, adiciona só as de chave nova e devolve essas mesmas instâncias) |
 | `IImportacaoRepository` | `ImportacaoArquivo` |
 | `IDespesaRecorrenteRepository` | `DespesaRecorrente` (lista as do usuário atual) |
 | `IDespesaRepository` | `Despesa` (lista as do usuário atual num mês de referência, inclusive a parcelada com parcela nele, lista as parceladas dele, obtém uma pelo id ou pela transação que a pagou, adiciona as novas) |

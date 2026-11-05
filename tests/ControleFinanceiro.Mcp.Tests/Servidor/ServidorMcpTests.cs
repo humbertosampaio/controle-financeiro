@@ -25,11 +25,11 @@ public sealed class ServidorMcpTests
     }
 
     [Fact]
-    public async Task ListarFerramentas_Deve_TerSomenteAVerificacao()
+    public async Task ListarFerramentas_Deve_TerAVerificacaoEAsLeituras()
     {
         IList<McpClientTool> ferramentas = await _fixture.ClienteMcp.ListToolsAsync();
 
-        ferramentas.Select(ferramenta => ferramenta.Name).Should().Equal(NomeFerramenta);
+        ferramentas.Select(ferramenta => ferramenta.Name).Should().BeEquivalentTo(NomeFerramenta, "listar_transacoes");
     }
 
     [Fact]
