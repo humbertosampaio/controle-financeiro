@@ -15,7 +15,10 @@ using ArchLoader = ArchUnitNET.Loader.ArchLoader;
 using DependencyInjectionMcp = ControleFinanceiro.Mcp.DependencyInjection;
 using DependencyInjectionPersistence = ControleFinanceiro.Infrastructure.Persistence.DependencyInjection;
 using IdBeneficiario = ControleFinanceiro.Domain.Beneficiarios.IdBeneficiario;
+using DiaOcorrenciaRecorrente = ControleFinanceiro.Domain.Despesas.DiaOcorrenciaRecorrente;
 using IdDespesa = ControleFinanceiro.Domain.Despesas.IdDespesa;
+using IdDespesaRecorrente = ControleFinanceiro.Domain.Despesas.IdDespesaRecorrente;
+using StatusPagamento = ControleFinanceiro.Domain.Despesas.StatusPagamento;
 using IdTransacao = ControleFinanceiro.Domain.Transacoes.IdTransacao;
 
 namespace ControleFinanceiro.SaidaModelo.Tests.Arquitetura;
@@ -138,7 +141,10 @@ public sealed class SaidaModeloArquiteturaTests
             .Should().BeEmpty();
     }
 
-    /// <summary>Texto só entra mascarado: <c>string</c> ou um agregado no construtor abririam a fronteira.</summary>
+    /// <summary>
+    /// Texto só entra mascarado: <c>string</c> ou um agregado no construtor abririam a fronteira. Outro tipo de saída, sozinho
+    /// ou numa lista, entra porque passa pelas mesmas regras.
+    /// </summary>
     [Fact]
     public void TiposDeSaida_Deve_AceitarNoConstrutorSoTiposPermitidos()
     {
@@ -246,9 +252,24 @@ public sealed class SaidaModeloArquiteturaTests
             || tipo == typeof(IReadOnlyList<DocumentoMascarado>)
             || tipo == typeof(DateOnly)
             || tipo == typeof(Reais)
+            || tipo == typeof(MesReferencia)
+            || tipo == typeof(StatusPagamento)
+            || tipo == typeof(DiaOcorrenciaRecorrente)
             || tipo == typeof(IdTransacao)
             || tipo == typeof(IdDespesa)
-            || tipo == typeof(IdBeneficiario);
+            || tipo == typeof(IdDespesaRecorrente)
+            || tipo == typeof(IdBeneficiario)
+            || EhSaida(tipo)
+            || EhListaDeSaida(tipo);
+    }
+
+    private static bool EhSaida(Type tipo) => !tipo.IsInterface && tipo.IsAssignableTo(typeof(ISaidaModelo));
+
+    private static bool EhListaDeSaida(Type tipo)
+    {
+        return tipo.IsGenericType
+            && tipo.GetGenericTypeDefinition() == typeof(IReadOnlyList<>)
+            && EhSaida(tipo.GetGenericArguments()[0]);
     }
 
     /// <summary>
