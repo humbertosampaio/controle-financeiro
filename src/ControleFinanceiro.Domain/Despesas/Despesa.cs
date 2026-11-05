@@ -54,4 +54,7 @@ public abstract class Despesa : AggregateRoot<IdDespesa>, IPertenceAoUsuario
 
     /// <summary>Devolve para pendente o que a transação quitou, ou falha com <see cref="ErroTransacaoNaoVinculada"/>.</summary>
     public abstract UnitResult<Erro> DesfazerVinculo(IdTransacao idTransacao);
+
+    /// <summary>O pagamento que cai no mês de referência, ou nada quando a despesa não tem pagamento nele.</summary>
+    public abstract Maybe<Pagamento> PagamentoDoMes(MesReferencia mesReferencia);
 }

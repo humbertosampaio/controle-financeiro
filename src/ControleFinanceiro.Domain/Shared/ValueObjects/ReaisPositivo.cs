@@ -5,6 +5,8 @@
 /// </summary>
 public sealed class ReaisPositivo : Reais
 {
+    public static readonly ReaisPositivo Zero = new(0m);
+
     private ReaisPositivo(decimal valor) : base(valor)
     {
     }

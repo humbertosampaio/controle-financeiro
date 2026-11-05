@@ -1,4 +1,5 @@
 using ControleFinanceiro.Application.Abstractions;
+using ControleFinanceiro.Application.IA.Leituras;
 using ControleFinanceiro.Mcp.Autenticacao;
 using ControleFinanceiro.Mcp.Ferramentas;
 using Microsoft.Extensions.DependencyInjection;
@@ -15,9 +16,14 @@ public static class DependencyInjection
             services
                 .AddMcpServer()
                 .WithStdioServerTransport()
-                .WithTools<VerificarServidorFerramenta>();
+                .WithTools<VerificarServidorTool>()
+                .WithTools<ListarTransacoesTool>()
+                .WithTools<ListarDespesasFixasTool>()
+                .WithTools<BalancoMensalTool>();
 
-            return services.AddScoped<IUsuarioAtual, UsuarioAtualNaoDefinido>();
+            return services
+                .AddScoped<IUsuarioAtual, UsuarioAtualConfigurado>()
+                .AddScoped<LeituraParaModeloService>();
         }
     }
 }

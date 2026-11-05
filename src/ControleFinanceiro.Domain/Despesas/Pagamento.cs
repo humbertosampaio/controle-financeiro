@@ -18,6 +18,9 @@ public sealed class Pagamento : ValueObject
     [MemberNotNullWhen(true, nameof(DataEfetiva), nameof(ValorEfetivo))]
     public bool EstaPago => Status == StatusPagamento.Pago;
 
+    /// <summary>O valor que vale para o pagamento: o efetivo quando pago, o projetado quando pendente.</summary>
+    public ReaisPositivo ValorVigente => EstaPago ? ValorEfetivo : ValorProjetado;
+
     private Pagamento(
         ReaisPositivo valorProjetado,
         StatusPagamento status,

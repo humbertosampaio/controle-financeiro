@@ -155,4 +155,20 @@ public sealed class DespesaSimplesTests
 
         result.Should().FailWith("Cartão de Crédito não é uma forma de pagamento válida para despesa simples");
     }
+
+    [Theory, DomainAutoData]
+    public void PagamentoDoMes_Quando_MesDaDespesa_Deve_RetornarOPagamento(DespesaSimples despesa)
+    {
+        Maybe<Pagamento> result = despesa.PagamentoDoMes(despesa.MesReferencia);
+
+        result.Should().HaveValue(despesa.Pagamento);
+    }
+
+    [Theory, DomainAutoData]
+    public void PagamentoDoMes_Quando_OutroMes_Deve_RetornarVazio(DespesaSimples despesa)
+    {
+        Maybe<Pagamento> result = despesa.PagamentoDoMes(despesa.MesReferencia.Posterior());
+
+        result.Should().HaveNoValue();
+    }
 }

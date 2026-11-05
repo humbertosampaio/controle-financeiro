@@ -1,6 +1,6 @@
 using System.Reflection;
 using System.Text.Json.Nodes;
-using ControleFinanceiro.Application.SaidaModelo;
+using ControleFinanceiro.Application.IA.Saida;
 using ControleFinanceiro.Domain.Shared.ValueObjects;
 using ControleFinanceiro.Domain.Transacoes;
 using ControleFinanceiro.Tests.Shared;

@@ -57,6 +57,8 @@ Código novo segue o análogo citado no plano. Regra nova tem teste no mesmo com
 
 Ao criar uma classe de testes com muitos casos, escreva dois ou três, releia-os com o critério de [cada parâmetro precisa se justificar](../../../docs/testes-com-autofixture.md#cada-parâmetro-precisa-se-justificar) e só então replique o formato nos demais.
 
+Antes de criar um tipo no Domain, confira a forma dele com as perguntas de [a forma do tipo vem do conceito](../../../docs/padroes-de-dominio.md#7-value-objects-e-ids) (entidade, SmartEnum, value object ou `record`), mesmo que o plano já a tenha definido: a forma que o plano escolheu é desenho a conferir, e não decisão fechada, a não ser que esteja em "Decisões fechadas". Se o critério der outra forma, pergunte ao dono como na seção 4 e registre o desvio.
+
 Num passo que cria serviço de domínio, depois de os testes passarem e antes de mostrar o passo, releia cada método privado do serviço com o critério de [o serviço de domínio só orquestra](../../../docs/padroes-de-dominio.md#3-regras-que-cruzam-agregados): se ele lê dados de um agregado só ou mostra um dos sinais listados lá, leve a lógica para o agregado, a entidade, o value object ou um tipo próprio. Um membro que o plano não previa entra na lista de desvios.
 
 ## 4. Quando o plano não fecha com o código

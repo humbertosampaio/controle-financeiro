@@ -1,5 +1,6 @@
 using ControleFinanceiro.Domain.Contas;
 using ControleFinanceiro.Domain.Importacoes;
+using ControleFinanceiro.Domain.Shared.ValueObjects;
 using ControleFinanceiro.Domain.Transacoes;
 using CSharpFunctionalExtensions;
 using Microsoft.EntityFrameworkCore;
@@ -53,6 +54,15 @@ internal sealed class TransacaoRepository : ITransacaoRepository
     {
         return await DaOrigem(origem)
             .Where(t => t.Data >= periodo.Inicio && t.Data <= periodo.Fim)
+            .ToListAsync(cancellationToken);
+    }
+
+    public async Task<IReadOnlyList<Transacao>> ListarDoMesAsync(MesReferencia mesReferencia, CancellationToken cancellationToken)
+    {
+        return await _dbSet
+            .Where(t => t.Data >= mesReferencia.Inicio && t.Data <= mesReferencia.Fim)
+            .OrderBy(t => t.Data)
+            .ThenBy(t => t.Id)
             .ToListAsync(cancellationToken);
     }
 

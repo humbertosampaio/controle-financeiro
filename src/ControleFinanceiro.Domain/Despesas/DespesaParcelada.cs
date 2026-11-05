@@ -91,6 +91,8 @@ public sealed class DespesaParcelada : Despesa
 
     public Maybe<ParcelaDespesa> ParcelaDoMes(MesReferencia mesReferencia) => _parcelas.TryFirst(p => p.MesReferencia == mesReferencia);
 
+    public override Maybe<Pagamento> PagamentoDoMes(MesReferencia mesReferencia) => ParcelaDoMes(mesReferencia).Map(p => p.Pagamento);
+
     /// <param name="numero">Um número até o total de parcelas da compra.</param>
     internal ParcelaDespesa ParcelaNumero(int numero) => _parcelas.First(p => p.NumeroParcela == numero);
 

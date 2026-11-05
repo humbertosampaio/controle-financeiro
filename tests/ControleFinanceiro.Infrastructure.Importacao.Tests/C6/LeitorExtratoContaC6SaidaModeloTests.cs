@@ -1,4 +1,4 @@
-using ControleFinanceiro.Application.SaidaModelo;
+using ControleFinanceiro.Application.IA.Saida;
 using ControleFinanceiro.Domain.Importacoes;
 using ControleFinanceiro.Domain.Transacoes;
 using ControleFinanceiro.Infrastructure.Importacao.C6;

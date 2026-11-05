@@ -25,6 +25,12 @@ public sealed class ReaisPositivoTests
         result.Should().Succeed().Which.Value.Should().Be(0m);
     }
 
+    [Fact]
+    public void Zero_Deve_SerOValorZero()
+    {
+        ReaisPositivo.Zero.Should().Be((ReaisPositivo)0m);
+    }
+
     [Theory, DomainAutoData]
     public void Criar_Quando_ValorMenorQueZero_Deve_RetornarFalha(decimal valor)
     {

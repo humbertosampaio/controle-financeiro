@@ -2,7 +2,7 @@ using System.Text.Json.Serialization;
 using ControleFinanceiro.Domain.Shared.ValueObjects;
 using ControleFinanceiro.Domain.Transacoes;
 
-namespace ControleFinanceiro.Application.SaidaModelo;
+namespace ControleFinanceiro.Application.IA.Saida;
 
 /// <summary>O que o modelo vê de uma transação. O <see cref="Id"/> é gerado por nós, e não vem do banco emissor.</summary>
 public sealed record TransacaoParaModelo : ISaidaModelo
