@@ -1,11 +1,16 @@
+using AutoFixture;
 using ControleFinanceiro.Domain.Beneficiarios;
+using ControleFinanceiro.Domain.Categorias;
 using ControleFinanceiro.Domain.Contas;
+using ControleFinanceiro.Domain.Despesas;
 using ControleFinanceiro.Domain.Importacoes;
 using ControleFinanceiro.Domain.Services;
+using ControleFinanceiro.Domain.Shared.ValueObjects;
 using ControleFinanceiro.Domain.Transacoes;
 using ControleFinanceiro.Domain.Usuarios;
 using ControleFinanceiro.Infrastructure.Persistence;
 using ControleFinanceiro.Tests.Shared;
+using Microsoft.EntityFrameworkCore;
 
 namespace ControleFinanceiro.Mcp.Tests.Infraestrutura;
 
@@ -52,5 +57,56 @@ internal sealed class BancoDeTeste
         await dbContext.SaveChangesAsync();
 
         return transacoes;
+    }
+
+    /// <summary>
+    /// Grava uma despesa recorrente no Pix, com o beneficiário dela e a categoria Outros do usuário, criada na primeira
+    /// recorrente dele. O usuário, a descrição, o valor e o dia vêm do <paramref name="fixture"/>.
+    /// </summary>
+    public async Task<DespesaRecorrente> GravarRecorrenteAsync(IFixture fixture)
+    {
+        IdUsuario idUsuario = fixture.Create<IdUsuario>();
+
+        await using ControleFinanceiroDbContext dbContext = _servidor.CriarDbContext(idUsuario);
+        CategoriaDespesa? outros = await dbContext.Categorias.FirstOrDefaultAsync();
+        if (outros is null)
+        {
+            outros = CategoriaDespesaFactory.CriarOutros(idUsuario);
+            await dbContext.Categorias.AddAsync(outros);
+        }
+
+        TextoObrigatorio descricao = fixture.Create<TextoObrigatorio>();
+        Beneficiario beneficiario = BeneficiarioFactory
+            .Resolver(idUsuario, beneficiariosDoUsuario: [], [new BeneficiarioNovo(descricao, alias: null)])
+            .Value[0];
+        DespesaRecorrente recorrente = DespesaRecorrenteFactory
+            .CriarSemCartao(
+                idUsuario,
+                recorrentesDoUsuario: [],
+                beneficiario,
+                descricao,
+                outros,
+                FormaPagamento.Pix,
+                fixture.Create<ReaisPositivo>(),
+                fixture.Create<DiaOcorrenciaRecorrente>())
+            .Value;
+
+        await dbContext.Beneficiarios.AddAsync(beneficiario);
+        await dbContext.DespesasRecorrentes.AddAsync(recorrente);
+        await dbContext.SaveChangesAsync();
+
+        return recorrente;
+    }
+
+    /// <summary>Grava a despesa que a recorrente gera no mês, pendente, como a geração do mês faria.</summary>
+    public async Task<Despesa> GravarDespesaDoMesAsync(DespesaRecorrente recorrente, MesReferencia mes)
+    {
+        Despesa despesa = GeracaoDespesasDoMesService.GerarComPagamentoImediato(recorrente, mes).Value;
+
+        await using ControleFinanceiroDbContext dbContext = _servidor.CriarDbContext(recorrente.IdUsuario);
+        await dbContext.Despesas.AddAsync(despesa);
+        await dbContext.SaveChangesAsync();
+
+        return despesa;
     }
 }
