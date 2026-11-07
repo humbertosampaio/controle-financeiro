@@ -19,15 +19,17 @@ public sealed record ErroParaModelo : ISaidaModelo
 
     public static readonly ErroParaModelo DespesaNaoEncontrada = Fixo("A despesa não foi encontrada: use o id de uma despesa de listar_despesas_fixas.");
 
-    public static readonly ErroParaModelo TransacaoJaVinculada = Fixo("A transação já paga uma despesa, e cada transação paga uma só.");
+    public static readonly ErroParaModelo TransacaoJaVinculada = Fixo("A transação já paga ou cobra uma despesa, e cada transação é ligada a uma só.");
 
-    public static readonly ErroParaModelo DespesaJaPaga = Fixo("A despesa já foi paga por outra transação.");
+    public static readonly ErroParaModelo DespesaJaPaga = Fixo("A despesa já foi paga por outra saída.");
+
+    public static readonly ErroParaModelo DespesaJaCobrada = Fixo("A despesa já foi cobrada por outra compra do cartão.");
 
     public static readonly ErroParaModelo TransacaoNaoEhSaida = Fixo("A transação é uma entrada: só uma saída paga despesa.");
 
-    public static readonly ErroParaModelo OrigemIncompativel = Fixo("A origem da transação não combina com a despesa: a despesa sem cartão é paga por uma saída da conta, e a do crédito, por uma saída do cartão dela.");
+    public static readonly ErroParaModelo OrigemIncompativel = Fixo("A origem da transação não combina com a despesa: a despesa sem cartão é paga por uma saída da conta, e a do crédito é cobrada por uma compra do cartão dela.");
 
-    public static readonly ErroParaModelo ParcelaIncompativel = Fixo("A parcela da transação não combina com a despesa: só a despesa parcelada é paga por parcela, e só pela parcela da mesma compra.");
+    public static readonly ErroParaModelo ParcelaIncompativel = Fixo("A parcela da transação não combina com a despesa: só a despesa parcelada é cobrada por parcela, e só pela parcela da mesma compra.");
 
     public static readonly ErroParaModelo ResumoDivergente = Fixo("O resumo não corresponde ao vínculo desses ids, e nada foi gravado: chame prever_vinculo de novo, mostre o novo resumo ao usuário e confirme com ele sem alteração.");
 
@@ -50,6 +52,7 @@ public sealed record ErroParaModelo : ISaidaModelo
         {
             ErroTransacaoJaVinculada => TransacaoJaVinculada,
             ErroDespesaJaPaga => DespesaJaPaga,
+            ErroDespesaJaCobrada => DespesaJaCobrada,
             ErroTransacaoNaoEhSaida => TransacaoNaoEhSaida,
             ErroOrigemIncompativelComDespesa => OrigemIncompativel,
             ErroParcelaIncompativelComDespesa => ParcelaIncompativel,

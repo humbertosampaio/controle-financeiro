@@ -1,5 +1,7 @@
 using System.Text.Json.Nodes;
+using AutoFixture.Xunit2;
 using ControleFinanceiro.Application.IA.Saida;
+using ControleFinanceiro.Domain.Cartoes;
 using ControleFinanceiro.Domain.Despesas;
 using ControleFinanceiro.Domain.Services;
 using ControleFinanceiro.Domain.Shared.ValueObjects;
@@ -42,6 +44,23 @@ public sealed class VinculoParaModeloTests
         vinculo.Resumo.Should().Be(VinculoParaModelo.De(transacao, despesa).Resumo);
     }
 
+    [Theory, UsuarioUnicoAutoData]
+    public void Serializar_Quando_CompraCobraAParcela_Deve_LevarAParcelaPendenteComOValorCobrado(
+        [Frozen] Cartao cartao,
+        DespesaParcelada despesa,
+        TransacoesDeTeste transacoes,
+        Lancamento lancamento)
+    {
+        Transacao transacao = Cobrar(despesa, cartao, transacoes, lancamento);
+
+        JsonObject json = VinculoParaModelo.De(transacao, despesa).Serializar();
+
+        VinculoLido vinculo = new(json);
+        vinculo.Despesa.Status.Should().Be(StatusPagamento.Pendente.Name);
+        vinculo.Despesa.Valor.Should().Be(transacao.ValorAbsoluto);
+        vinculo.Despesa.Mes.Should().Be(despesa.Parcelas[^1].MesReferencia.ToString());
+    }
+
     [Fact]
     public void Serializar_Quando_Falha_Deve_TerSoOErro()
     {
@@ -66,6 +85,30 @@ public sealed class VinculoParaModeloTests
             .And.Contain(ComEspacosComuns(despesa.Pagamento.ValorProjetado.ToString()))
             .And.NotContain(transacao.Id.Value.ToString())
             .And.NotContain(despesa.Id.Value.ToString());
+    }
+
+    [Theory, UsuarioUnicoAutoData]
+    public void Resumo_Quando_SaidaPagaASimples_Deve_DizerQueASaidaPaga(DespesaSimples despesa, TransacoesDeTeste transacoes, Lancamento lancamento)
+    {
+        Transacao transacao = Vincular(despesa, transacoes, lancamento);
+
+        string? resumo = VinculoParaModelo.De(transacao, despesa).Resumo;
+
+        resumo.Should().StartWith("A saída de").And.Contain(", paga a despesa ");
+    }
+
+    [Theory, UsuarioUnicoAutoData]
+    public void Resumo_Quando_CompraCobraAParcela_Deve_DizerQueACompraCobra(
+        [Frozen] Cartao cartao,
+        DespesaParcelada despesa,
+        TransacoesDeTeste transacoes,
+        Lancamento lancamento)
+    {
+        Transacao transacao = Cobrar(despesa, cartao, transacoes, lancamento);
+
+        string? resumo = VinculoParaModelo.De(transacao, despesa).Resumo;
+
+        resumo.Should().StartWith("A compra de").And.Contain(", cobra a despesa ");
     }
 
     [Theory]
@@ -146,6 +189,23 @@ public sealed class VinculoParaModeloTests
     private const string EspacoNaoSeparavel = " ";
 
     private static string ComEspacosComuns(string texto) => texto.Replace(EspacoNaoSeparavel, " ", StringComparison.Ordinal);
+
+    /// <summary>A compra da última parcela da despesa, no cartão dela, ligada à despesa: a parcela fica cobrada e pendente.</summary>
+    private static Transacao Cobrar(DespesaParcelada despesa, Cartao cartao, TransacoesDeTeste transacoes, Lancamento lancamento)
+    {
+        Lancamento compra = Lancamento.DoCartao(
+            despesa.DataOcorrencia,
+            hora: null,
+            -(decimal.Abs(lancamento.Valor) + 1m),
+            despesa.Descricao,
+            contraparte: null,
+            (Parcela)(despesa.Parcelas.Count, despesa.Parcelas.Count),
+            categoriaBanco: null,
+            lancamento.Identidade);
+        Transacao transacao = transacoes.DoCartao(cartao, compra);
+        VinculoTransacaoService.Vincular(transacao, despesa, despesaQueUsaATransacao: Maybe<Despesa>.None).Should().Succeed();
+        return transacao;
+    }
 
     private static Transacao Vincular(DespesaSimples despesa, TransacoesDeTeste transacoes, Lancamento lancamento)
     {

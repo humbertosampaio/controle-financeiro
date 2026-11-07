@@ -9,7 +9,7 @@ namespace ControleFinanceiro.Mcp.Ferramentas;
 internal sealed class ListarDespesasFixasTool
 {
     [McpServerTool(Name = "listar_despesas_fixas", ReadOnly = true)]
-    [Description("Lista as despesas fixas (recorrentes) com o valor e o dia em que ocorrem, cada uma com a despesa do mês pedido e o status do pagamento (Pago ou Pendente), quando a despesa do mês já foi gerada.")]
+    [Description("Lista as despesas fixas (recorrentes) com o valor e o dia em que ocorrem, cada uma com a despesa do mês pedido e o status do pagamento (Pago ou Pendente), quando a despesa do mês já foi gerada. A despesa do cartão cobrada na fatura e ainda não paga sai como Pendente, com o valor cobrado.")]
     public static Task<DespesasFixasDoMesParaModelo> Listar(
         LeituraParaModeloService leitura,
         [Description("O ano, com quatro dígitos.")] int ano,

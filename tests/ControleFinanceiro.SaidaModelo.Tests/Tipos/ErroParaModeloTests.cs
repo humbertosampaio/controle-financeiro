@@ -19,6 +19,7 @@ public sealed class ErroParaModeloTests
         ErroParaModelo.DespesaNaoEncontrada,
         ErroParaModelo.TransacaoJaVinculada,
         ErroParaModelo.DespesaJaPaga,
+        ErroParaModelo.DespesaJaCobrada,
         ErroParaModelo.TransacaoNaoEhSaida,
         ErroParaModelo.OrigemIncompativel,
         ErroParaModelo.ParcelaIncompativel,
@@ -27,6 +28,7 @@ public sealed class ErroParaModeloTests
     public static readonly TheoryData<Erro, ErroParaModelo> ErrosDoVinculo = new()
     {
         { ErroDespesaJaPaga.Instancia, ErroParaModelo.DespesaJaPaga },
+        { ErroDespesaJaCobrada.Instancia, ErroParaModelo.DespesaJaCobrada },
         { ErroTransacaoNaoEhSaida.Instancia, ErroParaModelo.TransacaoNaoEhSaida },
         { ErroOrigemIncompativelComDespesa.Instancia, ErroParaModelo.OrigemIncompativel },
         { ErroParcelaIncompativelComDespesa.Instancia, ErroParaModelo.ParcelaIncompativel },
