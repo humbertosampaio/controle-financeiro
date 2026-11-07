@@ -7,7 +7,11 @@ using ControleFinanceiro.Infrastructure.Persistence;
 using ControleFinanceiro.Tests.Shared.AutoFixture;
 using Microsoft.EntityFrameworkCore;
 using ModelContextProtocol.Client;
+using ModelContextProtocol.Protocol;
 using Npgsql;
+using NSubstitute;
+using NSubstitute.ClearExtensions;
+using NSubstitute.ExceptionExtensions;
 using Respawn;
 using Testcontainers.PostgreSql;
 
@@ -40,7 +44,18 @@ public sealed class ServidorMcpFixture : IAsyncLifetime
 
     private static string DllServidor => Path.Combine(PastaServidor, "ControleFinanceiro.Mcp.dll");
 
+    /// <summary>Um cliente sem elicitation: o servidor não consegue pedir confirmação a ele.</summary>
     public McpClient ClienteMcp { get; private set; } = null!;
+
+    /// <summary>Um cliente que aceita elicitation e responde pela <see cref="Elicitacao"/>.</summary>
+    public McpClient ClienteComConfirmacao { get; private set; } = null!;
+
+    /// <summary>
+    /// O usuário do <see cref="ClienteComConfirmacao"/>: um substituto que o teste programa e confere. A collection é
+    /// serial, então programá-lo por teste é seguro.
+    /// </summary>
+    public Func<ElicitRequestParams?, CancellationToken, ValueTask<ElicitResult>> Elicitacao { get; } =
+        Substitute.For<Func<ElicitRequestParams?, CancellationToken, ValueTask<ElicitResult>>>();
 
     /// <summary>O usuário que o servidor da fixture enxerga, pela configuração <c>Mcp:IdUsuario</c>.</summary>
     public Usuario Usuario { get; } = new DomainFixture().Create<Usuario>();
@@ -70,6 +85,10 @@ public sealed class ServidorMcpFixture : IAsyncLifetime
         });
 
         ClienteMcp = await IniciarClienteMcpAsync(ConexaoDoContainer, Usuario.Id);
+        ClienteComConfirmacao = await IniciarClienteMcpAsync(
+            ConexaoDoContainer,
+            Usuario.Id,
+            new McpClientOptions { Handlers = new McpClientHandlers { ElicitationHandler = Elicitacao } });
     }
 
     /// <summary>
@@ -85,6 +104,18 @@ public sealed class ServidorMcpFixture : IAsyncLifetime
         await _respawner.ResetAsync(conexao);
     }
 
+    /// <summary>Esquece as chamadas e volta a recusar, o que não grava nada se um teste esquecer de programar.</summary>
+    public void ReiniciarElicitacao()
+    {
+        Elicitacao.ClearSubstitute();
+        ProgramarElicitacao(RespostaElicitacao.Recusar());
+    }
+
+    public void ProgramarElicitacao(ElicitResult resposta) => Elicitacao(default, default).ReturnsForAnyArgs(resposta);
+
+    public void ProgramarFalhaDaElicitacao() =>
+        Elicitacao(default, default).ThrowsAsyncForAnyArgs(new InvalidOperationException("O cliente falhou ao perguntar."));
+
     /// <summary>Um <c>DbContext</c> no banco do container, que enxerga só os dados de <paramref name="idUsuario"/>.</summary>
     internal ControleFinanceiroDbContext CriarDbContext(IdUsuario idUsuario)
     {
@@ -99,7 +130,12 @@ public sealed class ServidorMcpFixture : IAsyncLifetime
     /// Inicia outro processo do servidor apontando para <paramref name="conexao"/> e faz o handshake.
     /// </summary>
     /// <param name="idUsuario">O usuário do servidor, ou nulo para iniciá-lo sem um usuário válido.</param>
-    public static Task<McpClient> IniciarClienteMcpAsync(string conexao, IdUsuario? idUsuario)
+    public static Task<McpClient> IniciarClienteMcpAsync(string conexao, IdUsuario? idUsuario) =>
+        IniciarClienteMcpAsync(conexao, idUsuario, opcoes: null);
+
+    /// <inheritdoc cref="IniciarClienteMcpAsync(string, IdUsuario?)"/>
+    /// <param name="opcoes">As capacidades e os handlers do cliente, ou nulo para o cliente padrão do SDK.</param>
+    public static Task<McpClient> IniciarClienteMcpAsync(string conexao, IdUsuario? idUsuario, McpClientOptions? opcoes)
     {
         StdioClientTransport transporte = new(new StdioClientTransportOptions
         {
@@ -113,7 +149,7 @@ public sealed class ServidorMcpFixture : IAsyncLifetime
             },
         });
 
-        return McpClient.CreateAsync(transporte);
+        return McpClient.CreateAsync(transporte, opcoes);
     }
 
     /// <summary>
@@ -140,6 +176,8 @@ public sealed class ServidorMcpFixture : IAsyncLifetime
     {
         if (ClienteMcp is not null)
             await ClienteMcp.DisposeAsync();
+        if (ClienteComConfirmacao is not null)
+            await ClienteComConfirmacao.DisposeAsync();
         await _postgres.DisposeAsync();
     }
 

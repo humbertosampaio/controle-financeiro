@@ -4,7 +4,7 @@ using ModelContextProtocol.Protocol;
 
 namespace ControleFinanceiro.Mcp.Tests.Infraestrutura;
 
-/// <summary>Chama as ferramentas de leitura como o modelo chamaria: só com o ano e o mês.</summary>
+/// <summary>Chama as ferramentas como o modelo chamaria: as de leitura só com o ano e o mês.</summary>
 internal static class ClienteMcpExtensions
 {
     extension(McpClient clienteMcp)
@@ -12,6 +12,13 @@ internal static class ClienteMcpExtensions
         public ValueTask<CallToolResult> ChamarDoMesAsync(string ferramenta, int ano, int mes)
         {
             return clienteMcp.CallToolAsync(ferramenta, new Dictionary<string, object?> { ["ano"] = ano, ["mes"] = mes });
+        }
+
+        public ValueTask<CallToolResult> VincularAsync(Guid idTransacao, Guid idDespesa)
+        {
+            return clienteMcp.CallToolAsync(
+                "vincular_transacao",
+                new Dictionary<string, object?> { ["idTransacao"] = idTransacao, ["idDespesa"] = idDespesa });
         }
     }
 

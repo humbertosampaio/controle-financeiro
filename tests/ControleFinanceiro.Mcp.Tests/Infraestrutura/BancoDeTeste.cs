@@ -98,6 +98,13 @@ internal sealed class BancoDeTeste
         return recorrente;
     }
 
+    /// <summary>Lê a despesa como está no banco, num contexto novo, para conferir o que o servidor gravou.</summary>
+    public async Task<Despesa> LerDespesaAsync(Despesa despesa)
+    {
+        await using ControleFinanceiroDbContext dbContext = _servidor.CriarDbContext(despesa.IdUsuario);
+        return await dbContext.Despesas.AsNoTracking().SingleAsync(d => d.Id == despesa.Id);
+    }
+
     /// <summary>Grava a despesa que a recorrente gera no mês, pendente, como a geração do mês faria.</summary>
     public async Task<Despesa> GravarDespesaDoMesAsync(DespesaRecorrente recorrente, MesReferencia mes)
     {
