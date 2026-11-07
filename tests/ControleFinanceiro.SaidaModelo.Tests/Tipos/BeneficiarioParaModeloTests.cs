@@ -5,6 +5,7 @@ using ControleFinanceiro.Domain.Services;
 using ControleFinanceiro.Domain.Shared.ValueObjects;
 using ControleFinanceiro.Tests.Shared;
 using ControleFinanceiro.Tests.Shared.AutoFixture.Attributes;
+using ControleFinanceiro.Tests.Shared.Respostas;
 
 namespace ControleFinanceiro.SaidaModelo.Tests.Tipos;
 
@@ -23,7 +24,7 @@ public sealed class BeneficiarioParaModeloTests
     {
         JsonObject json = beneficiario.ParaModelo().Serializar();
 
-        json["id"]!.GetValue<Guid>().Should().Be(beneficiario.Id.Value);
+        new BeneficiarioLido(json).Id.Should().Be(beneficiario.Id.Value);
     }
 
     [Theory, DomainAutoData]
@@ -33,7 +34,7 @@ public sealed class BeneficiarioParaModeloTests
 
         JsonObject json = beneficiario.ParaModelo().Serializar();
 
-        json.Texto("nome").Should().BeEmpty();
+        new BeneficiarioLido(json).Nome.Should().BeEmpty();
     }
 
     [Theory]
@@ -45,7 +46,7 @@ public sealed class BeneficiarioParaModeloTests
 
         JsonObject json = beneficiario.ParaModelo().Serializar();
 
-        json.Texto("nome").Should().Be($"FULANO {DocumentosDeTeste.Rotulo(forma)}");
+        new BeneficiarioLido(json).Nome.Should().Be($"FULANO {DocumentosDeTeste.Rotulo(forma)}");
     }
 
     [Theory]
@@ -83,5 +84,5 @@ public sealed class BeneficiarioParaModeloTests
         Aliases(json).Should().Equal("FULANO [CPF]");
     }
 
-    private static IEnumerable<string> Aliases(JsonObject json) => json["aliases"]!.AsArray().Select(alias => alias!.GetValue<string>());
+    private static IReadOnlyList<string> Aliases(JsonObject json) => new BeneficiarioLido(json).Aliases;
 }

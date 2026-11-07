@@ -7,6 +7,7 @@ using ControleFinanceiro.Domain.Transacoes;
 using ControleFinanceiro.Domain.Usuarios;
 using ControleFinanceiro.Tests.Shared;
 using ControleFinanceiro.Tests.Shared.AutoFixture.Attributes;
+using ControleFinanceiro.Tests.Shared.Respostas;
 
 namespace ControleFinanceiro.SaidaModelo.Tests.Tipos;
 
@@ -22,8 +23,9 @@ public sealed class EnvelopesDoMesParaModeloTests
         JsonObject json = TransacoesDoMesParaModelo.De(mes, [transacao.ParaModelo()]).Serializar();
 
         json.Select(campo => campo.Key).Should().BeEquivalentTo("mes", "transacoes");
-        json.Texto("mes").Should().Be(mes.ToString());
-        json["transacoes"]!.AsArray().Should().ContainSingle();
+        TransacoesDoMesLidas lidas = new(json);
+        lidas.Mes.Should().Be(mes.ToString());
+        lidas.Transacoes.Should().ContainSingle();
     }
 
     [Theory, DomainAutoData]
@@ -32,8 +34,9 @@ public sealed class EnvelopesDoMesParaModeloTests
         JsonObject json = DespesasFixasDoMesParaModelo.De(mes, [recorrente.ParaModelo(despesaDoMes: null, mes)]).Serializar();
 
         json.Select(campo => campo.Key).Should().BeEquivalentTo("mes", "despesasFixas");
-        json.Texto("mes").Should().Be(mes.ToString());
-        json["despesasFixas"]!.AsArray().Should().ContainSingle();
+        DespesasFixasDoMesLidas lidas = new(json);
+        lidas.Mes.Should().Be(mes.ToString());
+        lidas.DespesasFixas.Should().ContainSingle();
     }
 
     // Os nomes do JSON divergem das propriedades (TotalPago, TotalPendente, SaldoPrevisto): só o atributo os produz.
@@ -45,11 +48,12 @@ public sealed class EnvelopesDoMesParaModeloTests
         JsonObject json = balanco.ParaModelo().Serializar();
 
         json.Select(campo => campo.Key).Should().BeEquivalentTo("mes", "rendaLiquida", "pago", "pendente", "saldo");
-        json.Texto("mes").Should().Be(balanco.Mes.ToString());
-        json["rendaLiquida"]!.GetValue<decimal>().Should().Be(balanco.RendaLiquida);
-        json["pago"]!.GetValue<decimal>().Should().Be(balanco.TotalPago);
-        json["pendente"]!.GetValue<decimal>().Should().Be(balanco.TotalPendente);
-        json["saldo"]!.GetValue<decimal>().Should().Be(balanco.SaldoPrevisto);
+        BalancoLido lido = new(json);
+        lido.Mes.Should().Be(balanco.Mes.ToString());
+        lido.RendaLiquida.Should().Be(balanco.RendaLiquida);
+        lido.Pago.Should().Be(balanco.TotalPago);
+        lido.Pendente.Should().Be(balanco.TotalPendente);
+        lido.Saldo.Should().Be(balanco.SaldoPrevisto);
     }
 
     [Fact]
@@ -74,6 +78,6 @@ public sealed class EnvelopesDoMesParaModeloTests
         JsonObject json = BalancoMensalParaModelo.Falha(ErroParaModelo.UsuarioNaoEncontrado).Serializar();
 
         json.Select(campo => campo.Key).Should().Equal("erro");
-        json["erro"]!.AsObject().Texto("mensagem").Should().Be(ErroParaModelo.UsuarioNaoEncontrado.Mensagem);
+        ErroLido.DoEnvelope(json).Mensagem.Should().Be(ErroParaModelo.UsuarioNaoEncontrado.Mensagem);
     }
 }

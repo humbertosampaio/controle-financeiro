@@ -5,6 +5,7 @@ using ControleFinanceiro.Domain.Shared.ValueObjects;
 using ControleFinanceiro.Domain.Transacoes;
 using ControleFinanceiro.Tests.Shared;
 using ControleFinanceiro.Tests.Shared.AutoFixture.Attributes;
+using ControleFinanceiro.Tests.Shared.Respostas;
 using Xunit.Sdk;
 
 namespace ControleFinanceiro.SaidaModelo.Tests.Tipos;
@@ -28,9 +29,10 @@ public sealed class TransacaoParaModeloTests
 
         JsonObject json = transacao.ParaModelo().Serializar();
 
-        json["id"]!.GetValue<Guid>().Should().Be(transacao.Id.Value);
-        DateOnly.ParseExact(json.Texto("data"), "yyyy-MM-dd").Should().Be(transacao.Data);
-        json["valor"]!.GetValue<decimal>().Should().Be(transacao.Valor);
+        TransacaoLida lida = new(json);
+        lida.Id.Should().Be(transacao.Id.Value);
+        lida.Data.Should().Be(transacao.Data);
+        lida.Valor.Should().Be(transacao.Valor);
     }
 
     [Theory, UsuarioUnicoAutoData]
@@ -56,7 +58,7 @@ public sealed class TransacaoParaModeloTests
 
         JsonObject json = transacao.ParaModelo().Serializar();
 
-        json.Texto("descricao").Should().Be($"LOJA {DocumentosDeTeste.Rotulo(forma)}");
+        new TransacaoLida(json).Descricao.Should().Be($"LOJA {DocumentosDeTeste.Rotulo(forma)}");
     }
 
     [Theory, FormasDocumentoAutoData]
@@ -70,7 +72,7 @@ public sealed class TransacaoParaModeloTests
 
         JsonObject json = transacoes.DaConta(comDocumento).ParaModelo().Serializar();
 
-        json.Texto("contraparte").Should().Be($"FULANO {DocumentosDeTeste.Rotulo(forma)}");
+        new TransacaoLida(json).Contraparte.Should().Be($"FULANO {DocumentosDeTeste.Rotulo(forma)}");
     }
 
     [Theory, FormasDocumentoAutoData]
@@ -106,7 +108,7 @@ public sealed class TransacaoParaModeloTests
 
         JsonObject json = transacao.ParaModelo().Serializar();
 
-        json.Texto("descricao").Should().BeEmpty();
+        new TransacaoLida(json).Descricao.Should().BeEmpty();
     }
 
     [Theory, UsuarioUnicoAutoData]
@@ -118,7 +120,7 @@ public sealed class TransacaoParaModeloTests
 
         JsonObject json = transacao.ParaModelo().Serializar();
 
-        json.Texto("descricao").Should().Be("LOJA 11222333000182");
+        new TransacaoLida(json).Descricao.Should().Be("LOJA 11222333000182");
     }
 
     /// <summary>Um caso por forma de documento, das <see cref="FormasDocumento"/>, gerado como o <see cref="UsuarioUnicoAutoDataAttribute"/>.</summary>

@@ -1,9 +1,9 @@
 using System.Text.Json.Nodes;
 
-namespace ControleFinanceiro.Mcp.Tests.Infraestrutura.Respostas;
+namespace ControleFinanceiro.Tests.Shared.Respostas;
 
 /// <summary>Uma transação como o modelo a recebe: um campo ausente ou de outro tipo falha na leitura.</summary>
-internal sealed class TransacaoLida
+public sealed class TransacaoLida
 {
     public Guid Id { get; }
     public DateOnly Data { get; }

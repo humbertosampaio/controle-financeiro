@@ -1,9 +1,9 @@
 using System.Text.Json.Nodes;
 
-namespace ControleFinanceiro.Mcp.Tests.Infraestrutura.Respostas;
+namespace ControleFinanceiro.Tests.Shared.Respostas;
 
 /// <summary>Uma despesa fixa como o modelo a recebe, com a despesa do mês quando ela já foi gerada.</summary>
-internal sealed class DespesaFixaLida
+public sealed class DespesaFixaLida
 {
     public Guid Id { get; }
     public string Descricao { get; }

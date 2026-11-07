@@ -20,9 +20,4 @@ internal static class SaidaSerializada
             return padrao!.AsObject();
         }
     }
-
-    extension(JsonObject json)
-    {
-        public string Texto(string campo) => json[campo]!.GetValue<string>();
-    }
 }

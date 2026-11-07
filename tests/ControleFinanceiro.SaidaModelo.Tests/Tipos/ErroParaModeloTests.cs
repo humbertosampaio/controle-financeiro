@@ -1,5 +1,6 @@
 using System.Text.Json.Nodes;
 using ControleFinanceiro.Application.IA.Saida;
+using ControleFinanceiro.Tests.Shared.Respostas;
 
 namespace ControleFinanceiro.SaidaModelo.Tests.Tipos;
 
@@ -13,6 +14,6 @@ public sealed class ErroParaModeloTests
         JsonObject json = erro.Serializar();
 
         json.Select(campo => campo.Key).Should().Equal("mensagem");
-        json.Texto("mensagem").Should().NotBeEmpty();
+        new ErroLido(json).Mensagem.Should().NotBeEmpty();
     }
 }

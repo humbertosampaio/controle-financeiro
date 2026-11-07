@@ -1,9 +1,9 @@
 using System.Text.Json.Nodes;
 
-namespace ControleFinanceiro.Mcp.Tests.Infraestrutura.Respostas;
+namespace ControleFinanceiro.Tests.Shared.Respostas;
 
 /// <summary>A resposta do <c>listar_transacoes</c> num mês válido.</summary>
-internal sealed class TransacoesDoMesLidas
+public sealed class TransacoesDoMesLidas
 {
     public string Mes { get; }
     public IReadOnlyList<TransacaoLida> Transacoes { get; }

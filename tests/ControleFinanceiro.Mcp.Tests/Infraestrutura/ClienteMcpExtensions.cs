@@ -22,9 +22,4 @@ internal static class ClienteMcpExtensions
 
         public JsonObject Json => JsonNode.Parse(resultado.Texto)!.AsObject();
     }
-
-    extension(JsonObject json)
-    {
-        public string Texto(string campo) => json[campo]!.GetValue<string>();
-    }
 }
