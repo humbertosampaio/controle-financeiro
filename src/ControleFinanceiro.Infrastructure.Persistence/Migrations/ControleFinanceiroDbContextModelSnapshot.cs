@@ -222,6 +222,8 @@ namespace ControleFinanceiro.Infrastructure.Persistence.Migrations
 
                             t.HasCheckConstraint("CK_despesas_pagamento", "(status_pagamento = 1) = (data_pagamento_efetiva IS NOT NULL)");
 
+                            t.HasCheckConstraint("CK_despesas_pagamento_mes", "mes_referencia = date_trunc('month', data_pagamento_projetada::timestamp)::date");
+
                             t.HasCheckConstraint("CK_despesas_pagamento_transacao", "id_transacao_pagamento IS NULL OR status_pagamento = 1");
 
                             t.HasCheckConstraint("CK_despesas_pagamento_valor_efetivo", "(status_pagamento = 1) = (valor_pagamento_efetivo IS NOT NULL)");
@@ -356,6 +358,8 @@ namespace ControleFinanceiro.Infrastructure.Persistence.Migrations
                             t.HasCheckConstraint("CK_parcelas_despesa_numero", "numero_parcela >= 1");
 
                             t.HasCheckConstraint("CK_parcelas_despesa_pagamento", "(status_pagamento = 1) = (data_pagamento_efetiva IS NOT NULL)");
+
+                            t.HasCheckConstraint("CK_parcelas_despesa_pagamento_mes", "mes_referencia = date_trunc('month', data_pagamento_projetada::timestamp)::date");
 
                             t.HasCheckConstraint("CK_parcelas_despesa_pagamento_transacao", "id_transacao_pagamento IS NULL OR status_pagamento = 1");
 
@@ -624,6 +628,8 @@ namespace ControleFinanceiro.Infrastructure.Persistence.Migrations
 
                             t.HasCheckConstraint("CK_despesas_pagamento", "(status_pagamento = 1) = (data_pagamento_efetiva IS NOT NULL)");
 
+                            t.HasCheckConstraint("CK_despesas_pagamento_mes", "mes_referencia = date_trunc('month', data_pagamento_projetada::timestamp)::date");
+
                             t.HasCheckConstraint("CK_despesas_pagamento_transacao", "id_transacao_pagamento IS NULL OR status_pagamento = 1");
 
                             t.HasCheckConstraint("CK_despesas_pagamento_valor_efetivo", "(status_pagamento = 1) = (valor_pagamento_efetivo IS NOT NULL)");
@@ -654,6 +660,8 @@ namespace ControleFinanceiro.Infrastructure.Persistence.Migrations
                             t.HasCheckConstraint("CK_despesas_descricao", "btrim(descricao) <> ''");
 
                             t.HasCheckConstraint("CK_despesas_pagamento", "(status_pagamento = 1) = (data_pagamento_efetiva IS NOT NULL)");
+
+                            t.HasCheckConstraint("CK_despesas_pagamento_mes", "mes_referencia = date_trunc('month', data_pagamento_projetada::timestamp)::date");
 
                             t.HasCheckConstraint("CK_despesas_pagamento_transacao", "id_transacao_pagamento IS NULL OR status_pagamento = 1");
 
@@ -686,6 +694,8 @@ namespace ControleFinanceiro.Infrastructure.Persistence.Migrations
 
                             t.HasCheckConstraint("CK_despesas_pagamento", "(status_pagamento = 1) = (data_pagamento_efetiva IS NOT NULL)");
 
+                            t.HasCheckConstraint("CK_despesas_pagamento_mes", "mes_referencia = date_trunc('month', data_pagamento_projetada::timestamp)::date");
+
                             t.HasCheckConstraint("CK_despesas_pagamento_transacao", "id_transacao_pagamento IS NULL OR status_pagamento = 1");
 
                             t.HasCheckConstraint("CK_despesas_pagamento_valor_efetivo", "(status_pagamento = 1) = (valor_pagamento_efetivo IS NOT NULL)");
@@ -709,6 +719,8 @@ namespace ControleFinanceiro.Infrastructure.Persistence.Migrations
                             t.HasCheckConstraint("CK_despesas_descricao", "btrim(descricao) <> ''");
 
                             t.HasCheckConstraint("CK_despesas_pagamento", "(status_pagamento = 1) = (data_pagamento_efetiva IS NOT NULL)");
+
+                            t.HasCheckConstraint("CK_despesas_pagamento_mes", "mes_referencia = date_trunc('month', data_pagamento_projetada::timestamp)::date");
 
                             t.HasCheckConstraint("CK_despesas_pagamento_transacao", "id_transacao_pagamento IS NULL OR status_pagamento = 1");
 

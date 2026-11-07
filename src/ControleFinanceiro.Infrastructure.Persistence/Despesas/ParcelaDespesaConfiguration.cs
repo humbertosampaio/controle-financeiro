@@ -24,6 +24,9 @@ internal sealed class ParcelaDespesaConfiguration : IEntityTypeConfiguration<Par
             tabela.HasCheckConstraint(
                 "CK_parcelas_despesa_pagamento_transacao",
                 $"id_transacao_pagamento IS NULL OR status_pagamento = {StatusPagamento.Pago.Value}");
+            tabela.HasCheckConstraint(
+                "CK_parcelas_despesa_pagamento_mes",
+                "mes_referencia = date_trunc('month', data_pagamento_projetada::timestamp)::date");
         });
         entity.HasKey(p => p.Id);
 
