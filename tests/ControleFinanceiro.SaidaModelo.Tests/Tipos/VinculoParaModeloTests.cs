@@ -20,7 +20,7 @@ public sealed class VinculoParaModeloTests
 
         JsonObject json = VinculoParaModelo.De(transacao, despesa).Serializar();
 
-        json.Select(campo => campo.Key).Should().BeEquivalentTo("transacao", "despesa", "valorProjetado");
+        json.Select(campo => campo.Key).Should().BeEquivalentTo("transacao", "despesa", "valorProjetado", "resumo");
     }
 
     [Theory, UsuarioUnicoAutoData]
@@ -39,30 +39,31 @@ public sealed class VinculoParaModeloTests
         vinculo.Despesa.Mes.Should().Be(despesa.MesReferencia.ToString());
         vinculo.Despesa.Status.Should().Be(StatusPagamento.Pago.Name);
         vinculo.ValorProjetado.Should().Be(despesa.Pagamento.ValorProjetado);
+        vinculo.Resumo.Should().Be(VinculoParaModelo.De(transacao, despesa).Resumo);
     }
 
     [Fact]
     public void Serializar_Quando_Falha_Deve_TerSoOErro()
     {
-        JsonObject json = VinculoParaModelo.Falha(ErroParaModelo.ConfirmacaoRecusada).Serializar();
+        JsonObject json = VinculoParaModelo.Falha(ErroParaModelo.ResumoDivergente).Serializar();
 
         json.Select(campo => campo.Key).Should().Equal("erro");
-        ErroLido.DoEnvelope(json).Mensagem.Should().Be(ErroParaModelo.ConfirmacaoRecusada.Mensagem);
+        ErroLido.DoEnvelope(json).Mensagem.Should().Be(ErroParaModelo.ResumoDivergente.Mensagem);
     }
 
     [Theory, UsuarioUnicoAutoData]
-    public void Mensagem_Deve_DescreverATransacaoEADespesaSemOsIds(DespesaSimples despesa, TransacoesDeTeste transacoes, Lancamento lancamento)
+    public void Resumo_Deve_DescreverATransacaoEADespesaSemOsIds(DespesaSimples despesa, TransacoesDeTeste transacoes, Lancamento lancamento)
     {
         Transacao transacao = Vincular(despesa, transacoes, lancamento);
 
-        string? mensagem = VinculoParaModelo.De(transacao, despesa).Mensagem;
+        string? resumo = VinculoParaModelo.De(transacao, despesa).Resumo;
 
-        mensagem.Should()
-            .Contain(transacao.ValorAbsoluto.ToString())
+        resumo.Should()
+            .Contain(ComEspacosComuns(transacao.ValorAbsoluto.ToString()))
             .And.Contain(transacao.Descricao)
             .And.Contain(despesa.Descricao)
             .And.Contain(despesa.MesReferencia.ToString())
-            .And.Contain(despesa.Pagamento.ValorProjetado.ToString())
+            .And.Contain(ComEspacosComuns(despesa.Pagamento.ValorProjetado.ToString()))
             .And.NotContain(transacao.Id.Value.ToString())
             .And.NotContain(despesa.Id.Value.ToString());
     }
@@ -71,7 +72,7 @@ public sealed class VinculoParaModeloTests
     [InlineUsuarioUnicoAutoData(FormaDocumento.CpfComPontuacao)]
     [InlineUsuarioUnicoAutoData(FormaDocumento.CnpjPuro)]
     [InlineUsuarioUnicoAutoData(FormaDocumento.CnpjComLetrasComPontuacao)]
-    public void Mensagem_Quando_TextosComDocumento_Deve_SairSemODocumento(
+    public void Resumo_Quando_TextosComDocumento_Deve_SairSemODocumento(
         FormaDocumento forma,
         DocumentosDeTeste documentos,
         TransacoesDeTeste transacoes,
@@ -83,9 +84,53 @@ public sealed class VinculoParaModeloTests
         DespesaSimples despesa = fixture.Create<DespesaSimples>();
         Transacao transacao = Vincular(despesa, transacoes, lancamento.ComTextos(comDocumento, $"FULANO {documentos.Em(forma)}"));
 
-        string? mensagem = VinculoParaModelo.De(transacao, despesa).Mensagem;
+        string? resumo = VinculoParaModelo.De(transacao, despesa).Resumo;
 
-        mensagem.Should().NotContain(documentos.Em(forma)).And.Contain($"LOJA {DocumentosDeTeste.Rotulo(forma)}");
+        resumo.Should().NotContain(documentos.Em(forma)).And.Contain($"LOJA {DocumentosDeTeste.Rotulo(forma)}");
+    }
+
+    // O Reais formata com espaço não separável, e o resumo volta ao servidor nos argumentos da confirmação.
+    [Theory, UsuarioUnicoAutoData]
+    public void Resumo_Deve_TerSoEspacosComuns(DespesaSimples despesa, TransacoesDeTeste transacoes, Lancamento lancamento)
+    {
+        Transacao transacao = Vincular(despesa, transacoes, lancamento);
+
+        string? resumo = VinculoParaModelo.De(transacao, despesa).Resumo;
+
+        resumo.Should().NotContain(EspacoNaoSeparavel);
+    }
+
+    [Theory, UsuarioUnicoAutoData]
+    public void ConfereResumo_Quando_ResumoIgual_Deve_Conferir(DespesaSimples despesa, TransacoesDeTeste transacoes, Lancamento lancamento)
+    {
+        VinculoParaModelo vinculo = VinculoParaModelo.De(Vincular(despesa, transacoes, lancamento), despesa);
+
+        vinculo.ConfereResumo(vinculo.Resumo!).Should().BeTrue();
+    }
+
+    [Theory, UsuarioUnicoAutoData]
+    public void ConfereResumo_Quando_EspacosNaoSeparaveisENasPontas_Deve_Conferir(
+        DespesaSimples despesa,
+        TransacoesDeTeste transacoes,
+        Lancamento lancamento)
+    {
+        VinculoParaModelo vinculo = VinculoParaModelo.De(Vincular(despesa, transacoes, lancamento), despesa);
+
+        vinculo.ConfereResumo($" {vinculo.Resumo!.Replace(" ", EspacoNaoSeparavel, StringComparison.Ordinal)} ").Should().BeTrue();
+    }
+
+    [Theory, UsuarioUnicoAutoData]
+    public void ConfereResumo_Quando_ResumoAlterado_Deve_NaoConferir(DespesaSimples despesa, TransacoesDeTeste transacoes, Lancamento lancamento)
+    {
+        VinculoParaModelo vinculo = VinculoParaModelo.De(Vincular(despesa, transacoes, lancamento), despesa);
+
+        vinculo.ConfereResumo(vinculo.Resumo!.Replace("despesa", "despesas", StringComparison.Ordinal)).Should().BeFalse();
+    }
+
+    [Fact]
+    public void ConfereResumo_Quando_Falha_Deve_NaoConferir()
+    {
+        VinculoParaModelo.Falha(ErroParaModelo.DespesaJaPaga).ConfereResumo(string.Empty).Should().BeFalse();
     }
 
     [Theory, UsuarioUnicoAutoData]
@@ -97,6 +142,10 @@ public sealed class VinculoParaModeloTests
 
         act.Should().ThrowExactly<ArgumentException>().WithParameterName("despesa");
     }
+
+    private const string EspacoNaoSeparavel = " ";
+
+    private static string ComEspacosComuns(string texto) => texto.Replace(EspacoNaoSeparavel, " ", StringComparison.Ordinal);
 
     private static Transacao Vincular(DespesaSimples despesa, TransacoesDeTeste transacoes, Lancamento lancamento)
     {

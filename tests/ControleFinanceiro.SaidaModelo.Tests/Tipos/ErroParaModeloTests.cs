@@ -22,8 +22,7 @@ public sealed class ErroParaModeloTests
         ErroParaModelo.TransacaoNaoEhSaida,
         ErroParaModelo.OrigemIncompativel,
         ErroParaModelo.ParcelaIncompativel,
-        ErroParaModelo.ConfirmacaoRecusada,
-        ErroParaModelo.ConfirmacaoIndisponivel);
+        ErroParaModelo.ResumoDivergente);
 
     public static readonly TheoryData<Erro, ErroParaModelo> ErrosDoVinculo = new()
     {

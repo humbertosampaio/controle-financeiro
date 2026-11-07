@@ -21,7 +21,8 @@ public static class DependencyInjection
                 .WithTools<ListarTransacoesTool>()
                 .WithTools<ListarDespesasFixasTool>()
                 .WithTools<BalancoMensalTool>()
-                .WithTools<VincularTransacaoTool>();
+                .WithTools<PreverVinculoTool>()
+                .WithTools<ConfirmarVinculoTool>();
 
             return services
                 .AddScoped<IUsuarioAtual, UsuarioAtualConfigurado>()

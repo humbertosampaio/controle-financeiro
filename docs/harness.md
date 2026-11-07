@@ -42,6 +42,15 @@ Hook `PreToolUse` do Claude Code em `Bash`, `PowerShell`, `Write`, `Edit` e `Not
 
 **deny vence ask:** um secret indo para um arquivo guardado bloqueia, não vira pergunta.
 
+### Ferramentas do servidor MCP que gravam
+
+O guardrail não olha as ferramentas MCP. Quem pede a aprovação do usuário antes de uma ferramenta do `controle-financeiro` gravar são duas travas, e uma ferramenta que grava (`ReadOnly = false`) precisa das duas:
+
+- **a meta `anthropic/requiresUserInteraction`** na própria ferramenta (`[McpMeta(...)]`), que o Claude Code no terminal honra em todos os modos, inclusive no auto e no de ignorar permissões;
+- **uma regra `ask`** em `permissions` do `.claude/settings.json`, como `mcp__controle-financeiro__confirmar_vinculo`. O Claude Code do app desktop ignora a meta no modo auto e só pergunta por causa dela.
+
+Nenhum `allow` do projeto pode cobrir essas ferramentas, nem pelo servidor inteiro (`mcp__controle-financeiro`) nem com curinga. O `FerramentasQueGravamTests` (`tests/ControleFinanceiro.SaidaModelo.Tests/Arquitetura/`) confere as três coisas a partir do `.mcp.json` e do `.claude/settings.json`.
+
 **Falha aberta, de propósito:** erro inesperado no guardrail não bloqueia nada. Um bug nele não pode travar a sessão. Em troca, ele tem testes que cobrem os dois lados: o que tem que ser barrado e o fluxo normal que **não** pode ser barrado. O segundo é o que faz alguém desligar o harness.
 
 ```bash

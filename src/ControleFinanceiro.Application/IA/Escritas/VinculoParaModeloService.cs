@@ -2,17 +2,17 @@ using ControleFinanceiro.Application.Abstractions;
 using ControleFinanceiro.Application.IA.Saida;
 using ControleFinanceiro.Domain.Despesas;
 using ControleFinanceiro.Domain.Services;
-using ControleFinanceiro.Domain.Shared;
 using ControleFinanceiro.Domain.Transacoes;
 using CSharpFunctionalExtensions;
 
 namespace ControleFinanceiro.Application.IA.Escritas;
 
 /// <summary>
-/// O vínculo que o modelo pede, já como tipo de saída. A regra é a do <see cref="VinculoPagamentoService"/>, aplicada em
-/// memória; só o vínculo válido vai ao usuário, e só o confirmado é gravado. Sem confirmação, as mudanças em memória
-/// morrem com o escopo da requisição. Os repositórios enxergam só o usuário atual, então despesa ou transação de outro
-/// usuário é tratada como inexistente.
+/// O vínculo que o modelo pede, já como tipo de saída, em duas etapas. A regra é a do <see cref="VinculoPagamentoService"/>,
+/// aplicada em memória nas duas: a prévia nunca grava, e a confirmação, chamada depois que o usuário aprova o resumo no
+/// cliente, refaz o vínculo do zero e só grava se o resumo recalculado for o que ele aprovou. Sem gravação, as mudanças em
+/// memória morrem com o escopo da requisição. Os repositórios enxergam só o usuário atual, então despesa ou transação de
+/// outro usuário é tratada como inexistente.
 /// </summary>
 public sealed class VinculoParaModeloService
 {
@@ -29,38 +29,46 @@ public sealed class VinculoParaModeloService
 
     /// <param name="idTransacao">Vem do modelo: um id que não é de transação vira erro, e não exceção.</param>
     /// <param name="idDespesa">Vem do modelo: um id que não é de despesa vira erro, e não exceção.</param>
-    /// <param name="confirmacao">Quem pergunta ao usuário, ligado à requisição do modelo.</param>
-    public async Task<VinculoParaModelo> VincularAsync(
+    public async Task<VinculoParaModelo> PreverAsync(Guid idTransacao, Guid idDespesa, CancellationToken cancellationToken)
+    {
+        return await AplicarAsync(idTransacao, idDespesa, cancellationToken)
+            .Match(previa => previa, VinculoParaModelo.Falha);
+    }
+
+    /// <param name="idTransacao">Vem do modelo: um id que não é de transação vira erro, e não exceção.</param>
+    /// <param name="idDespesa">Vem do modelo: um id que não é de despesa vira erro, e não exceção.</param>
+    /// <param name="resumo">O resumo da prévia que o usuário aprovou, nos argumentos da chamada.</param>
+    public async Task<VinculoParaModelo> ConfirmarAsync(
         Guid idTransacao,
         Guid idDespesa,
-        IConfirmacaoHumana confirmacao,
+        string resumo,
+        CancellationToken cancellationToken)
+    {
+        return await AplicarAsync(idTransacao, idDespesa, cancellationToken)
+            .Ensure(vinculo => vinculo.ConfereResumo(resumo), ErroParaModelo.ResumoDivergente)
+            .Tap(() => _unitOfWork.CommitAsync(cancellationToken))
+            .Match(vinculo => vinculo, VinculoParaModelo.Falha);
+    }
+
+    private async Task<Result<VinculoParaModelo, ErroParaModelo>> AplicarAsync(
+        Guid idTransacao,
+        Guid idDespesa,
         CancellationToken cancellationToken)
     {
         Maybe<Transacao> transacao = await ObterTransacaoAsync(idTransacao, cancellationToken);
         if (transacao.HasNoValue)
-            return VinculoParaModelo.Falha(ErroParaModelo.TransacaoNaoEncontrada);
+            return ErroParaModelo.TransacaoNaoEncontrada;
 
         Maybe<Despesa> despesa = await ObterDespesaAsync(idDespesa, cancellationToken);
         if (despesa.HasNoValue)
-            return VinculoParaModelo.Falha(ErroParaModelo.DespesaNaoEncontrada);
+            return ErroParaModelo.DespesaNaoEncontrada;
 
         Maybe<Despesa> despesaQueUsaATransacao = await _despesas.ObterPelaTransacaoAsync(transacao.Value.Id, cancellationToken);
 
-        UnitResult<Erro> vinculo = VinculoPagamentoService.Vincular(transacao.Value, despesa.Value, despesaQueUsaATransacao);
-        if (vinculo.IsFailure)
-            return VinculoParaModelo.Falha(ErroParaModelo.De(vinculo.Error));
-
-        VinculoParaModelo previa = VinculoParaModelo.De(transacao.Value, despesa.Value);
-
-        RespostaConfirmacao resposta = await confirmacao.PedirAsync(previa, cancellationToken);
-        if (resposta == RespostaConfirmacao.Recusada)
-            return VinculoParaModelo.Falha(ErroParaModelo.ConfirmacaoRecusada);
-
-        if (resposta != RespostaConfirmacao.Confirmada)
-            return VinculoParaModelo.Falha(ErroParaModelo.ConfirmacaoIndisponivel);
-
-        await _unitOfWork.CommitAsync(cancellationToken);
-        return previa;
+        return VinculoPagamentoService
+            .Vincular(transacao.Value, despesa.Value, despesaQueUsaATransacao)
+            .MapError(ErroParaModelo.De)
+            .Map(() => VinculoParaModelo.De(transacao.Value, despesa.Value));
     }
 
     private async Task<Maybe<Transacao>> ObterTransacaoAsync(Guid idTransacao, CancellationToken cancellationToken)
