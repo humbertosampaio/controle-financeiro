@@ -12,8 +12,11 @@ public interface IDespesaRepository
 
     Task<Maybe<Despesa>> ObterAsync(IdDespesa idDespesa, CancellationToken cancellationToken);
 
-    /// <summary>A despesa que a transação pagou, inteira ou por uma das parcelas.</summary>
-    Task<Maybe<Despesa>> ObterPelaTransacaoAsync(IdTransacao idTransacao, CancellationToken cancellationToken);
+    /// <summary>A despesa que a compra do cartão cobrou, a adiada ou a parcelada por uma das parcelas.</summary>
+    Task<Maybe<Despesa>> ObterPelaCobrancaAsync(IdTransacao idTransacao, CancellationToken cancellationToken);
+
+    /// <summary>As despesas que a transação pagou, inteiras ou por uma das parcelas.</summary>
+    Task<IReadOnlyList<Despesa>> ListarPeloPagamentoAsync(IdTransacao idTransacao, CancellationToken cancellationToken);
 
     Task AdicionarAsync(IEnumerable<Despesa> despesas, CancellationToken cancellationToken);
 }

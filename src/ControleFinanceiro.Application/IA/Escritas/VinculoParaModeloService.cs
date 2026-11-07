@@ -63,7 +63,7 @@ public sealed class VinculoParaModeloService
         if (despesa.HasNoValue)
             return ErroParaModelo.DespesaNaoEncontrada;
 
-        Maybe<Despesa> despesaQueUsaATransacao = await _despesas.ObterPelaTransacaoAsync(transacao.Value.Id, cancellationToken);
+        Maybe<Despesa> despesaQueUsaATransacao = await _despesas.ObterQueUsaAsync(transacao.Value, cancellationToken);
 
         return VinculoTransacaoService
             .Vincular(transacao.Value, despesa.Value, despesaQueUsaATransacao)

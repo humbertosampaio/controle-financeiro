@@ -16,5 +16,18 @@ internal sealed class DespesaAdiadaConfiguration : IEntityTypeConfiguration<Desp
             .WithMany()
             .HasForeignKey(d => d.IdCartao)
             .OnDelete(DeleteBehavior.NoAction);
+
+        // Complex type opcional: sem cobrança, as duas colunas ficam nulas. A FK para transacoes e o índice único vão
+        // por SQL na migration, porque o EF não aceita complex type neles.
+        entity.ComplexProperty(d => d.Cobranca, cobranca =>
+        {
+            cobranca.IsRequired(false);
+
+            cobranca.Property(c => c.IdTransacao)
+                .HasColumnName("id_transacao_cobranca");
+
+            cobranca.Property(c => c.Valor)
+                .HasColumnName("valor_cobrado");
+        });
     }
 }

@@ -45,7 +45,7 @@ public sealed class VincularTransacaoEndpoint : Endpoint<VincularTransacaoReques
             return;
         }
 
-        Maybe<Despesa> despesaQueUsaATransacao = await _despesaRepository.ObterPelaTransacaoAsync(idTransacao, ct);
+        Maybe<Despesa> despesaQueUsaATransacao = await _despesaRepository.ObterQueUsaAsync(transacao.Value, ct);
 
         UnitResult<Erro> vinculo = VinculoTransacaoService.Vincular(transacao.Value, despesa.Value, despesaQueUsaATransacao);
         if (vinculo.IsFailure)

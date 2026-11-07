@@ -27,6 +27,13 @@ internal sealed class ParcelaDespesaConfiguration : IEntityTypeConfiguration<Par
             tabela.HasCheckConstraint(
                 "CK_parcelas_despesa_pagamento_mes",
                 "mes_referencia = date_trunc('month', data_pagamento_projetada::timestamp)::date");
+            tabela.HasCheckConstraint(
+                "CK_parcelas_despesa_cobranca",
+                "(id_transacao_cobranca IS NULL) = (valor_cobrado IS NULL)");
+            tabela.HasCheckConstraint("CK_parcelas_despesa_valor_cobrado", "valor_cobrado >= 0");
+            tabela.HasCheckConstraint(
+                "CK_parcelas_despesa_paga_cobrada",
+                "id_transacao_pagamento IS NULL OR id_transacao_cobranca IS NOT NULL");
         });
         entity.HasKey(p => p.Id);
 
@@ -51,7 +58,7 @@ internal sealed class ParcelaDespesaConfiguration : IEntityTypeConfiguration<Par
             pagamento.Property(p => p.ValorEfetivo)
                 .HasColumnName("valor_pagamento_efetivo");
 
-            // A FK para transacoes e o índice único vão por SQL na migration, porque o EF não aceita complex type neles.
+            // A FK para transacoes e os índices vão por SQL na migration, porque o EF não aceita complex type neles.
             pagamento.Property(p => p.IdTransacao)
                 .HasColumnName("id_transacao_pagamento");
 
@@ -65,6 +72,18 @@ internal sealed class ParcelaDespesaConfiguration : IEntityTypeConfiguration<Par
 
             pagamento.Property(p => p.DataEfetiva)
                 .HasColumnName("data_pagamento_efetiva");
+        });
+
+        // Complex type opcional, como o da DespesaAdiada.
+        entity.ComplexProperty(p => p.Cobranca, cobranca =>
+        {
+            cobranca.IsRequired(false);
+
+            cobranca.Property(c => c.IdTransacao)
+                .HasColumnName("id_transacao_cobranca");
+
+            cobranca.Property(c => c.Valor)
+                .HasColumnName("valor_cobrado");
         });
 
         entity.HasIndex("id_despesa", nameof(ParcelaDespesa.NumeroParcela))
