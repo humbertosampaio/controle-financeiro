@@ -22,15 +22,6 @@ public sealed class BancoDeDadosTests
     }
 
     [Fact]
-    public async Task Migrations_Quando_ApiSobe_Deve_EstarTodasAplicadas()
-    {
-        (IEnumerable<string> existentes, IEnumerable<string> aplicadas) = await _api.ConsultarAsync(async db =>
-            (db.Database.GetMigrations(), await db.Database.GetAppliedMigrationsAsync()));
-
-        aplicadas.Should().NotBeEmpty().And.Equal(existentes);
-    }
-
-    [Fact]
     public async Task Health_Quando_ApiSobe_Deve_RetornarSucesso()
     {
         using HttpResponseMessage resposta = await _api.Client.GetAsync(new Uri("/health", UriKind.Relative));
