@@ -23,7 +23,7 @@ public sealed record class ListarDespesasDoMesResponse(IReadOnlyList<ListarDespe
         decimal ValorProjetado,
         decimal? ValorEfetivo,
         int StatusPagamento,
-        DateOnly? DataPagamentoProjetada,
+        DateOnly DataPagamentoProjetada,
         DateOnly? DataPagamentoEfetiva,
         Guid? IdTransacao,
         ListarDespesasDoMesResponse.ParcelaDoMes? Parcela);
