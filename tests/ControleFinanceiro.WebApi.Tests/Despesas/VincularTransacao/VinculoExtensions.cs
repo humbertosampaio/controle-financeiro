@@ -19,6 +19,9 @@ internal static class VinculoExtensions
     /// <summary>O início da descrição de uma saída do extrato fictício do C6.</summary>
     public const string PixEnviado = "Pix enviado";
 
+    /// <summary>A descrição de uma compra à vista da fatura fictícia do C6.</summary>
+    public const string CompraAVista = "MERCADO FICTICIO";
+
     /// <summary>A descrição da compra parcelada da fatura fictícia do C6.</summary>
     public const string CompraParcelada = "LOJA DE EXEMPLO";
 

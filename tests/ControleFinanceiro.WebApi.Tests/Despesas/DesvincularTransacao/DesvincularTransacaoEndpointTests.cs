@@ -48,7 +48,7 @@ public sealed class DesvincularTransacaoEndpointTests : IAsyncLifetime
     }
 
     [Theory, ApiAutoData]
-    public async Task Delete_Quando_ParcelaVinculada_Deve_VoltarSoElaParaPendente(CadastrarUsuarioRequest cadastro)
+    public async Task Delete_Quando_ParcelaCobrada_Deve_TirarSoACobrancaDela(CadastrarUsuarioRequest cadastro)
     {
         Guid idUsuario = await _api.CadastrarUsuarioAsync(cadastro);
         await _api.ImportarFaturaC6Async(idUsuario);
@@ -63,7 +63,58 @@ public sealed class DesvincularTransacaoEndpointTests : IAsyncLifetime
     }
 
     [Theory, ApiAutoData]
-    public async Task Delete_Quando_TransacaoNaoVinculada_Deve_RetornarNaoEncontrado(CadastrarUsuarioRequest cadastro, Guid idTransacao)
+    public async Task Delete_Quando_AdiadaCobrada_Deve_TirarACobranca(
+        CadastrarUsuarioRequest cadastro,
+        CadastrarLoteBeneficiariosRequest beneficiarios,
+        CadastrarDespesaRecorrenteRequest recorrente,
+        GerarDespesasDoMesRequest geracao)
+    {
+        Guid idUsuario = await _api.CadastrarUsuarioAsync(cadastro);
+        await _api.ImportarFaturaC6Async(idUsuario);
+        DespesaAdiada despesa = await _api.GerarAdiadaAsync(idUsuario, beneficiarios, recorrente, geracao);
+        Transacao transacao = await _api.ObterTransacaoAsync(idUsuario, VinculoExtensions.CompraAVista);
+        await _api.VincularComSucessoAsync(idUsuario, despesa.Id.Value, transacao.Id.Value);
+
+        using HttpResponseMessage resposta = await DesvincularAsync(idUsuario, despesa.Id.Value, transacao.Id.Value);
+
+        resposta.StatusCode.Should().Be(HttpStatusCode.NoContent);
+        DespesaAdiada gravada = (await _api.ObterTodosAsync(db => db.Despesas.OfType<DespesaAdiada>())).Single();
+        gravada.Cobranca.Should().BeNull();
+        gravada.Pagamento.Should().Be(despesa.Pagamento);
+    }
+
+    [Theory, ApiAutoData]
+    public async Task Delete_Quando_CompraNaoCobrouADespesa_Deve_RetornarNaoEncontrado(CadastrarUsuarioRequest cadastro)
+    {
+        Guid idUsuario = await _api.CadastrarUsuarioAsync(cadastro);
+        await _api.ImportarFaturaC6Async(idUsuario);
+        DespesaParcelada despesa = (await _api.ObterParceladasAsync()).Single();
+        Transacao transacao = await _api.ObterTransacaoAsync(idUsuario, VinculoExtensions.CompraParcelada);
+
+        using HttpResponseMessage resposta = await DesvincularAsync(idUsuario, despesa.Id.Value, transacao.Id.Value);
+
+        resposta.StatusCode.Should().Be(HttpStatusCode.NotFound);
+    }
+
+    [Theory, ApiAutoData]
+    public async Task Delete_Quando_SaidaNaoPagouADespesa_Deve_RetornarNaoEncontrado(
+        CadastrarUsuarioRequest cadastro,
+        CadastrarLoteBeneficiariosRequest beneficiarios,
+        CadastrarDespesaRecorrenteRequest recorrente,
+        GerarDespesasDoMesRequest geracao)
+    {
+        Guid idUsuario = await _api.CadastrarUsuarioAsync(cadastro);
+        await _api.ImportarExtratoC6Async(idUsuario);
+        DespesaSimples despesa = await _api.GerarSimplesAsync(idUsuario, beneficiarios, recorrente, geracao);
+        Transacao transacao = await _api.ObterTransacaoAsync(idUsuario, VinculoExtensions.PixEnviado);
+
+        using HttpResponseMessage resposta = await DesvincularAsync(idUsuario, despesa.Id.Value, transacao.Id.Value);
+
+        resposta.StatusCode.Should().Be(HttpStatusCode.NotFound);
+    }
+
+    [Theory, ApiAutoData]
+    public async Task Delete_Quando_TransacaoNaoExiste_Deve_RetornarNaoEncontrado(CadastrarUsuarioRequest cadastro, Guid idTransacao)
     {
         Guid idUsuario = await _api.CadastrarUsuarioAsync(cadastro);
         await _api.ImportarFaturaC6Async(idUsuario);
@@ -102,7 +153,7 @@ public sealed class DesvincularTransacaoEndpointTests : IAsyncLifetime
         (await _api.ObterParceladasAsync())
             .Single()
             .Parcelas.Single(p => p.NumeroParcela == 3)
-            .Pagamento.IdTransacao.Should().Be(transacaoDoOutro.Id);
+            .Cobranca!.IdTransacao.Should().Be(transacaoDoOutro.Id);
     }
 
     [Fact]

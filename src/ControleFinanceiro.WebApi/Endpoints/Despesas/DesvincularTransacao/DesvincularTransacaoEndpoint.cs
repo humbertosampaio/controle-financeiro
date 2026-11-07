@@ -10,7 +10,7 @@ namespace ControleFinanceiro.WebApi.Endpoints.Despesas.DesvincularTransacao;
 
 /// <summary>
 /// Desfaz o que a transação fez na despesa: a compra do cartão perde a cobrança, e a saída da conta deixa de pagar a
-/// despesa simples, que volta para pendente.
+/// despesa simples, que volta para pendente. A despesa do cartão já paga pela fatura não perde a cobrança (409).
 /// </summary>
 public sealed class DesvincularTransacaoEndpoint : Endpoint<DesvincularTransacaoRequest>
 {
@@ -61,6 +61,11 @@ public sealed class DesvincularTransacaoEndpoint : Endpoint<DesvincularTransacao
         {
             case ErroTransacaoNaoCobrouADespesa or ErroTransacaoNaoPagouADespesa:
                 await Send.NotFoundAsync(ct);
+                break;
+
+            case ErroDespesaJaPaga:
+                AddError(erro.Descricao);
+                await Send.ErrorsAsync(StatusCodes.Status409Conflict, ct);
                 break;
 
             default:

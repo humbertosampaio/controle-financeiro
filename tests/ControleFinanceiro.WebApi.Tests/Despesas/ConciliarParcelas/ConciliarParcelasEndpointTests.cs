@@ -37,10 +37,9 @@ public sealed class ConciliarParcelasEndpointTests : IAsyncLifetime
 
         corpo.Should().Be(new ConciliarParcelasResponse(Vinculadas: 1, SemParcela: 0));
         DespesaParcelada gravada = (await _api.ObterParceladasAsync()).Single();
-        ParcelaDespesa paga = gravada.Parcelas.Single(p => p.TemCobranca);
-        paga.NumeroParcela.Should().Be(3);
-        paga.Pagamento.IdTransacao.Should().Be(transacao.Id);
-        paga.Pagamento.ValorEfetivo.Should().Be(transacao.ValorAbsoluto);
+        ParcelaDespesa cobrada = gravada.Parcelas.Single(p => p.TemCobranca);
+        cobrada.NumeroParcela.Should().Be(3);
+        cobrada.Cobranca.Should().Be(new Cobranca(transacao.Id, transacao.ValorAbsoluto));
     }
 
     [Theory, ApiAutoData]
