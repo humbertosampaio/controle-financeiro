@@ -5,6 +5,7 @@ using ControleFinanceiro.Domain.Shared.ValueObjects;
 using ControleFinanceiro.Domain.Transacoes;
 using ControleFinanceiro.Tests.Shared;
 using ControleFinanceiro.Tests.Shared.AutoFixture.Attributes;
+using ControleFinanceiro.Tests.Shared.Respostas;
 
 namespace ControleFinanceiro.SaidaModelo.Tests.Tipos;
 
@@ -23,11 +24,12 @@ public sealed class DespesaParaModeloTests
     {
         JsonObject json = despesa.ParaModelo(despesa.MesReferencia).Serializar();
 
-        json["id"]!.GetValue<Guid>().Should().Be(despesa.Id.Value);
-        DateOnly.ParseExact(json.Texto("dataOcorrencia"), "yyyy-MM-dd").Should().Be(despesa.DataOcorrencia);
-        json["valor"]!.GetValue<decimal>().Should().Be(despesa.Pagamento.ValorVigente);
-        json.Texto("mes").Should().Be(despesa.MesReferencia.ToString());
-        json.Texto("status").Should().Be(StatusPagamento.Pendente.Name);
+        DespesaDoMesLida lida = new(json);
+        lida.Id.Should().Be(despesa.Id.Value);
+        lida.DataOcorrencia.Should().Be(despesa.DataOcorrencia);
+        lida.Valor.Should().Be(despesa.Pagamento.ValorVigente);
+        lida.Mes.Should().Be(despesa.MesReferencia.ToString());
+        lida.Status.Should().Be(StatusPagamento.Pendente.Name);
     }
 
     // A primeira parcela nasce paga e a segunda, pendente: o status diz de qual parcela saiu o pagamento.
@@ -40,9 +42,10 @@ public sealed class DespesaParaModeloTests
 
         JsonObject json = despesa.ParaModelo(segunda.MesReferencia).Serializar();
 
-        json["valor"]!.GetValue<decimal>().Should().Be(segunda.Pagamento.ValorVigente);
-        json.Texto("mes").Should().Be(segunda.MesReferencia.ToString());
-        json.Texto("status").Should().Be(StatusPagamento.Pendente.Name);
+        DespesaDoMesLida lida = new(json);
+        lida.Valor.Should().Be(segunda.Pagamento.ValorVigente);
+        lida.Mes.Should().Be(segunda.MesReferencia.ToString());
+        lida.Status.Should().Be(StatusPagamento.Pendente.Name);
     }
 
     [Theory, DomainAutoData]
@@ -67,7 +70,7 @@ public sealed class DespesaParaModeloTests
 
         JsonObject json = despesa.ParaModelo(despesa.Parcelas[0].MesReferencia).Serializar();
 
-        json.Texto("descricao").Should().Be($"LOJA {DocumentosDeTeste.Rotulo(forma)}");
+        new DespesaDoMesLida(json).Descricao.Should().Be($"LOJA {DocumentosDeTeste.Rotulo(forma)}");
     }
 
     [Theory, DomainAutoData]
@@ -78,6 +81,6 @@ public sealed class DespesaParaModeloTests
 
         JsonObject json = despesa.ParaModelo(despesa.Parcelas[0].MesReferencia).Serializar();
 
-        json.Texto("descricao").Should().BeEmpty();
+        new DespesaDoMesLida(json).Descricao.Should().BeEmpty();
     }
 }

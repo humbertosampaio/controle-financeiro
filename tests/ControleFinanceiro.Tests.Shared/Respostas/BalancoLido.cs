@@ -1,13 +1,13 @@
 using System.Text.Json.Nodes;
 
-namespace ControleFinanceiro.Mcp.Tests.Infraestrutura.Respostas;
+namespace ControleFinanceiro.Tests.Shared.Respostas;
 
 /// <summary>
 /// A resposta do <c>balanco_mensal</c> num mês válido. Os nomes do JSON divergem das propriedades do tipo de saída
 /// (<c>TotalPago</c>, <c>TotalPendente</c>, <c>SaldoPrevisto</c>): ler <c>pago</c>, <c>pendente</c> e <c>saldo</c> prova
 /// que os atributos chegaram ao modelo.
 /// </summary>
-internal sealed class BalancoLido
+public sealed class BalancoLido
 {
     public string Mes { get; }
     public decimal RendaLiquida { get; }

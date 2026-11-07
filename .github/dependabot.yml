@@ -40,6 +40,7 @@ updates:
           - "Testcontainers*"
           - "Respawn"
           - "Bogus"
+          - "NSubstitute"
     ignore:
       # A partir da 8, o FluentAssertions tem licença paga para uso comercial.
       - dependency-name: "FluentAssertions"
@@ -51,6 +52,10 @@ updates:
       # vulnerabilidade, que a 2.5.307 já resolve.
       - dependency-name: "MessagePack"
         versions: [">= 3.0.0"]
+      # O AutoFixture.AutoNSubstitute 4.18.1 aceita só o NSubstitute abaixo da 6, e o restore falha
+      # com a 6 (NU1608). Libere quando um AutoNSubstitute novo aceitar a 6.
+      - dependency-name: "NSubstitute"
+        versions: [">= 6.0.0"]
 
   # A imagem do Postgres do AppHost e dos testes de integração, fixada em
   # src/ControleFinanceiro.AppHost/Resources/postgres.Dockerfile.

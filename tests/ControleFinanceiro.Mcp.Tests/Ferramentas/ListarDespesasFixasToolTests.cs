@@ -5,7 +5,7 @@ using ControleFinanceiro.Domain.Despesas;
 using ControleFinanceiro.Domain.Shared.ValueObjects;
 using ControleFinanceiro.Domain.Usuarios;
 using ControleFinanceiro.Mcp.Tests.Infraestrutura;
-using ControleFinanceiro.Mcp.Tests.Infraestrutura.Respostas;
+using ControleFinanceiro.Tests.Shared.Respostas;
 using ControleFinanceiro.Tests.Shared;
 using ControleFinanceiro.Tests.Shared.AutoFixture.Attributes;
 using ModelContextProtocol.Client;

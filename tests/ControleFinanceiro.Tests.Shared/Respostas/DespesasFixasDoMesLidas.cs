@@ -1,9 +1,9 @@
 using System.Text.Json.Nodes;
 
-namespace ControleFinanceiro.Mcp.Tests.Infraestrutura.Respostas;
+namespace ControleFinanceiro.Tests.Shared.Respostas;
 
 /// <summary>A resposta do <c>listar_despesas_fixas</c> num mês válido.</summary>
-internal sealed class DespesasFixasDoMesLidas
+public sealed class DespesasFixasDoMesLidas
 {
     public string Mes { get; }
     public IReadOnlyList<DespesaFixaLida> DespesasFixas { get; }

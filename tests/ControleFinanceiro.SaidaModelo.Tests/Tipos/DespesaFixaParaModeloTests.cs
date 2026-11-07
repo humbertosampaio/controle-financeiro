@@ -6,6 +6,7 @@ using ControleFinanceiro.Domain.Services;
 using ControleFinanceiro.Domain.Shared.ValueObjects;
 using ControleFinanceiro.Tests.Shared;
 using ControleFinanceiro.Tests.Shared.AutoFixture.Attributes;
+using ControleFinanceiro.Tests.Shared.Respostas;
 
 namespace ControleFinanceiro.SaidaModelo.Tests.Tipos;
 
@@ -39,11 +40,12 @@ public sealed class DespesaFixaParaModeloTests
 
         JsonObject json = recorrente.ParaModelo(despesaDoMes, mes).Serializar();
 
-        json["id"]!.GetValue<Guid>().Should().Be(recorrente.Id.Value);
-        json["valor"]!.GetValue<decimal>().Should().Be(recorrente.Valor);
-        json["diaOcorrencia"]!.GetValue<int>().Should().Be(recorrente.DiaOcorrencia);
-        json["despesaDoMes"]!["id"]!.GetValue<Guid>().Should().Be(despesaDoMes.Id.Value);
-        json["despesaDoMes"]!.AsObject().Texto("status").Should().Be(StatusPagamento.Pendente.Name);
+        DespesaFixaLida despesaFixa = new(json);
+        despesaFixa.Id.Should().Be(recorrente.Id.Value);
+        despesaFixa.Valor.Should().Be(recorrente.Valor);
+        despesaFixa.DiaOcorrencia.Should().Be(recorrente.DiaOcorrencia);
+        despesaFixa.DespesaDoMes!.Id.Should().Be(despesaDoMes.Id.Value);
+        despesaFixa.DespesaDoMes.Status.Should().Be(StatusPagamento.Pendente.Name);
     }
 
     [Theory]
@@ -63,8 +65,9 @@ public sealed class DespesaFixaParaModeloTests
         JsonObject json = recorrente.ParaModelo(despesaDoMes, mes).Serializar();
 
         string esperada = $"ALUGUEL {DocumentosDeTeste.Rotulo(forma)}";
-        json.Texto("descricao").Should().Be(esperada);
-        json["despesaDoMes"]!.AsObject().Texto("descricao").Should().Be(esperada);
+        DespesaFixaLida despesaFixa = new(json);
+        despesaFixa.Descricao.Should().Be(esperada);
+        despesaFixa.DespesaDoMes!.Descricao.Should().Be(esperada);
     }
 
     /// <summary>A recorrente sem cartão, para a despesa do mês sair da geração com pagamento imediato.</summary>

@@ -1,9 +1,9 @@
 using System.Text.Json.Nodes;
 
-namespace ControleFinanceiro.Mcp.Tests.Infraestrutura.Respostas;
+namespace ControleFinanceiro.Tests.Shared.Respostas;
 
 /// <summary>A despesa que uma recorrente gerou no mês, como o modelo a recebe.</summary>
-internal sealed class DespesaDoMesLida
+public sealed class DespesaDoMesLida
 {
     public Guid Id { get; }
     public string Descricao { get; }

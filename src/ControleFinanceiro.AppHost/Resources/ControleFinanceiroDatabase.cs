@@ -24,7 +24,9 @@ internal sealed class ControleFinanceiroDatabase
             .WithImageRegistry(PostgresImagem.Registro)
             .WithImage(PostgresImagem.Imagem)
             .WithImageTag(PostgresImagem.Tag)
-            .WithContainerName("postgres")
+            .WithContainerName("database")
+            // O Docker Desktop agrupa os containers pelo projeto do Compose.
+            .WithContainerRuntimeArgs("--label", "com.docker.compose.project=controle-financeiro", "--label", "com.docker.compose.service=database")
             .WithUserName(postgresUser)
             .WithPassword(postgresPassword)
             .WithEndpoint(
