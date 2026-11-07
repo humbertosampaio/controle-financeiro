@@ -63,6 +63,6 @@ public abstract class DespesaInteira : Despesa
     public override Maybe<Pagamento> PagamentoDoMes(MesReferencia mesReferencia) =>
         MesReferencia == mesReferencia ? Pagamento : Maybe<Pagamento>.None;
 
-    public override Maybe<MesReferencia> MesQuitado(IdTransacao idTransacao) =>
-        Pagamento.IdTransacao == idTransacao ? MesReferencia : Maybe<MesReferencia>.None;
+    public override Maybe<Pagamento> PagamentoQuitado(IdTransacao idTransacao) =>
+        Pagamento.IdTransacao == idTransacao ? Pagamento : Maybe<Pagamento>.None;
 }

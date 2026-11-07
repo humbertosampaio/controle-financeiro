@@ -505,7 +505,7 @@ public sealed class VinculoPagamentoServiceTests
     }
 
     [Theory, VinculoAutoData]
-    public void MesQuitado_Quando_SimplesQuitadaPelaTransacao_Deve_RetornarOMesDaDespesa(
+    public void PagamentoQuitado_Quando_SimplesQuitadaPelaTransacao_Deve_RetornarOPagamentoDaDespesa(
         DespesaSimples despesa,
         TransacoesDeTeste transacoes,
         SaidaDeTeste saida)
@@ -513,13 +513,13 @@ public sealed class VinculoPagamentoServiceTests
         Transacao transacao = transacoes.DaConta(saida.AVista());
         VinculoPagamentoService.Vincular(transacao, despesa, despesaQueUsaATransacao: Maybe<Despesa>.None).Should().Succeed();
 
-        Maybe<MesReferencia> result = despesa.MesQuitado(transacao.Id);
+        Maybe<Pagamento> result = despesa.PagamentoQuitado(transacao.Id);
 
-        result.Should().HaveValue(despesa.MesReferencia);
+        result.Should().HaveValue(despesa.Pagamento);
     }
 
     [Theory, VinculoAutoData]
-    public void MesQuitado_Quando_AdiadaQuitadaPelaTransacao_Deve_RetornarOMesDaDespesa(
+    public void PagamentoQuitado_Quando_AdiadaQuitadaPelaTransacao_Deve_RetornarOPagamentoDaDespesa(
         [Frozen] Cartao cartao,
         DespesaAdiada despesa,
         TransacoesDeTeste transacoes,
@@ -528,21 +528,21 @@ public sealed class VinculoPagamentoServiceTests
         Transacao transacao = transacoes.DoCartao(cartao, saida.AVista());
         VinculoPagamentoService.Vincular(transacao, despesa, despesaQueUsaATransacao: Maybe<Despesa>.None).Should().Succeed();
 
-        Maybe<MesReferencia> result = despesa.MesQuitado(transacao.Id);
+        Maybe<Pagamento> result = despesa.PagamentoQuitado(transacao.Id);
 
-        result.Should().HaveValue(despesa.MesReferencia);
+        result.Should().HaveValue(despesa.Pagamento);
     }
 
     [Theory, VinculoAutoData]
-    public void MesQuitado_Quando_InteiraPendente_Deve_RetornarVazio(DespesaSimples despesa, IdTransacao idTransacao)
+    public void PagamentoQuitado_Quando_InteiraPendente_Deve_RetornarVazio(DespesaSimples despesa, IdTransacao idTransacao)
     {
-        Maybe<MesReferencia> result = despesa.MesQuitado(idTransacao);
+        Maybe<Pagamento> result = despesa.PagamentoQuitado(idTransacao);
 
         result.Should().HaveNoValue();
     }
 
     [Theory, VinculoAutoData]
-    public void MesQuitado_Quando_InteiraQuitadaPorOutraTransacao_Deve_RetornarVazio(
+    public void PagamentoQuitado_Quando_InteiraQuitadaPorOutraTransacao_Deve_RetornarVazio(
         DespesaSimples despesa,
         TransacoesDeTeste transacoes,
         SaidaDeTeste saida,
@@ -550,13 +550,13 @@ public sealed class VinculoPagamentoServiceTests
     {
         VinculoPagamentoService.Vincular(transacoes.DaConta(saida.AVista()), despesa, despesaQueUsaATransacao: Maybe<Despesa>.None).Should().Succeed();
 
-        Maybe<MesReferencia> result = despesa.MesQuitado(outraTransacao);
+        Maybe<Pagamento> result = despesa.PagamentoQuitado(outraTransacao);
 
         result.Should().HaveNoValue();
     }
 
     [Theory, VinculoAutoData]
-    public void MesQuitado_Quando_ParcelaQuitadaPelaTransacao_Deve_RetornarOMesDaParcela(
+    public void PagamentoQuitado_Quando_ParcelaQuitadaPelaTransacao_Deve_RetornarOPagamentoDaParcela(
         [Frozen] Cartao cartao,
         DespesaParcelada despesa,
         TransacoesDeTeste transacoes,
@@ -565,21 +565,36 @@ public sealed class VinculoPagamentoServiceTests
         Transacao transacao = transacoes.DoCartao(cartao, saida.DaCompra(despesa, numero: 3));
         VinculoPagamentoService.Vincular(transacao, despesa, despesaQueUsaATransacao: Maybe<Despesa>.None).Should().Succeed();
 
-        Maybe<MesReferencia> result = despesa.MesQuitado(transacao.Id);
+        Maybe<Pagamento> result = despesa.PagamentoQuitado(transacao.Id);
 
-        result.Should().HaveValue(despesa.Parcelas[2].MesReferencia);
+        result.Should().HaveValue(despesa.Parcelas[2].Pagamento);
     }
 
     [Theory, VinculoAutoData]
-    public void MesQuitado_Quando_TransacaoNaoQuitouParcela_Deve_RetornarVazio(DespesaParcelada despesa, IdTransacao idTransacao)
+    public void ParcelaQuitada_Quando_ParcelaQuitadaPelaTransacao_Deve_RetornarAParcela(
+        [Frozen] Cartao cartao,
+        DespesaParcelada despesa,
+        TransacoesDeTeste transacoes,
+        SaidaDeTeste saida)
     {
-        Maybe<MesReferencia> result = despesa.MesQuitado(idTransacao);
+        Transacao transacao = transacoes.DoCartao(cartao, saida.DaCompra(despesa, numero: 3));
+        VinculoPagamentoService.Vincular(transacao, despesa, despesaQueUsaATransacao: Maybe<Despesa>.None).Should().Succeed();
+
+        Maybe<ParcelaDespesa> result = despesa.ParcelaQuitada(transacao.Id);
+
+        result.Should().HaveValue(despesa.Parcelas[2]);
+    }
+
+    [Theory, VinculoAutoData]
+    public void ParcelaQuitada_Quando_TransacaoNaoQuitouParcela_Deve_RetornarVazio(DespesaParcelada despesa, IdTransacao idTransacao)
+    {
+        Maybe<ParcelaDespesa> result = despesa.ParcelaQuitada(idTransacao);
 
         result.Should().HaveNoValue();
     }
 
     [Theory, VinculoAutoData]
-    public void MesQuitado_Quando_VinculoDaParcelaDesfeito_Deve_RetornarVazio(
+    public void ParcelaQuitada_Quando_VinculoDaParcelaDesfeito_Deve_RetornarVazio(
         [Frozen] Cartao cartao,
         DespesaParcelada despesa,
         TransacoesDeTeste transacoes,
@@ -589,7 +604,7 @@ public sealed class VinculoPagamentoServiceTests
         VinculoPagamentoService.Vincular(transacao, despesa, despesaQueUsaATransacao: Maybe<Despesa>.None).Should().Succeed();
         despesa.DesfazerVinculo(transacao.Id).Should().Succeed();
 
-        Maybe<MesReferencia> result = despesa.MesQuitado(transacao.Id);
+        Maybe<ParcelaDespesa> result = despesa.ParcelaQuitada(transacao.Id);
 
         result.Should().HaveNoValue();
     }

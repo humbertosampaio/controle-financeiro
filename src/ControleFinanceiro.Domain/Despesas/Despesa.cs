@@ -58,6 +58,6 @@ public abstract class Despesa : AggregateRoot<IdDespesa>, IPertenceAoUsuario
     /// <summary>O pagamento que cai no mês de referência, ou nada quando a despesa não tem pagamento nele.</summary>
     public abstract Maybe<Pagamento> PagamentoDoMes(MesReferencia mesReferencia);
 
-    /// <summary>O mês do pagamento que a transação quitou, ou nada quando ela não quitou nenhum desta despesa.</summary>
-    public abstract Maybe<MesReferencia> MesQuitado(IdTransacao idTransacao);
+    /// <summary>O pagamento que a transação quitou, ou nada quando ela não quitou nenhum desta despesa.</summary>
+    public abstract Maybe<Pagamento> PagamentoQuitado(IdTransacao idTransacao);
 }

@@ -54,12 +54,18 @@ public sealed record DespesaParaModelo : ISaidaModelo
             .PagamentoDoMes(mes)
             .GetValueOrThrow(new ArgumentException("A despesa não tem pagamento no mês.", nameof(despesa)));
 
+        return De(despesa, pagamento);
+    }
+
+    /// <param name="pagamento">Um pagamento da despesa.</param>
+    internal static DespesaParaModelo De(Despesa despesa, Pagamento pagamento)
+    {
         return new DespesaParaModelo(
             despesa.Id,
             (DocumentoMascarado)despesa.Descricao,
             despesa.DataOcorrencia,
             pagamento.ValorVigente,
-            mes,
+            pagamento.MesReferencia,
             pagamento.Status);
     }
 }

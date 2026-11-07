@@ -64,7 +64,8 @@ public sealed class VincularTransacaoEndpoint : Endpoint<VincularTransacaoReques
         return despesa switch
         {
             DespesaInteira inteira => Ler(inteira.Id, parcela: null, inteira.Pagamento),
-            DespesaParcelada parcelada => Ler(parcelada.Id, parcelada.Parcelas.First(p => p.Pagamento.IdTransacao == idTransacao)),
+            // O Value é seguro: a transação acabou de quitar uma parcela da despesa.
+            DespesaParcelada parcelada => Ler(parcelada.Id, parcelada.ParcelaQuitada(idTransacao).Value),
             _ => throw new InvalidOperationException($"Despesa sem resposta mapeada: {despesa.GetType().Name}"),
         };
     }

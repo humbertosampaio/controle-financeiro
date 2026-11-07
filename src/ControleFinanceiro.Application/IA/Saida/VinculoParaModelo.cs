@@ -1,8 +1,8 @@
-using System.Globalization;
-using System.Text.Json.Serialization;
 using ControleFinanceiro.Domain.Despesas;
 using ControleFinanceiro.Domain.Shared.ValueObjects;
 using ControleFinanceiro.Domain.Transacoes;
+using System.Globalization;
+using System.Text.Json.Serialization;
 
 namespace ControleFinanceiro.Application.IA.Saida;
 
@@ -64,22 +64,20 @@ public sealed record VinculoParaModelo : ISaidaModelo
     /// <exception cref="ArgumentException">Quando a transação não quitou nenhum pagamento da despesa.</exception>
     public static VinculoParaModelo De(Transacao transacao, Despesa despesa)
     {
-        MesReferencia mes = despesa
-            .MesQuitado(transacao.Id)
+        Pagamento pagamento = despesa
+            .PagamentoQuitado(transacao.Id)
             .GetValueOrThrow(new ArgumentException("A transação não quitou nenhum pagamento da despesa.", nameof(despesa)));
-        // O Value é seguro: cada parcela cai num mês diferente. A #136 elimina esta segunda busca.
-        Pagamento pagamento = despesa.PagamentoDoMes(mes).Value;
 
         return new VinculoParaModelo(
             transacao.ParaModelo(),
-            despesa.ParaModelo(mes),
+            despesa.ParaModelo(pagamento),
             pagamento.ValorProjetado,
             transacao.Data,
             transacao.ValorAbsoluto,
             (DocumentoMascarado)transacao.Descricao,
             (DocumentoMascarado)transacao.Contraparte,
             (DocumentoMascarado)despesa.Descricao,
-            mes);
+            pagamento.MesReferencia);
     }
 
     public static VinculoParaModelo Falha(ErroParaModelo erro) => new(erro);
