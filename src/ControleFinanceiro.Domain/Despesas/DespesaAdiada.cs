@@ -26,7 +26,6 @@ public sealed class DespesaAdiada : DespesaInteira
         FormaPagamento formaPagamento,
         IdCartao idCartao,
         IdDespesaRecorrente? idDespesaRecorrente,
-        MesReferencia mesReferencia,
         Pagamento pagamento)
         : base(
             id,
@@ -37,7 +36,6 @@ public sealed class DespesaAdiada : DespesaInteira
             dataOcorrencia,
             formaPagamento,
             idDespesaRecorrente,
-            mesReferencia,
             pagamento)
     {
         IdCartao = idCartao;
@@ -74,7 +72,6 @@ public sealed class DespesaAdiada : DespesaInteira
             FormaPagamento.Credito,
             idCartao,
             idDespesaRecorrente,
-            mesVencimento,
             pagamento);
     }
 
@@ -82,5 +79,5 @@ public sealed class DespesaAdiada : DespesaInteira
     /// Interno porque só o <see cref="Services.VinculoPagamentoService"/> confere a transação. A data efetiva é o vencimento
     /// projetado, porque a data da transação é a da compra, e não a do pagamento.
     /// </summary>
-    internal UnitResult<Erro> QuitarCom(IdTransacao idTransacao, ReaisPositivo valorEfetivo) => Quitar(idTransacao, Pagamento.DataProjetada!.Value, valorEfetivo);
+    internal UnitResult<Erro> QuitarCom(IdTransacao idTransacao, ReaisPositivo valorEfetivo) => Quitar(idTransacao, Pagamento.DataProjetada, valorEfetivo);
 }

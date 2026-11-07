@@ -15,6 +15,9 @@ public static class ParaModeloExtensions
     extension(Despesa despesa)
     {
         public DespesaParaModelo ParaModelo(MesReferencia mes) => DespesaParaModelo.De(despesa, mes);
+
+        /// <summary>Interno porque só quem achou o pagamento na própria despesa sabe que ele é dela.</summary>
+        internal DespesaParaModelo ParaModelo(Pagamento pagamento) => DespesaParaModelo.De(despesa, pagamento);
     }
 
     extension(DespesaRecorrente recorrente)

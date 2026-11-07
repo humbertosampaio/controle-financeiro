@@ -9,12 +9,12 @@ internal sealed class DespesaInteiraConfiguration : IEntityTypeConfiguration<Des
 {
     public void Configure(EntityTypeBuilder<DespesaInteira> entity)
     {
-        entity.Property(d => d.MesReferencia)
-            .HasColumnName("mes_referencia");
-
         // Complex type, como a origem da transação: o pagamento é um value object sem identidade.
         entity.ComplexProperty(d => d.Pagamento, pagamento =>
         {
+            pagamento.Property(p => p.MesReferencia)
+                .HasColumnName("mes_referencia");
+
             pagamento.Property(p => p.ValorProjetado)
                 .HasColumnName("valor_pagamento_projetado");
 
@@ -37,8 +37,8 @@ internal sealed class DespesaInteiraConfiguration : IEntityTypeConfiguration<Des
                 .HasColumnName("data_pagamento_efetiva");
         });
 
-        // A geração cria só as despesas que faltam no mês; o índice é a rede para duas gerações ao mesmo tempo.
-        entity.HasIndex(d => new { d.IdDespesaRecorrente, d.MesReferencia })
-            .IsUnique();
+        // A geração cria só as despesas que faltam no mês; o índice único (id_despesa_recorrente, mes_referencia) é a
+        // rede para duas gerações ao mesmo tempo. Ele continua no banco, criado pela migration Despesas, mas saiu do
+        // modelo, porque o EF não aceita complex type em índice, como o de id_transacao_pagamento.
     }
 }

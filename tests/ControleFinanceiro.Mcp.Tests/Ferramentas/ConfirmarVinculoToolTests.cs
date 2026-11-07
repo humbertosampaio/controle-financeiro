@@ -8,6 +8,7 @@ using ControleFinanceiro.Mcp.Tests.Infraestrutura;
 using ControleFinanceiro.Tests.Shared;
 using ControleFinanceiro.Tests.Shared.AutoFixture.Attributes;
 using ControleFinanceiro.Tests.Shared.Respostas;
+using CSharpFunctionalExtensions;
 using ModelContextProtocol.Client;
 using ModelContextProtocol.Protocol;
 
@@ -71,7 +72,7 @@ public sealed class ConfirmarVinculoToolTests : IAsyncLifetime
         vinculo.Despesa.Id.Should().Be(despesa.Id.Value);
         vinculo.Resumo.Should().Be(resumo);
         Despesa gravada = await _banco.LerDespesaAsync(despesa);
-        gravada.MesQuitado(transacao.Id).Should().HaveValue(mes);
+        gravada.PagamentoQuitado(transacao.Id).Map(p => p.MesReferencia).Should().HaveValue(mes);
     }
 
     [Theory, DomainAutoData]
@@ -121,8 +122,8 @@ public sealed class ConfirmarVinculoToolTests : IAsyncLifetime
 
         ErroLido.DoEnvelope(resultado.Json).Mensagem.Should().Be(ErroParaModelo.DespesaJaPaga.Mensagem);
         Despesa gravada = await _banco.LerDespesaAsync(despesa);
-        gravada.MesQuitado(transacao.Id).Should().HaveNoValue();
-        gravada.MesQuitado(outraSaida.Id).Should().HaveValue(mes);
+        gravada.PagamentoQuitado(transacao.Id).Should().HaveNoValue();
+        gravada.PagamentoQuitado(outraSaida.Id).Map(p => p.MesReferencia).Should().HaveValue(mes);
     }
 
     [Theory, DomainAutoData]
@@ -152,7 +153,7 @@ public sealed class ConfirmarVinculoToolTests : IAsyncLifetime
 
         ErroLido.DoEnvelope(resultado.Json).Mensagem.Should().Be(ErroParaModelo.TransacaoJaVinculada.Mensagem);
         Despesa gravada = await _banco.LerDespesaAsync(despesa);
-        gravada.MesQuitado(transacao.Id).Should().HaveValue(mes);
+        gravada.PagamentoQuitado(transacao.Id).Map(p => p.MesReferencia).Should().HaveValue(mes);
     }
 
     [Theory, DomainAutoData]

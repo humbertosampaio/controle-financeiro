@@ -23,7 +23,6 @@ public sealed class DespesaSimples : DespesaInteira
         DateOnly dataOcorrencia,
         FormaPagamento formaPagamento,
         IdDespesaRecorrente? idDespesaRecorrente,
-        MesReferencia mesReferencia,
         Pagamento pagamento)
         : base(
             id,
@@ -34,7 +33,6 @@ public sealed class DespesaSimples : DespesaInteira
             dataOcorrencia,
             formaPagamento,
             idDespesaRecorrente,
-            mesReferencia,
             pagamento)
     {
     }
@@ -62,7 +60,6 @@ public sealed class DespesaSimples : DespesaInteira
             dataOcorrencia,
             formaPagamento,
             idDespesaRecorrente: null,
-            mesReferencia: dataOcorrencia,
             pagamento);
     }
 
@@ -93,7 +90,6 @@ public sealed class DespesaSimples : DespesaInteira
             dataOcorrencia,
             formaPagamento,
             idDespesaRecorrente,
-            mesReferencia: dataOcorrencia,
             pagamento);
     }
 

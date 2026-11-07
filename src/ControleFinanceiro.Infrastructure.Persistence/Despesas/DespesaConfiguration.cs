@@ -36,6 +36,11 @@ internal sealed class DespesaConfiguration : IEntityTypeConfiguration<Despesa>
             tabela.HasCheckConstraint(
                 "CK_despesas_pagamento_transacao",
                 $"id_transacao_pagamento IS NULL OR status_pagamento = {StatusPagamento.Pago.Value}");
+
+            // Nas linhas da parcelada, as duas colunas são nulas, e o CHECK com nulo passa.
+            tabela.HasCheckConstraint(
+                "CK_despesas_pagamento_mes",
+                "mes_referencia = date_trunc('month', data_pagamento_projetada::timestamp)::date");
         });
 
         entity.HasDiscriminator<string>("tipo")

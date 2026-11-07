@@ -18,8 +18,8 @@ internal sealed class DespesaRepository : IDespesaRepository
     public async Task<IReadOnlyList<Despesa>> ListarDoMesAsync(MesReferencia mesReferencia, CancellationToken cancellationToken)
     {
         return await _dbSet
-            .Where(d => (d is DespesaInteira && ((DespesaInteira)d).MesReferencia == mesReferencia)
-                || (d is DespesaParcelada && ((DespesaParcelada)d).Parcelas.Any(p => p.MesReferencia == mesReferencia)))
+            .Where(d => (d is DespesaInteira && ((DespesaInteira)d).Pagamento.MesReferencia == mesReferencia)
+                || (d is DespesaParcelada && ((DespesaParcelada)d).Parcelas.Any(p => p.Pagamento.MesReferencia == mesReferencia)))
             .ToListAsync(cancellationToken);
     }
 

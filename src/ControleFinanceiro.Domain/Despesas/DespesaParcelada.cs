@@ -93,8 +93,10 @@ public sealed class DespesaParcelada : Despesa
 
     public override Maybe<Pagamento> PagamentoDoMes(MesReferencia mesReferencia) => ParcelaDoMes(mesReferencia).Map(p => p.Pagamento);
 
-    public override Maybe<MesReferencia> MesQuitado(IdTransacao idTransacao) =>
-        _parcelas.TryFirst(p => p.Pagamento.IdTransacao == idTransacao).Map(p => p.MesReferencia);
+    /// <summary>A parcela que a transação quitou, ou nada quando ela não quitou nenhuma.</summary>
+    public Maybe<ParcelaDespesa> ParcelaQuitada(IdTransacao idTransacao) => _parcelas.TryFirst(p => p.Pagamento.IdTransacao == idTransacao);
+
+    public override Maybe<Pagamento> PagamentoQuitado(IdTransacao idTransacao) => ParcelaQuitada(idTransacao).Map(p => p.Pagamento);
 
     /// <param name="numero">Um número até o total de parcelas da compra.</param>
     internal ParcelaDespesa ParcelaNumero(int numero) => _parcelas.First(p => p.NumeroParcela == numero);
@@ -109,11 +111,11 @@ public sealed class DespesaParcelada : Despesa
 
     public override UnitResult<Erro> DesfazerVinculo(IdTransacao idTransacao)
     {
-        ParcelaDespesa? parcela = _parcelas.Find(p => p.Pagamento.IdTransacao == idTransacao);
-        if (parcela is null)
+        Maybe<ParcelaDespesa> parcela = ParcelaQuitada(idTransacao);
+        if (parcela.HasNoValue)
             return ErroTransacaoNaoVinculada.Instancia;
 
-        parcela.Reabrir();
+        parcela.Value.Reabrir();
         return UnitResult.Success<Erro>();
     }
 }

@@ -222,6 +222,8 @@ namespace ControleFinanceiro.Infrastructure.Persistence.Migrations
 
                             t.HasCheckConstraint("CK_despesas_pagamento", "(status_pagamento = 1) = (data_pagamento_efetiva IS NOT NULL)");
 
+                            t.HasCheckConstraint("CK_despesas_pagamento_mes", "mes_referencia = date_trunc('month', data_pagamento_projetada::timestamp)::date");
+
                             t.HasCheckConstraint("CK_despesas_pagamento_transacao", "id_transacao_pagamento IS NULL OR status_pagamento = 1");
 
                             t.HasCheckConstraint("CK_despesas_pagamento_valor_efetivo", "(status_pagamento = 1) = (valor_pagamento_efetivo IS NOT NULL)");
@@ -304,10 +306,6 @@ namespace ControleFinanceiro.Infrastructure.Persistence.Migrations
                         .HasColumnType("uuid")
                         .HasColumnName("id");
 
-                    b.Property<DateOnly>("MesReferencia")
-                        .HasColumnType("date")
-                        .HasColumnName("mes_referencia");
-
                     b.Property<int>("NumeroParcela")
                         .HasColumnType("integer")
                         .HasColumnName("numero_parcela");
@@ -323,13 +321,17 @@ namespace ControleFinanceiro.Infrastructure.Persistence.Migrations
                                 .HasColumnType("date")
                                 .HasColumnName("data_pagamento_efetiva");
 
-                            b1.Property<DateOnly?>("DataProjetada")
+                            b1.Property<DateOnly>("DataProjetada")
                                 .HasColumnType("date")
                                 .HasColumnName("data_pagamento_projetada");
 
                             b1.Property<Guid?>("IdTransacao")
                                 .HasColumnType("uuid")
                                 .HasColumnName("id_transacao_pagamento");
+
+                            b1.Property<DateOnly>("MesReferencia")
+                                .HasColumnType("date")
+                                .HasColumnName("mes_referencia");
 
                             b1.Property<int>("Status")
                                 .HasColumnType("integer")
@@ -356,6 +358,8 @@ namespace ControleFinanceiro.Infrastructure.Persistence.Migrations
                             t.HasCheckConstraint("CK_parcelas_despesa_numero", "numero_parcela >= 1");
 
                             t.HasCheckConstraint("CK_parcelas_despesa_pagamento", "(status_pagamento = 1) = (data_pagamento_efetiva IS NOT NULL)");
+
+                            t.HasCheckConstraint("CK_parcelas_despesa_pagamento_mes", "mes_referencia = date_trunc('month', data_pagamento_projetada::timestamp)::date");
 
                             t.HasCheckConstraint("CK_parcelas_despesa_pagamento_transacao", "id_transacao_pagamento IS NULL OR status_pagamento = 1");
 
@@ -581,10 +585,6 @@ namespace ControleFinanceiro.Infrastructure.Persistence.Migrations
                 {
                     b.HasBaseType("ControleFinanceiro.Domain.Despesas.Despesa");
 
-                    b.Property<DateOnly>("MesReferencia")
-                        .HasColumnType("date")
-                        .HasColumnName("mes_referencia");
-
                     b.ComplexProperty(typeof(Dictionary<string, object>), "Pagamento", "ControleFinanceiro.Domain.Despesas.DespesaInteira.Pagamento#Pagamento", b1 =>
                         {
                             b1.IsRequired();
@@ -593,13 +593,17 @@ namespace ControleFinanceiro.Infrastructure.Persistence.Migrations
                                 .HasColumnType("date")
                                 .HasColumnName("data_pagamento_efetiva");
 
-                            b1.Property<DateOnly?>("DataProjetada")
+                            b1.Property<DateOnly>("DataProjetada")
                                 .HasColumnType("date")
                                 .HasColumnName("data_pagamento_projetada");
 
                             b1.Property<Guid?>("IdTransacao")
                                 .HasColumnType("uuid")
                                 .HasColumnName("id_transacao_pagamento");
+
+                            b1.Property<DateOnly>("MesReferencia")
+                                .HasColumnType("date")
+                                .HasColumnName("mes_referencia");
 
                             b1.Property<int>("Status")
                                 .HasColumnType("integer")
@@ -616,9 +620,6 @@ namespace ControleFinanceiro.Infrastructure.Persistence.Migrations
                                 .HasColumnName("valor_pagamento_projetado");
                         });
 
-                    b.HasIndex("IdDespesaRecorrente", "MesReferencia")
-                        .IsUnique();
-
                     b.ToTable(t =>
                         {
                             t.HasCheckConstraint("CK_despesas_cartao", "(tipo IN ('adiada', 'parcelada')) = (id_cartao IS NOT NULL)");
@@ -626,6 +627,8 @@ namespace ControleFinanceiro.Infrastructure.Persistence.Migrations
                             t.HasCheckConstraint("CK_despesas_descricao", "btrim(descricao) <> ''");
 
                             t.HasCheckConstraint("CK_despesas_pagamento", "(status_pagamento = 1) = (data_pagamento_efetiva IS NOT NULL)");
+
+                            t.HasCheckConstraint("CK_despesas_pagamento_mes", "mes_referencia = date_trunc('month', data_pagamento_projetada::timestamp)::date");
 
                             t.HasCheckConstraint("CK_despesas_pagamento_transacao", "id_transacao_pagamento IS NULL OR status_pagamento = 1");
 
@@ -658,6 +661,8 @@ namespace ControleFinanceiro.Infrastructure.Persistence.Migrations
 
                             t.HasCheckConstraint("CK_despesas_pagamento", "(status_pagamento = 1) = (data_pagamento_efetiva IS NOT NULL)");
 
+                            t.HasCheckConstraint("CK_despesas_pagamento_mes", "mes_referencia = date_trunc('month', data_pagamento_projetada::timestamp)::date");
+
                             t.HasCheckConstraint("CK_despesas_pagamento_transacao", "id_transacao_pagamento IS NULL OR status_pagamento = 1");
 
                             t.HasCheckConstraint("CK_despesas_pagamento_valor_efetivo", "(status_pagamento = 1) = (valor_pagamento_efetivo IS NOT NULL)");
@@ -689,6 +694,8 @@ namespace ControleFinanceiro.Infrastructure.Persistence.Migrations
 
                             t.HasCheckConstraint("CK_despesas_pagamento", "(status_pagamento = 1) = (data_pagamento_efetiva IS NOT NULL)");
 
+                            t.HasCheckConstraint("CK_despesas_pagamento_mes", "mes_referencia = date_trunc('month', data_pagamento_projetada::timestamp)::date");
+
                             t.HasCheckConstraint("CK_despesas_pagamento_transacao", "id_transacao_pagamento IS NULL OR status_pagamento = 1");
 
                             t.HasCheckConstraint("CK_despesas_pagamento_valor_efetivo", "(status_pagamento = 1) = (valor_pagamento_efetivo IS NOT NULL)");
@@ -712,6 +719,8 @@ namespace ControleFinanceiro.Infrastructure.Persistence.Migrations
                             t.HasCheckConstraint("CK_despesas_descricao", "btrim(descricao) <> ''");
 
                             t.HasCheckConstraint("CK_despesas_pagamento", "(status_pagamento = 1) = (data_pagamento_efetiva IS NOT NULL)");
+
+                            t.HasCheckConstraint("CK_despesas_pagamento_mes", "mes_referencia = date_trunc('month', data_pagamento_projetada::timestamp)::date");
 
                             t.HasCheckConstraint("CK_despesas_pagamento_transacao", "id_transacao_pagamento IS NULL OR status_pagamento = 1");
 
