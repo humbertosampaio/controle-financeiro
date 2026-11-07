@@ -96,14 +96,14 @@ public sealed class PagamentoTests
     }
 
     [Theory, DomainAutoData]
-    public void QuitarCom_Deve_RegistrarOsEfetivosEPreservarOPrevisto(
+    public void PagarCom_Deve_RegistrarOsEfetivosEPreservarOPrevisto(
         ReaisPositivo valor,
         DateOnly dataProjetada,
         IdTransacao idTransacao,
         DateOnly dataEfetiva,
         ReaisPositivo valorEfetivo)
     {
-        Pagamento result = Pagamento.Pendente(valor, dataProjetada).QuitarCom(idTransacao, dataEfetiva, valorEfetivo);
+        Pagamento result = Pagamento.Pendente(valor, dataProjetada).PagarCom(idTransacao, dataEfetiva, valorEfetivo);
 
         result.Status.Should().Be(StatusPagamento.Pago);
         result.ValorProjetado.Should().Be(valor);
@@ -121,22 +121,22 @@ public sealed class PagamentoTests
         DateOnly dataEfetiva,
         ReaisPositivo valorEfetivo)
     {
-        Pagamento quitado = Pagamento.Pendente(valor, dataProjetada).QuitarCom(idTransacao, dataEfetiva, valorEfetivo);
+        Pagamento pago = Pagamento.Pendente(valor, dataProjetada).PagarCom(idTransacao, dataEfetiva, valorEfetivo);
 
-        Pagamento result = quitado.Reabrir();
+        Pagamento result = pago.Reabrir();
 
         result.Should().Be(Pagamento.Pendente(valor, dataProjetada));
     }
 
     [Theory, DomainAutoData]
-    public void QuitarCom_Deve_PreservarOMes(
+    public void PagarCom_Deve_PreservarOMes(
         ReaisPositivo valor,
         DateOnly dataProjetada,
         IdTransacao idTransacao,
         DateOnly dataEfetiva,
         ReaisPositivo valorEfetivo)
     {
-        Pagamento result = Pagamento.Pendente(valor, dataProjetada).QuitarCom(idTransacao, dataEfetiva, valorEfetivo);
+        Pagamento result = Pagamento.Pendente(valor, dataProjetada).PagarCom(idTransacao, dataEfetiva, valorEfetivo);
 
         result.MesReferencia.Should().Be((MesReferencia)dataProjetada);
     }
@@ -149,9 +149,9 @@ public sealed class PagamentoTests
         DateOnly dataEfetiva,
         ReaisPositivo valorEfetivo)
     {
-        Pagamento quitado = Pagamento.Pendente(valor, dataProjetada).QuitarCom(idTransacao, dataEfetiva, valorEfetivo);
+        Pagamento pago = Pagamento.Pendente(valor, dataProjetada).PagarCom(idTransacao, dataEfetiva, valorEfetivo);
 
-        Pagamento result = quitado.Reabrir();
+        Pagamento result = pago.Reabrir();
 
         result.MesReferencia.Should().Be((MesReferencia)dataProjetada);
     }

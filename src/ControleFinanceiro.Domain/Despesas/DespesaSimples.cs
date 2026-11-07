@@ -97,12 +97,12 @@ public sealed class DespesaSimples : DespesaInteira
     /// Interno porque só o <see cref="Services.VinculoTransacaoService"/> confere a transação. A despesa que nasceu paga,
     /// sem transação, aceita ser paga pela saída.
     /// </summary>
-    internal UnitResult<Erro> QuitarCom(IdTransacao idTransacao, DateOnly dataEfetiva, ReaisPositivo valorEfetivo)
+    internal UnitResult<Erro> PagarCom(IdTransacao idTransacao, DateOnly dataEfetiva, ReaisPositivo valorEfetivo)
     {
         if (Pagamento.IdTransacao is not null)
             return ErroDespesaJaPaga.Instancia;
 
-        Pagamento = Pagamento.QuitarCom(idTransacao, dataEfetiva, valorEfetivo);
+        Pagamento = Pagamento.PagarCom(idTransacao, dataEfetiva, valorEfetivo);
         return UnitResult.Success<Erro>();
     }
 

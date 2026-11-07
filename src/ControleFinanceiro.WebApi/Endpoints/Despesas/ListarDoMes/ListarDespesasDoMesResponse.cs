@@ -9,7 +9,7 @@ public sealed record class ListarDespesasDoMesResponse(IReadOnlyList<ListarDespe
     /// <param name="ValorProjetado">Na parcelada, o valor da parcela do mês, assim como os demais dados do pagamento.</param>
     /// <param name="ValorEfetivo">O que de fato saiu, só quando está pago.</param>
     /// <param name="StatusPagamento">O código do status do pagamento: 0 (pendente) ou 1 (pago).</param>
-    /// <param name="IdTransacao">A transação que quitou, só quando há vínculo.</param>
+    /// <param name="IdTransacao">A transação que pagou, só quando há vínculo.</param>
     /// <param name="Parcela">A parcela do mês, só na despesa parcelada.</param>
     public sealed record class Despesa(
         Guid Id,

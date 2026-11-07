@@ -134,7 +134,7 @@ public sealed class VinculoParaModeloTests
     }
 
     [Theory, UsuarioUnicoAutoData]
-    public void De_Quando_TransacaoNaoQuitouADespesa_Deve_LancarExcecao(DespesaSimples despesa, TransacoesDeTeste transacoes, Lancamento lancamento)
+    public void De_Quando_TransacaoNaoPagouADespesa_Deve_LancarExcecao(DespesaSimples despesa, TransacoesDeTeste transacoes, Lancamento lancamento)
     {
         Transacao transacao = transacoes.DaConta(lancamento.SemCategoria().ComoSaida());
 

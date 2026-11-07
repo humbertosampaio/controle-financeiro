@@ -21,7 +21,7 @@ public sealed class VinculoTransacaoServiceTests
     private static readonly Parcela _parcelaDaCompra = (Parcela)(3, 10);
 
     [Theory, VinculoAutoData]
-    public void Vincular_Quando_SimplesESaidaDeConta_Deve_QuitarNaDataDaTransacao(
+    public void Vincular_Quando_SimplesESaidaDeConta_Deve_PagarNaDataDaTransacao(
         DespesaSimples despesa,
         TransacoesDeTeste transacoes,
         SaidaDeTeste saida)
@@ -143,7 +143,7 @@ public sealed class VinculoTransacaoServiceTests
     }
 
     [Theory, VinculoAutoData]
-    public void Vincular_Quando_DespesaJaQuitadaPorOutraTransacao_Deve_RetornarDespesaJaPaga(
+    public void Vincular_Quando_DespesaJaPagaPorOutraTransacao_Deve_RetornarDespesaJaPaga(
         DespesaSimples despesa,
         TransacoesDeTeste transacoes,
         SaidaDeTeste saida,

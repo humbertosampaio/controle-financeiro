@@ -17,7 +17,7 @@ public sealed record VinculoParaModelo : ISaidaModelo
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public TransacaoParaModelo? Transacao { get; }
 
-    /// <summary>A despesa no mês que a transação quitou, já paga por ela.</summary>
+    /// <summary>A despesa no mês que a transação pagou, já paga por ela.</summary>
     [JsonPropertyName("despesa")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public DespesaParaModelo? Despesa { get; }

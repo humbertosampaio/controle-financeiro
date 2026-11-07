@@ -37,7 +37,7 @@ public sealed class VincularTransacaoEndpointTests : IAsyncLifetime
     public Task DisposeAsync() => Task.CompletedTask;
 
     [Theory, ApiAutoData]
-    public async Task Post_Quando_SimplesESaidaDoExtrato_Deve_QuitarComOValorDaTransacao(
+    public async Task Post_Quando_SimplesESaidaDoExtrato_Deve_PagarComOValorDaTransacao(
         CadastrarUsuarioRequest cadastro,
         CadastrarLoteBeneficiariosRequest beneficiarios,
         CadastrarDespesaRecorrenteRequest recorrente,
@@ -68,7 +68,7 @@ public sealed class VincularTransacaoEndpointTests : IAsyncLifetime
     }
 
     [Theory, ApiAutoData]
-    public async Task Post_Quando_AdiadaECompraAVistaNoCartao_Deve_QuitarNoVencimento(
+    public async Task Post_Quando_AdiadaECompraAVistaNoCartao_Deve_PagarNoVencimento(
         CadastrarUsuarioRequest cadastro,
         CadastrarLoteBeneficiariosRequest beneficiarios,
         CadastrarDespesaRecorrenteRequest recorrente,
@@ -88,7 +88,7 @@ public sealed class VincularTransacaoEndpointTests : IAsyncLifetime
     }
 
     [Theory, ApiAutoData]
-    public async Task Post_Quando_ParcelaDaCompra_Deve_QuitarSoAParcelaDoMesmoNumero(CadastrarUsuarioRequest cadastro)
+    public async Task Post_Quando_ParcelaDaCompra_Deve_PagarSoAParcelaDoMesmoNumero(CadastrarUsuarioRequest cadastro)
     {
         Guid idUsuario = await ImportarFaturaAsync(cadastro);
         DespesaParcelada despesa = (await _api.ObterParceladasAsync()).Single();
@@ -106,7 +106,7 @@ public sealed class VincularTransacaoEndpointTests : IAsyncLifetime
     }
 
     [Theory, ApiAutoData]
-    public async Task Post_Quando_ParcelaDaFaturaSeguinte_Deve_QuitarAParcelaSeguinteNaMesmaDespesa(CadastrarUsuarioRequest cadastro)
+    public async Task Post_Quando_ParcelaDaFaturaSeguinte_Deve_PagarAParcelaSeguinteNaMesmaDespesa(CadastrarUsuarioRequest cadastro)
     {
         Guid idUsuario = await ImportarFaturaAsync(cadastro);
         await _api.ImportarFaturaComSucessoAsync(idUsuario, LayoutArquivoImportacao.C6CartaoCsv, FaturaCartaoC6.ComParcelaSeguinte());

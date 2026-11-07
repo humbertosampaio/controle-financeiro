@@ -21,7 +21,7 @@ public sealed record ErroParaModelo : ISaidaModelo
 
     public static readonly ErroParaModelo TransacaoJaVinculada = Fixo("A transação já paga uma despesa, e cada transação paga uma só.");
 
-    public static readonly ErroParaModelo DespesaJaPaga = Fixo("A despesa já foi quitada por outra transação.");
+    public static readonly ErroParaModelo DespesaJaPaga = Fixo("A despesa já foi paga por outra transação.");
 
     public static readonly ErroParaModelo TransacaoNaoEhSaida = Fixo("A transação é uma entrada: só uma saída paga despesa.");
 

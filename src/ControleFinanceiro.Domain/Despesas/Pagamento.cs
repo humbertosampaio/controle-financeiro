@@ -55,8 +55,8 @@ public sealed class Pagamento : ValueObject
     public static Pagamento Pago(ReaisPositivo valorProjetado, DateOnly dataProjetada, DateOnly dataEfetiva) =>
         new(valorProjetado, StatusPagamento.Pago, mesReferencia: dataProjetada, dataProjetada, dataEfetiva, valorEfetivo: valorProjetado, idTransacao: null);
 
-    /// <summary>O mesmo pagamento quitado pela transação. O valor, o mês e a data projetados não mudam.</summary>
-    public Pagamento QuitarCom(IdTransacao idTransacao, DateOnly dataEfetiva, ReaisPositivo valorEfetivo) =>
+    /// <summary>O mesmo pagamento, agora pago pela transação. O valor, o mês e a data projetados não mudam.</summary>
+    public Pagamento PagarCom(IdTransacao idTransacao, DateOnly dataEfetiva, ReaisPositivo valorEfetivo) =>
         new(ValorProjetado, StatusPagamento.Pago, MesReferencia, DataProjetada, dataEfetiva, valorEfetivo, idTransacao);
 
     /// <summary>O mesmo pagamento de volta a pendente, sem os dados efetivos.</summary>

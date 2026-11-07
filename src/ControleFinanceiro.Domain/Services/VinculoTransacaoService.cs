@@ -50,7 +50,7 @@ public static class VinculoTransacaoService
         if (!transacao.EhOrigemConta)
             return ErroOrigemIncompativelComDespesa.Instancia;
 
-        return simples.QuitarCom(transacao.Id, transacao.Data, transacao.ValorAbsoluto);
+        return simples.PagarCom(transacao.Id, transacao.Data, transacao.ValorAbsoluto);
     }
 
     private static UnitResult<Erro> VincularAdiada(Transacao transacao, DespesaAdiada adiada)
