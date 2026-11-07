@@ -60,7 +60,7 @@ Exemplo: a conciliação das parcelas da fatura (#116). O serviço confere o don
 
 Concorrência: a unicidade garantida pela factory tem um índice único no banco como rede. Duas requisições ao mesmo tempo dão 500 na segunda, e isso é aceito até haver motivo para tratar. A exceção é a `DespesaRecorrente` repetida (mesmo beneficiário e mesma descrição, sem contar caixa, acentos e espaços repetidos): só a factory a recusa, sem índice, e duas requisições ao mesmo tempo podem gravar as duas. O mesmo vale para a `DespesaParcelada` da mesma compra, recusada só pela `DespesaParceladaFactory`, porque a chave depende de texto normalizado, que não é coluna.
 
-O vínculo entre transação e despesa tem um índice único por tabela (`despesas` e `parcelas_despesa`), e não um só entre as duas. Eles bastam porque os conjuntos são disjuntos: transação com parcela só paga parcela, e transação sem parcela só paga despesa inteira, então o mesmo id não aparece nas duas tabelas por um caminho válido. Quem recusa a transação já usada é o `VinculoPagamentoService`.
+A cobrança tem um índice único por tabela (`despesas` e `parcelas_despesa`), e não um só entre as duas. Eles bastam porque os conjuntos são disjuntos: compra com parcela só cobra parcela, e compra sem parcela só cobra despesa adiada, então o mesmo id não aparece nas duas tabelas por um caminho válido. O pagamento tem um índice único parcial só na despesa simples, porque um pagamento de fatura paga várias despesas. Quem recusa a transação já usada é o `VinculoTransacaoService`.
 
 ## 4. Repositórios
 
