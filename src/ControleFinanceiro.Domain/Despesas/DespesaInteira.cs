@@ -9,8 +9,10 @@ namespace ControleFinanceiro.Domain.Despesas;
 
 public abstract class DespesaInteira : Despesa
 {
-    public MesReferencia MesReferencia { get; protected set; } = null!;
     public Pagamento Pagamento { get; protected set; } = null!;
+
+    /// <summary>O mês do pagamento. Não é mapeada: numa consulta do EF, use <c>Pagamento.MesReferencia</c>.</summary>
+    public MesReferencia MesReferencia => Pagamento.MesReferencia;
 
     protected DespesaInteira()
     {
@@ -25,7 +27,6 @@ public abstract class DespesaInteira : Despesa
         DateOnly dataOcorrencia,
         FormaPagamento formaPagamento,
         IdDespesaRecorrente? idDespesaRecorrente,
-        MesReferencia mesReferencia,
         Pagamento pagamento)
         : base(
             id,
@@ -37,7 +38,6 @@ public abstract class DespesaInteira : Despesa
             formaPagamento,
             idDespesaRecorrente)
     {
-        MesReferencia = mesReferencia;
         Pagamento = pagamento;
     }
 

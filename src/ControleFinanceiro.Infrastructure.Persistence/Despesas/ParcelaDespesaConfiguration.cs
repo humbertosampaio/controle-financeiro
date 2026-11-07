@@ -33,15 +33,15 @@ internal sealed class ParcelaDespesaConfiguration : IEntityTypeConfiguration<Par
         entity.Property(p => p.NumeroParcela)
             .HasColumnName("numero_parcela");
 
-        entity.Property(p => p.MesReferencia)
-            .HasColumnName("mes_referencia");
-
         entity.Property<IdDespesa>("id_despesa")
             .IsRequired();
 
         // Complex type, como o da DespesaInteira: o pagamento é um value object sem identidade.
         entity.ComplexProperty(p => p.Pagamento, pagamento =>
         {
+            pagamento.Property(p => p.MesReferencia)
+                .HasColumnName("mes_referencia");
+
             pagamento.Property(p => p.ValorProjetado)
                 .HasColumnName("valor_pagamento_projetado");
 

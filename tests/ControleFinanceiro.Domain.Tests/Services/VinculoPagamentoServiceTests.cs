@@ -28,7 +28,7 @@ public sealed class VinculoPagamentoServiceTests
     {
         Transacao transacao = transacoes.DaConta(saida.AVista());
         ReaisPositivo previsto = despesa.Pagamento.ValorProjetado;
-        DateOnly? projetada = despesa.Pagamento.DataProjetada;
+        DateOnly projetada = despesa.Pagamento.DataProjetada;
 
         UnitResult<Erro> result = VinculoPagamentoService.Vincular(transacao, despesa, despesaQueUsaATransacao: Maybe<Despesa>.None);
 

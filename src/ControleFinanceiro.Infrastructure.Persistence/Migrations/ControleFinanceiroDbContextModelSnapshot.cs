@@ -304,10 +304,6 @@ namespace ControleFinanceiro.Infrastructure.Persistence.Migrations
                         .HasColumnType("uuid")
                         .HasColumnName("id");
 
-                    b.Property<DateOnly>("MesReferencia")
-                        .HasColumnType("date")
-                        .HasColumnName("mes_referencia");
-
                     b.Property<int>("NumeroParcela")
                         .HasColumnType("integer")
                         .HasColumnName("numero_parcela");
@@ -323,13 +319,17 @@ namespace ControleFinanceiro.Infrastructure.Persistence.Migrations
                                 .HasColumnType("date")
                                 .HasColumnName("data_pagamento_efetiva");
 
-                            b1.Property<DateOnly?>("DataProjetada")
+                            b1.Property<DateOnly>("DataProjetada")
                                 .HasColumnType("date")
                                 .HasColumnName("data_pagamento_projetada");
 
                             b1.Property<Guid?>("IdTransacao")
                                 .HasColumnType("uuid")
                                 .HasColumnName("id_transacao_pagamento");
+
+                            b1.Property<DateOnly>("MesReferencia")
+                                .HasColumnType("date")
+                                .HasColumnName("mes_referencia");
 
                             b1.Property<int>("Status")
                                 .HasColumnType("integer")
@@ -581,10 +581,6 @@ namespace ControleFinanceiro.Infrastructure.Persistence.Migrations
                 {
                     b.HasBaseType("ControleFinanceiro.Domain.Despesas.Despesa");
 
-                    b.Property<DateOnly>("MesReferencia")
-                        .HasColumnType("date")
-                        .HasColumnName("mes_referencia");
-
                     b.ComplexProperty(typeof(Dictionary<string, object>), "Pagamento", "ControleFinanceiro.Domain.Despesas.DespesaInteira.Pagamento#Pagamento", b1 =>
                         {
                             b1.IsRequired();
@@ -593,13 +589,17 @@ namespace ControleFinanceiro.Infrastructure.Persistence.Migrations
                                 .HasColumnType("date")
                                 .HasColumnName("data_pagamento_efetiva");
 
-                            b1.Property<DateOnly?>("DataProjetada")
+                            b1.Property<DateOnly>("DataProjetada")
                                 .HasColumnType("date")
                                 .HasColumnName("data_pagamento_projetada");
 
                             b1.Property<Guid?>("IdTransacao")
                                 .HasColumnType("uuid")
                                 .HasColumnName("id_transacao_pagamento");
+
+                            b1.Property<DateOnly>("MesReferencia")
+                                .HasColumnType("date")
+                                .HasColumnName("mes_referencia");
 
                             b1.Property<int>("Status")
                                 .HasColumnType("integer")
@@ -615,9 +615,6 @@ namespace ControleFinanceiro.Infrastructure.Persistence.Migrations
                                 .HasColumnType("numeric(14,2)")
                                 .HasColumnName("valor_pagamento_projetado");
                         });
-
-                    b.HasIndex("IdDespesaRecorrente", "MesReferencia")
-                        .IsUnique();
 
                     b.ToTable(t =>
                         {

@@ -34,6 +34,22 @@ public sealed class PagamentoTests
     }
 
     [Theory, DomainAutoData]
+    public void Pendente_Deve_GuardarOMesDaDataProjetada(ReaisPositivo valor, DateOnly dataProjetada)
+    {
+        Pagamento pagamento = Pagamento.Pendente(valor, dataProjetada);
+
+        pagamento.MesReferencia.Should().Be((MesReferencia)dataProjetada);
+    }
+
+    [Theory, DomainAutoData]
+    public void Pago_Deve_GuardarOMesDaDataProjetada(ReaisPositivo valor, DateOnly dataProjetada, DateOnly dataEfetiva)
+    {
+        Pagamento pagamento = Pagamento.Pago(valor, dataProjetada, dataEfetiva);
+
+        pagamento.MesReferencia.Should().Be((MesReferencia)dataProjetada);
+    }
+
+    [Theory, DomainAutoData]
     public void EstaPago_Quando_PagamentoPendente_Deve_RetornarFalse(ReaisPositivo valor, DateOnly dataProjetada)
     {
         Pagamento pagamento = Pagamento.Pendente(valor, dataProjetada);
@@ -101,5 +117,33 @@ public sealed class PagamentoTests
         Pagamento result = quitado.Reabrir();
 
         result.Should().Be(Pagamento.Pendente(valor, dataProjetada));
+    }
+
+    [Theory, DomainAutoData]
+    public void QuitarCom_Deve_PreservarOMes(
+        ReaisPositivo valor,
+        DateOnly dataProjetada,
+        IdTransacao idTransacao,
+        DateOnly dataEfetiva,
+        ReaisPositivo valorEfetivo)
+    {
+        Pagamento result = Pagamento.Pendente(valor, dataProjetada).QuitarCom(idTransacao, dataEfetiva, valorEfetivo);
+
+        result.MesReferencia.Should().Be((MesReferencia)dataProjetada);
+    }
+
+    [Theory, DomainAutoData]
+    public void Reabrir_Deve_PreservarOMes(
+        ReaisPositivo valor,
+        DateOnly dataProjetada,
+        IdTransacao idTransacao,
+        DateOnly dataEfetiva,
+        ReaisPositivo valorEfetivo)
+    {
+        Pagamento quitado = Pagamento.Pendente(valor, dataProjetada).QuitarCom(idTransacao, dataEfetiva, valorEfetivo);
+
+        Pagamento result = quitado.Reabrir();
+
+        result.MesReferencia.Should().Be((MesReferencia)dataProjetada);
     }
 }
