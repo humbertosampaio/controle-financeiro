@@ -29,9 +29,7 @@ public sealed record ErroParaModelo : ISaidaModelo
 
     public static readonly ErroParaModelo ParcelaIncompativel = Fixo("A parcela da transação não combina com a despesa: só a despesa parcelada é paga por parcela, e só pela parcela da mesma compra.");
 
-    public static readonly ErroParaModelo ConfirmacaoRecusada = Fixo("O usuário não confirmou o vínculo, e nada foi gravado.");
-
-    public static readonly ErroParaModelo ConfirmacaoIndisponivel = Fixo("Não foi possível pedir a confirmação do usuário, e nada foi gravado: o cliente MCP precisa aceitar elicitation.");
+    public static readonly ErroParaModelo ResumoDivergente = Fixo("O resumo não corresponde ao vínculo desses ids, e nada foi gravado: chame prever_vinculo de novo, mostre o novo resumo ao usuário e confirme com ele sem alteração.");
 
     [JsonPropertyName("mensagem")]
     public string Mensagem { get; }
