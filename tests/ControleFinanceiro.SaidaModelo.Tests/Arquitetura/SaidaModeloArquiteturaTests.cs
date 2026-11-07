@@ -300,7 +300,7 @@ public sealed class SaidaModeloArquiteturaTests
                 .Any(i => i.IsGenericType && i.GetGenericTypeDefinition() == typeof(IEnumerable<>));
     }
 
-    private static string CaminhoDaSolucao()
+    internal static string CaminhoDaSolucao()
     {
         DirectoryInfo? pasta = new(AppContext.BaseDirectory);
         while (pasta is not null && !File.Exists(Path.Combine(pasta.FullName, "ControleFinanceiro.slnx")))

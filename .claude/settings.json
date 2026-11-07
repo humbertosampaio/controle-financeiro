@@ -1,4 +1,9 @@
 {
+  "permissions": {
+    "ask": [
+      "mcp__controle-financeiro__confirmar_vinculo"
+    ]
+  },
   "hooks": {
     "PreToolUse": [
       {
