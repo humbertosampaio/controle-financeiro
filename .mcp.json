@@ -1,0 +1,9 @@
+{
+  "mcpServers": {
+    "controle-financeiro": {
+      "type": "stdio",
+      "command": "dotnet",
+      "args": ["artifacts/mcp/ControleFinanceiro.Mcp.dll"]
+    }
+  }
+}
