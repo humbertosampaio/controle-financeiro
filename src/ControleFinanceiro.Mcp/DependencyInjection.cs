@@ -1,4 +1,5 @@
 using ControleFinanceiro.Application.Abstractions;
+using ControleFinanceiro.Application.IA.Escritas;
 using ControleFinanceiro.Application.IA.Leituras;
 using ControleFinanceiro.Mcp.Autenticacao;
 using ControleFinanceiro.Mcp.Ferramentas;
@@ -19,11 +20,13 @@ public static class DependencyInjection
                 .WithTools<VerificarServidorTool>()
                 .WithTools<ListarTransacoesTool>()
                 .WithTools<ListarDespesasFixasTool>()
-                .WithTools<BalancoMensalTool>();
+                .WithTools<BalancoMensalTool>()
+                .WithTools<VincularTransacaoTool>();
 
             return services
                 .AddScoped<IUsuarioAtual, UsuarioAtualConfigurado>()
-                .AddScoped<LeituraParaModeloService>();
+                .AddScoped<LeituraParaModeloService>()
+                .AddScoped<VinculoParaModeloService>();
         }
     }
 }

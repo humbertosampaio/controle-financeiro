@@ -14,12 +14,12 @@ using Architecture = ArchUnitNET.Domain.Architecture;
 using ArchLoader = ArchUnitNET.Loader.ArchLoader;
 using DependencyInjectionMcp = ControleFinanceiro.Mcp.DependencyInjection;
 using DependencyInjectionPersistence = ControleFinanceiro.Infrastructure.Persistence.DependencyInjection;
-using IdBeneficiario = ControleFinanceiro.Domain.Beneficiarios.IdBeneficiario;
 using DiaOcorrenciaRecorrente = ControleFinanceiro.Domain.Despesas.DiaOcorrenciaRecorrente;
+using IdBeneficiario = ControleFinanceiro.Domain.Beneficiarios.IdBeneficiario;
 using IdDespesa = ControleFinanceiro.Domain.Despesas.IdDespesa;
 using IdDespesaRecorrente = ControleFinanceiro.Domain.Despesas.IdDespesaRecorrente;
-using StatusPagamento = ControleFinanceiro.Domain.Despesas.StatusPagamento;
 using IdTransacao = ControleFinanceiro.Domain.Transacoes.IdTransacao;
+using StatusPagamento = ControleFinanceiro.Domain.Despesas.StatusPagamento;
 
 namespace ControleFinanceiro.SaidaModelo.Tests.Arquitetura;
 
@@ -43,6 +43,8 @@ public sealed class SaidaModeloArquiteturaTests
         .Build();
 
     private const string NomeVerificacaoServidor = "ControleFinanceiro.Mcp.Ferramentas.VerificacaoServidor";
+    private const string NomeConfirmacaoPorElicitacao = "ControleFinanceiro.Mcp.Confirmacao.ConfirmacaoPorElicitacao";
+    private const string NomeVincularTransacaoTool = "ControleFinanceiro.Mcp.Ferramentas.VincularTransacaoTool";
 
     /// <summary>Os projetos de <c>src/</c> que falam com o modelo: as regras desta classe valem para eles.</summary>
     private static readonly Assembly[] _falamComOModelo = [_mcp];
@@ -181,18 +183,64 @@ public sealed class SaidaModeloArquiteturaTests
             .Should().Equal("Banco");
     }
 
-    /// <summary>Mensagem de exceção, progresso, logging e sampling levam texto ao cliente sem passar pelos tipos de saída.</summary>
+    /// <summary>
+    /// Mensagem de exceção, progresso, logging e sampling levam texto ao cliente sem passar pelos tipos de saída. O
+    /// <see cref="McpServer"/> fica de fora só aqui: as regras seguintes o limitam à confirmação do vínculo.
+    /// </summary>
     [Fact]
     public void QuemFalaComOModelo_Deve_NaoUsarOutrosCanaisDoSdk()
     {
         Type[] proibidos = TiposDe(_sdkMcp)
             .Where(tipo => tipo.IsAssignableTo(typeof(Exception))
-                || tipo.IsAssignableTo(typeof(McpSession))
+                || (tipo.IsAssignableTo(typeof(McpSession)) && tipo != typeof(McpServer))
                 || tipo == typeof(RequestContext<>)
                 || tipo == typeof(ProgressNotificationValue))
             .ToArray();
 
         TiposDeQuemFala().Should().NotDependOnAny(proibidos).Check(_arquitetura);
+    }
+
+    /// <summary>
+    /// A elicitation pergunta ao usuário, e não ao modelo, e só existe no <see cref="McpServer"/> da requisição. Ele
+    /// também abre sampling e logging: por isso, só o adaptador da confirmação e a ferramenta que o cria podem conhecê-lo.
+    /// </summary>
+    [Fact]
+    public void QuemFalaComOModelo_Deve_UsarOMcpServerSoNaConfirmacaoDoVinculo()
+    {
+        TiposDeQuemFala()
+            .And().DoNotHaveFullName(NomeConfirmacaoPorElicitacao)
+            .And().DoNotHaveFullNameStartingWith(NomeConfirmacaoPorElicitacao + "+")
+            .And().DoNotHaveFullName(NomeVincularTransacaoTool)
+            .Should().NotDependOnAny(typeof(McpServer))
+            .Check(_arquitetura);
+    }
+
+    /// <summary>A ferramenta só repassa o <see cref="McpServer"/> ao adaptador: quem chama algo dele é só a confirmação.</summary>
+    [Fact]
+    public void VincularTransacaoTool_Deve_NaoChamarOSdk()
+    {
+        Types().That().HaveFullName(NomeVincularTransacaoTool)
+            .Or().HaveFullNameStartingWith(NomeVincularTransacaoTool + "+")
+            .Should().NotCallAny(MethodMembers().That().AreDeclaredIn(TiposDe(_sdkMcp)))
+            .Check(_arquitetura);
+    }
+
+    /// <summary>
+    /// O adaptador só pergunta: do <see cref="McpServer"/>, lê as capacidades do cliente e chama o <see cref="McpServer.ElicitAsync"/>, e
+    /// do resto do SDK, só lê a capacidade e a resposta. Sampling, logging, notificação e progresso ficam de fora.
+    /// </summary>
+    [Fact]
+    public void ConfirmacaoPorElicitacao_Deve_ChamarDoSdkSoAElicitation()
+    {
+        Type[] lidosNaPergunta = [typeof(ClientCapabilities), typeof(ElicitationCapability), typeof(ElicitResult<>)];
+
+        Types().That().HaveFullName(NomeConfirmacaoPorElicitacao)
+            .Or().HaveFullNameStartingWith(NomeConfirmacaoPorElicitacao + "+")
+            .Should().NotCallAny(MethodMembers()
+                .That().AreDeclaredIn(TiposDe(_sdkMcp).Except(lidosNaPergunta))
+                .And().DoNotHaveNameStartingWith("ElicitAsync")
+                .And().DoNotHaveNameStartingWith("get_ClientCapabilities"))
+            .Check(_arquitetura);
     }
 
     /// <summary>Prompts e resources também mandam conteúdo ao modelo, e o retorno deles não passa pela fronteira.</summary>
