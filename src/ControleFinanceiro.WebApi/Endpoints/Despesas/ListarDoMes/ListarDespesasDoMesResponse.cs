@@ -9,7 +9,9 @@ public sealed record class ListarDespesasDoMesResponse(IReadOnlyList<ListarDespe
     /// <param name="ValorProjetado">Na parcelada, o valor da parcela do mês, assim como os demais dados do pagamento.</param>
     /// <param name="ValorEfetivo">O que de fato saiu, só quando está pago.</param>
     /// <param name="StatusPagamento">O código do status do pagamento: 0 (pendente) ou 1 (pago).</param>
-    /// <param name="IdTransacao">A transação que quitou, só quando há vínculo.</param>
+    /// <param name="IdTransacao">A transação que pagou, só quando uma pagou.</param>
+    /// <param name="IdTransacaoCobranca">A compra da fatura que cobrou, só na despesa do cartão cobrada.</param>
+    /// <param name="ValorCobrado">O valor da compra da fatura, só na despesa do cartão cobrada.</param>
     /// <param name="Parcela">A parcela do mês, só na despesa parcelada.</param>
     public sealed record class Despesa(
         Guid Id,
@@ -26,6 +28,8 @@ public sealed record class ListarDespesasDoMesResponse(IReadOnlyList<ListarDespe
         DateOnly DataPagamentoProjetada,
         DateOnly? DataPagamentoEfetiva,
         Guid? IdTransacao,
+        Guid? IdTransacaoCobranca,
+        decimal? ValorCobrado,
         ListarDespesasDoMesResponse.ParcelaDoMes? Parcela);
 
     /// <param name="Total">O total de parcelas da compra.</param>

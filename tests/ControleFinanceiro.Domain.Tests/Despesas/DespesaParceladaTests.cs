@@ -132,6 +132,24 @@ public sealed class DespesaParceladaTests
     }
 
     [Theory, DomainAutoData]
+    public void ValorVigenteDoMes_Quando_ParcelaPendente_Deve_RetornarOValorProjetado(DespesaParcelada despesa)
+    {
+        ParcelaDespesa ultima = despesa.Parcelas[^1];
+
+        Maybe<ReaisPositivo> result = despesa.ValorVigenteDoMes(ultima.MesReferencia);
+
+        result.Should().HaveValue(ultima.ValorProjetado);
+    }
+
+    [Theory, DomainAutoData]
+    public void ValorVigenteDoMes_Quando_NaoHaParcelaNoMes_Deve_RetornarVazio(DespesaParcelada despesa)
+    {
+        Maybe<ReaisPositivo> result = despesa.ValorVigenteDoMes(despesa.Parcelas[^1].MesReferencia.Posterior());
+
+        result.Should().HaveNoValue();
+    }
+
+    [Theory, DomainAutoData]
     public void EhDaCompra_Quando_MesmaChave_Deve_RetornarTrueSemContarCaixaEAcentos([Frozen] IdUsuario idUsuario, Cartao cartao)
     {
         DespesaParcelada despesa = Parcelar(idUsuario, cartao, numero: 3, total: 10);

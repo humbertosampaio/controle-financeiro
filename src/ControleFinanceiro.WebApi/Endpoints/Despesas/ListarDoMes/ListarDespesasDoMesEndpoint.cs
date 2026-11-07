@@ -52,6 +52,8 @@ public sealed class ListarDespesasDoMesEndpoint : Endpoint<ListarDespesasDoMesRe
 
     private static ListarDespesasDoMesResponse.Despesa Ler(DespesaInteira inteira)
     {
+        DespesaAdiada? adiada = inteira as DespesaAdiada;
+
         return new(
             inteira.Id,
             inteira.IdBeneficiario,
@@ -59,7 +61,7 @@ public sealed class ListarDespesasDoMesEndpoint : Endpoint<ListarDespesasDoMesRe
             inteira.IdCategoria,
             inteira.DataOcorrencia,
             inteira.FormaPagamento.Value,
-            (inteira as DespesaAdiada)?.IdCartao,
+            adiada?.IdCartao,
             inteira.IdDespesaRecorrente,
             inteira.Pagamento.ValorProjetado,
             inteira.Pagamento.ValorEfetivo?.Value,
@@ -67,6 +69,8 @@ public sealed class ListarDespesasDoMesEndpoint : Endpoint<ListarDespesasDoMesRe
             inteira.Pagamento.DataProjetada,
             inteira.Pagamento.DataEfetiva,
             inteira.Pagamento.IdTransacao?.Value,
+            adiada?.Cobranca?.IdTransacao.Value,
+            adiada?.Cobranca?.Valor.Value,
             Parcela: null);
     }
 
@@ -87,6 +91,8 @@ public sealed class ListarDespesasDoMesEndpoint : Endpoint<ListarDespesasDoMesRe
             parcela.Pagamento.DataProjetada,
             parcela.Pagamento.DataEfetiva,
             parcela.Pagamento.IdTransacao?.Value,
+            parcela.Cobranca?.IdTransacao.Value,
+            parcela.Cobranca?.Valor.Value,
             new ListarDespesasDoMesResponse.ParcelaDoMes(parcela.Id, parcela.NumeroParcela, parcelada.Parcelas.Count));
     }
 }

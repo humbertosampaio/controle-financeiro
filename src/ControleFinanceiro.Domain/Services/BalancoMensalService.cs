@@ -7,7 +7,8 @@ namespace ControleFinanceiro.Domain.Services;
 
 /// <summary>
 /// Calcula o balanço de um mês a partir da renda líquida atual do usuário e dos pagamentos das despesas que caem
-/// nele. A renda não tem histórico: um mês passado usa a de hoje, e entradas fora do salário não contam.
+/// nele, pelo valor vigente de cada um. A despesa do cartão cobrada e ainda não paga entra no pendente pelo valor
+/// cobrado. A renda não tem histórico: um mês passado usa a de hoje, e entradas fora do salário não contam.
 /// </summary>
 public static class BalancoMensalService
 {
@@ -20,21 +21,16 @@ public static class BalancoMensalService
         if (despesasDoMes.Any(d => d.IdUsuario != usuario.Id))
             throw new ArgumentException("A lista traz uma despesa de outro usuário.", nameof(despesasDoMes));
 
-        Maybe<Pagamento>[] pagamentosDoMes = despesasDoMes
-            .Select(d => d.PagamentoDoMes(mesReferencia))
-            .ToArray();
-
-        if (pagamentosDoMes.Any(p => p.HasNoValue))
+        if (despesasDoMes.Any(d => d.PagamentoDoMes(mesReferencia).HasNoValue))
             throw new ArgumentException("A lista traz uma despesa sem pagamento no mês.", nameof(despesasDoMes));
 
-        Pagamento[] pagamentos = pagamentosDoMes
-            .Select(p => p.Value)
-            .ToArray();
+        bool EstaPaga(Despesa despesa) => despesa.PagamentoDoMes(mesReferencia).Value.EstaPago;
+        ReaisPositivo ValorVigente(Despesa despesa) => despesa.ValorVigenteDoMes(mesReferencia).Value;
 
         return new BalancoMensal(
             mesReferencia,
             usuario.RendaLiquida,
-            totalPago: pagamentos.Where(p => p.EstaPago).Sum(p => p.ValorVigente),
-            totalPendente: pagamentos.Where(p => !p.EstaPago).Sum(p => p.ValorVigente));
+            totalPago: despesasDoMes.Where(EstaPaga).Sum(ValorVigente),
+            totalPendente: despesasDoMes.Where(d => !EstaPaga(d)).Sum(ValorVigente));
     }
 }

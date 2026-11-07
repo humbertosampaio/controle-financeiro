@@ -37,6 +37,17 @@ internal sealed class DespesaConfiguration : IEntityTypeConfiguration<Despesa>
                 "CK_despesas_pagamento_transacao",
                 $"id_transacao_pagamento IS NULL OR status_pagamento = {StatusPagamento.Pago.Value}");
 
+            tabela.HasCheckConstraint(
+                "CK_despesas_cobranca",
+                "(id_transacao_cobranca IS NULL) = (valor_cobrado IS NULL)");
+            tabela.HasCheckConstraint("CK_despesas_valor_cobrado", "valor_cobrado >= 0");
+            tabela.HasCheckConstraint(
+                "CK_despesas_cobranca_so_adiada",
+                $"id_transacao_cobranca IS NULL OR tipo = '{TipoAdiada}'");
+            tabela.HasCheckConstraint(
+                "CK_despesas_adiada_paga_cobrada",
+                $"tipo <> '{TipoAdiada}' OR status_pagamento <> {StatusPagamento.Pago.Value} OR id_transacao_cobranca IS NOT NULL");
+
             // Nas linhas da parcelada, as duas colunas são nulas, e o CHECK com nulo passa.
             tabela.HasCheckConstraint(
                 "CK_despesas_pagamento_mes",

@@ -52,12 +52,21 @@ public abstract class Despesa : AggregateRoot<IdDespesa>, IPertenceAoUsuario
     /// <summary>Interno porque só o <see cref="Services.AlteracaoCategoriaDespesaService"/> confere de quem é a categoria.</summary>
     internal void AlterarCategoria(IdCategoriaDespesa idCategoria) => IdCategoria = idCategoria;
 
-    /// <summary>Devolve para pendente o que a transação quitou, ou falha com <see cref="ErroTransacaoNaoVinculada"/>.</summary>
-    public abstract UnitResult<Erro> DesfazerVinculo(IdTransacao idTransacao);
-
     /// <summary>O pagamento que cai no mês de referência, ou nada quando a despesa não tem pagamento nele.</summary>
     public abstract Maybe<Pagamento> PagamentoDoMes(MesReferencia mesReferencia);
 
-    /// <summary>O pagamento que a transação quitou, ou nada quando ela não quitou nenhum desta despesa.</summary>
-    public abstract Maybe<Pagamento> PagamentoQuitado(IdTransacao idTransacao);
+    /// <summary>
+    /// O valor que vale para o pagamento do mês: o efetivo quando pago, o cobrado quando a fatura o cobrou, senão o
+    /// projetado. Nada quando a despesa não tem pagamento no mês.
+    /// </summary>
+    public abstract Maybe<ReaisPositivo> ValorVigenteDoMes(MesReferencia mesReferencia);
+
+    /// <summary>
+    /// O pagamento da despesa ou da parcela que a compra do cartão cobrou, ou nada quando ela não cobrou nenhum desta
+    /// despesa. A simples não é cobrada: a saída a paga direto.
+    /// </summary>
+    public abstract Maybe<Pagamento> PagamentoCobradoPor(IdTransacao idTransacao);
+
+    /// <summary>Os pagamentos desta despesa que a transação realizou, vazio quando ela não pagou nenhum.</summary>
+    public abstract IReadOnlyList<Pagamento> PagamentosRealizadosPor(IdTransacao idTransacao);
 }

@@ -26,8 +26,8 @@ public sealed class ConciliacaoParcelasServiceTests
         ConciliacaoParcelas result = compra.Conciliar([despesa], [transacao]);
 
         result.Should().Be(new ConciliacaoParcelas(Vinculadas:1, SemParcela:0));
-        despesa.Parcelas[2].Pagamento.IdTransacao.Should().Be(transacao.Id);
-        despesa.Parcelas.Where(p => p.NumeroParcela != 3).Should().OnlyContain(p => p.Pagamento.IdTransacao == null);
+        despesa.Parcelas[2].Cobranca!.IdTransacao.Should().Be(transacao.Id);
+        despesa.Parcelas.Where(p => p.NumeroParcela != 3).Should().OnlyContain(p => p.Cobranca == null);
     }
 
     [Theory, ConciliacaoAutoData]
@@ -41,23 +41,22 @@ public sealed class ConciliacaoParcelasServiceTests
         ConciliacaoParcelas result = compra.Conciliar([despesa], [terceira, quarta]);
 
         result.Should().Be(new ConciliacaoParcelas(Vinculadas:1, SemParcela:0));
-        despesa.Parcelas[2].Pagamento.IdTransacao.Should().Be(terceira.Id);
-        despesa.Parcelas[3].Pagamento.IdTransacao.Should().Be(quarta.Id);
+        despesa.Parcelas[2].Cobranca!.IdTransacao.Should().Be(terceira.Id);
+        despesa.Parcelas[3].Cobranca!.IdTransacao.Should().Be(quarta.Id);
     }
 
     [Theory, ConciliacaoAutoData]
-    public void Conciliar_Quando_ParcelaNasceuPaga_Deve_AceitarOVinculoComOValorDaTransacao(CompraDeTeste compra)
+    public void Conciliar_Quando_ParcelaNasceuPaga_Deve_CobrarComOValorDaTransacaoEContinuarPaga(CompraDeTeste compra)
     {
         DespesaParcelada despesa = compra.Despesas(compra.Parcela()).Single();
+        Pagamento pagamento = despesa.Parcelas[0].Pagamento;
         Transacao transacao = compra.Transacao(compra.Parcela(numero: 1, valor: -ValorMaior));
 
         ConciliacaoParcelas result = compra.Conciliar([despesa], [transacao]);
 
         result.Vinculadas.Should().Be(1);
-        Pagamento pagamento = despesa.Parcelas[0].Pagamento;
-        pagamento.IdTransacao.Should().Be(transacao.Id);
-        pagamento.ValorEfetivo.Should().Be((ReaisPositivo)ValorMaior);
-        pagamento.DataEfetiva.Should().Be(pagamento.DataProjetada);
+        despesa.Parcelas[0].Cobranca.Should().Be(new Cobranca(transacao.Id, (ReaisPositivo)ValorMaior));
+        despesa.Parcelas[0].Pagamento.Should().Be(pagamento);
     }
 
     [Theory, ConciliacaoAutoData]
@@ -70,7 +69,7 @@ public sealed class ConciliacaoParcelasServiceTests
         ConciliacaoParcelas result = compra.Conciliar(gemeas, [primeira, segunda]);
 
         result.Should().Be(new ConciliacaoParcelas(Vinculadas:2, SemParcela:0));
-        gemeas.Select(d => d.Parcelas[2].Pagamento.IdTransacao).Should().BeEquivalentTo([primeira.Id, segunda.Id]);
+        gemeas.Select(d => d.Parcelas[2].Cobranca?.IdTransacao).Should().BeEquivalentTo([primeira.Id, segunda.Id]);
     }
 
     [Theory, ConciliacaoAutoData]
@@ -84,10 +83,10 @@ public sealed class ConciliacaoParcelasServiceTests
 
         compra.Conciliar([menor, maior], [terceiraMaior, terceiraMenor, quartaMaior, quartaMenor]);
 
-        menor.Parcelas[2].Pagamento.IdTransacao.Should().Be(terceiraMenor.Id);
-        menor.Parcelas[3].Pagamento.IdTransacao.Should().Be(quartaMenor.Id);
-        maior.Parcelas[2].Pagamento.IdTransacao.Should().Be(terceiraMaior.Id);
-        maior.Parcelas[3].Pagamento.IdTransacao.Should().Be(quartaMaior.Id);
+        menor.Parcelas[2].Cobranca!.IdTransacao.Should().Be(terceiraMenor.Id);
+        menor.Parcelas[3].Cobranca!.IdTransacao.Should().Be(quartaMenor.Id);
+        maior.Parcelas[2].Cobranca!.IdTransacao.Should().Be(terceiraMaior.Id);
+        maior.Parcelas[3].Cobranca!.IdTransacao.Should().Be(quartaMaior.Id);
     }
 
     [Theory, ConciliacaoAutoData]
@@ -98,8 +97,8 @@ public sealed class ConciliacaoParcelasServiceTests
 
         compra.Conciliar(gemeas.Reverse().ToArray(), transacoes.Reverse().ToArray());
 
-        gemeas[0].Parcelas[2].Pagamento.IdTransacao.Should().Be(transacoes[0].Id);
-        gemeas[1].Parcelas[2].Pagamento.IdTransacao.Should().Be(transacoes[1].Id);
+        gemeas[0].Parcelas[2].Cobranca!.IdTransacao.Should().Be(transacoes[0].Id);
+        gemeas[1].Parcelas[2].Cobranca!.IdTransacao.Should().Be(transacoes[1].Id);
     }
 
     [Theory, ConciliacaoAutoData]
@@ -110,8 +109,8 @@ public sealed class ConciliacaoParcelasServiceTests
 
         compra.Conciliar([menor, maior], [transacao]);
 
-        maior.Parcelas[2].Pagamento.IdTransacao.Should().Be(transacao.Id);
-        menor.Parcelas[2].Pagamento.IdTransacao.Should().BeNull();
+        maior.Parcelas[2].Cobranca!.IdTransacao.Should().Be(transacao.Id);
+        menor.Parcelas[2].Cobranca.Should().BeNull();
     }
 
     [Theory, ConciliacaoAutoData]
@@ -123,8 +122,8 @@ public sealed class ConciliacaoParcelasServiceTests
 
         compra.Conciliar([menor, maior], [valorIgual, semValorIgual]);
 
-        maior.Parcelas[2].Pagamento.IdTransacao.Should().Be(valorIgual.Id);
-        menor.Parcelas[2].Pagamento.IdTransacao.Should().Be(semValorIgual.Id);
+        maior.Parcelas[2].Cobranca!.IdTransacao.Should().Be(valorIgual.Id);
+        menor.Parcelas[2].Cobranca!.IdTransacao.Should().Be(semValorIgual.Id);
     }
 
     [Theory]
@@ -140,8 +139,8 @@ public sealed class ConciliacaoParcelasServiceTests
 
         compra.Conciliar(despesas, transacoes);
 
-        menor.Parcelas[2].Pagamento.IdTransacao.Should().Be(transacaoMenor.Id);
-        maior.Parcelas[2].Pagamento.IdTransacao.Should().Be(transacaoMaior.Id);
+        menor.Parcelas[2].Cobranca!.IdTransacao.Should().Be(transacaoMenor.Id);
+        maior.Parcelas[2].Cobranca!.IdTransacao.Should().Be(transacaoMaior.Id);
     }
 
     [Theory, ConciliacaoAutoData]
@@ -150,12 +149,12 @@ public sealed class ConciliacaoParcelasServiceTests
         DespesaParcelada despesa = compra.Despesas(compra.Parcela()).Single();
         Transacao transacao = compra.Transacao(compra.Parcela());
         compra.Conciliar([despesa], [transacao]);
-        Pagamento[] pagamentos = despesa.Parcelas.Select(p => p.Pagamento).ToArray();
+        Cobranca?[] cobrancas = despesa.Parcelas.Select(p => p.Cobranca).ToArray();
 
         ConciliacaoParcelas result = compra.Conciliar([despesa], [transacao]);
 
         result.Should().Be(new ConciliacaoParcelas(Vinculadas:0, SemParcela:0));
-        despesa.Parcelas.Select(p => p.Pagamento).Should().Equal(pagamentos);
+        despesa.Parcelas.Select(p => p.Cobranca).Should().Equal(cobrancas);
     }
 
     [Theory, ConciliacaoAutoData]
@@ -164,13 +163,13 @@ public sealed class ConciliacaoParcelasServiceTests
         IReadOnlyList<DespesaParcelada> gemeas = compra.Despesas(compra.Parcela(), compra.Parcela());
         Transacao vinculada = compra.Transacao(compra.Parcela());
         Transacao livre = compra.Transacao(compra.Parcela());
-        VinculoPagamentoService.Vincular(vinculada, gemeas[1], despesaQueUsaATransacao: Maybe<Despesa>.None).Should().Succeed();
+        VinculoTransacaoService.Vincular(vinculada, gemeas[1], despesaQueUsaATransacao: Maybe<Despesa>.None).Should().Succeed();
 
         ConciliacaoParcelas result = compra.Conciliar(gemeas, [vinculada, livre]);
 
         result.Should().Be(new ConciliacaoParcelas(Vinculadas:1, SemParcela:0));
-        gemeas[1].Parcelas[2].Pagamento.IdTransacao.Should().Be(vinculada.Id);
-        gemeas[0].Parcelas[2].Pagamento.IdTransacao.Should().Be(livre.Id);
+        gemeas[1].Parcelas[2].Cobranca!.IdTransacao.Should().Be(vinculada.Id);
+        gemeas[0].Parcelas[2].Cobranca!.IdTransacao.Should().Be(livre.Id);
     }
 
     [Theory, ConciliacaoAutoData]
@@ -257,7 +256,7 @@ public sealed class ConciliacaoParcelasServiceTests
     }
 
     [Theory, ConciliacaoAutoData]
-    public void Conciliar_Quando_TransacaoAVista_Deve_IgnorarSemContar(CompraDeTeste compra, VinculoPagamentoServiceTests.SaidaDeTeste saida)
+    public void Conciliar_Quando_TransacaoAVista_Deve_IgnorarSemContar(CompraDeTeste compra, VinculoTransacaoServiceTests.SaidaDeTeste saida)
     {
         DespesaParcelada despesa = compra.Despesas(compra.Parcela()).Single();
         Transacao transacao = compra.Transacao(saida.AVista());

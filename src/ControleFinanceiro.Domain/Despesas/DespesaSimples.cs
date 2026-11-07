@@ -93,6 +93,29 @@ public sealed class DespesaSimples : DespesaInteira
             pagamento);
     }
 
-    /// <summary>Interno porque só o <see cref="Services.VinculoPagamentoService"/> confere a transação.</summary>
-    internal UnitResult<Erro> QuitarCom(IdTransacao idTransacao, DateOnly dataEfetiva, ReaisPositivo valorEfetivo) => Quitar(idTransacao, dataEfetiva, valorEfetivo);
+    /// <summary>
+    /// Interno porque só o <see cref="Services.VinculoTransacaoService"/> confere a transação. A despesa que nasceu paga,
+    /// sem transação, aceita ser paga pela saída.
+    /// </summary>
+    internal UnitResult<Erro> PagarCom(IdTransacao idTransacao, DateOnly dataEfetiva, ReaisPositivo valorEfetivo)
+    {
+        if (Pagamento.IdTransacao is not null)
+            return ErroDespesaJaPaga.Instancia;
+
+        Pagamento = Pagamento.PagarCom(idTransacao, dataEfetiva, valorEfetivo);
+        return UnitResult.Success<Erro>();
+    }
+
+    /// <summary>Interno porque só o <see cref="Services.VinculoTransacaoService"/> confere a origem da transação.</summary>
+    internal UnitResult<Erro> DesfazerPagamento(IdTransacao idTransacao)
+    {
+        if (Pagamento.IdTransacao != idTransacao)
+            return ErroTransacaoNaoPagouADespesa.Instancia;
+
+        Pagamento = Pagamento.Reabrir();
+        return UnitResult.Success<Erro>();
+    }
+
+    /// <summary>Sempre nada: a simples não é cobrada, e a saída a paga direto.</summary>
+    public override Maybe<Pagamento> PagamentoCobradoPor(IdTransacao idTransacao) => Maybe<Pagamento>.None;
 }

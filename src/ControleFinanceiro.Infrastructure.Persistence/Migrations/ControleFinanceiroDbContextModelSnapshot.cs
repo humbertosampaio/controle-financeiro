@@ -216,7 +216,13 @@ namespace ControleFinanceiro.Infrastructure.Persistence.Migrations
 
                     b.ToTable("despesas", null, t =>
                         {
+                            t.HasCheckConstraint("CK_despesas_adiada_paga_cobrada", "tipo <> 'adiada' OR status_pagamento <> 1 OR id_transacao_cobranca IS NOT NULL");
+
                             t.HasCheckConstraint("CK_despesas_cartao", "(tipo IN ('adiada', 'parcelada')) = (id_cartao IS NOT NULL)");
+
+                            t.HasCheckConstraint("CK_despesas_cobranca", "(id_transacao_cobranca IS NULL) = (valor_cobrado IS NULL)");
+
+                            t.HasCheckConstraint("CK_despesas_cobranca_so_adiada", "id_transacao_cobranca IS NULL OR tipo = 'adiada'");
 
                             t.HasCheckConstraint("CK_despesas_descricao", "btrim(descricao) <> ''");
 
@@ -227,6 +233,8 @@ namespace ControleFinanceiro.Infrastructure.Persistence.Migrations
                             t.HasCheckConstraint("CK_despesas_pagamento_transacao", "id_transacao_pagamento IS NULL OR status_pagamento = 1");
 
                             t.HasCheckConstraint("CK_despesas_pagamento_valor_efetivo", "(status_pagamento = 1) = (valor_pagamento_efetivo IS NOT NULL)");
+
+                            t.HasCheckConstraint("CK_despesas_valor_cobrado", "valor_cobrado >= 0");
 
                             t.HasCheckConstraint("CK_despesas_valor_efetivo", "valor_pagamento_efetivo >= 0");
 
@@ -313,6 +321,18 @@ namespace ControleFinanceiro.Infrastructure.Persistence.Migrations
                     b.Property<Guid>("id_despesa")
                         .HasColumnType("uuid");
 
+                    b.ComplexProperty(typeof(Dictionary<string, object>), "Cobranca", "ControleFinanceiro.Domain.Despesas.ParcelaDespesa.Cobranca#Cobranca", b1 =>
+                        {
+                            b1.Property<Guid>("IdTransacao")
+                                .HasColumnType("uuid")
+                                .HasColumnName("id_transacao_cobranca");
+
+                            b1.Property<decimal>("Valor")
+                                .HasPrecision(14, 2)
+                                .HasColumnType("numeric(14,2)")
+                                .HasColumnName("valor_cobrado");
+                        });
+
                     b.ComplexProperty(typeof(Dictionary<string, object>), "Pagamento", "ControleFinanceiro.Domain.Despesas.ParcelaDespesa.Pagamento#Pagamento", b1 =>
                         {
                             b1.IsRequired();
@@ -355,7 +375,11 @@ namespace ControleFinanceiro.Infrastructure.Persistence.Migrations
 
                     b.ToTable("parcelas_despesa", null, t =>
                         {
+                            t.HasCheckConstraint("CK_parcelas_despesa_cobranca", "(id_transacao_cobranca IS NULL) = (valor_cobrado IS NULL)");
+
                             t.HasCheckConstraint("CK_parcelas_despesa_numero", "numero_parcela >= 1");
+
+                            t.HasCheckConstraint("CK_parcelas_despesa_paga_cobrada", "id_transacao_pagamento IS NULL OR id_transacao_cobranca IS NOT NULL");
 
                             t.HasCheckConstraint("CK_parcelas_despesa_pagamento", "(status_pagamento = 1) = (data_pagamento_efetiva IS NOT NULL)");
 
@@ -364,6 +388,8 @@ namespace ControleFinanceiro.Infrastructure.Persistence.Migrations
                             t.HasCheckConstraint("CK_parcelas_despesa_pagamento_transacao", "id_transacao_pagamento IS NULL OR status_pagamento = 1");
 
                             t.HasCheckConstraint("CK_parcelas_despesa_pagamento_valor_efetivo", "(status_pagamento = 1) = (valor_pagamento_efetivo IS NOT NULL)");
+
+                            t.HasCheckConstraint("CK_parcelas_despesa_valor_cobrado", "valor_cobrado >= 0");
 
                             t.HasCheckConstraint("CK_parcelas_despesa_valor_efetivo", "valor_pagamento_efetivo >= 0");
 
@@ -622,7 +648,13 @@ namespace ControleFinanceiro.Infrastructure.Persistence.Migrations
 
                     b.ToTable(t =>
                         {
+                            t.HasCheckConstraint("CK_despesas_adiada_paga_cobrada", "tipo <> 'adiada' OR status_pagamento <> 1 OR id_transacao_cobranca IS NOT NULL");
+
                             t.HasCheckConstraint("CK_despesas_cartao", "(tipo IN ('adiada', 'parcelada')) = (id_cartao IS NOT NULL)");
+
+                            t.HasCheckConstraint("CK_despesas_cobranca", "(id_transacao_cobranca IS NULL) = (valor_cobrado IS NULL)");
+
+                            t.HasCheckConstraint("CK_despesas_cobranca_so_adiada", "id_transacao_cobranca IS NULL OR tipo = 'adiada'");
 
                             t.HasCheckConstraint("CK_despesas_descricao", "btrim(descricao) <> ''");
 
@@ -633,6 +665,8 @@ namespace ControleFinanceiro.Infrastructure.Persistence.Migrations
                             t.HasCheckConstraint("CK_despesas_pagamento_transacao", "id_transacao_pagamento IS NULL OR status_pagamento = 1");
 
                             t.HasCheckConstraint("CK_despesas_pagamento_valor_efetivo", "(status_pagamento = 1) = (valor_pagamento_efetivo IS NOT NULL)");
+
+                            t.HasCheckConstraint("CK_despesas_valor_cobrado", "valor_cobrado >= 0");
 
                             t.HasCheckConstraint("CK_despesas_valor_efetivo", "valor_pagamento_efetivo >= 0");
 
@@ -655,7 +689,13 @@ namespace ControleFinanceiro.Infrastructure.Persistence.Migrations
 
                     b.ToTable(t =>
                         {
+                            t.HasCheckConstraint("CK_despesas_adiada_paga_cobrada", "tipo <> 'adiada' OR status_pagamento <> 1 OR id_transacao_cobranca IS NOT NULL");
+
                             t.HasCheckConstraint("CK_despesas_cartao", "(tipo IN ('adiada', 'parcelada')) = (id_cartao IS NOT NULL)");
+
+                            t.HasCheckConstraint("CK_despesas_cobranca", "(id_transacao_cobranca IS NULL) = (valor_cobrado IS NULL)");
+
+                            t.HasCheckConstraint("CK_despesas_cobranca_so_adiada", "id_transacao_cobranca IS NULL OR tipo = 'adiada'");
 
                             t.HasCheckConstraint("CK_despesas_descricao", "btrim(descricao) <> ''");
 
@@ -666,6 +706,8 @@ namespace ControleFinanceiro.Infrastructure.Persistence.Migrations
                             t.HasCheckConstraint("CK_despesas_pagamento_transacao", "id_transacao_pagamento IS NULL OR status_pagamento = 1");
 
                             t.HasCheckConstraint("CK_despesas_pagamento_valor_efetivo", "(status_pagamento = 1) = (valor_pagamento_efetivo IS NOT NULL)");
+
+                            t.HasCheckConstraint("CK_despesas_valor_cobrado", "valor_cobrado >= 0");
 
                             t.HasCheckConstraint("CK_despesas_valor_efetivo", "valor_pagamento_efetivo >= 0");
 
@@ -684,11 +726,29 @@ namespace ControleFinanceiro.Infrastructure.Persistence.Migrations
                         .HasColumnType("uuid")
                         .HasColumnName("id_cartao");
 
+                    b.ComplexProperty(typeof(Dictionary<string, object>), "Cobranca", "ControleFinanceiro.Domain.Despesas.DespesaAdiada.Cobranca#Cobranca", b1 =>
+                        {
+                            b1.Property<Guid>("IdTransacao")
+                                .HasColumnType("uuid")
+                                .HasColumnName("id_transacao_cobranca");
+
+                            b1.Property<decimal>("Valor")
+                                .HasPrecision(14, 2)
+                                .HasColumnType("numeric(14,2)")
+                                .HasColumnName("valor_cobrado");
+                        });
+
                     b.HasIndex("IdCartao");
 
                     b.ToTable(t =>
                         {
+                            t.HasCheckConstraint("CK_despesas_adiada_paga_cobrada", "tipo <> 'adiada' OR status_pagamento <> 1 OR id_transacao_cobranca IS NOT NULL");
+
                             t.HasCheckConstraint("CK_despesas_cartao", "(tipo IN ('adiada', 'parcelada')) = (id_cartao IS NOT NULL)");
+
+                            t.HasCheckConstraint("CK_despesas_cobranca", "(id_transacao_cobranca IS NULL) = (valor_cobrado IS NULL)");
+
+                            t.HasCheckConstraint("CK_despesas_cobranca_so_adiada", "id_transacao_cobranca IS NULL OR tipo = 'adiada'");
 
                             t.HasCheckConstraint("CK_despesas_descricao", "btrim(descricao) <> ''");
 
@@ -699,6 +759,8 @@ namespace ControleFinanceiro.Infrastructure.Persistence.Migrations
                             t.HasCheckConstraint("CK_despesas_pagamento_transacao", "id_transacao_pagamento IS NULL OR status_pagamento = 1");
 
                             t.HasCheckConstraint("CK_despesas_pagamento_valor_efetivo", "(status_pagamento = 1) = (valor_pagamento_efetivo IS NOT NULL)");
+
+                            t.HasCheckConstraint("CK_despesas_valor_cobrado", "valor_cobrado >= 0");
 
                             t.HasCheckConstraint("CK_despesas_valor_efetivo", "valor_pagamento_efetivo >= 0");
 
@@ -714,7 +776,13 @@ namespace ControleFinanceiro.Infrastructure.Persistence.Migrations
 
                     b.ToTable(t =>
                         {
+                            t.HasCheckConstraint("CK_despesas_adiada_paga_cobrada", "tipo <> 'adiada' OR status_pagamento <> 1 OR id_transacao_cobranca IS NOT NULL");
+
                             t.HasCheckConstraint("CK_despesas_cartao", "(tipo IN ('adiada', 'parcelada')) = (id_cartao IS NOT NULL)");
+
+                            t.HasCheckConstraint("CK_despesas_cobranca", "(id_transacao_cobranca IS NULL) = (valor_cobrado IS NULL)");
+
+                            t.HasCheckConstraint("CK_despesas_cobranca_so_adiada", "id_transacao_cobranca IS NULL OR tipo = 'adiada'");
 
                             t.HasCheckConstraint("CK_despesas_descricao", "btrim(descricao) <> ''");
 
@@ -725,6 +793,8 @@ namespace ControleFinanceiro.Infrastructure.Persistence.Migrations
                             t.HasCheckConstraint("CK_despesas_pagamento_transacao", "id_transacao_pagamento IS NULL OR status_pagamento = 1");
 
                             t.HasCheckConstraint("CK_despesas_pagamento_valor_efetivo", "(status_pagamento = 1) = (valor_pagamento_efetivo IS NOT NULL)");
+
+                            t.HasCheckConstraint("CK_despesas_valor_cobrado", "valor_cobrado >= 0");
 
                             t.HasCheckConstraint("CK_despesas_valor_efetivo", "valor_pagamento_efetivo >= 0");
 

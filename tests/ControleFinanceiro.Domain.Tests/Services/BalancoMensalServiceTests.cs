@@ -5,7 +5,9 @@ using ControleFinanceiro.Domain.Shared.Extensions;
 using ControleFinanceiro.Domain.Shared.ValueObjects;
 using ControleFinanceiro.Domain.Transacoes;
 using ControleFinanceiro.Domain.Usuarios;
+using ControleFinanceiro.Tests.Shared;
 using ControleFinanceiro.Tests.Shared.AutoFixture.Attributes;
+using CSharpFunctionalExtensions;
 
 namespace ControleFinanceiro.Domain.Tests.Services;
 
@@ -32,7 +34,7 @@ public sealed class BalancoMensalServiceTests
 
         BalancoMensal result = BalancoMensalService.Calcular(usuario, despesas, primeira.MesReferencia);
 
-        result.TotalPago.Should().Be(despesas.Sum(d => d.Parcelas[0].Pagamento.ValorVigente));
+        result.TotalPago.Should().Be(despesas.Sum(d => d.Parcelas[0].ValorVigente));
         result.TotalPendente.Should().Be(ReaisPositivo.Zero);
     }
 
@@ -57,9 +59,26 @@ public sealed class BalancoMensalServiceTests
 
         BalancoMensal result = BalancoMensalService.Calcular(usuario, [paga, pendente], parcelaPaga.MesReferencia);
 
-        result.TotalPago.Should().Be(parcelaPaga.Pagamento.ValorVigente);
-        result.TotalPendente.Should().Be(parcelaPendente.Pagamento.ValorVigente);
+        result.TotalPago.Should().Be(parcelaPaga.ValorVigente);
+        result.TotalPendente.Should().Be(parcelaPendente.ValorVigente);
         result.SaldoPrevisto.Should().Be(usuario.RendaLiquida - parcelaPaga.ValorProjetado - parcelaPendente.ValorProjetado);
+    }
+
+    [Theory, DespesasDoUsuarioAutoData]
+    public void Calcular_Quando_AdiadaCobradaENaoPaga_Deve_SomarOValorCobradoNoPendente(
+        Usuario usuario,
+        Cartao cartao,
+        DespesaAdiada despesa,
+        TransacoesDeTeste transacoes,
+        VinculoTransacaoServiceTests.SaidaDeTeste saida)
+    {
+        Transacao compra = transacoes.DoCartao(cartao, saida.AVista());
+        VinculoTransacaoService.Vincular(compra, despesa, despesaQueUsaATransacao: Maybe<Despesa>.None).Should().Succeed();
+
+        BalancoMensal result = BalancoMensalService.Calcular(usuario, [despesa], despesa.MesReferencia);
+
+        result.TotalPago.Should().Be(ReaisPositivo.Zero);
+        result.TotalPendente.Should().Be(saida.ValorPago);
     }
 
     // A despesa vale um real a mais que a renda líquida, em módulo: o saldo fica negativo qualquer que seja a renda gerada.

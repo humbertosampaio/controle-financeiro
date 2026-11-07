@@ -171,4 +171,20 @@ public sealed class DespesaSimplesTests
 
         result.Should().HaveNoValue();
     }
+
+    [Theory, DomainAutoData]
+    public void ValorVigenteDoMes_Quando_Pendente_Deve_RetornarOValorProjetado(DespesaSimples despesa)
+    {
+        Maybe<ReaisPositivo> result = despesa.ValorVigenteDoMes(despesa.MesReferencia);
+
+        result.Should().HaveValue(despesa.Pagamento.ValorProjetado);
+    }
+
+    [Theory, DomainAutoData]
+    public void ValorVigenteDoMes_Quando_OutroMes_Deve_RetornarVazio(DespesaSimples despesa)
+    {
+        Maybe<ReaisPositivo> result = despesa.ValorVigenteDoMes(despesa.MesReferencia.Posterior());
+
+        result.Should().HaveNoValue();
+    }
 }

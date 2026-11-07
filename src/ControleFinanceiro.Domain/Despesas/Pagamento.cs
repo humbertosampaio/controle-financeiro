@@ -14,14 +14,21 @@ public sealed class Pagamento : ValueObject
     public DateOnly? DataEfetiva { get; }
     public ReaisPositivo? ValorEfetivo { get; }
 
-    /// <summary>A transação que quitou o pagamento, ou nulo quando ele está pendente ou nasceu pago, sem transação.</summary>
+    /// <summary>
+    /// A transação que pagou: a saída na simples, a saída que pagou a fatura na despesa do cartão. Nulo quando o
+    /// pagamento está pendente ou nasceu pago, sem transação.
+    /// </summary>
     public IdTransacao? IdTransacao { get; }
 
     [MemberNotNullWhen(true, nameof(DataEfetiva), nameof(ValorEfetivo))]
     public bool EstaPago => Status == StatusPagamento.Pago;
 
-    /// <summary>O valor que vale para o pagamento: o efetivo quando pago, o projetado quando pendente.</summary>
-    public ReaisPositivo ValorVigente => EstaPago ? ValorEfetivo : ValorProjetado;
+    /// <summary>
+    /// O valor que vale para o pagamento: o efetivo quando pago, o cobrado quando a fatura cobrou a despesa, senão o
+    /// projetado.
+    /// </summary>
+    /// <param name="cobranca">A cobrança da despesa do cartão, ou nulo quando não há.</param>
+    public ReaisPositivo ValorVigenteCom(Cobranca? cobranca) => EstaPago ? ValorEfetivo : cobranca?.Valor ?? ValorProjetado;
 
     private Pagamento(
         ReaisPositivo valorProjetado,
@@ -48,8 +55,8 @@ public sealed class Pagamento : ValueObject
     public static Pagamento Pago(ReaisPositivo valorProjetado, DateOnly dataProjetada, DateOnly dataEfetiva) =>
         new(valorProjetado, StatusPagamento.Pago, mesReferencia: dataProjetada, dataProjetada, dataEfetiva, valorEfetivo: valorProjetado, idTransacao: null);
 
-    /// <summary>O mesmo pagamento quitado pela transação. O valor, o mês e a data projetados não mudam.</summary>
-    public Pagamento QuitarCom(IdTransacao idTransacao, DateOnly dataEfetiva, ReaisPositivo valorEfetivo) =>
+    /// <summary>O mesmo pagamento, agora pago pela transação. O valor, o mês e a data projetados não mudam.</summary>
+    public Pagamento PagarCom(IdTransacao idTransacao, DateOnly dataEfetiva, ReaisPositivo valorEfetivo) =>
         new(ValorProjetado, StatusPagamento.Pago, MesReferencia, DataProjetada, dataEfetiva, valorEfetivo, idTransacao);
 
     /// <summary>O mesmo pagamento de volta a pendente, sem os dados efetivos.</summary>

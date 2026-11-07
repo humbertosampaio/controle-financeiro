@@ -22,7 +22,7 @@ public sealed class VincularTransacaoEndpointTests : IAsyncLifetime
     private const string PixEnviado = VinculoExtensions.PixEnviado;
     private const string PixRecebido = "Pix recebido";
     private const string BoletoPago = "Pagamento de boleto";
-    private const string CompraAVista = "MERCADO FICTICIO";
+    private const string CompraAVista = VinculoExtensions.CompraAVista;
     private const string CompraParcelada = VinculoExtensions.CompraParcelada;
 
     private readonly ApiComPostgresFixture _api;
@@ -37,7 +37,7 @@ public sealed class VincularTransacaoEndpointTests : IAsyncLifetime
     public Task DisposeAsync() => Task.CompletedTask;
 
     [Theory, ApiAutoData]
-    public async Task Post_Quando_SimplesESaidaDoExtrato_Deve_QuitarComOValorDaTransacao(
+    public async Task Post_Quando_SimplesESaidaDoExtrato_Deve_PagarComOValorDaTransacao(
         CadastrarUsuarioRequest cadastro,
         CadastrarLoteBeneficiariosRequest beneficiarios,
         CadastrarDespesaRecorrenteRequest recorrente,
@@ -58,7 +58,8 @@ public sealed class VincularTransacaoEndpointTests : IAsyncLifetime
             NumeroParcela: null,
             ValorProjetado: 75.00m,
             ValorEfetivo: 89.90m,
-            transacao.Data));
+            transacao.Data,
+            ValorCobrado: null));
         Pagamento gravado = (await _api.ObterTodosAsync(db => db.Despesas.OfType<DespesaSimples>())).Single().Pagamento;
         gravado.Status.Should().Be(StatusPagamento.Pago);
         gravado.IdTransacao.Should().Be(transacao.Id);
@@ -68,7 +69,7 @@ public sealed class VincularTransacaoEndpointTests : IAsyncLifetime
     }
 
     [Theory, ApiAutoData]
-    public async Task Post_Quando_AdiadaECompraAVistaNoCartao_Deve_QuitarNoVencimento(
+    public async Task Post_Quando_AdiadaECompraAVistaNoCartao_Deve_CobrarSemPagar(
         CadastrarUsuarioRequest cadastro,
         CadastrarLoteBeneficiariosRequest beneficiarios,
         CadastrarDespesaRecorrenteRequest recorrente,
@@ -81,14 +82,42 @@ public sealed class VincularTransacaoEndpointTests : IAsyncLifetime
         using HttpResponseMessage resposta = await _api.VincularAsync(idUsuario, despesa.Id.Value, new VincularTransacaoRequest { IdTransacao = transacao.Id.Value });
 
         resposta.StatusCode.Should().Be(HttpStatusCode.OK);
-        Pagamento gravado = (await _api.ObterTodosAsync(db => db.Despesas.OfType<DespesaAdiada>())).Single().Pagamento;
-        gravado.IdTransacao.Should().Be(transacao.Id);
-        gravado.DataEfetiva.Should().Be(despesa.Pagamento.DataProjetada);
-        gravado.ValorEfetivo.Should().Be((ReaisPositivo)123.45m);
+        VincularTransacaoResponse? corpo = await resposta.Content.ReadFromJsonAsync<VincularTransacaoResponse>();
+        corpo.Should().Be(new VincularTransacaoResponse(
+            despesa.Id.Value,
+            IdParcela: null,
+            NumeroParcela: null,
+            despesa.Pagamento.ValorProjetado,
+            ValorEfetivo: null,
+            DataEfetiva: null,
+            ValorCobrado: 123.45m));
+        DespesaAdiada gravada = (await _api.ObterTodosAsync(db => db.Despesas.OfType<DespesaAdiada>())).Single();
+        gravada.Cobranca.Should().Be(new Cobranca(transacao.Id, (ReaisPositivo)123.45m));
+        gravada.Pagamento.Should().Be(despesa.Pagamento);
     }
 
     [Theory, ApiAutoData]
-    public async Task Post_Quando_ParcelaDaCompra_Deve_QuitarSoAParcelaDoMesmoNumero(CadastrarUsuarioRequest cadastro)
+    public async Task Post_Quando_AdiadaJaCobradaPorOutraCompra_Deve_RetornarConflito(
+        CadastrarUsuarioRequest cadastro,
+        CadastrarLoteBeneficiariosRequest beneficiarios,
+        CadastrarDespesaRecorrenteRequest recorrente,
+        GerarDespesasDoMesRequest geracao)
+    {
+        Guid idUsuario = await ImportarFaturaAsync(cadastro);
+        DespesaAdiada despesa = await _api.GerarAdiadaAsync(idUsuario, beneficiarios, recorrente, geracao);
+        Transacao cobrada = await _api.ObterTransacaoAsync(idUsuario, CompraAVista);
+        await _api.VincularComSucessoAsync(idUsuario, despesa.Id.Value, cobrada.Id.Value);
+        Transacao outra = (await _api.ObterTodosAsync(db => db.Transacoes))
+            .First(t => t.Id != cobrada.Id && t.EhSaida && !t.EhParcelada && t.Origem.IdCartao == despesa.IdCartao);
+
+        using HttpResponseMessage resposta = await _api.VincularAsync(idUsuario, despesa.Id.Value, new VincularTransacaoRequest { IdTransacao = outra.Id.Value });
+
+        resposta.StatusCode.Should().Be(HttpStatusCode.Conflict);
+        (await _api.ObterTodosAsync(db => db.Despesas.OfType<DespesaAdiada>())).Single().Cobranca!.IdTransacao.Should().Be(cobrada.Id);
+    }
+
+    [Theory, ApiAutoData]
+    public async Task Post_Quando_ParcelaDaCompra_Deve_CobrarSoAParcelaDoMesmoNumeroSemPagar(CadastrarUsuarioRequest cadastro)
     {
         Guid idUsuario = await ImportarFaturaAsync(cadastro);
         DespesaParcelada despesa = (await _api.ObterParceladasAsync()).Single();
@@ -97,16 +126,31 @@ public sealed class VincularTransacaoEndpointTests : IAsyncLifetime
         using HttpResponseMessage resposta = await _api.VincularAsync(idUsuario, despesa.Id.Value, new VincularTransacaoRequest { IdTransacao = transacao.Id.Value });
 
         resposta.StatusCode.Should().Be(HttpStatusCode.OK);
+        ParcelaDespesa terceira = despesa.Parcelas.Single(p => p.NumeroParcela == 3);
         VincularTransacaoResponse? corpo = await resposta.Content.ReadFromJsonAsync<VincularTransacaoResponse>();
-        corpo!.NumeroParcela.Should().Be(3);
-        corpo.IdParcela.Should().Be(despesa.Parcelas.Single(p => p.NumeroParcela == 3).Id.Value);
+        corpo.Should().Be(new VincularTransacaoResponse(
+            despesa.Id.Value,
+            terceira.Id.Value,
+            NumeroParcela: 3,
+            terceira.ValorProjetado,
+            ValorEfetivo: null,
+            DataEfetiva: null,
+            ValorCobrado: 99.90m));
         DespesaParcelada gravada = (await _api.ObterParceladasAsync()).Single();
         gravada.Parcelas.Should().HaveCount(10);
-        gravada.Parcelas.Single(p => p.Pagamento.IdTransacao is not null).NumeroParcela.Should().Be(3);
+        gravada.Parcelas.Single(p => p.TemCobranca).Cobranca.Should().Be(new Cobranca(transacao.Id, (ReaisPositivo)99.90m));
+        Pagamento[] pendentes = despesa.Parcelas
+            .OrderBy(p => p.NumeroParcela)
+            .Select(p => p.Pagamento)
+            .ToArray();
+        gravada.Parcelas
+            .OrderBy(p => p.NumeroParcela)
+            .Select(p => p.Pagamento)
+            .Should().Equal(pendentes);
     }
 
     [Theory, ApiAutoData]
-    public async Task Post_Quando_ParcelaDaFaturaSeguinte_Deve_QuitarAParcelaSeguinteNaMesmaDespesa(CadastrarUsuarioRequest cadastro)
+    public async Task Post_Quando_ParcelaDaFaturaSeguinte_Deve_CobrarAParcelaSeguinteNaMesmaDespesa(CadastrarUsuarioRequest cadastro)
     {
         Guid idUsuario = await ImportarFaturaAsync(cadastro);
         await _api.ImportarFaturaComSucessoAsync(idUsuario, LayoutArquivoImportacao.C6CartaoCsv, FaturaCartaoC6.ComParcelaSeguinte());
@@ -117,7 +161,7 @@ public sealed class VincularTransacaoEndpointTests : IAsyncLifetime
 
         resposta.StatusCode.Should().Be(HttpStatusCode.OK);
         (await _api.ObterParceladasAsync()).Single().Parcelas
-            .Single(p => p.Pagamento.IdTransacao is not null)
+            .Single(p => p.TemCobranca)
             .NumeroParcela.Should().Be(4);
     }
 
@@ -133,7 +177,7 @@ public sealed class VincularTransacaoEndpointTests : IAsyncLifetime
 
         (await _api.ObterParceladasAsync()).Single().Parcelas
             .Single(p => p.NumeroParcela == 3)
-            .Pagamento.IdTransacao.Should().Be(transacao.Id);
+            .Cobranca!.IdTransacao.Should().Be(transacao.Id);
     }
 
     [Theory, ApiAutoData]

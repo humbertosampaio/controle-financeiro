@@ -21,7 +21,7 @@ internal sealed class DespesaInteiraConfiguration : IEntityTypeConfiguration<Des
             pagamento.Property(p => p.ValorEfetivo)
                 .HasColumnName("valor_pagamento_efetivo");
 
-            // A FK para transacoes e o índice único vão por SQL na migration, porque o EF não aceita complex type neles.
+            // A FK para transacoes e os índices vão por SQL na migration, porque o EF não aceita complex type neles.
             pagamento.Property(p => p.IdTransacao)
                 .HasColumnName("id_transacao_pagamento");
 

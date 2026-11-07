@@ -27,7 +27,7 @@ public sealed class DespesaParaModeloTests
         DespesaDoMesLida lida = new(json);
         lida.Id.Should().Be(despesa.Id.Value);
         lida.DataOcorrencia.Should().Be(despesa.DataOcorrencia);
-        lida.Valor.Should().Be(despesa.Pagamento.ValorVigente);
+        lida.Valor.Should().Be(despesa.ValorVigente);
         lida.Mes.Should().Be(despesa.MesReferencia.ToString());
         lida.Status.Should().Be(StatusPagamento.Pendente.Name);
     }
@@ -43,7 +43,7 @@ public sealed class DespesaParaModeloTests
         JsonObject json = despesa.ParaModelo(segunda.MesReferencia).Serializar();
 
         DespesaDoMesLida lida = new(json);
-        lida.Valor.Should().Be(segunda.Pagamento.ValorVigente);
+        lida.Valor.Should().Be(segunda.ValorVigente);
         lida.Mes.Should().Be(segunda.MesReferencia.ToString());
         lida.Status.Should().Be(StatusPagamento.Pendente.Name);
     }

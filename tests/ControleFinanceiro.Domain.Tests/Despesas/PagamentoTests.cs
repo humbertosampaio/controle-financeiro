@@ -21,6 +21,36 @@ public sealed class PagamentoTests
     }
 
     [Theory, DomainAutoData]
+    public void ValorVigenteCom_Quando_PendenteSemCobranca_Deve_RetornarOValorProjetado(ReaisPositivo valor, DateOnly dataProjetada)
+    {
+        ReaisPositivo result = Pagamento.Pendente(valor, dataProjetada).ValorVigenteCom(cobranca: null);
+
+        result.Should().Be(valor);
+    }
+
+    [Theory, DomainAutoData]
+    public void ValorVigenteCom_Quando_PendenteCobrado_Deve_RetornarOValorCobrado(ReaisPositivo valor, DateOnly dataProjetada, Cobranca cobranca)
+    {
+        ReaisPositivo result = Pagamento.Pendente(valor, dataProjetada).ValorVigenteCom(cobranca);
+
+        result.Should().Be(cobranca.Valor);
+    }
+
+    [Theory, DomainAutoData]
+    public void ValorVigenteCom_Quando_PagoECobrado_Deve_RetornarOValorEfetivo(
+        ReaisPositivo valor,
+        DateOnly dataProjetada,
+        DateOnly dataEfetiva,
+        Cobranca cobranca)
+    {
+        Pagamento pago = Pagamento.Pago(valor, dataProjetada, dataEfetiva);
+
+        ReaisPositivo result = pago.ValorVigenteCom(cobranca);
+
+        result.Should().Be(pago.ValorEfetivo);
+    }
+
+    [Theory, DomainAutoData]
     public void Pago_Deve_CriarPagamentoPago(ReaisPositivo valor, DateOnly dataProjetada, DateOnly dataEfetiva)
     {
         Pagamento pagamento = Pagamento.Pago(valor, dataProjetada, dataEfetiva);
@@ -66,35 +96,14 @@ public sealed class PagamentoTests
     }
 
     [Theory, DomainAutoData]
-    public void ValorVigente_Quando_PagamentoPendente_Deve_RetornarOValorProjetado(ReaisPositivo valor, DateOnly dataProjetada)
-    {
-        Pagamento pagamento = Pagamento.Pendente(valor, dataProjetada);
-
-        pagamento.ValorVigente.Should().Be(valor);
-    }
-
-    [Theory, DomainAutoData]
-    public void ValorVigente_Quando_PagamentoQuitadoComOutroValor_Deve_RetornarOValorEfetivo(
+    public void PagarCom_Deve_RegistrarOsEfetivosEPreservarOPrevisto(
         ReaisPositivo valor,
         DateOnly dataProjetada,
         IdTransacao idTransacao,
         DateOnly dataEfetiva,
         ReaisPositivo valorEfetivo)
     {
-        Pagamento pagamento = Pagamento.Pendente(valor, dataProjetada).QuitarCom(idTransacao, dataEfetiva, valorEfetivo);
-
-        pagamento.ValorVigente.Should().Be(valorEfetivo);
-    }
-
-    [Theory, DomainAutoData]
-    public void QuitarCom_Deve_RegistrarOsEfetivosEPreservarOPrevisto(
-        ReaisPositivo valor,
-        DateOnly dataProjetada,
-        IdTransacao idTransacao,
-        DateOnly dataEfetiva,
-        ReaisPositivo valorEfetivo)
-    {
-        Pagamento result = Pagamento.Pendente(valor, dataProjetada).QuitarCom(idTransacao, dataEfetiva, valorEfetivo);
+        Pagamento result = Pagamento.Pendente(valor, dataProjetada).PagarCom(idTransacao, dataEfetiva, valorEfetivo);
 
         result.Status.Should().Be(StatusPagamento.Pago);
         result.ValorProjetado.Should().Be(valor);
@@ -112,22 +121,22 @@ public sealed class PagamentoTests
         DateOnly dataEfetiva,
         ReaisPositivo valorEfetivo)
     {
-        Pagamento quitado = Pagamento.Pendente(valor, dataProjetada).QuitarCom(idTransacao, dataEfetiva, valorEfetivo);
+        Pagamento pago = Pagamento.Pendente(valor, dataProjetada).PagarCom(idTransacao, dataEfetiva, valorEfetivo);
 
-        Pagamento result = quitado.Reabrir();
+        Pagamento result = pago.Reabrir();
 
         result.Should().Be(Pagamento.Pendente(valor, dataProjetada));
     }
 
     [Theory, DomainAutoData]
-    public void QuitarCom_Deve_PreservarOMes(
+    public void PagarCom_Deve_PreservarOMes(
         ReaisPositivo valor,
         DateOnly dataProjetada,
         IdTransacao idTransacao,
         DateOnly dataEfetiva,
         ReaisPositivo valorEfetivo)
     {
-        Pagamento result = Pagamento.Pendente(valor, dataProjetada).QuitarCom(idTransacao, dataEfetiva, valorEfetivo);
+        Pagamento result = Pagamento.Pendente(valor, dataProjetada).PagarCom(idTransacao, dataEfetiva, valorEfetivo);
 
         result.MesReferencia.Should().Be((MesReferencia)dataProjetada);
     }
@@ -140,9 +149,9 @@ public sealed class PagamentoTests
         DateOnly dataEfetiva,
         ReaisPositivo valorEfetivo)
     {
-        Pagamento quitado = Pagamento.Pendente(valor, dataProjetada).QuitarCom(idTransacao, dataEfetiva, valorEfetivo);
+        Pagamento pago = Pagamento.Pendente(valor, dataProjetada).PagarCom(idTransacao, dataEfetiva, valorEfetivo);
 
-        Pagamento result = quitado.Reabrir();
+        Pagamento result = pago.Reabrir();
 
         result.MesReferencia.Should().Be((MesReferencia)dataProjetada);
     }

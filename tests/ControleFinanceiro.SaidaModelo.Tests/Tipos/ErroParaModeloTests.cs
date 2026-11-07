@@ -19,6 +19,7 @@ public sealed class ErroParaModeloTests
         ErroParaModelo.DespesaNaoEncontrada,
         ErroParaModelo.TransacaoJaVinculada,
         ErroParaModelo.DespesaJaPaga,
+        ErroParaModelo.DespesaJaCobrada,
         ErroParaModelo.TransacaoNaoEhSaida,
         ErroParaModelo.OrigemIncompativel,
         ErroParaModelo.ParcelaIncompativel,
@@ -27,6 +28,7 @@ public sealed class ErroParaModeloTests
     public static readonly TheoryData<Erro, ErroParaModelo> ErrosDoVinculo = new()
     {
         { ErroDespesaJaPaga.Instancia, ErroParaModelo.DespesaJaPaga },
+        { ErroDespesaJaCobrada.Instancia, ErroParaModelo.DespesaJaCobrada },
         { ErroTransacaoNaoEhSaida.Instancia, ErroParaModelo.TransacaoNaoEhSaida },
         { ErroOrigemIncompativelComDespesa.Instancia, ErroParaModelo.OrigemIncompativel },
         { ErroParcelaIncompativelComDespesa.Instancia, ErroParaModelo.ParcelaIncompativel },
@@ -56,7 +58,7 @@ public sealed class ErroParaModeloTests
         Lancamento lancamento)
     {
         Transacao transacao = transacoes.DaConta(lancamento.SemCategoria().ComoSaida());
-        Erro erro = VinculoPagamentoService.Vincular(transacao, despesa, outra).Error;
+        Erro erro = VinculoTransacaoService.Vincular(transacao, despesa, outra).Error;
 
         ErroParaModelo.De(erro).Should().BeSameAs(ErroParaModelo.TransacaoJaVinculada);
     }
@@ -64,7 +66,7 @@ public sealed class ErroParaModeloTests
     [Fact]
     public void De_Quando_ErroSemMensagemMapeada_Deve_LancarExcecao()
     {
-        Action act = () => ErroParaModelo.De(ErroTransacaoNaoVinculada.Instancia);
+        Action act = () => ErroParaModelo.De(ErroTransacaoNaoCobrouADespesa.Instancia);
 
         act.Should().ThrowExactly<InvalidOperationException>();
     }

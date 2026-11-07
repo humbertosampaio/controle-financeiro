@@ -9,8 +9,8 @@ using FastEndpoints;
 namespace ControleFinanceiro.WebApi.Endpoints.Despesas.VincularTransacao;
 
 /// <summary>
-/// Registra que uma saída pagou uma despesa do usuário. Na parcelada, a parcela vem do número informado na transação,
-/// e não da requisição.
+/// Liga uma saída a uma despesa do usuário: a da conta paga a despesa simples, e a compra do cartão cobra a despesa
+/// adiada ou uma parcela, sem pagá-la. Na parcelada, a parcela vem do número informado na transação, e não da requisição.
 /// </summary>
 public sealed class VincularTransacaoEndpoint : Endpoint<VincularTransacaoRequest, VincularTransacaoResponse>
 {
@@ -45,9 +45,9 @@ public sealed class VincularTransacaoEndpoint : Endpoint<VincularTransacaoReques
             return;
         }
 
-        Maybe<Despesa> despesaQueUsaATransacao = await _despesaRepository.ObterPelaTransacaoAsync(idTransacao, ct);
+        Maybe<Despesa> despesaQueUsaATransacao = await _despesaRepository.ObterQueUsaAsync(transacao.Value, ct);
 
-        UnitResult<Erro> vinculo = VinculoPagamentoService.Vincular(transacao.Value, despesa.Value, despesaQueUsaATransacao);
+        UnitResult<Erro> vinculo = VinculoTransacaoService.Vincular(transacao.Value, despesa.Value, despesaQueUsaATransacao);
         if (vinculo.IsFailure)
         {
             await EnviarErroAsync(vinculo.Error, ct);
@@ -63,24 +63,27 @@ public sealed class VincularTransacaoEndpoint : Endpoint<VincularTransacaoReques
     {
         return despesa switch
         {
-            DespesaInteira inteira => Ler(inteira.Id, parcela: null, inteira.Pagamento),
-            // O Value é seguro: a transação acabou de quitar uma parcela da despesa.
-            DespesaParcelada parcelada => Ler(parcelada.Id, parcelada.ParcelaQuitada(idTransacao).Value),
+            DespesaSimples simples => Ler(simples.Id, parcela: null, simples.Pagamento, cobranca: null),
+            DespesaAdiada adiada => Ler(adiada.Id, parcela: null, adiada.Pagamento, adiada.Cobranca),
+            // O Value é seguro: a transação acabou de cobrar uma parcela da despesa.
+            DespesaParcelada parcelada => Ler(parcelada.Id, parcelada.ParcelaCobradaPor(idTransacao).Value),
             _ => throw new InvalidOperationException($"Despesa sem resposta mapeada: {despesa.GetType().Name}"),
         };
     }
 
-    private static VincularTransacaoResponse Ler(IdDespesa idDespesa, ParcelaDespesa parcela) => Ler(idDespesa, parcela, parcela.Pagamento);
+    private static VincularTransacaoResponse Ler(IdDespesa idDespesa, ParcelaDespesa parcela) =>
+        Ler(idDespesa, parcela, parcela.Pagamento, parcela.Cobranca);
 
-    private static VincularTransacaoResponse Ler(IdDespesa idDespesa, ParcelaDespesa? parcela, Pagamento pagamento)
+    private static VincularTransacaoResponse Ler(IdDespesa idDespesa, ParcelaDespesa? parcela, Pagamento pagamento, Cobranca? cobranca)
     {
         return new(
             idDespesa.Value,
             parcela?.Id.Value,
             parcela?.NumeroParcela,
             pagamento.ValorProjetado,
-            pagamento.ValorEfetivo!,
-            pagamento.DataEfetiva!.Value);
+            pagamento.ValorEfetivo?.Value,
+            pagamento.DataEfetiva,
+            cobranca?.Valor.Value);
     }
 
     private async Task EnviarErroAsync(Erro erro, CancellationToken ct)
@@ -89,7 +92,7 @@ public sealed class VincularTransacaoEndpoint : Endpoint<VincularTransacaoReques
 
         switch (erro)
         {
-            case ErroTransacaoJaVinculada or ErroDespesaJaPaga:
+            case ErroTransacaoJaVinculada or ErroDespesaJaPaga or ErroDespesaJaCobrada:
                 await Send.ErrorsAsync(StatusCodes.Status409Conflict, ct);
                 break;
 

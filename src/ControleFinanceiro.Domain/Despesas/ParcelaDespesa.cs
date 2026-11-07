@@ -16,13 +16,19 @@ public sealed class ParcelaDespesa : Entity<IdParcelaDespesa>
     public int NumeroParcela { get; private set; }
     public Pagamento Pagamento { get; private set; } = null!;
 
+    /// <summary>A compra da fatura que cobrou a parcela, ou nulo enquanto nenhuma a cobrou.</summary>
+    public Cobranca? Cobranca { get; private set; }
+
     /// <summary>O mês do pagamento. Não é mapeada: numa consulta do EF, use <c>Pagamento.MesReferencia</c>.</summary>
     public MesReferencia MesReferencia => Pagamento.MesReferencia;
 
-    /// <summary>Verdadeiro quando uma transação pagou a parcela. A que nasceu paga não tem transação.</summary>
-    public bool TemTransacao => Pagamento.IdTransacao is not null;
+    /// <summary>Verdadeiro quando uma compra da fatura cobrou a parcela.</summary>
+    public bool TemCobranca => Cobranca is not null;
 
     public ReaisPositivo ValorProjetado => Pagamento.ValorProjetado;
+
+    /// <summary>O efetivo quando paga, o cobrado quando a fatura a cobrou, senão o projetado.</summary>
+    public ReaisPositivo ValorVigente => Pagamento.ValorVigenteCom(Cobranca);
 
     private ParcelaDespesa()
     {
@@ -51,18 +57,26 @@ public sealed class ParcelaDespesa : Entity<IdParcelaDespesa>
         return new ParcelaDespesa(IdParcelaDespesa.FromNewVersion7Guid(), numeroParcela, Pagamento.Pago(valor, data, data));
     }
 
-    /// <summary>
-    /// A data efetiva é o vencimento projetado, a mesma convenção do <see cref="CriarPaga"/>. A parcela que nasceu paga,
-    /// sem transação, aceita o vínculo.
-    /// </summary>
-    internal UnitResult<Erro> QuitarCom(IdTransacao idTransacao, ReaisPositivo valorEfetivo)
+    /// <summary>Cobrar não paga: o pagamento continua como está, e a parcela que nasceu paga continua paga.</summary>
+    internal UnitResult<Erro> CobrarCom(Cobranca cobranca)
     {
-        if (TemTransacao)
-            return ErroDespesaJaPaga.Instancia;
+        if (TemCobranca)
+            return ErroDespesaJaCobrada.Instancia;
 
-        Pagamento = Pagamento.QuitarCom(idTransacao, Pagamento.DataProjetada, valorEfetivo);
+        Cobranca = cobranca;
         return UnitResult.Success<Erro>();
     }
 
-    internal void Reabrir() => Pagamento = Pagamento.Reabrir();
+    /// <summary>
+    /// Tira a cobrança. A parcela paga por uma transação, a da fatura, falha com <see cref="ErroDespesaJaPaga"/>; a que
+    /// nasceu paga, sem transação, perde a cobrança e continua paga.
+    /// </summary>
+    internal UnitResult<Erro> DesfazerCobranca()
+    {
+        if (Pagamento.IdTransacao is not null)
+            return ErroDespesaJaPaga.Instancia;
+
+        Cobranca = null;
+        return UnitResult.Success<Erro>();
+    }
 }

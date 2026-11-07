@@ -29,12 +29,20 @@ internal sealed class DespesaRepository : IDespesaRepository
     public async Task<Maybe<Despesa>> ObterAsync(IdDespesa idDespesa, CancellationToken cancellationToken) =>
         await _dbSet.FindAsync([idDespesa], cancellationToken);
 
-    public async Task<Maybe<Despesa>> ObterPelaTransacaoAsync(IdTransacao idTransacao, CancellationToken cancellationToken)
+    public async Task<Maybe<Despesa>> ObterPelaCobrancaAsync(IdTransacao idTransacao, CancellationToken cancellationToken)
+    {
+        return await _dbSet
+            .Where(d => (d is DespesaAdiada && ((DespesaAdiada)d).Cobranca!.IdTransacao == idTransacao)
+                || (d is DespesaParcelada && ((DespesaParcelada)d).Parcelas.Any(p => p.Cobranca!.IdTransacao == idTransacao)))
+            .FirstOrDefaultAsync(cancellationToken);
+    }
+
+    public async Task<IReadOnlyList<Despesa>> ListarPeloPagamentoAsync(IdTransacao idTransacao, CancellationToken cancellationToken)
     {
         return await _dbSet
             .Where(d => (d is DespesaInteira && ((DespesaInteira)d).Pagamento.IdTransacao == idTransacao)
                 || (d is DespesaParcelada && ((DespesaParcelada)d).Parcelas.Any(p => p.Pagamento.IdTransacao == idTransacao)))
-            .FirstOrDefaultAsync(cancellationToken);
+            .ToListAsync(cancellationToken);
     }
 
     public async Task AdicionarAsync(IEnumerable<Despesa> despesas, CancellationToken cancellationToken) =>

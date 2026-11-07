@@ -15,9 +15,9 @@ public sealed class DespesaParcelada : Despesa
     public IdCartao IdCartao { get; private set; }
     public IReadOnlyList<ParcelaDespesa> Parcelas => _parcelas.AsReadOnly();
 
-    /// <summary>As transações que pagaram alguma parcela.</summary>
-    public IEnumerable<IdTransacao> TransacoesVinculadas =>
-        _parcelas.Select(p => p.Pagamento.IdTransacao).OfType<IdTransacao>();
+    /// <summary>As compras da fatura que cobraram alguma parcela.</summary>
+    public IEnumerable<IdTransacao> TransacoesCobranca =>
+        _parcelas.Select(p => p.Cobranca?.IdTransacao).OfType<IdTransacao>();
 
     private DespesaParcelada()
     {
@@ -93,10 +93,19 @@ public sealed class DespesaParcelada : Despesa
 
     public override Maybe<Pagamento> PagamentoDoMes(MesReferencia mesReferencia) => ParcelaDoMes(mesReferencia).Map(p => p.Pagamento);
 
-    /// <summary>A parcela que a transação quitou, ou nada quando ela não quitou nenhuma.</summary>
-    public Maybe<ParcelaDespesa> ParcelaQuitada(IdTransacao idTransacao) => _parcelas.TryFirst(p => p.Pagamento.IdTransacao == idTransacao);
+    public override Maybe<ReaisPositivo> ValorVigenteDoMes(MesReferencia mesReferencia) => ParcelaDoMes(mesReferencia).Map(p => p.ValorVigente);
 
-    public override Maybe<Pagamento> PagamentoQuitado(IdTransacao idTransacao) => ParcelaQuitada(idTransacao).Map(p => p.Pagamento);
+    /// <summary>A parcela que a compra da fatura cobrou, ou nada quando ela não cobrou nenhuma.</summary>
+    public Maybe<ParcelaDespesa> ParcelaCobradaPor(IdTransacao idTransacao) => _parcelas.TryFirst(p => p.Cobranca?.IdTransacao == idTransacao);
+
+    public override Maybe<Pagamento> PagamentoCobradoPor(IdTransacao idTransacao) => ParcelaCobradaPor(idTransacao).Map(p => p.Pagamento);
+
+    /// <summary>As parcelas que a transação pagou, vazio quando ela não pagou nenhuma.</summary>
+    public IReadOnlyList<ParcelaDespesa> ParcelasPagasPor(IdTransacao idTransacao) =>
+        _parcelas.Where(p => p.Pagamento.IdTransacao == idTransacao).ToList();
+
+    public override IReadOnlyList<Pagamento> PagamentosRealizadosPor(IdTransacao idTransacao) =>
+        ParcelasPagasPor(idTransacao).Select(p => p.Pagamento).ToList();
 
     /// <param name="numero">Um número até o total de parcelas da compra.</param>
     internal ParcelaDespesa ParcelaNumero(int numero) => _parcelas.First(p => p.NumeroParcela == numero);
@@ -104,18 +113,15 @@ public sealed class DespesaParcelada : Despesa
     public bool EhDaCompra(ChaveCompraParcelada chave) =>
         chave == new ChaveCompraParcelada(IdCartao, DataOcorrencia, (TextoNormalizado)Descricao, _parcelas.Count);
 
-    /// <summary>Interno porque só o <see cref="Services.VinculoPagamentoService"/> confere que a transação é desta compra.</summary>
+    /// <summary>Interno porque só o <see cref="Services.VinculoTransacaoService"/> confere que a transação é desta compra.</summary>
     /// <param name="parcela">A parcela como o banco a informou, de uma compra com o mesmo total.</param>
-    internal UnitResult<Erro> QuitarParcela(Parcela parcela, IdTransacao idTransacao, ReaisPositivo valorEfetivo) =>
-        ParcelaNumero(parcela.Numero).QuitarCom(idTransacao, valorEfetivo);
+    internal UnitResult<Erro> CobrarParcela(Parcela parcela, Cobranca cobranca) => ParcelaNumero(parcela.Numero).CobrarCom(cobranca);
 
-    public override UnitResult<Erro> DesfazerVinculo(IdTransacao idTransacao)
+    /// <summary>Interno porque só o <see cref="Services.VinculoTransacaoService"/> confere a origem da transação.</summary>
+    internal UnitResult<Erro> DesfazerCobranca(IdTransacao idTransacao)
     {
-        Maybe<ParcelaDespesa> parcela = ParcelaQuitada(idTransacao);
-        if (parcela.HasNoValue)
-            return ErroTransacaoNaoVinculada.Instancia;
-
-        parcela.Value.Reabrir();
-        return UnitResult.Success<Erro>();
+        return ParcelaCobradaPor(idTransacao)
+            .ToResult<ParcelaDespesa, Erro>(ErroTransacaoNaoCobrouADespesa.Instancia)
+            .Bind(p => p.DesfazerCobranca());
     }
 }
