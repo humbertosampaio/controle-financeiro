@@ -47,7 +47,7 @@ public sealed class VincularTransacaoEndpoint : Endpoint<VincularTransacaoReques
 
         Maybe<Despesa> despesaQueUsaATransacao = await _despesaRepository.ObterPelaTransacaoAsync(idTransacao, ct);
 
-        UnitResult<Erro> vinculo = VinculoPagamentoService.Vincular(transacao.Value, despesa.Value, despesaQueUsaATransacao);
+        UnitResult<Erro> vinculo = VinculoTransacaoService.Vincular(transacao.Value, despesa.Value, despesaQueUsaATransacao);
         if (vinculo.IsFailure)
         {
             await EnviarErroAsync(vinculo.Error, ct);
@@ -64,8 +64,8 @@ public sealed class VincularTransacaoEndpoint : Endpoint<VincularTransacaoReques
         return despesa switch
         {
             DespesaInteira inteira => Ler(inteira.Id, parcela: null, inteira.Pagamento),
-            // O Value é seguro: a transação acabou de quitar uma parcela da despesa.
-            DespesaParcelada parcelada => Ler(parcelada.Id, parcelada.ParcelaQuitada(idTransacao).Value),
+            // O Value é seguro: a transação acabou de cobrar uma parcela da despesa.
+            DespesaParcelada parcelada => Ler(parcelada.Id, parcelada.ParcelaCobradaPor(idTransacao).Value),
             _ => throw new InvalidOperationException($"Despesa sem resposta mapeada: {despesa.GetType().Name}"),
         };
     }

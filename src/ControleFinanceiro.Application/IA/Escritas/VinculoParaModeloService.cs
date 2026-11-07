@@ -8,7 +8,7 @@ using CSharpFunctionalExtensions;
 namespace ControleFinanceiro.Application.IA.Escritas;
 
 /// <summary>
-/// O vínculo que o modelo pede, já como tipo de saída, em duas etapas. A regra é a do <see cref="VinculoPagamentoService"/>,
+/// O vínculo que o modelo pede, já como tipo de saída, em duas etapas. A regra é a do <see cref="VinculoTransacaoService"/>,
 /// aplicada em memória nas duas: a prévia nunca grava, e a confirmação, chamada depois que o usuário aprova o resumo no
 /// cliente, refaz o vínculo do zero e só grava se o resumo recalculado for o que ele aprovou. Sem gravação, as mudanças em
 /// memória morrem com o escopo da requisição. Os repositórios enxergam só o usuário atual, então despesa ou transação de
@@ -65,7 +65,7 @@ public sealed class VinculoParaModeloService
 
         Maybe<Despesa> despesaQueUsaATransacao = await _despesas.ObterPelaTransacaoAsync(transacao.Value.Id, cancellationToken);
 
-        return VinculoPagamentoService
+        return VinculoTransacaoService
             .Vincular(transacao.Value, despesa.Value, despesaQueUsaATransacao)
             .MapError(ErroParaModelo.De)
             .Map(() => VinculoParaModelo.De(transacao.Value, despesa.Value));

@@ -58,13 +58,17 @@ public sealed record DespesaParaModelo : ISaidaModelo
     }
 
     /// <param name="pagamento">Um pagamento da despesa.</param>
+    /// <remarks>
+    /// O valor é o vigente do mês do pagamento: a despesa do cartão cobrada e ainda não paga sai como pendente, com o
+    /// valor cobrado.
+    /// </remarks>
     internal static DespesaParaModelo De(Despesa despesa, Pagamento pagamento)
     {
         return new DespesaParaModelo(
             despesa.Id,
             (DocumentoMascarado)despesa.Descricao,
             despesa.DataOcorrencia,
-            pagamento.ValorVigente,
+            despesa.ValorVigenteDoMes(pagamento.MesReferencia).Value,
             pagamento.MesReferencia,
             pagamento.Status);
     }

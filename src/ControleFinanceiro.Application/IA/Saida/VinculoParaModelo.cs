@@ -1,6 +1,7 @@
 using ControleFinanceiro.Domain.Despesas;
 using ControleFinanceiro.Domain.Shared.ValueObjects;
 using ControleFinanceiro.Domain.Transacoes;
+using CSharpFunctionalExtensions;
 using System.Globalization;
 using System.Text.Json.Serialization;
 
@@ -61,12 +62,12 @@ public sealed record VinculoParaModelo : ISaidaModelo
     }
 
     /// <param name="despesa">A despesa já vinculada à transação.</param>
-    /// <exception cref="ArgumentException">Quando a transação não quitou nenhum pagamento da despesa.</exception>
+    /// <exception cref="ArgumentException">Quando a transação não cobrou nem pagou nenhum pagamento da despesa.</exception>
     public static VinculoParaModelo De(Transacao transacao, Despesa despesa)
     {
-        Pagamento pagamento = despesa
-            .PagamentoQuitado(transacao.Id)
-            .GetValueOrThrow(new ArgumentException("A transação não quitou nenhum pagamento da despesa.", nameof(despesa)));
+        Maybe<Pagamento> cobrado = despesa.PagamentoCobradoPor(transacao.Id);
+        Pagamento pagamento = (cobrado.HasValue ? cobrado : despesa.PagamentosRealizadosPor(transacao.Id).TryFirst())
+            .GetValueOrThrow(new ArgumentException("A transação não cobrou nem pagou nenhum pagamento da despesa.", nameof(despesa)));
 
         return new VinculoParaModelo(
             transacao.ParaModelo(),

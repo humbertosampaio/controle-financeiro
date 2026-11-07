@@ -37,7 +37,7 @@ public sealed class ConciliarParcelasEndpointTests : IAsyncLifetime
 
         corpo.Should().Be(new ConciliarParcelasResponse(Vinculadas: 1, SemParcela: 0));
         DespesaParcelada gravada = (await _api.ObterParceladasAsync()).Single();
-        ParcelaDespesa paga = gravada.Parcelas.Single(p => p.TemTransacao);
+        ParcelaDespesa paga = gravada.Parcelas.Single(p => p.TemCobranca);
         paga.NumeroParcela.Should().Be(3);
         paga.Pagamento.IdTransacao.Should().Be(transacao.Id);
         paga.Pagamento.ValorEfetivo.Should().Be(transacao.ValorAbsoluto);
@@ -56,7 +56,7 @@ public sealed class ConciliarParcelasEndpointTests : IAsyncLifetime
         (await _api.ObterParceladasAsync())
             .Single()
             .Parcelas
-            .Where(p => p.TemTransacao)
+            .Where(p => p.TemCobranca)
             .Select(p => p.NumeroParcela)
             .Should().BeEquivalentTo([3, 4]);
     }
@@ -77,7 +77,7 @@ public sealed class ConciliarParcelasEndpointTests : IAsyncLifetime
         corpo.Should().Be(new ConciliarParcelasResponse(Vinculadas: 2, SemParcela: 0));
         List<DespesaParcelada> gemeas = await _api.ObterParceladasAsync();
         gemeas.Should().HaveCount(2);
-        gemeas.SelectMany(d => d.TransacoesVinculadas).Should().OnlyHaveUniqueItems().And.HaveCount(2);
+        gemeas.SelectMany(d => d.TransacoesCobranca).Should().OnlyHaveUniqueItems().And.HaveCount(2);
     }
 
     [Theory, ApiAutoData]
@@ -114,7 +114,7 @@ public sealed class ConciliarParcelasEndpointTests : IAsyncLifetime
         ConciliarParcelasResponse corpo = await _api.ConciliarComSucessoAsync(idUsuario);
 
         corpo.Should().Be(new ConciliarParcelasResponse(Vinculadas: 0, SemParcela: 0));
-        (await _api.ObterParceladasAsync()).Single().TransacoesVinculadas.Should().Equal(transacao.Id);
+        (await _api.ObterParceladasAsync()).Single().TransacoesCobranca.Should().Equal(transacao.Id);
     }
 
     [Theory, ApiAutoData]
@@ -127,8 +127,8 @@ public sealed class ConciliarParcelasEndpointTests : IAsyncLifetime
 
         corpo.Vinculadas.Should().Be(1);
         List<DespesaParcelada> parceladas = await _api.ObterParceladasAsync();
-        parceladas.Single(d => d.IdUsuario == IdUsuario.From(idUsuario)).TransacoesVinculadas.Should().ContainSingle();
-        parceladas.Single(d => d.IdUsuario == IdUsuario.From(idOutro)).TransacoesVinculadas.Should().BeEmpty();
+        parceladas.Single(d => d.IdUsuario == IdUsuario.From(idUsuario)).TransacoesCobranca.Should().ContainSingle();
+        parceladas.Single(d => d.IdUsuario == IdUsuario.From(idOutro)).TransacoesCobranca.Should().BeEmpty();
     }
 
     [Fact]

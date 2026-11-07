@@ -8,8 +8,9 @@ namespace ControleFinanceiro.Domain.Services;
 
 /// <summary>
 /// Liga cada saída parcelada sem vínculo à parcela de mesmo número da mesma compra, reconhecida pela
-/// <see cref="ChaveCompraParcelada"/>. Só vincula: não cria despesa, não altera transação e não toca nos vínculos
-/// existentes. A idempotência vem do estado, porque só entram transação livre e parcela sem transação.
+/// <see cref="ChaveCompraParcelada"/>, que passa a ser a cobrança da parcela. Só vincula: não cria despesa, não altera
+/// transação e não toca nas cobranças existentes. A idempotência vem do estado, porque só entram transação livre e parcela
+/// sem cobrança.
 /// </summary>
 public static class ConciliacaoParcelasService
 {
@@ -28,8 +29,8 @@ public static class ConciliacaoParcelasService
         if (transacoesParceladas.Any(t => t.IdUsuario != idUsuario))
             throw new ArgumentException("A lista traz uma transação de outro usuário.", nameof(transacoesParceladas));
 
-        // Transação com parcela só paga parcela, então as parceladas bastam para saber quais já têm vínculo.
-        HashSet<IdTransacao> jaVinculadas = parceladas.SelectMany(d => d.TransacoesVinculadas).ToHashSet();
+        // Transação com parcela só cobra parcela, então as parceladas bastam para saber quais já têm vínculo.
+        HashSet<IdTransacao> jaVinculadas = parceladas.SelectMany(d => d.TransacoesCobranca).ToHashSet();
 
         Transacao[] candidatas = transacoesParceladas
             .Where(t => t.EhParcelaPagaNoCartao && !jaVinculadas.Contains(t.Id))
@@ -46,18 +47,21 @@ public static class ConciliacaoParcelasService
         return new ConciliacaoParcelas(vinculos.Length, candidatas.Length - vinculos.Length);
     }
 
-    /// <summary>A parcela que nasceu paga também é vaga, porque recebe o valor real da transação.</summary>
+    /// <summary>
+    /// A parcela que nasceu paga também é vaga: recebe a cobrança, que liga a compra a ela, e o valor vigente continua o
+    /// efetivo.
+    /// </summary>
     private static IEnumerable<Vaga> VagasDe(IEnumerable<DespesaParcelada> parceladas, ParcelaDaCompra parcela)
     {
         return parceladas
             .Where(d => d.EhDaCompra(parcela.Chave))
             .Select(d => new Vaga(d, d.ParcelaNumero(parcela.Numero)))
-            .Where(vaga => !vaga.Parcela.TemTransacao);
+            .Where(vaga => !vaga.Parcela.TemCobranca);
     }
 
     private static void Vincular(Vinculo vinculo)
     {
-        UnitResult<Erro> result = VinculoPagamentoService.Vincular(vinculo.Transacao, vinculo.Despesa, despesaQueUsaATransacao: Maybe<Despesa>.None);
+        UnitResult<Erro> result = VinculoTransacaoService.Vincular(vinculo.Transacao, vinculo.Despesa, despesaQueUsaATransacao: Maybe<Despesa>.None);
 
         // O agrupamento já garante o que o Vincular confere. A mensagem leva só o código, sem dado da transação.
         if (result.IsFailure)

@@ -150,7 +150,7 @@ public sealed class VinculoParaModeloTests
     private static Transacao Vincular(DespesaSimples despesa, TransacoesDeTeste transacoes, Lancamento lancamento)
     {
         Transacao transacao = transacoes.DaConta(lancamento.SemCategoria().ComoSaida());
-        VinculoPagamentoService.Vincular(transacao, despesa, despesaQueUsaATransacao: Maybe<Despesa>.None).Should().Succeed();
+        VinculoTransacaoService.Vincular(transacao, despesa, despesaQueUsaATransacao: Maybe<Despesa>.None).Should().Succeed();
         return transacao;
     }
 }
