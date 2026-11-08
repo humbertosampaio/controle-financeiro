@@ -3,8 +3,10 @@ using ControleFinanceiro.Domain.Transacoes;
 using ControleFinanceiro.WebApi.Endpoints.Beneficiarios.CadastrarLote;
 using ControleFinanceiro.WebApi.Endpoints.Despesas.CadastrarRecorrente;
 using ControleFinanceiro.WebApi.Endpoints.Despesas.GerarDoMes;
+using ControleFinanceiro.WebApi.Endpoints.Despesas.PagarFatura;
 using ControleFinanceiro.WebApi.Endpoints.Usuarios.Cadastrar;
 using ControleFinanceiro.WebApi.Tests.AutoFixture;
+using ControleFinanceiro.WebApi.Tests.Despesas.PagarFatura;
 using ControleFinanceiro.WebApi.Tests.Despesas.VincularTransacao;
 using ControleFinanceiro.WebApi.Tests.Importacoes.ImportarExtrato;
 using ControleFinanceiro.WebApi.Tests.Importacoes.ImportarFatura;
@@ -154,6 +156,29 @@ public sealed class DesvincularTransacaoEndpointTests : IAsyncLifetime
             .Single()
             .Parcelas.Single(p => p.NumeroParcela == 3)
             .Cobranca!.IdTransacao.Should().Be(transacaoDoOutro.Id);
+    }
+
+    [Theory, ApiAutoData]
+    public async Task Delete_Quando_AdiadaPagaPelaFatura_Deve_RetornarConflitoEManterACobranca(
+        CadastrarUsuarioRequest cadastro,
+        CadastrarLoteBeneficiariosRequest beneficiarios,
+        CadastrarDespesaRecorrenteRequest recorrente,
+        GerarDespesasDoMesRequest geracao,
+        PagarFaturaRequest requisicao)
+    {
+        Guid idUsuario = await _api.CadastrarUsuarioAsync(cadastro);
+        await _api.ImportarExtratoC6Async(idUsuario);
+        await _api.ImportarFaturaC6Async(idUsuario);
+        DespesaAdiada despesa = await _api.GerarAdiadaAsync(idUsuario, beneficiarios, recorrente, geracao);
+        Transacao compra = await _api.ObterTransacaoAsync(idUsuario, VinculoExtensions.CompraAVista);
+        await _api.VincularComSucessoAsync(idUsuario, despesa.Id.Value, compra.Id.Value);
+        Transacao saida = await _api.ObterTransacaoAsync(idUsuario, VinculoExtensions.PixEnviado);
+        await _api.PagarFaturaComSucessoAsync(idUsuario, requisicao.Pagando(saida, despesa.IdCartao, despesa.MesReferencia));
+
+        using HttpResponseMessage resposta = await DesvincularAsync(idUsuario, despesa.Id.Value, compra.Id.Value);
+
+        resposta.StatusCode.Should().Be(HttpStatusCode.Conflict);
+        (await _api.ObterTodosAsync(db => db.Despesas.OfType<DespesaAdiada>())).Single().Cobranca!.IdTransacao.Should().Be(compra.Id);
     }
 
     [Fact]

@@ -68,6 +68,34 @@ internal static class VinculoExtensions
                 .Single(d => d.IdUsuario == IdUsuario.From(idUsuario));
         }
 
+        /// <summary>
+        /// Uma despesa do mês em cada final da fatura fictícia, gerada de uma recorrente no crédito, pendente: a do
+        /// físico e a do virtual, que saem na mesma fatura.
+        /// </summary>
+        public async Task<(DespesaAdiada Fisico, DespesaAdiada Virtual)> GerarAdiadaEmCadaFinalAsync(
+            Guid idUsuario,
+            CadastrarLoteBeneficiariosRequest beneficiarios,
+            CadastrarDespesaRecorrenteRequest recorrente,
+            GerarDespesasDoMesRequest geracao)
+        {
+            IReadOnlyList<Cartao> cartoes = (await api.ObterTodosAsync(db => db.Cartoes))
+                .Where(c => c.IdUsuario == IdUsuario.From(idUsuario))
+                .ToList();
+            Cartao fisico = cartoes.Single(c => c.Sufixo == FaturaCartaoC6.SufixoFisico);
+            Cartao @virtual = cartoes.Single(c => c.Sufixo == FaturaCartaoC6.SufixoVirtual);
+            IReadOnlyList<Guid> idsBeneficiarios = await api.CadastrarBeneficiariosAsync(idUsuario, beneficiarios);
+            Guid idCategoria = (await api.ObterTodosAsync(db => db.Categorias))
+                .First(c => c.IdUsuario == IdUsuario.From(idUsuario))
+                .Id.Value;
+            CadastrarDespesaRecorrenteRequest noCredito = recorrente with { FormaPagamento = FormaPagamento.Credito.Value, IdCategoria = idCategoria };
+            await api.CadastrarDespesaRecorrenteAsync(idUsuario, noCredito with { IdBeneficiario = idsBeneficiarios[0], IdCartao = fisico.Id.Value });
+            await api.CadastrarDespesaRecorrenteAsync(idUsuario, noCredito with { IdBeneficiario = idsBeneficiarios[1], IdCartao = @virtual.Id.Value });
+            await api.GerarDoMesAsync(idUsuario, geracao);
+
+            IReadOnlyList<DespesaAdiada> adiadas = await api.ObterTodosAsync(db => db.Despesas.OfType<DespesaAdiada>());
+            return (adiadas.Single(d => d.IdCartao == fisico.Id), adiadas.Single(d => d.IdCartao == @virtual.Id));
+        }
+
         public async Task<Transacao> ObterTransacaoAsync(Guid idUsuario, string descricao)
         {
             return (await api.ObterTodosAsync(db => db.Transacoes))
@@ -85,7 +113,11 @@ internal static class VinculoExtensions
                 .First(c => c.IdUsuario == IdUsuario.From(idUsuario))
                 .Id.Value;
             await api.CadastrarDespesaRecorrenteAsync(idUsuario, recorrente with { IdBeneficiario = idsBeneficiarios[0], IdCategoria = idCategoria });
+            await api.GerarDoMesAsync(idUsuario, geracao);
+        }
 
+        private async Task GerarDoMesAsync(Guid idUsuario, GerarDespesasDoMesRequest geracao)
+        {
             using HttpResponseMessage gerada = await api.Client.PostAsJsonAsync(
                 new Uri($"/api/usuarios/{idUsuario}/despesas/geracoes", UriKind.Relative),
                 geracao);
