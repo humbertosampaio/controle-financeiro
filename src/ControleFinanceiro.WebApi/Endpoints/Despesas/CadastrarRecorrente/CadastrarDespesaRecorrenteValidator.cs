@@ -40,8 +40,7 @@ public sealed class CadastrarDespesaRecorrenteValidator : Validator<CadastrarDes
             .When(x => x.FormaPagamento != FormaPagamento.Credito.Value);
 
         RuleFor(x => x.IdCartao)
-            .MustBeId(id => IdCartao.TryFrom(id!.Value))
-            .When(x => x.IdCartao is not null);
+            .MustBeId(IdCartao.TryFrom);
 
         RuleFor(x => x.Valor)
             .MustBeValueObject(ReaisPositivo.Criar);

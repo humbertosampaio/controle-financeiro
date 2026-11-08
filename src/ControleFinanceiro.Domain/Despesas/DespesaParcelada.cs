@@ -8,7 +8,7 @@ using ControleFinanceiro.Domain.Usuarios;
 
 namespace ControleFinanceiro.Domain.Despesas;
 
-public sealed class DespesaParcelada : Despesa
+public sealed class DespesaParcelada : Despesa, IDespesaDoCartao
 {
     private readonly List<ParcelaDespesa> _parcelas = [];
 
@@ -116,6 +116,22 @@ public sealed class DespesaParcelada : Despesa
     /// <summary>Interno porque só o <see cref="Services.VinculoTransacaoService"/> confere que a transação é desta compra.</summary>
     /// <param name="parcela">A parcela como o banco a informou, de uma compra com o mesmo total.</param>
     internal UnitResult<Erro> CobrarParcela(Parcela parcela, Cobranca cobranca) => ParcelaNumero(parcela.Numero).CobrarCom(cobranca);
+
+    public bool FoiPagaSoPelaFatura(FaturaCartao fatura, IdTransacao idSaida)
+    {
+        return fatura.Contem(IdCartao)
+            && _parcelas.TrueForAll(p => p.Pagamento.IdTransacao != idSaida || p.MesReferencia == fatura.MesVencimento);
+    }
+
+    bool IDespesaDoCartao.PagarFatura(FaturaCartao fatura, IdTransacao idSaida, DateOnly dataPagamento)
+    {
+        if (!fatura.Contem(IdCartao))
+            return false;
+
+        return ParcelaDoMes(fatura.MesVencimento)
+            .Map(p => p.PagarFatura(idSaida, dataPagamento))
+            .GetValueOrDefault(defaultValue: false);
+    }
 
     /// <summary>Interno porque só o <see cref="Services.VinculoTransacaoService"/> confere a origem da transação.</summary>
     internal UnitResult<Erro> DesfazerCobranca(IdTransacao idTransacao)

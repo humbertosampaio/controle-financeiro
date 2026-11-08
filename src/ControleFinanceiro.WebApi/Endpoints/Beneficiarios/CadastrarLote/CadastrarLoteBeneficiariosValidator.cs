@@ -31,8 +31,7 @@ public sealed class CadastrarLoteBeneficiariosValidator : Validator<CadastrarLot
             .ChildRules(item =>
             {
                 item.RuleFor(x => x.IdBeneficiario)
-                    .MustBeId(id => IdBeneficiario.TryFrom(id!.Value))
-                    .When(x => x.IdBeneficiario is not null);
+                    .MustBeId(IdBeneficiario.TryFrom);
 
                 item.RuleFor(x => x.Nome)
                     .Null()

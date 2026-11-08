@@ -2,6 +2,7 @@
 using ControleFinanceiro.Domain.Shared.ValueObjects;
 using ControleFinanceiro.Domain.Transacoes;
 using ControleFinanceiro.Tests.Shared.AutoFixture.Attributes;
+using CSharpFunctionalExtensions;
 
 namespace ControleFinanceiro.Domain.Tests.Despesas;
 
@@ -48,6 +49,47 @@ public sealed class PagamentoTests
         ReaisPositivo result = pago.ValorVigenteCom(cobranca);
 
         result.Should().Be(pago.ValorEfetivo);
+    }
+
+    [Theory, DomainAutoData]
+    public void PagarPelaFatura_Quando_PendenteCobrado_Deve_PagarComADataDaSaidaEOValorCobrado(
+        ReaisPositivo valor,
+        DateOnly dataProjetada,
+        Cobranca cobranca,
+        IdTransacao idSaida,
+        DateOnly dataPagamento)
+    {
+        Pagamento pendente = Pagamento.Pendente(valor, dataProjetada);
+
+        Maybe<Pagamento> result = pendente.PagarPelaFatura(cobranca, idSaida, dataPagamento);
+
+        result.Should().HaveValue(pendente.PagarCom(idSaida, dataPagamento, cobranca.Valor));
+    }
+
+    [Theory, DomainAutoData]
+    public void PagarPelaFatura_Quando_PendenteSemCobranca_Deve_RetornarNada(
+        ReaisPositivo valor,
+        DateOnly dataProjetada,
+        IdTransacao idSaida,
+        DateOnly dataPagamento)
+    {
+        Maybe<Pagamento> result = Pagamento.Pendente(valor, dataProjetada).PagarPelaFatura(cobranca: null, idSaida, dataPagamento);
+
+        result.Should().HaveNoValue();
+    }
+
+    [Theory, DomainAutoData]
+    public void PagarPelaFatura_Quando_JaPago_Deve_RetornarNada(
+        ReaisPositivo valor,
+        DateOnly dataProjetada,
+        DateOnly dataEfetiva,
+        Cobranca cobranca,
+        IdTransacao idSaida,
+        DateOnly dataPagamento)
+    {
+        Maybe<Pagamento> result = Pagamento.Pago(valor, dataProjetada, dataEfetiva).PagarPelaFatura(cobranca, idSaida, dataPagamento);
+
+        result.Should().HaveNoValue();
     }
 
     [Theory, DomainAutoData]

@@ -59,6 +59,19 @@ public sealed class Pagamento : ValueObject
     public Pagamento PagarCom(IdTransacao idTransacao, DateOnly dataEfetiva, ReaisPositivo valorEfetivo) =>
         new(ValorProjetado, StatusPagamento.Pago, MesReferencia, DataProjetada, dataEfetiva, valorEfetivo, idTransacao);
 
+    /// <summary>
+    /// O mesmo pagamento, agora pago pela saída que pagou a fatura, com a data dela e o valor cobrado como efetivo. Nada
+    /// quando não há cobrança ou o pagamento já está pago: só se paga pela fatura o que ela cobrou e está pendente.
+    /// </summary>
+    /// <param name="cobranca">A cobrança da despesa do cartão, ou nulo quando não há.</param>
+    public Maybe<Pagamento> PagarPelaFatura(Cobranca? cobranca, IdTransacao idTransacao, DateOnly dataPagamento)
+    {
+        if (cobranca is null || EstaPago)
+            return Maybe<Pagamento>.None;
+
+        return PagarCom(idTransacao, dataPagamento, cobranca.Valor);
+    }
+
     /// <summary>O mesmo pagamento de volta a pendente, sem os dados efetivos.</summary>
     public Pagamento Reabrir() => Pendente(ValorProjetado, DataProjetada);
 

@@ -1,6 +1,7 @@
 using ControleFinanceiro.Domain.Cartoes;
 using ControleFinanceiro.Domain.Despesas;
 using ControleFinanceiro.Domain.Shared.ValueObjects;
+using ControleFinanceiro.Tests.Shared;
 using ControleFinanceiro.Tests.Shared.AutoFixture.Attributes;
 
 namespace ControleFinanceiro.Domain.Tests.Cartoes;
@@ -114,6 +115,36 @@ public sealed class CartaoTests
         SufixoCartao outroSufixo = sut.Sufixo == (SufixoCartao)"0000" ? (SufixoCartao)"0001" : (SufixoCartao)"0000";
 
         sut.PossuiBancoESufixo(sut.Banco, outroSufixo).Should().BeFalse();
+    }
+
+    [Theory, DomainAutoData]
+    public void EhDaMesmaFaturaQue_Quando_OutroFinalComOMesmoBancoEOsMesmosDias_Deve_SerVerdadeiro(Cartao sut, SufixoCartao outroSufixo)
+    {
+        sut.EhDaMesmaFaturaQue(sut.OutroFinal(outroSufixo)).Should().BeTrue();
+    }
+
+    [Theory, DomainAutoData]
+    public void EhDaMesmaFaturaQue_Quando_OutroBanco_Deve_SerFalso(Cartao sut)
+    {
+        sut.EhDaMesmaFaturaQue(sut.EmOutroBanco()).Should().BeFalse();
+    }
+
+    [Theory, DomainAutoData]
+    public void EhDaMesmaFaturaQue_Quando_OutroVencimento_Deve_SerFalso(Cartao sut, SufixoCartao outroSufixo, DiaVencimentoCartao outroVencimento)
+    {
+        Cartao outro = sut.OutroFinal(outroSufixo);
+        outro.AlterarCicloFatura(outroVencimento, sut.DiaFechamento);
+
+        sut.EhDaMesmaFaturaQue(outro).Should().BeFalse();
+    }
+
+    [Theory, DomainAutoData]
+    public void EhDaMesmaFaturaQue_Quando_OutroFechamento_Deve_SerFalso(Cartao sut, SufixoCartao outroSufixo, DiaFechamentoCartao outroFechamento)
+    {
+        Cartao outro = sut.OutroFinal(outroSufixo);
+        outro.AlterarCicloFatura(sut.DiaVencimento, outroFechamento);
+
+        sut.EhDaMesmaFaturaQue(outro).Should().BeFalse();
     }
 
     private static Cartao CartaoComDias(Fixture fixture, int diaFechamento, int diaVencimento)
