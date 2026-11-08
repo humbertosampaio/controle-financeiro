@@ -26,6 +26,9 @@ internal sealed class DespesaRepository : IDespesaRepository
     public async Task<IReadOnlyList<DespesaParcelada>> ListarParceladasAsync(CancellationToken cancellationToken) =>
         await _dbSet.OfType<DespesaParcelada>().ToListAsync(cancellationToken);
 
+    public async Task<IReadOnlyList<DespesaAdiada>> ListarAdiadasAsync(CancellationToken cancellationToken) =>
+        await _dbSet.OfType<DespesaAdiada>().ToListAsync(cancellationToken);
+
     public async Task<Maybe<Despesa>> ObterAsync(IdDespesa idDespesa, CancellationToken cancellationToken) =>
         await _dbSet.FindAsync([idDespesa], cancellationToken);
 
