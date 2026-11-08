@@ -8,7 +8,7 @@ using ControleFinanceiro.Domain.Usuarios;
 
 namespace ControleFinanceiro.Domain.Despesas;
 
-public sealed class DespesaAdiada : DespesaInteira
+public sealed class DespesaAdiada : DespesaInteira, IDespesaDoCartao
 {
     public IdCartao IdCartao { get; private set; }
 
@@ -108,6 +108,24 @@ public sealed class DespesaAdiada : DespesaInteira
 
         Cobranca = null;
         return UnitResult.Success<Erro>();
+    }
+
+    public bool FoiPagaSoPelaFatura(FaturaCartao fatura, IdTransacao idSaida)
+    {
+        return fatura.Contem(IdCartao) && (Pagamento.IdTransacao != idSaida || MesReferencia == fatura.MesVencimento);
+    }
+
+    bool IDespesaDoCartao.PagarFatura(FaturaCartao fatura, IdTransacao idSaida, DateOnly dataPagamento)
+    {
+        if (!fatura.Contem(IdCartao) || MesReferencia != fatura.MesVencimento)
+            return false;
+
+        Maybe<Pagamento> pago = Pagamento.PagarPelaFatura(Cobranca, idSaida, dataPagamento);
+        if (pago.HasNoValue)
+            return false;
+
+        Pagamento = pago.Value;
+        return true;
     }
 
     public override Maybe<Pagamento> PagamentoCobradoPor(IdTransacao idTransacao) =>

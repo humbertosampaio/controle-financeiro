@@ -65,6 +65,14 @@ public sealed class Cartao : AggregateRoot<IdCartao>, IPertenceAoUsuario
     public bool PossuiBancoESufixo(Banco banco, SufixoCartao sufixo) => Banco == banco && Sufixo == sufixo;
 
     /// <summary>
+    /// Verdadeiro quando os dois cartões saem na mesma fatura: mesmo banco, mesmo dia de vencimento e mesmo dia de
+    /// fechamento. No C6, cada final é um cartão, e os finais da mesma fatura são pagos juntos. Um cartão é da mesma
+    /// fatura que ele mesmo.
+    /// </summary>
+    public bool EhDaMesmaFaturaQue(Cartao outro) =>
+        Banco == outro.Banco && DiaVencimento == outro.DiaVencimento && DiaFechamento == outro.DiaFechamento;
+
+    /// <summary>
     /// Liga a data de uma compra ao mês de vencimento da fatura em que ela cai. O dia de fechamento é o último dia de
     /// compras da fatura, e o vencimento cai no mês do fechamento só quando o dia de vencimento é maior que o de
     /// fechamento; com os dois dias iguais, vai para o mês seguinte.

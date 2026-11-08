@@ -492,6 +492,44 @@ public sealed class VinculoTransacaoServiceTests
     }
 
     [Theory, VinculoAutoData]
+    public void Desvincular_Quando_AdiadaPagaPelaFatura_Deve_RetornarDespesaJaPagaEManterACobranca(
+        [Frozen] Cartao cartao,
+        DespesaAdiada despesa,
+        TransacoesDeTeste transacoes,
+        SaidaDeTeste compra,
+        SaidaDeTeste pagamento)
+    {
+        Transacao transacao = transacoes.DoCartao(cartao, compra.AVista());
+        VinculoTransacaoService.Vincular(transacao, despesa, despesaQueUsaATransacao: Maybe<Despesa>.None).Should().Succeed();
+        PagamentoFaturaService.Pagar(transacoes.DaConta(pagamento.AVista()), cartao, despesa.MesReferencia, [cartao], [despesa], despesasPagasPelaSaida: []).Should().Succeed();
+        Cobranca cobranca = despesa.Cobranca!;
+
+        UnitResult<Erro> result = VinculoTransacaoService.Desvincular(transacao, despesa);
+
+        result.Should().Fail().Which.Should().Be(ErroDespesaJaPaga.Instancia);
+        despesa.Cobranca.Should().Be(cobranca);
+    }
+
+    [Theory, VinculoAutoData]
+    public void Desvincular_Quando_ParcelaPagaPelaFatura_Deve_RetornarDespesaJaPagaEManterACobranca(
+        [Frozen] Cartao cartao,
+        DespesaParcelada despesa,
+        TransacoesDeTeste transacoes,
+        SaidaDeTeste compra,
+        SaidaDeTeste pagamento)
+    {
+        Transacao transacao = transacoes.DoCartao(cartao, compra.DaCompra(despesa, numero: 3));
+        VinculoTransacaoService.Vincular(transacao, despesa, despesaQueUsaATransacao: Maybe<Despesa>.None).Should().Succeed();
+        PagamentoFaturaService.Pagar(transacoes.DaConta(pagamento.AVista()), cartao, despesa.Parcelas[2].MesReferencia, [cartao], [despesa], despesasPagasPelaSaida: []).Should().Succeed();
+        Cobranca cobranca = despesa.Parcelas[2].Cobranca!;
+
+        UnitResult<Erro> result = VinculoTransacaoService.Desvincular(transacao, despesa);
+
+        result.Should().Fail().Which.Should().Be(ErroDespesaJaPaga.Instancia);
+        despesa.Parcelas[2].Cobranca.Should().Be(cobranca);
+    }
+
+    [Theory, VinculoAutoData]
     public void Desvincular_Quando_ParceladaSemACompra_Deve_RetornarNaoCobrou(
         [Frozen] Cartao cartao,
         DespesaParcelada despesa,

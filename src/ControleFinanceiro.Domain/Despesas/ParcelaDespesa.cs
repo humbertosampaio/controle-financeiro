@@ -68,6 +68,20 @@ public sealed class ParcelaDespesa : Entity<IdParcelaDespesa>
     }
 
     /// <summary>
+    /// Paga a parcela pela saída que pagou a fatura, com a data dela e o valor cobrado, quando ela tem cobrança e está
+    /// pendente. Devolve se pagou: a parcela que nasceu paga ou ainda não foi cobrada fica como está.
+    /// </summary>
+    internal bool PagarFatura(IdTransacao idTransacao, DateOnly dataPagamento)
+    {
+        Maybe<Pagamento> pago = Pagamento.PagarPelaFatura(Cobranca, idTransacao, dataPagamento);
+        if (pago.HasNoValue)
+            return false;
+
+        Pagamento = pago.Value;
+        return true;
+    }
+
+    /// <summary>
     /// Tira a cobrança. A parcela paga por uma transação, a da fatura, falha com <see cref="ErroDespesaJaPaga"/>; a que
     /// nasceu paga, sem transação, perde a cobrança e continua paga.
     /// </summary>
