@@ -31,8 +31,7 @@ public sealed class CadastrarLoteCategoriasValidator : Validator<CadastrarLoteCa
             .ChildRules(item =>
             {
                 item.RuleFor(x => x.IdCategoria)
-                    .MustBeId(id => IdCategoriaDespesa.TryFrom(id!.Value))
-                    .When(x => x.IdCategoria is not null);
+                    .MustBeId(IdCategoriaDespesa.TryFrom);
 
                 item.RuleFor(x => x.Nome)
                     .Null()

@@ -46,6 +46,23 @@ public static class CustomValidators
         }
     }
 
+    extension<T>(IRuleBuilder<T, Guid?> ruleBuilder)
+    {
+        /// <summary>Como o <c>MustBeId</c> do id obrigatório, mas o id ausente passa: só o informado é conferido.</summary>
+        public IRuleBuilderOptionsConditions<T, Guid?> MustBeId<TId>(Func<Guid, ValueObjectOrError<TId>> tryFrom)
+        {
+            return ruleBuilder.Custom((property, context) =>
+            {
+                if (property is not Guid informado)
+                    return;
+
+                ValueObjectOrError<TId> resultado = tryFrom(informado);
+                if (!resultado.IsSuccess)
+                    context.AddFailure(resultado.Error.ErrorMessage);
+            });
+        }
+    }
+
     extension<T, TValue>(IRuleBuilder<T, TValue> ruleBuilder)
         where TValue : IEquatable<TValue>, IComparable<TValue>
     {
