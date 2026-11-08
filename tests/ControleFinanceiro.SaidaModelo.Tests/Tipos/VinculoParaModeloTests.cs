@@ -203,14 +203,14 @@ public sealed class VinculoParaModeloTests
             categoriaBanco: null,
             lancamento.Identidade);
         Transacao transacao = transacoes.DoCartao(cartao, compra);
-        VinculoTransacaoService.Vincular(transacao, despesa, despesaQueUsaATransacao: Maybe<Despesa>.None).Should().Succeed();
+        VinculoTransacaoService.Vincular(transacao, despesa, despesaQueUsaATransacao: Maybe<Despesa>.None, cartoesDoUsuario: []).Should().Succeed();
         return transacao;
     }
 
     private static Transacao Vincular(DespesaSimples despesa, TransacoesDeTeste transacoes, Lancamento lancamento)
     {
         Transacao transacao = transacoes.DaConta(lancamento.SemCategoria().ComoSaida());
-        VinculoTransacaoService.Vincular(transacao, despesa, despesaQueUsaATransacao: Maybe<Despesa>.None).Should().Succeed();
+        VinculoTransacaoService.Vincular(transacao, despesa, despesaQueUsaATransacao: Maybe<Despesa>.None, cartoesDoUsuario: []).Should().Succeed();
         return transacao;
     }
 }

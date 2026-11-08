@@ -61,9 +61,9 @@ public static class ConciliacaoParcelasService
 
     private static void Vincular(Vinculo vinculo)
     {
-        UnitResult<Erro> result = VinculoTransacaoService.Vincular(vinculo.Transacao, vinculo.Despesa, despesaQueUsaATransacao: Maybe<Despesa>.None);
+        UnitResult<Erro> result = VinculoTransacaoService.VincularParcelada(vinculo.Transacao, vinculo.Despesa);
 
-        // O agrupamento já garante o que o Vincular confere. A mensagem leva só o código, sem dado da transação.
+        // O agrupamento já garante o usuário, a saída e a transação livre, que o Vincular conferiria antes do VincularParcelada. A mensagem leva só o código, sem dado da transação.
         if (result.IsFailure)
             throw new InvalidOperationException($"Vínculo recusado na conciliação das parcelas: {result.Error.Codigo}");
     }

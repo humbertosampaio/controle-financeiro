@@ -2,7 +2,6 @@ using ControleFinanceiro.Domain.Beneficiarios;
 using ControleFinanceiro.Domain.Cartoes;
 using ControleFinanceiro.Domain.Categorias;
 using ControleFinanceiro.Domain.Despesas;
-using ControleFinanceiro.Domain.Shared.ValueObjects;
 using ControleFinanceiro.Domain.Transacoes;
 using ControleFinanceiro.Domain.Usuarios;
 
@@ -83,35 +82,14 @@ public static class DespesaParceladaFactory
     {
         return DespesaParcelada.Criar(
             idUsuario,
-            IdBeneficiarioDa(beneficiariosDoUsuario, lancamento),
+            AliasesResolvidos.IdBeneficiarioDo(beneficiariosDoUsuario, lancamento.AliasTextoBeneficiario!),
             lancamento.Descricao,
-            IdCategoriaDa(categoriasDoUsuario, lancamento),
+            AliasesResolvidos.IdCategoriaDo(categoriasDoUsuario, lancamento.AliasCategoriaBanco),
             lancamento.Data,
             lancamento.ValorAbsoluto,
             cartao.Id,
             cartao.MesVencimento(lancamento.Data),
             cartao.DiaVencimento,
             lancamento.Parcela!);
-    }
-
-    private static IdBeneficiario IdBeneficiarioDa(IReadOnlyCollection<Beneficiario> beneficiariosDoUsuario, Lancamento lancamento)
-    {
-        Alias alias = lancamento.AliasTextoBeneficiario!;
-        Beneficiario beneficiario = beneficiariosDoUsuario.FirstOrDefault(b => b.PossuiAlias(alias))
-            ?? throw new ArgumentException("O beneficiário de uma compra não está na lista.", nameof(beneficiariosDoUsuario));
-
-        return beneficiario.Id;
-    }
-
-    /// <returns>Nulo quando o banco não dá categoria à compra.</returns>
-    private static IdCategoriaDespesa? IdCategoriaDa(IReadOnlyCollection<CategoriaDespesa> categoriasDoUsuario, Lancamento lancamento)
-    {
-        if (lancamento.AliasCategoriaBanco is not Alias alias)
-            return null;
-
-        CategoriaDespesa categoria = categoriasDoUsuario.FirstOrDefault(c => c.PossuiAlias(alias))
-            ?? throw new ArgumentException("A categoria de uma compra não está na lista.", nameof(categoriasDoUsuario));
-
-        return categoria.Id;
     }
 }

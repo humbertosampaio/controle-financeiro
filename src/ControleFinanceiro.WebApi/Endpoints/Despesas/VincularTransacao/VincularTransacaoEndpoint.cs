@@ -1,4 +1,5 @@
 using ControleFinanceiro.Application.Abstractions;
+using ControleFinanceiro.Domain.Cartoes;
 using ControleFinanceiro.Domain.Despesas;
 using ControleFinanceiro.Domain.Services;
 using ControleFinanceiro.Domain.Shared;
@@ -10,21 +11,24 @@ namespace ControleFinanceiro.WebApi.Endpoints.Despesas.VincularTransacao;
 
 /// <summary>
 /// Liga uma saída a uma despesa do usuário: a da conta paga a despesa simples, e a compra do cartão cobra a despesa
-/// adiada ou uma parcela, sem pagá-la. Na parcelada, a parcela vem do número informado na transação, e não da requisição.
+/// adiada, também de outro cartão da mesma fatura, ou uma parcela, sem pagá-la. Na parcelada, a parcela vem do número informado na transação, e não da requisição.
 /// </summary>
 public sealed class VincularTransacaoEndpoint : Endpoint<VincularTransacaoRequest, VincularTransacaoResponse>
 {
     private readonly IDespesaRepository _despesaRepository;
     private readonly ITransacaoRepository _transacaoRepository;
+    private readonly ICartaoRepository _cartaoRepository;
     private readonly IUnitOfWork _unitOfWork;
 
     public VincularTransacaoEndpoint(
         IDespesaRepository despesaRepository,
         ITransacaoRepository transacaoRepository,
+        ICartaoRepository cartaoRepository,
         IUnitOfWork unitOfWork)
     {
         _despesaRepository = despesaRepository;
         _transacaoRepository = transacaoRepository;
+        _cartaoRepository = cartaoRepository;
         _unitOfWork = unitOfWork;
     }
 
@@ -46,8 +50,9 @@ public sealed class VincularTransacaoEndpoint : Endpoint<VincularTransacaoReques
         }
 
         Maybe<Despesa> despesaQueUsaATransacao = await _despesaRepository.ObterQueUsaAsync(transacao.Value, ct);
+        IReadOnlyList<Cartao> cartoesDoUsuario = await _cartaoRepository.ListarAsync(ct);
 
-        UnitResult<Erro> vinculo = VinculoTransacaoService.Vincular(transacao.Value, despesa.Value, despesaQueUsaATransacao);
+        UnitResult<Erro> vinculo = VinculoTransacaoService.Vincular(transacao.Value, despesa.Value, despesaQueUsaATransacao, cartoesDoUsuario);
         if (vinculo.IsFailure)
         {
             await EnviarErroAsync(vinculo.Error, ct);

@@ -163,7 +163,7 @@ public sealed class ConciliacaoParcelasServiceTests
         IReadOnlyList<DespesaParcelada> gemeas = compra.Despesas(compra.Parcela(), compra.Parcela());
         Transacao vinculada = compra.Transacao(compra.Parcela());
         Transacao livre = compra.Transacao(compra.Parcela());
-        VinculoTransacaoService.Vincular(vinculada, gemeas[1], despesaQueUsaATransacao: Maybe<Despesa>.None).Should().Succeed();
+        VinculoTransacaoService.Vincular(vinculada, gemeas[1], despesaQueUsaATransacao: Maybe<Despesa>.None, cartoesDoUsuario: []).Should().Succeed();
 
         ConciliacaoParcelas result = compra.Conciliar(gemeas, [vinculada, livre]);
 

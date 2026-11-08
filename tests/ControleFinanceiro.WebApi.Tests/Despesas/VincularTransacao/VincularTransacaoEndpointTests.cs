@@ -97,6 +97,25 @@ public sealed class VincularTransacaoEndpointTests : IAsyncLifetime
     }
 
     [Theory, ApiAutoData]
+    public async Task Post_Quando_AdiadaECompraDeOutroFinalDaMesmaFatura_Deve_Cobrar(
+        CadastrarUsuarioRequest cadastro,
+        CadastrarLoteBeneficiariosRequest beneficiarios,
+        CadastrarDespesaRecorrenteRequest recorrente,
+        GerarDespesasDoMesRequest geracao)
+    {
+        Guid idUsuario = await ImportarFaturaAsync(cadastro);
+        DespesaAdiada despesa = await _api.GerarAdiadaAsync(idUsuario, beneficiarios, recorrente, geracao);
+        Transacao doOutroFinal = (await _api.ObterTodosAsync(db => db.Transacoes))
+            .First(t => t.EhSaida && !t.EhParcelada && t.Origem.IdCartao != despesa.IdCartao);
+
+        using HttpResponseMessage resposta = await _api.VincularAsync(idUsuario, despesa.Id.Value, new VincularTransacaoRequest { IdTransacao = doOutroFinal.Id.Value });
+
+        resposta.StatusCode.Should().Be(HttpStatusCode.OK);
+        DespesaAdiada gravada = (await _api.ObterTodosAsync(db => db.Despesas.OfType<DespesaAdiada>())).Single();
+        gravada.Cobranca.Should().Be(new Cobranca(doOutroFinal.Id, doOutroFinal.ValorAbsoluto));
+    }
+
+    [Theory, ApiAutoData]
     public async Task Post_Quando_AdiadaJaCobradaPorOutraCompra_Deve_RetornarConflito(
         CadastrarUsuarioRequest cadastro,
         CadastrarLoteBeneficiariosRequest beneficiarios,

@@ -78,6 +78,50 @@ public sealed class DespesaAdiada : DespesaInteira, IDespesaDoCartao
             pagamento);
     }
 
+    /// <summary>
+    /// A despesa da compra à vista que a fatura trouxe sem despesa prevista: nasce cobrada pela compra, com o valor dela, e
+    /// pendente até a saída da conta pagar a fatura.
+    /// </summary>
+    /// <remarks>Interno porque só a <see cref="Services.DespesaAdiadaFactory"/> confere a compra e a previsão.</remarks>
+    internal static DespesaAdiada CriarCobrada(
+        IdUsuario idUsuario,
+        IdBeneficiario idBeneficiario,
+        TextoObrigatorio descricao,
+        IdCategoriaDespesa? idCategoria,
+        DateOnly dataOcorrencia,
+        IdCartao idCartao,
+        MesReferencia mesVencimento,
+        DiaVencimentoCartao diaVencimento,
+        Cobranca cobranca)
+    {
+        DespesaAdiada despesa = Criar(
+            idUsuario,
+            idBeneficiario,
+            descricao,
+            idCategoria,
+            dataOcorrencia,
+            cobranca.Valor,
+            idCartao,
+            mesVencimento,
+            diaVencimento,
+            idDespesaRecorrente: null);
+
+        despesa.Cobranca = cobranca;
+        return despesa;
+    }
+
+    /// <summary>
+    /// Verdadeiro quando a despesa prevê a compra do beneficiário na fatura: ainda sem cobrança, e por isso pendente, no
+    /// mês de vencimento dela e num dos cartões dela, para a recorrente prevista num final e cobrada noutro.
+    /// </summary>
+    public bool EhPrevisaoDe(FaturaCartao fatura, IdBeneficiario idBeneficiario)
+    {
+        return Cobranca is null
+            && IdBeneficiario == idBeneficiario
+            && MesReferencia == fatura.MesVencimento
+            && fatura.Contem(IdCartao);
+    }
+
     /// <summary>O efetivo quando paga, o cobrado quando a fatura a cobrou, senão o projetado.</summary>
     public override ReaisPositivo ValorVigente => Pagamento.ValorVigenteCom(Cobranca);
 

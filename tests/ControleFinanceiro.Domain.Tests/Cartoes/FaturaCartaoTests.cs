@@ -28,6 +28,41 @@ public sealed class FaturaCartaoTests
     }
 
     [Theory, DomainAutoData]
+    public void DoCartao_Deve_SerAFaturaDoCartaoDaLista(Cartao cartao, SufixoCartao outroSufixo, MesReferencia mesVencimento)
+    {
+        Cartao outroFinal = cartao.OutroFinal(outroSufixo);
+
+        FaturaCartao result = FaturaCartao.DoCartao(cartao.Id, [outroFinal, cartao], mesVencimento);
+
+        result.Should().Be(FaturaCartao.Do(cartao, [outroFinal, cartao], mesVencimento));
+        result.DiaVencimento.Should().Be(cartao.DiaVencimento);
+    }
+
+    [Theory, DomainAutoData]
+    public void DaCompra_Deve_VencerNoMesDaFaturaEmQueACompraCai(Cartao cartao, DateOnly dataCompra)
+    {
+        FaturaCartao result = FaturaCartao.DaCompra(cartao.Id, dataCompra, [cartao]);
+
+        result.MesVencimento.Should().Be(cartao.MesVencimento(dataCompra));
+    }
+
+    [Theory, DomainAutoData]
+    public void DoCartao_Quando_CartaoForaDaLista_Deve_LancarExcecao(Cartao cartao, MesReferencia mesVencimento)
+    {
+        Action act = () => FaturaCartao.DoCartao(cartao.Id, cartoesDoUsuario: [], mesVencimento);
+
+        act.Should().ThrowExactly<ArgumentException>().WithParameterName("cartoesDoUsuario");
+    }
+
+    [Theory, DomainAutoData]
+    public void DaCompra_Quando_CartaoForaDaLista_Deve_LancarExcecao(Cartao cartao, DateOnly dataCompra)
+    {
+        Action act = () => FaturaCartao.DaCompra(cartao.Id, dataCompra, cartoesDoUsuario: []);
+
+        act.Should().ThrowExactly<ArgumentException>().WithParameterName("cartoesDoUsuario");
+    }
+
+    [Theory, DomainAutoData]
     public void Contem_Quando_CartaoDeOutraFatura_Deve_SerFalso(Cartao cartao, MesReferencia mesVencimento)
     {
         Cartao deOutroBanco = cartao.EmOutroBanco();

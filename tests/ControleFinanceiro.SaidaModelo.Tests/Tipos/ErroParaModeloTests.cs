@@ -58,7 +58,7 @@ public sealed class ErroParaModeloTests
         Lancamento lancamento)
     {
         Transacao transacao = transacoes.DaConta(lancamento.SemCategoria().ComoSaida());
-        Erro erro = VinculoTransacaoService.Vincular(transacao, despesa, outra).Error;
+        Erro erro = VinculoTransacaoService.Vincular(transacao, despesa, outra, cartoesDoUsuario: []).Error;
 
         ErroParaModelo.De(erro).Should().BeSameAs(ErroParaModelo.TransacaoJaVinculada);
     }
