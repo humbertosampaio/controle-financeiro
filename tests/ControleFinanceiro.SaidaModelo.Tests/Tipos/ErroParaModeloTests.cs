@@ -17,21 +17,27 @@ public sealed class ErroParaModeloTests
         ErroParaModelo.UsuarioNaoEncontrado,
         ErroParaModelo.TransacaoNaoEncontrada,
         ErroParaModelo.DespesaNaoEncontrada,
+        ErroParaModelo.CartaoNaoEncontrado,
         ErroParaModelo.TransacaoJaVinculada,
         ErroParaModelo.DespesaJaPaga,
         ErroParaModelo.DespesaJaCobrada,
         ErroParaModelo.TransacaoNaoEhSaida,
         ErroParaModelo.OrigemIncompativel,
         ErroParaModelo.ParcelaIncompativel,
-        ErroParaModelo.ResumoDivergente);
+        ErroParaModelo.TransacaoPagaOutraFatura,
+        ErroParaModelo.FaturaSemCobrancaPendente,
+        ErroParaModelo.ResumoDivergente,
+        ErroParaModelo.ResumoPagamentoFaturaDivergente);
 
-    public static readonly TheoryData<Erro, ErroParaModelo> ErrosDoVinculo = new()
+    public static readonly TheoryData<Erro, ErroParaModelo> ErrosDoDominio = new()
     {
         { ErroDespesaJaPaga.Instancia, ErroParaModelo.DespesaJaPaga },
         { ErroDespesaJaCobrada.Instancia, ErroParaModelo.DespesaJaCobrada },
         { ErroTransacaoNaoEhSaida.Instancia, ErroParaModelo.TransacaoNaoEhSaida },
         { ErroOrigemIncompativelComDespesa.Instancia, ErroParaModelo.OrigemIncompativel },
         { ErroParcelaIncompativelComDespesa.Instancia, ErroParaModelo.ParcelaIncompativel },
+        { ErroTransacaoPagaOutraFatura.Instancia, ErroParaModelo.TransacaoPagaOutraFatura },
+        { ErroFaturaSemCobrancaPendente.Instancia, ErroParaModelo.FaturaSemCobrancaPendente },
     };
 
     [Theory, MemberData(nameof(Erros))]
@@ -43,8 +49,8 @@ public sealed class ErroParaModeloTests
         new ErroLido(json).Mensagem.Should().NotBeEmpty();
     }
 
-    [Theory, MemberData(nameof(ErrosDoVinculo))]
-    public void De_Quando_ErroDoVinculo_Deve_RetornarAMensagemFixa(Erro erro, ErroParaModelo esperado)
+    [Theory, MemberData(nameof(ErrosDoDominio))]
+    public void De_Quando_ErroDoDominio_Deve_RetornarAMensagemFixa(Erro erro, ErroParaModelo esperado)
     {
         ErroParaModelo.De(erro).Should().BeSameAs(esperado);
     }

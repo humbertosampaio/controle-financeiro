@@ -13,12 +13,16 @@ using Architecture = ArchUnitNET.Domain.Architecture;
 using ArchLoader = ArchUnitNET.Loader.ArchLoader;
 using DependencyInjectionMcp = ControleFinanceiro.Mcp.DependencyInjection;
 using DependencyInjectionPersistence = ControleFinanceiro.Infrastructure.Persistence.DependencyInjection;
+using DiaFechamentoCartao = ControleFinanceiro.Domain.Cartoes.DiaFechamentoCartao;
 using DiaOcorrenciaRecorrente = ControleFinanceiro.Domain.Despesas.DiaOcorrenciaRecorrente;
+using DiaVencimentoCartao = ControleFinanceiro.Domain.Cartoes.DiaVencimentoCartao;
 using IdBeneficiario = ControleFinanceiro.Domain.Beneficiarios.IdBeneficiario;
+using IdCartao = ControleFinanceiro.Domain.Cartoes.IdCartao;
 using IdDespesa = ControleFinanceiro.Domain.Despesas.IdDespesa;
 using IdDespesaRecorrente = ControleFinanceiro.Domain.Despesas.IdDespesaRecorrente;
 using IdTransacao = ControleFinanceiro.Domain.Transacoes.IdTransacao;
 using StatusPagamento = ControleFinanceiro.Domain.Despesas.StatusPagamento;
+using SufixoCartao = ControleFinanceiro.Domain.Cartoes.SufixoCartao;
 
 namespace ControleFinanceiro.SaidaModelo.Tests.Arquitetura;
 
@@ -256,11 +260,16 @@ public sealed class SaidaModeloArquiteturaTests
             || tipo == typeof(Reais)
             || tipo == typeof(MesReferencia)
             || tipo == typeof(StatusPagamento)
+            || tipo == typeof(Banco)
             || tipo == typeof(DiaOcorrenciaRecorrente)
+            || tipo == typeof(DiaFechamentoCartao)
+            || tipo == typeof(DiaVencimentoCartao)
+            || tipo == typeof(SufixoCartao)
             || tipo == typeof(IdTransacao)
             || tipo == typeof(IdDespesa)
             || tipo == typeof(IdDespesaRecorrente)
             || tipo == typeof(IdBeneficiario)
+            || tipo == typeof(IdCartao)
             || EhSaida(tipo)
             || EhListaDeSaida(tipo);
     }
