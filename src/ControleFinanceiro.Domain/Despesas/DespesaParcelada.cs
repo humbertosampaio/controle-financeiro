@@ -53,7 +53,7 @@ public sealed class DespesaParcelada : Despesa, IDespesaDoCartao
     /// compra repetida, confere a posse dos itens e calcula o mês da primeira parcela pelos dias do cartão.
     /// </remarks>
     /// <param name="valor">O valor da parcela informada, o único que o arquivo traz.</param>
-    /// <param name="mesPrimeiraParcela">O mês de vencimento da fatura em que a primeira parcela cai.</param>
+    /// <param name="vencimentoPrimeiraParcela">O vencimento da fatura em que a primeira parcela cai.</param>
     /// <param name="parcela">A parcela como o banco a informou.</param>
     internal static DespesaParcelada Criar(
         IdUsuario idUsuario,
@@ -63,8 +63,7 @@ public sealed class DespesaParcelada : Despesa, IDespesaDoCartao
         DateOnly dataOcorrencia,
         ReaisPositivo valor,
         IdCartao idCartao,
-        MesReferencia mesPrimeiraParcela,
-        DiaVencimentoCartao diaVencimento,
+        VencimentoFatura vencimentoPrimeiraParcela,
         Parcela parcela)
     {
         DespesaParcelada despesa = new(
@@ -76,14 +75,14 @@ public sealed class DespesaParcelada : Despesa, IDespesaDoCartao
             dataOcorrencia,
             idCartao);
 
-        MesReferencia mes = mesPrimeiraParcela;
+        VencimentoFatura vencimento = vencimentoPrimeiraParcela;
         for (int numero = 1; numero <= parcela.Total; numero++)
         {
             despesa._parcelas.Add(numero < parcela.Numero
-                ? ParcelaDespesa.CriarPaga(numero, mes, diaVencimento, valor)
-                : ParcelaDespesa.CriarPendente(numero, mes, diaVencimento, valor));
+                ? ParcelaDespesa.CriarPaga(numero, vencimento, valor)
+                : ParcelaDespesa.CriarPendente(numero, vencimento, valor));
 
-            mes = mes.Posterior();
+            vencimento = vencimento.Seguinte();
         }
 
         return despesa;
@@ -120,7 +119,7 @@ public sealed class DespesaParcelada : Despesa, IDespesaDoCartao
     public bool FoiPagaSoPelaFatura(FaturaCartao fatura, IdTransacao idSaida)
     {
         return fatura.Contem(IdCartao)
-            && _parcelas.TrueForAll(p => p.Pagamento.IdTransacao != idSaida || p.MesReferencia == fatura.MesVencimento);
+            && _parcelas.TrueForAll(p => p.Pagamento.IdTransacao != idSaida || p.MesReferencia == fatura.Vencimento.Mes);
     }
 
     bool IDespesaDoCartao.PagarFatura(FaturaCartao fatura, IdTransacao idSaida, DateOnly dataPagamento)
@@ -128,7 +127,7 @@ public sealed class DespesaParcelada : Despesa, IDespesaDoCartao
         if (!fatura.Contem(IdCartao))
             return false;
 
-        return ParcelaDoMes(fatura.MesVencimento)
+        return ParcelaDoMes(fatura.Vencimento.Mes)
             .Map(p => p.PagarFatura(idSaida, dataPagamento))
             .GetValueOrDefault(defaultValue: false);
     }

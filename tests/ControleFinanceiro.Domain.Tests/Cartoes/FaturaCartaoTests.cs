@@ -8,21 +8,21 @@ namespace ControleFinanceiro.Domain.Tests.Cartoes;
 public sealed class FaturaCartaoTests
 {
     [Theory, DomainAutoData]
-    public void Do_Deve_JuntarOCartaoEOsFinaisDaMesmaFatura(Cartao cartao, SufixoCartao outroSufixo, MesReferencia mesVencimento)
+    public void DoCartao_Deve_JuntarOCartaoEOsFinaisDaMesmaFatura(Cartao cartao, SufixoCartao outroSufixo, MesReferencia mesVencimento)
     {
         Cartao outroFinal = cartao.OutroFinal(outroSufixo);
         Cartao deOutroBanco = cartao.EmOutroBanco();
 
-        FaturaCartao result = FaturaCartao.Do(cartao, [cartao, outroFinal, deOutroBanco], mesVencimento);
+        FaturaCartao result = FaturaCartao.DoCartao(cartao, [cartao, outroFinal, deOutroBanco], mesVencimento);
 
         result.Cartoes.Should().BeEquivalentTo([cartao.Id, outroFinal.Id]);
-        result.MesVencimento.Should().Be(mesVencimento);
+        result.Vencimento.Should().Be(cartao.VencimentoNoMes(mesVencimento));
     }
 
     [Theory, DomainAutoData]
-    public void Do_Quando_CartaoForaDaLista_Deve_IncluirOCartao(Cartao cartao, MesReferencia mesVencimento)
+    public void DoCartao_Quando_CartaoForaDaLista_Deve_IncluirOCartao(Cartao cartao, MesReferencia mesVencimento)
     {
-        FaturaCartao result = FaturaCartao.Do(cartao, cartoesDoUsuario: [], mesVencimento);
+        FaturaCartao result = FaturaCartao.DoCartao(cartao, cartoesDoUsuario: [], mesVencimento);
 
         result.Cartoes.Should().Equal(cartao.Id);
     }
@@ -34,8 +34,7 @@ public sealed class FaturaCartaoTests
 
         FaturaCartao result = FaturaCartao.DoCartao(cartao.Id, [outroFinal, cartao], mesVencimento);
 
-        result.Should().Be(FaturaCartao.Do(cartao, [outroFinal, cartao], mesVencimento));
-        result.DiaVencimento.Should().Be(cartao.DiaVencimento);
+        result.Should().Be(FaturaCartao.DoCartao(cartao, [outroFinal, cartao], mesVencimento));
     }
 
     [Theory, DomainAutoData]
@@ -43,7 +42,7 @@ public sealed class FaturaCartaoTests
     {
         FaturaCartao result = FaturaCartao.DaCompra(cartao.Id, dataCompra, [cartao]);
 
-        result.MesVencimento.Should().Be(cartao.MesVencimento(dataCompra));
+        result.Vencimento.Should().Be(cartao.VencimentoDaCompra(dataCompra));
     }
 
     [Theory, DomainAutoData]
@@ -67,7 +66,7 @@ public sealed class FaturaCartaoTests
     {
         Cartao deOutroBanco = cartao.EmOutroBanco();
 
-        FaturaCartao.Do(cartao, [cartao, deOutroBanco], mesVencimento).Contem(deOutroBanco.Id).Should().BeFalse();
+        FaturaCartao.DoCartao(cartao, [cartao, deOutroBanco], mesVencimento).Contem(deOutroBanco.Id).Should().BeFalse();
     }
 
     [Theory, DomainAutoData]
@@ -75,7 +74,7 @@ public sealed class FaturaCartaoTests
     {
         Cartao outroFinal = cartao.OutroFinal(outroSufixo);
 
-        FaturaCartao.Do(cartao, [cartao, outroFinal], mesVencimento)
-            .Should().Be(FaturaCartao.Do(outroFinal, [outroFinal, cartao], mesVencimento));
+        FaturaCartao.DoCartao(cartao, [cartao, outroFinal], mesVencimento)
+            .Should().Be(FaturaCartao.DoCartao(outroFinal, [outroFinal, cartao], mesVencimento));
     }
 }

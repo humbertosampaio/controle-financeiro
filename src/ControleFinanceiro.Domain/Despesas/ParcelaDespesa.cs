@@ -44,16 +44,16 @@ public sealed class ParcelaDespesa : Entity<IdParcelaDespesa>
         Pagamento = pagamento;
     }
 
-    internal static ParcelaDespesa CriarPendente(int numeroParcela, MesReferencia mesReferencia, DiaVencimentoCartao diaVencimento, ReaisPositivo valor)
+    internal static ParcelaDespesa CriarPendente(int numeroParcela, VencimentoFatura vencimento, ReaisPositivo valor)
     {
-        Pagamento pagamento = Pagamento.Pendente(valor, mesReferencia.NoDia(diaVencimento));
+        Pagamento pagamento = Pagamento.Pendente(valor, vencimento);
         return new ParcelaDespesa(IdParcelaDespesa.FromNewVersion7Guid(), numeroParcela, pagamento);
     }
 
     /// <summary>A parcela já paga, com o vencimento projetado como data efetiva, a única data que se conhece dela.</summary>
-    internal static ParcelaDespesa CriarPaga(int numeroParcela, MesReferencia mesReferencia, DiaVencimentoCartao diaVencimento, ReaisPositivo valor)
+    internal static ParcelaDespesa CriarPaga(int numeroParcela, VencimentoFatura vencimento, ReaisPositivo valor)
     {
-        DateOnly data = mesReferencia.NoDia(diaVencimento);
+        DateOnly data = vencimento;
         return new ParcelaDespesa(IdParcelaDespesa.FromNewVersion7Guid(), numeroParcela, Pagamento.Pago(valor, data, data));
     }
 

@@ -88,8 +88,7 @@ public static class DespesaParceladaFactory
             lancamento.Data,
             lancamento.ValorAbsoluto,
             cartao.Id,
-            cartao.MesVencimento(lancamento.Data),
-            cartao.DiaVencimento,
+            cartao.VencimentoDaCompra(lancamento.Data),
             lancamento.Parcela!);
     }
 }

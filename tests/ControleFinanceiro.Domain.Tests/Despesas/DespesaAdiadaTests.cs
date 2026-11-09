@@ -19,10 +19,10 @@ public sealed class DespesaAdiadaTests
         ReaisPositivo valor,
         IdCartao idCartao)
     {
-        DateOnly dataOcorrencia = new DateOnly(2026, 02, 05);
-        DiaVencimentoCartao diaVencimento = (DiaVencimentoCartao)05;
-        MesReferencia mesVencimento = MesReferencia.Criar(mes: 04, ano: 2026).Value;
-        DateOnly dataProjetadaPagamentoEsperada = new DateOnly(2026, 04, 05);
+        DateOnly dataOcorrencia = new(2026, 02, 05);
+        MesReferencia mesVencimento = (MesReferencia)(04, 2026);
+        VencimentoFatura vencimento = new(mesVencimento, (DiaVencimentoCartao)05);
+        DateOnly dataProjetadaPagamentoEsperada = new(2026, 04, 05);
 
         DespesaAdiada result = DespesaAdiada.Criar(
             idUsuario,
@@ -32,8 +32,7 @@ public sealed class DespesaAdiadaTests
             dataOcorrencia,
             valor,
             idCartao,
-            mesVencimento,
-            diaVencimento,
+            vencimento,
             idDespesaRecorrente: null);
 
         result.IdUsuario.Should().Be(idUsuario);
@@ -69,10 +68,9 @@ public sealed class DespesaAdiadaTests
             new DateOnly(2026, 03, 05),
             valor,
             idCartao,
-            MesReferencia.Criar(mes: 02, ano: 2026).Value,
-            diaVencimento,
+            new VencimentoFatura((MesReferencia)(02, 2026), diaVencimento),
             idDespesaRecorrente: null);
 
-        act.Should().ThrowExactly<ArgumentException>().WithParameterName("mesVencimento");
+        act.Should().ThrowExactly<ArgumentException>().WithParameterName("vencimento");
     }
 }

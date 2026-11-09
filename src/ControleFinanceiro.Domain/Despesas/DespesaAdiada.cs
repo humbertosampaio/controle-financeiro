@@ -44,7 +44,7 @@ public sealed class DespesaAdiada : DespesaInteira, IDespesaDoCartao
         IdCartao = idCartao;
     }
 
-    /// <param name="mesVencimento">O mês de vencimento da fatura em que a ocorrência cai.</param>
+    /// <param name="vencimento">O vencimento da fatura em que a ocorrência cai.</param>
     /// <param name="idDespesaRecorrente">A recorrente que gerou a despesa, ou nulo quando ela não veio de uma.</param>
     /// <exception cref="ArgumentException">Quando o mês de vencimento vem antes do mês da ocorrência.</exception>
     public static DespesaAdiada Criar(
@@ -55,15 +55,14 @@ public sealed class DespesaAdiada : DespesaInteira, IDespesaDoCartao
         DateOnly dataOcorrencia,
         ReaisPositivo valor,
         IdCartao idCartao,
-        MesReferencia mesVencimento,
-        DiaVencimentoCartao diaVencimento,
+        VencimentoFatura vencimento,
         IdDespesaRecorrente? idDespesaRecorrente)
     {
         MesReferencia mesOcorrencia = dataOcorrencia;
-        if (mesVencimento < mesOcorrencia)
-            throw new ArgumentException("O mês de vencimento vem antes do mês da ocorrência.", nameof(mesVencimento));
+        if (vencimento.Mes < mesOcorrencia)
+            throw new ArgumentException("O mês de vencimento vem antes do mês da ocorrência.", nameof(vencimento));
 
-        Pagamento pagamento = Pagamento.Pendente(valor, dataProjetada: mesVencimento.NoDia(diaVencimento));
+        Pagamento pagamento = Pagamento.Pendente(valor, dataProjetada: vencimento);
 
         return new DespesaAdiada(
             IdDespesa.FromNewVersion7Guid(),
@@ -90,8 +89,7 @@ public sealed class DespesaAdiada : DespesaInteira, IDespesaDoCartao
         IdCategoriaDespesa? idCategoria,
         DateOnly dataOcorrencia,
         IdCartao idCartao,
-        MesReferencia mesVencimento,
-        DiaVencimentoCartao diaVencimento,
+        VencimentoFatura vencimento,
         Cobranca cobranca)
     {
         DespesaAdiada despesa = Criar(
@@ -102,8 +100,7 @@ public sealed class DespesaAdiada : DespesaInteira, IDespesaDoCartao
             dataOcorrencia,
             cobranca.Valor,
             idCartao,
-            mesVencimento,
-            diaVencimento,
+            vencimento,
             idDespesaRecorrente: null);
 
         despesa.Cobranca = cobranca;
@@ -118,7 +115,7 @@ public sealed class DespesaAdiada : DespesaInteira, IDespesaDoCartao
     {
         return Cobranca is null
             && IdBeneficiario == idBeneficiario
-            && MesReferencia == fatura.MesVencimento
+            && MesReferencia == fatura.Vencimento.Mes
             && fatura.Contem(IdCartao);
     }
 
@@ -156,12 +153,12 @@ public sealed class DespesaAdiada : DespesaInteira, IDespesaDoCartao
 
     public bool FoiPagaSoPelaFatura(FaturaCartao fatura, IdTransacao idSaida)
     {
-        return fatura.Contem(IdCartao) && (Pagamento.IdTransacao != idSaida || MesReferencia == fatura.MesVencimento);
+        return fatura.Contem(IdCartao) && (Pagamento.IdTransacao != idSaida || MesReferencia == fatura.Vencimento.Mes);
     }
 
     bool IDespesaDoCartao.PagarFatura(FaturaCartao fatura, IdTransacao idSaida, DateOnly dataPagamento)
     {
-        if (!fatura.Contem(IdCartao) || MesReferencia != fatura.MesVencimento)
+        if (!fatura.Contem(IdCartao) || MesReferencia != fatura.Vencimento.Mes)
             return false;
 
         Maybe<Pagamento> pago = Pagamento.PagarPelaFatura(Cobranca, idSaida, dataPagamento);

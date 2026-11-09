@@ -409,8 +409,7 @@ public sealed class DespesaAdiadaFactoryTests
                 compra.Data,
                 compra.ValorAbsoluto,
                 cartao.Id,
-                cartao.MesVencimento(compra.Data),
-                cartao.DiaVencimento,
+                cartao.VencimentoDaCompra(compra.Data),
                 idDespesaRecorrente: null);
         }
 

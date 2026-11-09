@@ -40,7 +40,7 @@ public static class PagamentoFaturaService
         if (despesasPagasPelaSaida.OfType<DespesaSimples>().FirstOrDefault() is DespesaSimples simples)
             return new ErroTransacaoJaVinculada(simples.Id);
 
-        FaturaCartao fatura = FaturaCartao.Do(cartao, cartoesDoUsuario, mesVencimento);
+        FaturaCartao fatura = FaturaCartao.DoCartao(cartao, cartoesDoUsuario, mesVencimento);
 
         if (despesasPagasPelaSaida.Any(d => d is not IDespesaDoCartao doCartao || !doCartao.FoiPagaSoPelaFatura(fatura, saida.Id)))
             return ErroTransacaoPagaOutraFatura.Instancia;

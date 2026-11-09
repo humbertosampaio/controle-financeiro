@@ -35,14 +35,22 @@ classDiagram
             PossuiBancoESufixo(Banco, SufixoCartao)
             EhDaMesmaFaturaQue(Cartao)
             MesVencimento(dataCompra)
+            VencimentoDaCompra(dataCompra)
+            VencimentoNoMes(MesReferencia)
             DataOcorrenciaQueVenceEm(MesReferencia, DiaValidoEmTodoMes)
+        }
+        class VencimentoFatura {
+            <<ValueObject>>
+            Mes
+            Dia
+            Seguinte()
+            DateOnly (implícito)
         }
         class FaturaCartao {
             <<ValueObject>>
             Cartoes
-            MesVencimento
-            DiaVencimento
-            Do(Cartao, cartoesDoUsuario, MesReferencia)
+            Vencimento
+            DoCartao(Cartao, cartoesDoUsuario, MesReferencia)
             DoCartao(IdCartao, cartoesDoUsuario, MesReferencia)
             DaCompra(IdCartao, dataCompra, cartoesDoUsuario)
             Contem(IdCartao)
@@ -85,13 +93,13 @@ classDiagram
             PagarFatura(FaturaCartao, IdTransacao, dataPagamento)
         }
         class DespesaAdiada {
-            CriarCobrada(IdUsuario, IdBeneficiario, descricao, IdCategoria, dataOcorrencia, IdCartao, mesVencimento, DiaVencimentoCartao, Cobranca)
+            CriarCobrada(IdUsuario, IdBeneficiario, descricao, IdCategoria, dataOcorrencia, IdCartao, VencimentoFatura, Cobranca)
             EhPrevisaoDe(FaturaCartao, IdBeneficiario)
             CobrarCom(Cobranca)
             DesfazerCobranca(IdTransacao)
         }
         class DespesaParcelada {
-            Criar(IdUsuario, IdBeneficiario, descricao, IdCategoria, dataOcorrencia, valor, IdCartao, mesPrimeiraParcela, DiaVencimentoCartao, Parcela)
+            Criar(IdUsuario, IdBeneficiario, descricao, IdCategoria, dataOcorrencia, valor, IdCartao, vencimentoPrimeiraParcela, Parcela)
             ParcelaDoMes(MesReferencia)
             ParcelaCobradaPor(IdTransacao)
             ParcelasPagasPor(IdTransacao)
@@ -207,6 +215,7 @@ classDiagram
     IDespesaDoCartao <|.. DespesaParcelada
     IDespesaDoCartao ..> FaturaCartao : PagarFatura
     FaturaCartao ..> Cartao : IdCartao (os da mesma fatura)
+    FaturaCartao *-- VencimentoFatura
     DespesaParcelada "1" *-- "*" ParcelaDespesa
     DespesaInteira *-- Pagamento
     ParcelaDespesa *-- Pagamento
@@ -249,7 +258,7 @@ classDiagram
 ### Invariantes que valem saber
 
 - **Usuario**: `RendaLiquida` = renda bruta − descontos.
-- **Cartao**: um por banco + sufixo em cada usuário. Só nasce pela `CartaoFactory`, que recebe os cartões do usuário: o `Criar` falha com `ErroCartaoJaCadastrado`, e o `ObterDosFinais` devolve o cartão de cada final de uma fatura, ou falha com `ErroCartoesNaoResolvidos`: a importação nunca cria cartão. O índice único da tabela é a rede para duas requisições ao mesmo tempo. O dia de vencimento e o de fechamento são obrigatórios, sem regra entre eles. Os dois podem ser alterados depois, e os dias novos valem só para as despesas geradas a partir daí: as já geradas e as parcelas já criadas guardam a data projetada do pagamento. O `MesVencimento` calcula, pelos dias do cartão, o mês de vencimento da fatura em que cai uma compra, e o `DataOcorrenciaQueVenceEm` faz a volta: a data da compra que vence num mês pedido. A compra no dia do fechamento entra na fatura que fecha nesse dia.
+- **Cartao**: um por banco + sufixo em cada usuário. Só nasce pela `CartaoFactory`, que recebe os cartões do usuário: o `Criar` falha com `ErroCartaoJaCadastrado`, e o `ObterDosFinais` devolve o cartão de cada final de uma fatura, ou falha com `ErroCartoesNaoResolvidos`: a importação nunca cria cartão. O índice único da tabela é a rede para duas requisições ao mesmo tempo. O dia de vencimento e o de fechamento são obrigatórios, sem regra entre eles. Os dois podem ser alterados depois, e os dias novos valem só para as despesas geradas a partir daí: as já geradas e as parcelas já criadas guardam a data projetada do pagamento. O `MesVencimento` calcula, pelos dias do cartão, o mês de vencimento da fatura em que cai uma compra, e o `DataOcorrenciaQueVenceEm` faz a volta: a data da compra que vence num mês pedido. O `VencimentoFatura` junta o mês e o dia de vencimento, que é o mesmo para todos os finais da mesma fatura, e vira a data pela conversão implícita para `DateOnly`; o `VencimentoDaCompra` e o `VencimentoNoMes` o montam pelo cartão, e a `DespesaAdiada`, a `DespesaParcelada` e a `FaturaCartao` o recebem no lugar do par solto. A compra no dia do fechamento entra na fatura que fecha nesse dia.
 - **ContaBancaria**: uma por banco + sufixo em cada usuário, com o apelido padrão "&lt;tipo&gt; &lt;banco&gt; final &lt;sufixo&gt;". Só nasce pela `ContaBancariaFactory.ObterOuCriar`, que devolve a conta existente ou uma nova, e falha com `ErroContaDeOutroTipo` se a conta existe com outro tipo.
 - **Beneficiario**: quem recebeu o dinheiro de uma saída, reconhecido no arquivo só pelos aliases, nunca pelo nome. Pode nascer sem alias (cadastro manual, sem arquivo). Cada alias aponta para um beneficiário só em cada usuário: o beneficiário só nasce e só ganha alias pela `BeneficiarioFactory`, que recebe os beneficiários do usuário: o `Resolver` aplica um lote inteiro ou nada (`BeneficiarioNovo`, com ou sem alias, e `AliasBeneficiarioExistente`) e falha com `ErroAliasBeneficiarioJaAtribuido`. O nome não é único: o usuário o escolhe livremente. O índice único `(id_usuario, texto_normalizado)` é a rede, e por isso o `AliasBeneficiario` guarda o `IdUsuario`. Renomear e remover alias não passam pela factory.
 - **CategoriaDespesa**: categoria de despesa do usuário. Os aliases são as categorias do banco que ele associou a ela; a busca casa só com eles, nunca com o nome. O nome é único em cada usuário, comparado sem caixa, acentos e espaços repetidos, e cada alias aponta para uma categoria só. A categoria só nasce, só ganha alias e só é renomeada pela `CategoriaDespesaFactory`, que recebe as categorias do usuário: o `Resolver` aplica um lote inteiro ou nada (categorias novas, com ou sem alias, e aliases para as existentes) e falha com `ErroCategoriaJaCadastrada` ou `ErroAliasCategoriaJaAtribuido`. O índice único `(id_usuario, texto_normalizado)` dos aliases é a rede. Todo usuário tem a categoria `Outros` (`CategoriaDespesa.NomeOutros`), criada junto com ele pela `CriarOutros`: é achada pelo nome, então não pode ser renomeada (`ErroCategoriaOutrosNaoRenomeavel`). Remover alias não passa pela factory.
@@ -469,7 +478,7 @@ Puros, sem infraestrutura: recebem os agregados e as listas de que precisam, e q
 
 Cada value object mora na pasta do agregado dono, mesmo quando outro agregado o usa:
 
-- `Cartoes`: `SufixoCartao`, `DiaVencimentoCartao`, `DiaFechamentoCartao` e `FaturaCartao` (os cartões que saem na mesma fatura e o mês de vencimento dela; a igualdade não depende da ordem dos cartões).
+- `Cartoes`: `SufixoCartao`, `DiaVencimentoCartao`, `DiaFechamentoCartao`, `VencimentoFatura` (o mês e o dia de vencimento de uma fatura, ordenado pela data e convertido implicitamente para `DateOnly`) e `FaturaCartao` (os cartões que saem na mesma fatura e o vencimento dela; a igualdade não depende da ordem dos cartões).
 - `Contas`: `SufixoConta` e o SmartEnum `TipoConta`.
 - `Despesas`: `DiaOcorrenciaRecorrente`, `Pagamento` (valores projetado e efetivo, `StatusPagamento`, data projetada, sempre presente, e efetiva, o mês de referência, que é o da data projetada e não muda ao pagar nem ao reabrir, e a transação que o pagou; o `CK_despesas_pagamento_mes` e o `CK_parcelas_despesa_pagamento_mes` repetem o mês no banco), `Cobranca` (a compra do cartão que cobrou a despesa adiada ou a parcela e o valor que ela fixou; os CHECKs fazem as duas colunas andarem juntas, só na adiada e na parcela, e exigem a cobrança na despesa do cartão paga por transação), `ChaveCompraParcelada`, `ParcelaDaCompra` (a chave e o número, que agrupam a conciliação) e os SmartEnums `FormaPagamento` e `StatusPagamento`.
 - `Importacoes`: `Extrato`, `LancamentoContabilizado`, `Fatura`, `LancamentoFatura`, `PeriodoArquivo`, `SaldoDiario` e o SmartEnum `LayoutArquivoImportacao`, com as listas `Extratos` (o arquivo traz a conta), `ExtratosContaInformada` (o usuário informa o sufixo, numa rota própria do layout) e `Faturas`.

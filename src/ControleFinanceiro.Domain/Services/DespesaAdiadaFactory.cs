@@ -93,8 +93,7 @@ public static class DespesaAdiadaFactory
             AliasesResolvidos.IdCategoriaDo(categoriasDoUsuario, compra.AliasCategoriaBanco),
             compra.Data,
             idCartao,
-            fatura.MesVencimento,
-            fatura.DiaVencimento,
+            fatura.Vencimento,
             new Cobranca(compra.Id, compra.ValorAbsoluto));
     }
 }
