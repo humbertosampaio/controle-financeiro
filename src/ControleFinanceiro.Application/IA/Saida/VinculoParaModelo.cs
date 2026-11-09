@@ -95,11 +95,8 @@ public sealed record VinculoParaModelo : ISaidaModelo
 
     public static VinculoParaModelo Falha(ErroParaModelo erro) => new(erro);
 
-    /// <summary>
-    /// Se o resumo que o usuário aprovou é o deste vínculo. O cliente pode trocar um espaço por outro, ou acrescentar
-    /// espaços nas pontas, e isso não muda o que o usuário leu.
-    /// </summary>
-    public bool ConfereResumo(string resumo) => Resumo is not null && string.Equals(NormalizarEspacos(resumo), Resumo, StringComparison.Ordinal);
+    /// <summary>Se o resumo que o usuário aprovou é o deste vínculo, pelo <see cref="ResumoAprovado.Confere"/>.</summary>
+    public bool ConfereResumo(string resumo) => ResumoAprovado.Confere(Resumo, resumo);
 
     private static string MontarResumo(
         DateOnly dataTransacao,
@@ -114,16 +111,9 @@ public sealed record VinculoParaModelo : ISaidaModelo
     {
         string contraparte = contraparteTransacao.TemConteudo ? $" ({contraparteTransacao})" : string.Empty;
 
-        // O Reais formata com espaço não separável, e o resumo volta nos argumentos da confirmação.
-        return NormalizarEspacos(
+        return ResumoAprovado.Normalizar(
             $"{sujeito} de {valorTransacao} em {dataTransacao.ToString("dd/MM/yyyy", CultureInfo.InvariantCulture)}, "
             + $"\"{descricaoTransacao.ConteudoOuVazio}\"{contraparte}, {efeito} a despesa \"{descricaoDespesa.ConteudoOuVazio}\" "
             + $"de {mes}, com valor previsto de {valorProjetado}.");
-    }
-
-    private static string NormalizarEspacos(string texto)
-    {
-        string comEspacosComuns = string.Concat(texto.Select(c => char.GetUnicodeCategory(c) == UnicodeCategory.SpaceSeparator ? ' ' : c));
-        return comEspacosComuns.Trim();
     }
 }

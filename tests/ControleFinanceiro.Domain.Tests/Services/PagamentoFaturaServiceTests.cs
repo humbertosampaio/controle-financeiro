@@ -36,6 +36,41 @@ public sealed class PagamentoFaturaServiceTests
     }
 
     [Theory, PagamentoFaturaAutoData]
+    public void Pagar_Deve_DevolverOTotalCobradoDasDespesasPagas(
+        [Frozen] Cartao cartao,
+        DespesaAdiada despesa,
+        DespesaAdiada outra,
+        TransacoesDeTeste transacoes,
+        SaidaDeTeste compra,
+        SaidaDeTeste outraCompra,
+        SaidaDeTeste pagamento)
+    {
+        Cobrar(despesa, cartao, transacoes.DoCartao(cartao, compra.AVista()));
+        Cobrar(outra, cartao, transacoes.DoCartao(cartao, outraCompra.AVista()));
+
+        Result<PagamentoFatura, Erro> result = PagamentoFaturaService.Pagar(transacoes.DaConta(pagamento.AVista()), cartao, despesa.MesReferencia, [cartao], [despesa, outra], despesasPagasPelaSaida: []);
+
+        result.Should().Succeed().Which.Total.Value.Should().Be(compra.ValorPago.Value + outraCompra.ValorPago.Value);
+    }
+
+    [Theory, PagamentoFaturaAutoData]
+    public void Pagar_Quando_ParcelasCobradas_Deve_SomarSoAParcelaDoMesNoTotal(
+        [Frozen] Cartao cartao,
+        DespesaParcelada despesa,
+        TransacoesDeTeste transacoes,
+        SaidaDeTeste compra,
+        SaidaDeTeste outraCompra,
+        SaidaDeTeste pagamento)
+    {
+        Cobrar(despesa, cartao, transacoes.DoCartao(cartao, compra.DaCompra(despesa, numero: 1)));
+        Cobrar(despesa, cartao, transacoes.DoCartao(cartao, outraCompra.DaCompra(despesa, numero: 2)));
+
+        Result<PagamentoFatura, Erro> result = PagamentoFaturaService.Pagar(transacoes.DaConta(pagamento.AVista()), cartao, despesa.Parcelas[0].MesReferencia, [cartao], [despesa], despesasPagasPelaSaida: []);
+
+        result.Should().Succeed().Which.Total.Should().Be(compra.ValorPago);
+    }
+
+    [Theory, PagamentoFaturaAutoData]
     public void Pagar_Quando_ParcelasCobradas_Deve_PagarSoAParcelaDoMes(
         [Frozen] Cartao cartao,
         DespesaParcelada despesa,

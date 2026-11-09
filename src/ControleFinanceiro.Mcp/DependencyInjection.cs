@@ -22,12 +22,16 @@ public static class DependencyInjection
                 .WithTools<ListarDespesasFixasTool>()
                 .WithTools<BalancoMensalTool>()
                 .WithTools<PreverVinculoTool>()
-                .WithTools<ConfirmarVinculoTool>();
+                .WithTools<ConfirmarVinculoTool>()
+                .WithTools<ListarCartoesTool>()
+                .WithTools<PreverPagamentoFaturaTool>()
+                .WithTools<ConfirmarPagamentoFaturaTool>();
 
             return services
                 .AddScoped<IUsuarioAtual, UsuarioAtualConfigurado>()
                 .AddScoped<LeituraParaModeloService>()
-                .AddScoped<VinculoParaModeloService>();
+                .AddScoped<VinculoParaModeloService>()
+                .AddScoped<PagamentoFaturaParaModeloService>();
         }
     }
 }

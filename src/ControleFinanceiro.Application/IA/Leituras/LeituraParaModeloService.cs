@@ -1,5 +1,6 @@
 using ControleFinanceiro.Application.Abstractions;
 using ControleFinanceiro.Application.IA.Saida;
+using ControleFinanceiro.Domain.Cartoes;
 using ControleFinanceiro.Domain.Despesas;
 using ControleFinanceiro.Domain.Services;
 using ControleFinanceiro.Domain.Shared.ValueObjects;
@@ -21,19 +22,22 @@ public sealed class LeituraParaModeloService
     private readonly IDespesaRepository _despesas;
     private readonly IUsuarioRepository _usuarios;
     private readonly IUsuarioAtual _usuarioAtual;
+    private readonly ICartaoRepository _cartoes;
 
     public LeituraParaModeloService(
         ITransacaoRepository transacoes,
         IDespesaRecorrenteRepository recorrentes,
         IDespesaRepository despesas,
         IUsuarioRepository usuarios,
-        IUsuarioAtual usuarioAtual)
+        IUsuarioAtual usuarioAtual,
+        ICartaoRepository cartoes)
     {
         _transacoes = transacoes;
         _recorrentes = recorrentes;
         _despesas = despesas;
         _usuarios = usuarios;
         _usuarioAtual = usuarioAtual;
+        _cartoes = cartoes;
     }
 
     public async Task<TransacoesDoMesParaModelo> ListarTransacoesAsync(int ano, int mes, CancellationToken cancellationToken)
@@ -99,5 +103,16 @@ public sealed class LeituraParaModeloService
         return BalancoMensalService
             .Calcular(usuario.Value, despesasDoMes, mesReferencia)
             .ParaModelo();
+    }
+
+    /// <summary>
+    /// Todos os cartões do usuário, com o final, para o usuário reconhecer o cartão, e nunca o número inteiro: o modelo
+    /// escolhe o da fatura pelo banco e pelos dias.
+    /// </summary>
+    public async Task<CartoesParaModelo> ListarCartoesAsync(CancellationToken cancellationToken)
+    {
+        IReadOnlyList<Cartao> cartoes = await _cartoes.ListarAsync(cancellationToken);
+
+        return CartoesParaModelo.De(cartoes.Select(cartao => cartao.ParaModelo()).ToArray());
     }
 }

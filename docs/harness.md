@@ -47,7 +47,7 @@ Hook `PreToolUse` do Claude Code em `Bash`, `PowerShell`, `Write`, `Edit` e `Not
 O guardrail não olha as ferramentas MCP. Quem pede a aprovação do usuário antes de uma ferramenta do `controle-financeiro` gravar são duas travas, e uma ferramenta que grava (`ReadOnly = false`) precisa das duas:
 
 - **a meta `anthropic/requiresUserInteraction`** na própria ferramenta (`[McpMeta(...)]`), que o Claude Code no terminal honra em todos os modos, inclusive no auto e no de ignorar permissões;
-- **uma regra `ask`** em `permissions` do `.claude/settings.json`, como `mcp__controle-financeiro__confirmar_vinculo`. O Claude Code do app desktop ignora a meta no modo auto e só pergunta por causa dela.
+- **uma regra `ask`** em `permissions` do `.claude/settings.json`, como `mcp__controle-financeiro__confirmar_vinculo` e `mcp__controle-financeiro__confirmar_pagamento_fatura`. O Claude Code do app desktop ignora a meta no modo auto e só pergunta por causa dela.
 
 Nenhum `allow` do projeto pode cobrir essas ferramentas, nem pelo servidor inteiro (`mcp__controle-financeiro`) nem com curinga. O `FerramentasQueGravamTests` (`tests/ControleFinanceiro.SaidaModelo.Tests/Arquitetura/`) confere as três coisas a partir do `.mcp.json` e do `.claude/settings.json`.
 

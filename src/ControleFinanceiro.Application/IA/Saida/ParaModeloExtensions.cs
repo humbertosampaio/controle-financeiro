@@ -1,4 +1,5 @@
 using ControleFinanceiro.Domain.Beneficiarios;
+using ControleFinanceiro.Domain.Cartoes;
 using ControleFinanceiro.Domain.Despesas;
 using ControleFinanceiro.Domain.Shared.ValueObjects;
 using ControleFinanceiro.Domain.Transacoes;
@@ -28,6 +29,11 @@ public static class ParaModeloExtensions
     extension(Beneficiario beneficiario)
     {
         public BeneficiarioParaModelo ParaModelo() => BeneficiarioParaModelo.De(beneficiario);
+    }
+
+    extension(Cartao cartao)
+    {
+        public CartaoParaModelo ParaModelo() => CartaoParaModelo.De(cartao);
     }
 
     extension(BalancoMensal balanco)

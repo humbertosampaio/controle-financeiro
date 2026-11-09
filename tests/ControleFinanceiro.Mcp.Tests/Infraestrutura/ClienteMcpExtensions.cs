@@ -1,10 +1,14 @@
-using System.Text.Json.Nodes;
+using ControleFinanceiro.Domain.Shared.ValueObjects;
 using ModelContextProtocol.Client;
 using ModelContextProtocol.Protocol;
+using System.Text.Json.Nodes;
 
 namespace ControleFinanceiro.Mcp.Tests.Infraestrutura;
 
-/// <summary>Chama as ferramentas como o modelo chamaria: as de leitura só com o ano e o mês, e as do vínculo com os ids.</summary>
+/// <summary>
+/// Chama as ferramentas como o modelo chamaria: as de leitura só com o ano e o mês, as do vínculo com os ids, e as do
+/// pagamento da fatura com os ids e o mês de vencimento.
+/// </summary>
 internal static class ClienteMcpExtensions
 {
     extension(McpClient clienteMcp)
@@ -34,6 +38,37 @@ internal static class ClienteMcpExtensions
                 "confirmar_vinculo",
                 new Dictionary<string, object?> { ["resumo"] = resumo, ["idTransacao"] = idTransacao, ["idDespesa"] = idDespesa });
         }
+    }
+
+    extension(McpClient clienteMcp)
+    {
+        public ValueTask<CallToolResult> ListarCartoesAsync() => clienteMcp.CallToolAsync("listar_cartoes", new Dictionary<string, object?>());
+
+        public ValueTask<CallToolResult> PreverPagamentoFaturaAsync(Guid idTransacao, Guid idCartao, MesReferencia mesVencimento)
+        {
+            return clienteMcp.CallToolAsync("prever_pagamento_fatura", ArgumentosDoPagamento(idTransacao, idCartao, mesVencimento));
+        }
+
+        /// <summary>Chama a confirmação como o cliente a envia depois que o usuário aprova a chamada, com o resumo primeiro.</summary>
+        public ValueTask<CallToolResult> ConfirmarPagamentoFaturaAsync(Guid idTransacao, Guid idCartao, MesReferencia mesVencimento, string resumo)
+        {
+            Dictionary<string, object?> argumentos = new() { ["resumo"] = resumo };
+            foreach ((string nome, object? valor) in ArgumentosDoPagamento(idTransacao, idCartao, mesVencimento))
+                argumentos[nome] = valor;
+
+            return clienteMcp.CallToolAsync("confirmar_pagamento_fatura", argumentos);
+        }
+    }
+
+    private static Dictionary<string, object?> ArgumentosDoPagamento(Guid idTransacao, Guid idCartao, MesReferencia mesVencimento)
+    {
+        return new Dictionary<string, object?>
+        {
+            ["idTransacao"] = idTransacao,
+            ["idCartao"] = idCartao,
+            ["ano"] = mesVencimento.Ano,
+            ["mes"] = mesVencimento.Mes,
+        };
     }
 
     extension(CallToolResult resultado)
