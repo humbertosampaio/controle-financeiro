@@ -53,7 +53,7 @@ Se a branch já existir (a sessão está retomando o trabalho), troque para ela 
 
 Siga os passos na ordem do plano. Cada passo vira um commit semântico em Conventional Commits PT-BR, com `Refs #<n>` no corpo. Onde o plano marca um ponto de parada, mostre o resultado e espere o ok antes de seguir.
 
-Código novo segue o análogo citado no plano. Regra nova tem teste no mesmo commit, ou no seguinte quando o plano separa; use o `autor-de-testes` quando faltar cobertura.
+Código novo segue o análogo citado no plano. Escolha o análogo de um método pelo que significa "não deu certo" na operação, e não só pela vizinhança do fluxo: antes de copiar a forma do retorno (`bool`, `Maybe`, `Result`), confira com [filtro ou falha](../../../docs/padroes-de-dominio.md#5-falhas) que o "não aplica" tem o mesmo sentido nos dois. Desfazer o pagamento da fatura copiou o `bool` do pagar, quando o análogo certo era o `Result` dos outros desfazeres. Regra nova tem teste no mesmo commit, ou no seguinte quando o plano separa; use o `autor-de-testes` quando faltar cobertura.
 
 Ao criar uma classe de testes com muitos casos, escreva dois ou três, releia-os com o critério de [cada parâmetro precisa se justificar](../../../docs/testes-com-autofixture.md#cada-parâmetro-precisa-se-justificar) e só então replique o formato nos demais.
 

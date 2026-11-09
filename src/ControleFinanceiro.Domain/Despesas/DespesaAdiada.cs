@@ -169,6 +169,8 @@ public sealed class DespesaAdiada : DespesaInteira, IDespesaDoCartao
         return true;
     }
 
+    UnitResult<Erro> IDespesaDoCartao.DesfazerPagamento(IdTransacao idSaida) => Pagamento.Reabrir(idSaida).Map(p => Pagamento = p);
+
     public override Maybe<Pagamento> PagamentoCobradoPor(IdTransacao idTransacao) =>
         Cobranca?.IdTransacao == idTransacao ? Pagamento : Maybe<Pagamento>.None;
 }

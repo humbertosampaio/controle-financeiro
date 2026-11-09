@@ -107,6 +107,8 @@ Três camadas, descritas em [docs/harness.md](docs/harness.md):
 - **Skills** (`.claude/skills/`): `planejar-issue` (plano na issue + sub-issues, antes do código), `implementar-issue` (numa sessão nova, a partir do plano publicado), `revisar-mudanca` (gates + revisores) e `abrir-pr` (push + PR vinculado + merge depois do CI verde), depois do código.
 - **Gates** (`.githooks/` + `.github/workflows/ci.yml`): varredura de secrets e de dados no pre-commit, Conventional Commits no commit-msg, bloqueio de push na `main`, testes de unidade e testes de integração e do servidor MCP afetados (`scripts/harness/testes-afetados.mjs`) no pre-push, build, modelo do EF sem migration pendente, as três suítes completas e a cobertura mínima do domínio (`coverlet.msbuild`; como subir o mínimo está em `docs/harness.md`) no CI. Ative uma vez por clone: `git config core.hooksPath .githooks`.
 
+**Refino contínuo do harness.** Sempre que o dono te corrigir, ou sugerir algo com que você concorde, pergunte-se: *algo nas instruções que eu segui (CLAUDE.md, guias em `docs/`, skills, agentes) poderia ser diferente para eu ter acertado logo de cara?* Se sim, avise o dono no chat, diga o que faltou e proponha o texto da mudança e onde ele entra. Com o ok dele, faça a mudança, em branch e PR próprios, separados da issue em andamento. Detalhes em [docs/harness.md](docs/harness.md#refino-contínuo).
+
 ## GitHub
 
 Repositório privado `humbertosampaio/controle-financeiro`. Trabalho organizado em Issues (labels `tipo:*`, `fase:*`, `area:*`), sub-issues sob um épico por fase e um GitHub Project. Use o `gh` CLI.

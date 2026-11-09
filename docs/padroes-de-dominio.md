@@ -80,6 +80,7 @@ Falha prevista é `Result`; exceção fica para erro de sistema e para bug de qu
   - Erro sem parâmetros é uma instância única (`ErroOrigemNaoPertenceAoUsuario.Instancia`); com parâmetros, nasce com `new` a cada falha.
   - O construtor é `internal`: só o domínio cria o erro.
   - Quem chama compara pelo tipo (`erro is ErroCartaoJaCadastrado`), nunca pelo `Codigo` ou pela `Descricao`.
+- **Filtro ou falha: quem escolheu a entidade decide.** Quando o serviço percorre um conjunto e a entidade só diz se a operação vale para ela (pagar as despesas do mês que a fatura cobrou), "não vale" é filtro: a entidade devolve `bool` ou `Maybe`, e o erro do conjunto (`ErroFaturaSemCobrancaPendente`) é do serviço. Quando quem chama já escolheu a entidade e pede a operação para ela (desfazer o que esta transação pagou), "não deu" é falha dela: a entidade devolve `UnitResult<Erro>` com o motivo, e o serviço só o repassa, sem escrever erro próprio. O serviço só cria o erro quando não há entidade a quem perguntar, como numa lista vazia. Exemplos: `IDespesaDoCartao.PagarFatura` (filtro) e `DesfazerPagamento`/`DesfazerCobranca` (falha).
 - **Mensagem em texto** (`Result<T>`) para valor que não pertence ao conceito, como a validação de um value object: todas essas falhas são a mesma situação, entrada inválida.
 
 As camadas de fora reagem aos tipos (o endpoint mapeia cada um para um status num `switch` só, como no `AdicionarCartaoEndpoint`), mas não são motivo para criá-los nem para removê-los. O tipo nasce quando a situação de negócio aparece, não antes.

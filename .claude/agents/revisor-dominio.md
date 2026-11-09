@@ -53,6 +53,8 @@ Os arquivos `.Designer.cs` e `ModelSnapshot.cs` são gerados pelo EF: não leia.
     - método privado que lê dados de um agregado só, sem motivo registrado no plano;
     - algoritmo longo dentro do serviço, em vez de num tipo próprio.
 
+    - erro devolvido pelo serviço cujo motivo depende do estado de uma entidade que ele recebeu, quando ela poderia devolvê-lo: o método dela devolve `bool` ou `Maybe` e o serviço traduz em `Erro`. A exceção é o filtro sobre um conjunto, em que o erro é do conjunto (seção 5 do guia, "filtro ou falha").
+
     Ler um campo só ou chamar um método do agregado é o que o serviço deve fazer, e não é achado. Seguir um análogo que ainda concentra essa lógica também não dispensa o achado.
 17. **Forma do tipo segue o conceito** (seção 7 do guia, "a forma do tipo vem do conceito"). Para cada tipo novo ou alterado no Domain, aplique as perguntas em ordem e compare com a forma do código. É achado MÉDIO, dizendo a forma que o critério dá e por quê:
     - um conceito que o negócio nomeia (no produto, na issue ou no plano) modelado como `record` "de retorno", primitivo ou tupla, em vez de value object;

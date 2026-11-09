@@ -81,6 +81,10 @@ public sealed class ParcelaDespesa : Entity<IdParcelaDespesa>
         return true;
     }
 
+    /// <summary>Devolve a parcela a pendente, com a cobrança preservada.</summary>
+    /// <remarks>Chamado só para as parcelas pagas pela transação, que a <see cref="DespesaParcelada"/> já escolheu.</remarks>
+    internal void DesfazerPagamento() => Pagamento = Pagamento.Reabrir();
+
     /// <summary>
     /// Tira a cobrança. A parcela paga por uma transação, a da fatura, falha com <see cref="ErroDespesaJaPaga"/>; a que
     /// nasceu paga, sem transação, perde a cobrança e continua paga.
