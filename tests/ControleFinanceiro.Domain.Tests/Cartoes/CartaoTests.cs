@@ -53,6 +53,22 @@ public sealed class CartaoTests
         result.Should().Be((MesReferencia)(mesEsperado, anoEsperado));
     }
 
+    [Theory, DomainAutoData]
+    public void VencimentoDaCompra_Deve_SerOMesDaFaturaNoDiaDeVencimentoDoCartao(Cartao sut, DateOnly dataCompra)
+    {
+        VencimentoFatura result = sut.VencimentoDaCompra(dataCompra);
+
+        result.Should().Be(new VencimentoFatura(sut.MesVencimento(dataCompra), sut.DiaVencimento));
+    }
+
+    [Theory, DomainAutoData]
+    public void VencimentoNoMes_Deve_SerODiaDeVencimentoDoCartaoNoMes(Cartao sut, MesReferencia mesVencimento)
+    {
+        VencimentoFatura result = sut.VencimentoNoMes(mesVencimento);
+
+        result.Should().Be(new VencimentoFatura(mesVencimento, sut.DiaVencimento));
+    }
+
     [Theory]
     [InlineDomainAutoData(10, 20, 3, 2026, 5, 2026, 3)]
     [InlineDomainAutoData(10, 20, 3, 2026, 10, 2026, 3)]

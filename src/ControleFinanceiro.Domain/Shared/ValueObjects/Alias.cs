@@ -26,6 +26,13 @@ public sealed class Alias : ValueObject
             : new Alias(texto!.Trim(), normalizado);
     }
 
+    /// <summary>O alias do texto, ou nulo quando não há texto ou ele fica vazio depois de normalizado.</summary>
+    public static Alias? DoTextoOuNulo(string? texto)
+    {
+        Result<Alias> alias = Criar(texto);
+        return alias.IsSuccess ? alias.Value : null;
+    }
+
     public static explicit operator Alias(string? texto) => Criar(texto).Value;
 
     public override string ToString() => TextoOriginal;

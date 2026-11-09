@@ -75,5 +75,17 @@ public sealed class AliasTests
         result.Should().Be(Alias.Criar(valor).Value);
     }
 
+    [Theory, MemberData(nameof(ValoresVazios))]
+    public void DoTextoOuNulo_Quando_ValorVazio_Deve_RetornarNulo(string? valor)
+    {
+        Alias.DoTextoOuNulo(valor).Should().BeNull();
+    }
+
+    [Theory, AutoData]
+    public void DoTextoOuNulo_Quando_ValorValido_Deve_RetornarOMesmoQueOCriar(string valor)
+    {
+        Alias.DoTextoOuNulo(valor).Should().Be((Alias)valor);
+    }
+
     public static readonly TheoryData<string?> ValoresVazios = new(string.Empty, null, "   ", "\t", "\u0301");
 }

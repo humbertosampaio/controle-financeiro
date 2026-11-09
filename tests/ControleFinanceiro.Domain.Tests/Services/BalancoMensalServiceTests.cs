@@ -73,7 +73,7 @@ public sealed class BalancoMensalServiceTests
         VinculoTransacaoServiceTests.SaidaDeTeste saida)
     {
         Transacao compra = transacoes.DoCartao(cartao, saida.AVista());
-        VinculoTransacaoService.Vincular(compra, despesa, despesaQueUsaATransacao: Maybe<Despesa>.None).Should().Succeed();
+        VinculoTransacaoService.Vincular(compra, despesa, despesaQueUsaATransacao: Maybe<Despesa>.None, cartoesDoUsuario: [cartao]).Should().Succeed();
 
         BalancoMensal result = BalancoMensalService.Calcular(usuario, [despesa], despesa.MesReferencia);
 

@@ -1,3 +1,4 @@
+using ControleFinanceiro.Domain.Cartoes;
 using ControleFinanceiro.Domain.Despesas;
 using ControleFinanceiro.Domain.Shared;
 using ControleFinanceiro.Domain.Transacoes;
@@ -17,15 +18,28 @@ public static class VinculoTransacaoService
     /// A despesa que já usa a transação, se houver: a que ela cobrou, quando é do cartão, ou uma que ela pagou, quando é da
     /// conta.
     /// </param>
-    /// <exception cref="ArgumentException">Quando a transação ou a despesa que a usa é de outro usuário: é bug de quem chama.</exception>
+    /// <param name="cartoesDoUsuario">
+    /// Todos os cartões do usuário, entre eles o da despesa adiada: a compra de outro cartão da mesma fatura também a cobra.
+    /// </param>
+    /// <exception cref="ArgumentException">
+    /// Quando a transação, a despesa que a usa ou um cartão é de outro usuário, ou quando o cartão da despesa adiada não está
+    /// na lista: é bug de quem chama.
+    /// </exception>
     /// <exception cref="InvalidOperationException">Quando o tipo da despesa não tem regra de vínculo.</exception>
-    public static UnitResult<Erro> Vincular(Transacao transacao, Despesa despesa, Maybe<Despesa> despesaQueUsaATransacao)
+    public static UnitResult<Erro> Vincular(
+        Transacao transacao,
+        Despesa despesa,
+        Maybe<Despesa> despesaQueUsaATransacao,
+        IReadOnlyCollection<Cartao> cartoesDoUsuario)
     {
         if (transacao.IdUsuario != despesa.IdUsuario)
             throw new ArgumentException("A transação é de outro usuário.", nameof(transacao));
 
         if (despesaQueUsaATransacao.HasValue && despesaQueUsaATransacao.Value.IdUsuario != despesa.IdUsuario)
             throw new ArgumentException("A despesa que usa a transação é de outro usuário.", nameof(despesaQueUsaATransacao));
+
+        if (cartoesDoUsuario.Any(c => c.IdUsuario != despesa.IdUsuario))
+            throw new ArgumentException("A lista traz um cartão de outro usuário.", nameof(cartoesDoUsuario));
 
         if (despesaQueUsaATransacao.HasValue)
             return new ErroTransacaoJaVinculada(despesaQueUsaATransacao.Value.Id);
@@ -36,7 +50,7 @@ public static class VinculoTransacaoService
         return despesa switch
         {
             DespesaSimples simples => VincularSimples(transacao, simples),
-            DespesaAdiada adiada => VincularAdiada(transacao, adiada),
+            DespesaAdiada adiada => VincularAdiada(transacao, adiada, cartoesDoUsuario),
             DespesaParcelada parcelada => VincularParcelada(transacao, parcelada),
             _ => throw new InvalidOperationException($"Despesa sem regra de vínculo: {despesa.GetType().Name}"),
         };
@@ -53,19 +67,25 @@ public static class VinculoTransacaoService
         return simples.PagarCom(transacao.Id, transacao.Data, transacao.ValorAbsoluto);
     }
 
-    private static UnitResult<Erro> VincularAdiada(Transacao transacao, DespesaAdiada adiada)
+    /// <remarks>A compra de qualquer cartão da fatura em que a despesa vence a cobra, como os finais do C6.</remarks>
+    private static UnitResult<Erro> VincularAdiada(Transacao transacao, DespesaAdiada adiada, IReadOnlyCollection<Cartao> cartoesDoUsuario)
     {
         if (transacao.EhParcelada)
             return ErroParcelaIncompativelComDespesa.Instancia;
 
-        if (transacao.Origem.IdCartao != adiada.IdCartao)
+        FaturaCartao fatura = FaturaCartao.DoCartao(adiada.IdCartao, cartoesDoUsuario, adiada.MesReferencia);
+
+        if (transacao.Origem.IdCartao is not IdCartao idCartao || !fatura.Contem(idCartao))
             return ErroOrigemIncompativelComDespesa.Instancia;
 
         return adiada.CobrarCom(new Cobranca(transacao.Id, transacao.ValorAbsoluto));
     }
 
-    /// <remarks>O mês da parcela não entra na conferência, para um fechamento deslocado por feriado não impedir o vínculo.</remarks>
-    private static UnitResult<Erro> VincularParcelada(Transacao transacao, DespesaParcelada parcelada)
+    /// <remarks>
+    /// O mês da parcela não entra na conferência, para um fechamento deslocado por feriado não impedir o vínculo. Interno
+    /// para a <see cref="ConciliacaoParcelasService"/>, que já conferiu o usuário, a saída e a transação livre.
+    /// </remarks>
+    internal static UnitResult<Erro> VincularParcelada(Transacao transacao, DespesaParcelada parcelada)
     {
         if (transacao.Parcela is not Parcela parcela)
             return ErroParcelaIncompativelComDespesa.Instancia;

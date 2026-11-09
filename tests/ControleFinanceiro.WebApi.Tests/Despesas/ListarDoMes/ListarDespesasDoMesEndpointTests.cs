@@ -174,17 +174,12 @@ public sealed class ListarDespesasDoMesEndpointTests : IAsyncLifetime
     }
 
     [Theory, ApiAutoData]
-    public async Task Get_Quando_AdiadaCobrada_Deve_TrazerACobrancaComoPendente(
-        CadastrarUsuarioRequest cadastro,
-        CadastrarLoteBeneficiariosRequest beneficiarios,
-        CadastrarDespesaRecorrenteRequest recorrente,
-        GerarDespesasDoMesRequest geracao)
+    public async Task Get_Quando_AdiadaCobrada_Deve_TrazerACobrancaComoPendente(CadastrarUsuarioRequest cadastro)
     {
         Guid idUsuario = await _api.CadastrarUsuarioAsync(cadastro);
         await _api.ImportarFaturaC6Async(idUsuario);
-        DespesaAdiada despesa = await _api.GerarAdiadaAsync(idUsuario, beneficiarios, recorrente, geracao);
+        DespesaAdiada despesa = await _api.ObterAdiadaDaCompraAsync(idUsuario, VinculoExtensions.CompraAVista);
         Transacao transacao = await _api.ObterTransacaoAsync(idUsuario, VinculoExtensions.CompraAVista);
-        await _api.VincularComSucessoAsync(idUsuario, despesa.Id.Value, transacao.Id.Value);
 
         using HttpResponseMessage resposta = await ListarAsync(idUsuario, despesa.MesReferencia.Ano, despesa.MesReferencia.Mes);
 

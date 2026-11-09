@@ -1,5 +1,6 @@
 using ControleFinanceiro.Application.Abstractions;
 using ControleFinanceiro.Application.IA.Saida;
+using ControleFinanceiro.Domain.Cartoes;
 using ControleFinanceiro.Domain.Despesas;
 using ControleFinanceiro.Domain.Services;
 using ControleFinanceiro.Domain.Transacoes;
@@ -18,12 +19,18 @@ public sealed class VinculoParaModeloService
 {
     private readonly ITransacaoRepository _transacoes;
     private readonly IDespesaRepository _despesas;
+    private readonly ICartaoRepository _cartoes;
     private readonly IUnitOfWork _unitOfWork;
 
-    public VinculoParaModeloService(ITransacaoRepository transacoes, IDespesaRepository despesas, IUnitOfWork unitOfWork)
+    public VinculoParaModeloService(
+        ITransacaoRepository transacoes,
+        IDespesaRepository despesas,
+        ICartaoRepository cartoes,
+        IUnitOfWork unitOfWork)
     {
         _transacoes = transacoes;
         _despesas = despesas;
+        _cartoes = cartoes;
         _unitOfWork = unitOfWork;
     }
 
@@ -64,9 +71,10 @@ public sealed class VinculoParaModeloService
             return ErroParaModelo.DespesaNaoEncontrada;
 
         Maybe<Despesa> despesaQueUsaATransacao = await _despesas.ObterQueUsaAsync(transacao.Value, cancellationToken);
+        IReadOnlyList<Cartao> cartoesDoUsuario = await _cartoes.ListarAsync(cancellationToken);
 
         return VinculoTransacaoService
-            .Vincular(transacao.Value, despesa.Value, despesaQueUsaATransacao)
+            .Vincular(transacao.Value, despesa.Value, despesaQueUsaATransacao, cartoesDoUsuario)
             .MapError(ErroParaModelo.De)
             .Map(() => VinculoParaModelo.De(transacao.Value, despesa.Value));
     }

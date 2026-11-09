@@ -120,10 +120,10 @@ public sealed class Lancamento : ValueObject
     }
 
     /// <summary>O alias do <see cref="TextoBeneficiario"/>; nulo quando não há texto ou ele fica vazio depois de normalizado.</summary>
-    public Alias? AliasTextoBeneficiario => AliasDe(TextoBeneficiario);
+    public Alias? AliasTextoBeneficiario => Alias.DoTextoOuNulo(TextoBeneficiario);
 
     /// <summary>O alias da <see cref="CategoriaBanco"/>; nulo quando não há categoria ou ela fica vazia depois de normalizada.</summary>
-    public Alias? AliasCategoriaBanco => AliasDe(CategoriaBanco);
+    public Alias? AliasCategoriaBanco => Alias.DoTextoOuNulo(CategoriaBanco);
 
     /// <summary>
     /// Verdadeiro na saída com parcela, que só a fatura traz. A linha sem texto de beneficiário fica de fora porque a despesa exige
@@ -133,12 +133,6 @@ public sealed class Lancamento : ValueObject
 
     /// <summary>O <see cref="Valor"/> sem o sinal.</summary>
     public ReaisPositivo ValorAbsoluto => (ReaisPositivo)decimal.Abs(Valor);
-
-    private static Alias? AliasDe(string? texto)
-    {
-        Result<Alias> alias = Alias.Criar(texto);
-        return alias.IsSuccess ? alias.Value : null;
-    }
 
     private static string? Aparar(string? texto) => string.IsNullOrWhiteSpace(texto) ? null : texto.Trim();
 

@@ -44,7 +44,7 @@ public sealed class DespesaAdiada : DespesaInteira, IDespesaDoCartao
         IdCartao = idCartao;
     }
 
-    /// <param name="mesVencimento">O mês de vencimento da fatura em que a ocorrência cai.</param>
+    /// <param name="vencimento">O vencimento da fatura em que a ocorrência cai.</param>
     /// <param name="idDespesaRecorrente">A recorrente que gerou a despesa, ou nulo quando ela não veio de uma.</param>
     /// <exception cref="ArgumentException">Quando o mês de vencimento vem antes do mês da ocorrência.</exception>
     public static DespesaAdiada Criar(
@@ -55,15 +55,14 @@ public sealed class DespesaAdiada : DespesaInteira, IDespesaDoCartao
         DateOnly dataOcorrencia,
         ReaisPositivo valor,
         IdCartao idCartao,
-        MesReferencia mesVencimento,
-        DiaVencimentoCartao diaVencimento,
+        VencimentoFatura vencimento,
         IdDespesaRecorrente? idDespesaRecorrente)
     {
         MesReferencia mesOcorrencia = dataOcorrencia;
-        if (mesVencimento < mesOcorrencia)
-            throw new ArgumentException("O mês de vencimento vem antes do mês da ocorrência.", nameof(mesVencimento));
+        if (vencimento.Mes < mesOcorrencia)
+            throw new ArgumentException("O mês de vencimento vem antes do mês da ocorrência.", nameof(vencimento));
 
-        Pagamento pagamento = Pagamento.Pendente(valor, dataProjetada: mesVencimento.NoDia(diaVencimento));
+        Pagamento pagamento = Pagamento.Pendente(valor, dataProjetada: vencimento);
 
         return new DespesaAdiada(
             IdDespesa.FromNewVersion7Guid(),
@@ -76,6 +75,48 @@ public sealed class DespesaAdiada : DespesaInteira, IDespesaDoCartao
             idCartao,
             idDespesaRecorrente,
             pagamento);
+    }
+
+    /// <summary>
+    /// A despesa da compra à vista que a fatura trouxe sem despesa prevista: nasce cobrada pela compra, com o valor dela, e
+    /// pendente até a saída da conta pagar a fatura.
+    /// </summary>
+    /// <remarks>Interno porque só a <see cref="Services.DespesaAdiadaFactory"/> confere a compra e a previsão.</remarks>
+    internal static DespesaAdiada CriarCobrada(
+        IdUsuario idUsuario,
+        IdBeneficiario idBeneficiario,
+        TextoObrigatorio descricao,
+        IdCategoriaDespesa? idCategoria,
+        DateOnly dataOcorrencia,
+        IdCartao idCartao,
+        VencimentoFatura vencimento,
+        Cobranca cobranca)
+    {
+        DespesaAdiada despesa = Criar(
+            idUsuario,
+            idBeneficiario,
+            descricao,
+            idCategoria,
+            dataOcorrencia,
+            cobranca.Valor,
+            idCartao,
+            vencimento,
+            idDespesaRecorrente: null);
+
+        despesa.Cobranca = cobranca;
+        return despesa;
+    }
+
+    /// <summary>
+    /// Verdadeiro quando a despesa prevê a compra do beneficiário na fatura: ainda sem cobrança, e por isso pendente, no
+    /// mês de vencimento dela e num dos cartões dela, para a recorrente prevista num final e cobrada noutro.
+    /// </summary>
+    public bool EhPrevisaoDe(FaturaCartao fatura, IdBeneficiario idBeneficiario)
+    {
+        return Cobranca is null
+            && IdBeneficiario == idBeneficiario
+            && MesReferencia == fatura.Vencimento.Mes
+            && fatura.Contem(IdCartao);
     }
 
     /// <summary>O efetivo quando paga, o cobrado quando a fatura a cobrou, senão o projetado.</summary>
@@ -112,12 +153,12 @@ public sealed class DespesaAdiada : DespesaInteira, IDespesaDoCartao
 
     public bool FoiPagaSoPelaFatura(FaturaCartao fatura, IdTransacao idSaida)
     {
-        return fatura.Contem(IdCartao) && (Pagamento.IdTransacao != idSaida || MesReferencia == fatura.MesVencimento);
+        return fatura.Contem(IdCartao) && (Pagamento.IdTransacao != idSaida || MesReferencia == fatura.Vencimento.Mes);
     }
 
     bool IDespesaDoCartao.PagarFatura(FaturaCartao fatura, IdTransacao idSaida, DateOnly dataPagamento)
     {
-        if (!fatura.Contem(IdCartao) || MesReferencia != fatura.MesVencimento)
+        if (!fatura.Contem(IdCartao) || MesReferencia != fatura.Vencimento.Mes)
             return false;
 
         Maybe<Pagamento> pago = Pagamento.PagarPelaFatura(Cobranca, idSaida, dataPagamento);

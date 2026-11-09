@@ -89,6 +89,12 @@ public sealed class Cartao : AggregateRoot<IdCartao>, IPertenceAoUsuario
         return VenceNoMesDoFechamento ? mesFechamento : mesFechamento.Posterior();
     }
 
+    /// <summary>O vencimento da fatura em que a compra cai: o <see cref="MesVencimento"/> dela, no dia de vencimento do cartão.</summary>
+    public VencimentoFatura VencimentoDaCompra(DateOnly dataCompra) => new(MesVencimento(dataCompra), DiaVencimento);
+
+    /// <summary>O vencimento da fatura do cartão no mês, no dia de vencimento dele.</summary>
+    public VencimentoFatura VencimentoNoMes(MesReferencia mesVencimento) => new(mesVencimento, DiaVencimento);
+
     /// <summary>
     /// A inversa do <see cref="MesVencimento"/>: a data, no dia informado, da compra que cai na fatura que vence em
     /// <paramref name="mesVencimento"/>. Pode ficar até dois meses antes dele.

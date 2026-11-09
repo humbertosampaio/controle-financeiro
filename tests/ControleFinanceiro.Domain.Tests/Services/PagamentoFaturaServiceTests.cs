@@ -23,7 +23,7 @@ public sealed class PagamentoFaturaServiceTests
         SaidaDeTeste compra,
         SaidaDeTeste pagamento)
     {
-        Cobrar(despesa, transacoes.DoCartao(cartao, compra.AVista()));
+        Cobrar(despesa, cartao, transacoes.DoCartao(cartao, compra.AVista()));
         Transacao saida = transacoes.DaConta(pagamento.AVista());
 
         Result<PagamentoFatura, Erro> result = PagamentoFaturaService.Pagar(saida, cartao, despesa.MesReferencia, [cartao], [despesa], despesasPagasPelaSaida: []);
@@ -43,8 +43,8 @@ public sealed class PagamentoFaturaServiceTests
         SaidaDeTeste compra,
         SaidaDeTeste pagamento)
     {
-        Cobrar(despesa, transacoes.DoCartao(cartao, compra.DaCompra(despesa, numero: 1)));
-        Cobrar(despesa, transacoes.DoCartao(cartao, compra.DaCompra(despesa, numero: 2)));
+        Cobrar(despesa, cartao, transacoes.DoCartao(cartao, compra.DaCompra(despesa, numero: 1)));
+        Cobrar(despesa, cartao, transacoes.DoCartao(cartao, compra.DaCompra(despesa, numero: 2)));
         Transacao saida = transacoes.DaConta(pagamento.AVista());
         Pagamento segunda = despesa.Parcelas[1].Pagamento;
 
@@ -69,8 +69,8 @@ public sealed class PagamentoFaturaServiceTests
     {
         Cartao outroFinal = cartao.OutroFinal(outroSufixo);
         DespesaAdiada doOutroFinal = AdiadaDo(outroFinal, fixture);
-        Cobrar(doCartao, transacoes.DoCartao(cartao, compra.AVista()));
-        Cobrar(doOutroFinal, transacoes.DoCartao(outroFinal, compra.AVista()));
+        Cobrar(doCartao, cartao, transacoes.DoCartao(cartao, compra.AVista()));
+        Cobrar(doOutroFinal, outroFinal, transacoes.DoCartao(outroFinal, compra.AVista()));
         Transacao saida = transacoes.DaConta(pagamento.AVista());
 
         Result<PagamentoFatura, Erro> result = PagamentoFaturaService.Pagar(saida, cartao, doCartao.MesReferencia, [cartao, outroFinal], [doCartao, doOutroFinal], despesasPagasPelaSaida: []);
@@ -93,8 +93,8 @@ public sealed class PagamentoFaturaServiceTests
         Cartao outroCartao = cartao.OutroFinal(outroSufixo);
         DespesaAdiada doOutroCartao = AdiadaDo(outroCartao, fixture);
         outroCartao.AlterarCicloFatura(outroVencimento, cartao.DiaFechamento);
-        Cobrar(doCartao, transacoes.DoCartao(cartao, compra.AVista()));
-        Cobrar(doOutroCartao, transacoes.DoCartao(outroCartao, compra.AVista()));
+        Cobrar(doCartao, cartao, transacoes.DoCartao(cartao, compra.AVista()));
+        Cobrar(doOutroCartao, outroCartao, transacoes.DoCartao(outroCartao, compra.AVista()));
         Pagamento pendente = doOutroCartao.Pagamento;
 
         Result<PagamentoFatura, Erro> result = PagamentoFaturaService.Pagar(transacoes.DaConta(pagamento.AVista()), cartao, doCartao.MesReferencia, [cartao, outroCartao], [doCartao, doOutroCartao], despesasPagasPelaSaida: []);
@@ -112,7 +112,7 @@ public sealed class PagamentoFaturaServiceTests
         SaidaDeTeste compra,
         SaidaDeTeste pagamento)
     {
-        Cobrar(adiada, transacoes.DoCartao(cartao, compra.AVista()));
+        Cobrar(adiada, cartao, transacoes.DoCartao(cartao, compra.AVista()));
         Pagamento pendente = simples.Pagamento;
 
         Result<PagamentoFatura, Erro> result = PagamentoFaturaService.Pagar(transacoes.DaConta(pagamento.AVista()), cartao, adiada.MesReferencia, [cartao], [simples, adiada], despesasPagasPelaSaida: []);
@@ -129,7 +129,7 @@ public sealed class PagamentoFaturaServiceTests
         SaidaDeTeste compra,
         SaidaDeTeste pagamento)
     {
-        Cobrar(despesa, transacoes.DoCartao(cartao, compra.AVista()));
+        Cobrar(despesa, cartao, transacoes.DoCartao(cartao, compra.AVista()));
         Pagamento pendente = despesa.Pagamento;
 
         Result<PagamentoFatura, Erro> result = PagamentoFaturaService.Pagar(transacoes.DaConta(pagamento.AVista()), cartao, despesa.MesReferencia.Posterior(), [cartao], [despesa], despesasPagasPelaSaida: []);
@@ -162,7 +162,7 @@ public sealed class PagamentoFaturaServiceTests
         SaidaDeTeste pagamento,
         SaidaDeTeste outroPagamento)
     {
-        Cobrar(despesa, transacoes.DoCartao(cartao, compra.AVista()));
+        Cobrar(despesa, cartao, transacoes.DoCartao(cartao, compra.AVista()));
         PagamentoFaturaService.Pagar(transacoes.DaConta(pagamento.AVista()), cartao, despesa.MesReferencia, [cartao], [despesa], despesasPagasPelaSaida: []).Should().Succeed();
         Pagamento pago = despesa.Pagamento;
 
@@ -182,7 +182,7 @@ public sealed class PagamentoFaturaServiceTests
     {
         fixture.Inject((Parcela)(3, 10));
         DespesaParcelada despesa = fixture.Create<DespesaParcelada>();
-        Cobrar(despesa, transacoes.DoCartao(cartao, compra.DaCompra(despesa, numero: 1)));
+        Cobrar(despesa, cartao, transacoes.DoCartao(cartao, compra.DaCompra(despesa, numero: 1)));
         Pagamento paga = despesa.Parcelas[0].Pagamento;
 
         Result<PagamentoFatura, Erro> result = PagamentoFaturaService.Pagar(transacoes.DaConta(pagamento.AVista()), cartao, despesa.Parcelas[0].MesReferencia, [cartao], [despesa], despesasPagasPelaSaida: []);
@@ -201,9 +201,9 @@ public sealed class PagamentoFaturaServiceTests
         SaidaDeTeste pagamento)
     {
         Transacao saida = transacoes.DaConta(pagamento.AVista());
-        Cobrar(primeira, transacoes.DoCartao(cartao, compra.AVista()));
+        Cobrar(primeira, cartao, transacoes.DoCartao(cartao, compra.AVista()));
         PagamentoFaturaService.Pagar(saida, cartao, primeira.MesReferencia, [cartao], [primeira, nova], despesasPagasPelaSaida: []).Should().Succeed();
-        Cobrar(nova, transacoes.DoCartao(cartao, compra.AVista()));
+        Cobrar(nova, cartao, transacoes.DoCartao(cartao, compra.AVista()));
 
         Result<PagamentoFatura, Erro> result = PagamentoFaturaService.Pagar(saida, cartao, primeira.MesReferencia, [cartao], [primeira, nova], [primeira]);
 
@@ -220,7 +220,7 @@ public sealed class PagamentoFaturaServiceTests
         SaidaDeTeste pagamento)
     {
         Transacao saida = transacoes.DaConta(pagamento.AVista());
-        Cobrar(despesa, transacoes.DoCartao(cartao, compra.AVista()));
+        Cobrar(despesa, cartao, transacoes.DoCartao(cartao, compra.AVista()));
         PagamentoFaturaService.Pagar(saida, cartao, despesa.MesReferencia, [cartao], [despesa], despesasPagasPelaSaida: []).Should().Succeed();
 
         Result<PagamentoFatura, Erro> result = PagamentoFaturaService.Pagar(saida, cartao, despesa.MesReferencia.Posterior(), [cartao], despesasDoMes: [], [despesa]);
@@ -243,9 +243,9 @@ public sealed class PagamentoFaturaServiceTests
         DespesaAdiada doOutroCartao = AdiadaDo(outroCartao, fixture);
         outroCartao.AlterarCicloFatura(outroVencimento, cartao.DiaFechamento);
         Transacao saida = transacoes.DaConta(pagamento.AVista());
-        Cobrar(doOutroCartao, transacoes.DoCartao(outroCartao, compra.AVista()));
+        Cobrar(doOutroCartao, outroCartao, transacoes.DoCartao(outroCartao, compra.AVista()));
         PagamentoFaturaService.Pagar(saida, outroCartao, doOutroCartao.MesReferencia, [cartao, outroCartao], [doOutroCartao], despesasPagasPelaSaida: []).Should().Succeed();
-        Cobrar(doCartao, transacoes.DoCartao(cartao, compra.AVista()));
+        Cobrar(doCartao, cartao, transacoes.DoCartao(cartao, compra.AVista()));
         Pagamento pendente = doCartao.Pagamento;
 
         Result<PagamentoFatura, Erro> result = PagamentoFaturaService.Pagar(saida, cartao, doCartao.MesReferencia, [cartao, outroCartao], [doCartao], [doOutroCartao]);
@@ -264,8 +264,8 @@ public sealed class PagamentoFaturaServiceTests
         SaidaDeTeste pagamento)
     {
         Transacao saida = transacoes.DaConta(pagamento.AVista());
-        VinculoTransacaoService.Vincular(saida, simples, despesaQueUsaATransacao: Maybe<Despesa>.None).Should().Succeed();
-        Cobrar(adiada, transacoes.DoCartao(cartao, compra.AVista()));
+        VinculoTransacaoService.Vincular(saida, simples, despesaQueUsaATransacao: Maybe<Despesa>.None, cartoesDoUsuario: []).Should().Succeed();
+        Cobrar(adiada, cartao, transacoes.DoCartao(cartao, compra.AVista()));
 
         Result<PagamentoFatura, Erro> result = PagamentoFaturaService.Pagar(saida, cartao, adiada.MesReferencia, [cartao], [adiada], [simples]);
 
@@ -283,7 +283,7 @@ public sealed class PagamentoFaturaServiceTests
         SaidaDeTeste compra,
         SaidaDeTeste pagamento)
     {
-        Cobrar(despesa, transacoes.DoCartao(cartao, compra.AVista()));
+        Cobrar(despesa, cartao, transacoes.DoCartao(cartao, compra.AVista()));
 
         Result<PagamentoFatura, Erro> result = PagamentoFaturaService.Pagar(transacoes.DoCartao(cartao, pagamento.AVista()), cartao, despesa.MesReferencia, [cartao], [despesa], despesasPagasPelaSaida: []);
 
@@ -302,7 +302,7 @@ public sealed class PagamentoFaturaServiceTests
         SaidaDeTeste compra,
         SaidaDeTeste pagamento)
     {
-        Cobrar(despesa, transacoes.DoCartao(cartao, compra.AVista()));
+        Cobrar(despesa, cartao, transacoes.DoCartao(cartao, compra.AVista()));
 
         Result<PagamentoFatura, Erro> result = PagamentoFaturaService.Pagar(transacoes.DaConta(pagamento.ComValor(valor)), cartao, despesa.MesReferencia, [cartao], [despesa], despesasPagasPelaSaida: []);
 
@@ -372,9 +372,9 @@ public sealed class PagamentoFaturaServiceTests
         act.Should().ThrowExactly<ArgumentException>().WithParameterName("despesasPagasPelaSaida");
     }
 
-    private static void Cobrar(Despesa despesa, Transacao compra)
+    private static void Cobrar(Despesa despesa, Cartao cartao, Transacao compra)
     {
-        VinculoTransacaoService.Vincular(compra, despesa, despesaQueUsaATransacao: Maybe<Despesa>.None).Should().Succeed();
+        VinculoTransacaoService.Vincular(compra, despesa, despesaQueUsaATransacao: Maybe<Despesa>.None, cartoesDoUsuario: [cartao]).Should().Succeed();
     }
 
     /// <summary>

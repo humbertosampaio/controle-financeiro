@@ -10,6 +10,8 @@ public interface IDespesaRepository
 
     Task<IReadOnlyList<DespesaParcelada>> ListarParceladasAsync(CancellationToken cancellationToken);
 
+    Task<IReadOnlyList<DespesaAdiada>> ListarAdiadasAsync(CancellationToken cancellationToken);
+
     Task<Maybe<Despesa>> ObterAsync(IdDespesa idDespesa, CancellationToken cancellationToken);
 
     /// <summary>A despesa que a compra do cartão cobrou, a adiada ou a parcelada por uma das parcelas.</summary>

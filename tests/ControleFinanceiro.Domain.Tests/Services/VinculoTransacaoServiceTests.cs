@@ -30,7 +30,7 @@ public sealed class VinculoTransacaoServiceTests
         ReaisPositivo previsto = despesa.Pagamento.ValorProjetado;
         DateOnly projetada = despesa.Pagamento.DataProjetada;
 
-        UnitResult<Erro> result = VinculoTransacaoService.Vincular(transacao, despesa, despesaQueUsaATransacao: Maybe<Despesa>.None);
+        UnitResult<Erro> result = VinculoTransacaoService.Vincular(transacao, despesa, despesaQueUsaATransacao: Maybe<Despesa>.None, cartoesDoUsuario: []);
 
         result.Should().Succeed();
         despesa.Pagamento.EstaPago.Should().BeTrue();
@@ -48,7 +48,7 @@ public sealed class VinculoTransacaoServiceTests
     {
         ReaisPositivo projetado = despesa.Pagamento.ValorProjetado;
 
-        UnitResult<Erro> result = VinculoTransacaoService.Vincular(transacoes.DaConta(saida.AVista()), despesa, despesaQueUsaATransacao: Maybe<Despesa>.None);
+        UnitResult<Erro> result = VinculoTransacaoService.Vincular(transacoes.DaConta(saida.AVista()), despesa, despesaQueUsaATransacao: Maybe<Despesa>.None, cartoesDoUsuario: []);
 
         result.Should().Succeed();
         despesa.Pagamento.ValorEfetivo.Should().Be(saida.ValorPago);
@@ -65,7 +65,7 @@ public sealed class VinculoTransacaoServiceTests
         Pagamento pendente = despesa.Pagamento;
         Transacao transacao = transacoes.DoCartao(cartao, saida.AVista());
 
-        UnitResult<Erro> result = VinculoTransacaoService.Vincular(transacao, despesa, despesaQueUsaATransacao: Maybe<Despesa>.None);
+        UnitResult<Erro> result = VinculoTransacaoService.Vincular(transacao, despesa, despesaQueUsaATransacao: Maybe<Despesa>.None, cartoesDoUsuario: [cartao]);
 
         result.Should().Succeed();
         despesa.Cobranca.Should().Be(new Cobranca(transacao.Id, saida.ValorPago));
@@ -82,7 +82,7 @@ public sealed class VinculoTransacaoServiceTests
         Pagamento[] pagamentos = despesa.Parcelas.Select(p => p.Pagamento).ToArray();
         Transacao transacao = transacoes.DoCartao(cartao, saida.DaCompra(despesa, numero: 3));
 
-        UnitResult<Erro> result = VinculoTransacaoService.Vincular(transacao, despesa, despesaQueUsaATransacao: Maybe<Despesa>.None);
+        UnitResult<Erro> result = VinculoTransacaoService.Vincular(transacao, despesa, despesaQueUsaATransacao: Maybe<Despesa>.None, cartoesDoUsuario: []);
 
         result.Should().Succeed();
         despesa.Parcelas[2].Cobranca.Should().Be(new Cobranca(transacao.Id, saida.ValorPago));
@@ -102,7 +102,7 @@ public sealed class VinculoTransacaoServiceTests
         paga.EstaPago.Should().BeTrue();
         Transacao transacao = transacoes.DoCartao(cartao, saida.DaCompra(despesa, numero: 1));
 
-        UnitResult<Erro> result = VinculoTransacaoService.Vincular(transacao, despesa, despesaQueUsaATransacao: Maybe<Despesa>.None);
+        UnitResult<Erro> result = VinculoTransacaoService.Vincular(transacao, despesa, despesaQueUsaATransacao: Maybe<Despesa>.None, cartoesDoUsuario: []);
 
         result.Should().Succeed();
         primeira.Cobranca.Should().Be(new Cobranca(transacao.Id, saida.ValorPago));
@@ -118,7 +118,7 @@ public sealed class VinculoTransacaoServiceTests
     {
         Transacao transacao = transacoes.DaConta(saida.AVista());
 
-        UnitResult<Erro> result = VinculoTransacaoService.Vincular(transacao, despesa, outra);
+        UnitResult<Erro> result = VinculoTransacaoService.Vincular(transacao, despesa, outra, cartoesDoUsuario: []);
 
         result.Should().Fail()
             .Which.Should().BeOfType<ErroTransacaoJaVinculada>()
@@ -133,9 +133,9 @@ public sealed class VinculoTransacaoServiceTests
         SaidaDeTeste saida)
     {
         Transacao transacao = transacoes.DaConta(saida.AVista());
-        VinculoTransacaoService.Vincular(transacao, despesa, despesaQueUsaATransacao: Maybe<Despesa>.None).Should().Succeed();
+        VinculoTransacaoService.Vincular(transacao, despesa, despesaQueUsaATransacao: Maybe<Despesa>.None, cartoesDoUsuario: []).Should().Succeed();
 
-        UnitResult<Erro> result = VinculoTransacaoService.Vincular(transacao, despesa, despesa);
+        UnitResult<Erro> result = VinculoTransacaoService.Vincular(transacao, despesa, despesa, cartoesDoUsuario: []);
 
         result.Should().Fail()
             .Which.Should().BeOfType<ErroTransacaoJaVinculada>()
@@ -150,9 +150,9 @@ public sealed class VinculoTransacaoServiceTests
         SaidaDeTeste outraSaida)
     {
         Transacao primeira = transacoes.DaConta(saida.AVista());
-        VinculoTransacaoService.Vincular(primeira, despesa, despesaQueUsaATransacao: Maybe<Despesa>.None).Should().Succeed();
+        VinculoTransacaoService.Vincular(primeira, despesa, despesaQueUsaATransacao: Maybe<Despesa>.None, cartoesDoUsuario: []).Should().Succeed();
 
-        UnitResult<Erro> result = VinculoTransacaoService.Vincular(transacoes.DaConta(outraSaida.AVista()), despesa, despesaQueUsaATransacao: Maybe<Despesa>.None);
+        UnitResult<Erro> result = VinculoTransacaoService.Vincular(transacoes.DaConta(outraSaida.AVista()), despesa, despesaQueUsaATransacao: Maybe<Despesa>.None, cartoesDoUsuario: []);
 
         result.Should().Fail().Which.Should().Be(ErroDespesaJaPaga.Instancia);
         despesa.Pagamento.IdTransacao.Should().Be(primeira.Id);
@@ -167,10 +167,10 @@ public sealed class VinculoTransacaoServiceTests
         SaidaDeTeste outraSaida)
     {
         Transacao primeira = transacoes.DoCartao(cartao, saida.DaCompra(despesa, numero: 3));
-        VinculoTransacaoService.Vincular(primeira, despesa, despesaQueUsaATransacao: Maybe<Despesa>.None).Should().Succeed();
+        VinculoTransacaoService.Vincular(primeira, despesa, despesaQueUsaATransacao: Maybe<Despesa>.None, cartoesDoUsuario: []).Should().Succeed();
         Transacao outra = transacoes.DoCartao(cartao, outraSaida.DaCompra(despesa, numero: 3));
 
-        UnitResult<Erro> result = VinculoTransacaoService.Vincular(outra, despesa, despesaQueUsaATransacao: Maybe<Despesa>.None);
+        UnitResult<Erro> result = VinculoTransacaoService.Vincular(outra, despesa, despesaQueUsaATransacao: Maybe<Despesa>.None, cartoesDoUsuario: []);
 
         result.Should().Fail().Which.Should().Be(ErroDespesaJaCobrada.Instancia);
         despesa.Parcelas[2].Cobranca!.IdTransacao.Should().Be(primeira.Id);
@@ -185,9 +185,9 @@ public sealed class VinculoTransacaoServiceTests
         SaidaDeTeste outraSaida)
     {
         Transacao primeira = transacoes.DoCartao(cartao, saida.AVista());
-        VinculoTransacaoService.Vincular(primeira, despesa, despesaQueUsaATransacao: Maybe<Despesa>.None).Should().Succeed();
+        VinculoTransacaoService.Vincular(primeira, despesa, despesaQueUsaATransacao: Maybe<Despesa>.None, cartoesDoUsuario: [cartao]).Should().Succeed();
 
-        UnitResult<Erro> result = VinculoTransacaoService.Vincular(transacoes.DoCartao(cartao, outraSaida.AVista()), despesa, despesaQueUsaATransacao: Maybe<Despesa>.None);
+        UnitResult<Erro> result = VinculoTransacaoService.Vincular(transacoes.DoCartao(cartao, outraSaida.AVista()), despesa, despesaQueUsaATransacao: Maybe<Despesa>.None, cartoesDoUsuario: [cartao]);
 
         result.Should().Fail().Which.Should().Be(ErroDespesaJaCobrada.Instancia);
         despesa.Cobranca!.IdTransacao.Should().Be(primeira.Id);
@@ -204,7 +204,7 @@ public sealed class VinculoTransacaoServiceTests
     {
         Transacao transacao = transacoes.DaConta(saida.ComValor(valor));
 
-        UnitResult<Erro> result = VinculoTransacaoService.Vincular(transacao, despesa, despesaQueUsaATransacao: Maybe<Despesa>.None);
+        UnitResult<Erro> result = VinculoTransacaoService.Vincular(transacao, despesa, despesaQueUsaATransacao: Maybe<Despesa>.None, cartoesDoUsuario: []);
 
         result.Should().Fail().Which.Should().Be(ErroTransacaoNaoEhSaida.Instancia);
     }
@@ -216,32 +216,64 @@ public sealed class VinculoTransacaoServiceTests
         TransacoesDeTeste transacoes,
         SaidaDeTeste saida)
     {
-        UnitResult<Erro> result = VinculoTransacaoService.Vincular(transacoes.DoCartao(cartao, saida.AVista()), despesa, despesaQueUsaATransacao: Maybe<Despesa>.None);
+        UnitResult<Erro> result = VinculoTransacaoService.Vincular(transacoes.DoCartao(cartao, saida.AVista()), despesa, despesaQueUsaATransacao: Maybe<Despesa>.None, cartoesDoUsuario: []);
 
         result.Should().Fail().Which.Should().Be(ErroOrigemIncompativelComDespesa.Instancia);
     }
 
     [Theory, VinculoAutoData]
     public void Vincular_Quando_AdiadaComSaidaDeConta_Deve_RetornarOrigemIncompativel(
+        [Frozen] Cartao cartao,
         DespesaAdiada despesa,
         TransacoesDeTeste transacoes,
         SaidaDeTeste saida)
     {
-        UnitResult<Erro> result = VinculoTransacaoService.Vincular(transacoes.DaConta(saida.AVista()), despesa, despesaQueUsaATransacao: Maybe<Despesa>.None);
+        UnitResult<Erro> result = VinculoTransacaoService.Vincular(transacoes.DaConta(saida.AVista()), despesa, despesaQueUsaATransacao: Maybe<Despesa>.None, cartoesDoUsuario: [cartao]);
 
         result.Should().Fail().Which.Should().Be(ErroOrigemIncompativelComDespesa.Instancia);
     }
 
     [Theory, VinculoAutoData]
-    public void Vincular_Quando_AdiadaComSaidaDeOutroCartao_Deve_RetornarOrigemIncompativel(
-        Cartao outroCartao,
+    public void Vincular_Quando_AdiadaComCompraDeOutroFinalDaMesmaFatura_Deve_Cobrar(
+        [Frozen] Cartao cartao,
+        DespesaAdiada despesa,
+        SufixoCartao outroSufixo,
+        TransacoesDeTeste transacoes,
+        SaidaDeTeste saida)
+    {
+        Cartao outroFinal = cartao.OutroFinal(outroSufixo);
+        Transacao transacao = transacoes.DoCartao(outroFinal, saida.AVista());
+
+        UnitResult<Erro> result = VinculoTransacaoService.Vincular(transacao, despesa, despesaQueUsaATransacao: Maybe<Despesa>.None, cartoesDoUsuario: [cartao, outroFinal]);
+
+        result.Should().Succeed();
+        despesa.Cobranca.Should().Be(new Cobranca(transacao.Id, saida.ValorPago));
+    }
+
+    [Theory, VinculoAutoData]
+    public void Vincular_Quando_AdiadaComCompraDeCartaoDeOutraFatura_Deve_RetornarOrigemIncompativel(
+        [Frozen] Cartao cartao,
         DespesaAdiada despesa,
         TransacoesDeTeste transacoes,
         SaidaDeTeste saida)
     {
-        UnitResult<Erro> result = VinculoTransacaoService.Vincular(transacoes.DoCartao(outroCartao, saida.AVista()), despesa, despesaQueUsaATransacao: Maybe<Despesa>.None);
+        Cartao outroBanco = cartao.EmOutroBanco();
+
+        UnitResult<Erro> result = VinculoTransacaoService.Vincular(transacoes.DoCartao(outroBanco, saida.AVista()), despesa, despesaQueUsaATransacao: Maybe<Despesa>.None, cartoesDoUsuario: [cartao, outroBanco]);
 
         result.Should().Fail().Which.Should().Be(ErroOrigemIncompativelComDespesa.Instancia);
+    }
+
+    [Theory, VinculoAutoData]
+    public void Vincular_Quando_CartaoDaAdiadaForaDaLista_Deve_LancarExcecao(
+        [Frozen] Cartao cartao,
+        DespesaAdiada despesa,
+        TransacoesDeTeste transacoes,
+        SaidaDeTeste saida)
+    {
+        Action act = () => VinculoTransacaoService.Vincular(transacoes.DoCartao(cartao, saida.AVista()), despesa, despesaQueUsaATransacao: Maybe<Despesa>.None, cartoesDoUsuario: []);
+
+        act.Should().ThrowExactly<ArgumentException>().WithParameterName("cartoesDoUsuario");
     }
 
     [Theory, VinculoAutoData]
@@ -251,7 +283,7 @@ public sealed class VinculoTransacaoServiceTests
         TransacoesDeTeste transacoes,
         SaidaDeTeste saida)
     {
-        UnitResult<Erro> result = VinculoTransacaoService.Vincular(transacoes.DoCartao(outroCartao, saida.DaCompra(despesa, numero: 3)), despesa, despesaQueUsaATransacao: Maybe<Despesa>.None);
+        UnitResult<Erro> result = VinculoTransacaoService.Vincular(transacoes.DoCartao(outroCartao, saida.DaCompra(despesa, numero: 3)), despesa, despesaQueUsaATransacao: Maybe<Despesa>.None, cartoesDoUsuario: []);
 
         result.Should().Fail().Which.Should().Be(ErroOrigemIncompativelComDespesa.Instancia);
     }
@@ -262,7 +294,7 @@ public sealed class VinculoTransacaoServiceTests
         TransacoesDeTeste transacoes,
         SaidaDeTeste saida)
     {
-        UnitResult<Erro> result = VinculoTransacaoService.Vincular(transacoes.DaConta(saida.AVista()), despesa, despesaQueUsaATransacao: Maybe<Despesa>.None);
+        UnitResult<Erro> result = VinculoTransacaoService.Vincular(transacoes.DaConta(saida.AVista()), despesa, despesaQueUsaATransacao: Maybe<Despesa>.None, cartoesDoUsuario: []);
 
         result.Should().Fail().Which.Should().Be(ErroParcelaIncompativelComDespesa.Instancia);
     }
@@ -276,7 +308,7 @@ public sealed class VinculoTransacaoServiceTests
     {
         Transacao transacao = transacoes.DoCartao(cartao, saida.ComParcela());
 
-        UnitResult<Erro> result = VinculoTransacaoService.Vincular(transacao, despesa, despesaQueUsaATransacao: Maybe<Despesa>.None);
+        UnitResult<Erro> result = VinculoTransacaoService.Vincular(transacao, despesa, despesaQueUsaATransacao: Maybe<Despesa>.None, cartoesDoUsuario: []);
 
         result.Should().Fail().Which.Should().Be(ErroParcelaIncompativelComDespesa.Instancia);
     }
@@ -290,7 +322,7 @@ public sealed class VinculoTransacaoServiceTests
     {
         Transacao transacao = transacoes.DoCartao(cartao, saida.ComParcela());
 
-        UnitResult<Erro> result = VinculoTransacaoService.Vincular(transacao, despesa, despesaQueUsaATransacao: Maybe<Despesa>.None);
+        UnitResult<Erro> result = VinculoTransacaoService.Vincular(transacao, despesa, despesaQueUsaATransacao: Maybe<Despesa>.None, cartoesDoUsuario: []);
 
         result.Should().Fail().Which.Should().Be(ErroParcelaIncompativelComDespesa.Instancia);
     }
@@ -302,7 +334,7 @@ public sealed class VinculoTransacaoServiceTests
         TransacoesDeTeste transacoes,
         SaidaDeTeste saida)
     {
-        UnitResult<Erro> result = VinculoTransacaoService.Vincular(transacoes.DoCartao(cartao, saida.AVista()), despesa, despesaQueUsaATransacao: Maybe<Despesa>.None);
+        UnitResult<Erro> result = VinculoTransacaoService.Vincular(transacoes.DoCartao(cartao, saida.AVista()), despesa, despesaQueUsaATransacao: Maybe<Despesa>.None, cartoesDoUsuario: []);
 
         result.Should().Fail().Which.Should().Be(ErroParcelaIncompativelComDespesa.Instancia);
     }
@@ -316,7 +348,7 @@ public sealed class VinculoTransacaoServiceTests
     {
         Lancamento compra = saida.DaCompra(despesa.DataOcorrencia.AddDays(1), despesa.Descricao, (Parcela)(3, despesa.Parcelas.Count));
 
-        UnitResult<Erro> result = VinculoTransacaoService.Vincular(transacoes.DoCartao(cartao, compra), despesa, despesaQueUsaATransacao: Maybe<Despesa>.None);
+        UnitResult<Erro> result = VinculoTransacaoService.Vincular(transacoes.DoCartao(cartao, compra), despesa, despesaQueUsaATransacao: Maybe<Despesa>.None, cartoesDoUsuario: []);
 
         result.Should().Fail().Which.Should().Be(ErroParcelaIncompativelComDespesa.Instancia);
     }
@@ -331,7 +363,7 @@ public sealed class VinculoTransacaoServiceTests
     {
         Lancamento compra = saida.DaCompra(despesa.DataOcorrencia, outraDescricao, (Parcela)(3, despesa.Parcelas.Count));
 
-        UnitResult<Erro> result = VinculoTransacaoService.Vincular(transacoes.DoCartao(cartao, compra), despesa, despesaQueUsaATransacao: Maybe<Despesa>.None);
+        UnitResult<Erro> result = VinculoTransacaoService.Vincular(transacoes.DoCartao(cartao, compra), despesa, despesaQueUsaATransacao: Maybe<Despesa>.None, cartoesDoUsuario: []);
 
         result.Should().Fail().Which.Should().Be(ErroParcelaIncompativelComDespesa.Instancia);
     }
@@ -345,7 +377,7 @@ public sealed class VinculoTransacaoServiceTests
     {
         Lancamento compra = saida.DaCompra(despesa.DataOcorrencia, despesa.Descricao, (Parcela)(3, despesa.Parcelas.Count + 2));
 
-        UnitResult<Erro> result = VinculoTransacaoService.Vincular(transacoes.DoCartao(cartao, compra), despesa, despesaQueUsaATransacao: Maybe<Despesa>.None);
+        UnitResult<Erro> result = VinculoTransacaoService.Vincular(transacoes.DoCartao(cartao, compra), despesa, despesaQueUsaATransacao: Maybe<Despesa>.None, cartoesDoUsuario: []);
 
         result.Should().Fail().Which.Should().Be(ErroParcelaIncompativelComDespesa.Instancia);
     }
@@ -360,7 +392,7 @@ public sealed class VinculoTransacaoServiceTests
         Transacao transacao = transacoes.DaConta(saida.AVista());
         transacao.IdUsuario.Should().Be(outroUsuario);
 
-        Action act = () => VinculoTransacaoService.Vincular(transacao, despesa, despesaQueUsaATransacao: Maybe<Despesa>.None);
+        Action act = () => VinculoTransacaoService.Vincular(transacao, despesa, despesaQueUsaATransacao: Maybe<Despesa>.None, cartoesDoUsuario: []);
 
         act.Should().ThrowExactly<ArgumentException>().WithParameterName("transacao");
     }
@@ -376,9 +408,25 @@ public sealed class VinculoTransacaoServiceTests
         deOutroUsuario.IdUsuario.Should().NotBe(idUsuario);
         Transacao transacao = transacoes.DaConta(saida.AVista());
 
-        Action act = () => VinculoTransacaoService.Vincular(transacao, despesa, deOutroUsuario);
+        Action act = () => VinculoTransacaoService.Vincular(transacao, despesa, deOutroUsuario, cartoesDoUsuario: []);
 
         act.Should().ThrowExactly<ArgumentException>().WithParameterName("despesaQueUsaATransacao");
+    }
+
+    // O cartão vem antes do [Frozen]: só o que é pedido depois dele sai do usuário congelado.
+    [Theory, DomainAutoData]
+    public void Vincular_Quando_CartaoDeOutroUsuario_Deve_LancarExcecao(
+        Cartao deOutroUsuario,
+        [Frozen] IdUsuario idUsuario,
+        DespesaSimples despesa,
+        TransacoesDeTeste transacoes,
+        SaidaDeTeste saida)
+    {
+        deOutroUsuario.IdUsuario.Should().NotBe(idUsuario);
+
+        Action act = () => VinculoTransacaoService.Vincular(transacoes.DaConta(saida.AVista()), despesa, despesaQueUsaATransacao: Maybe<Despesa>.None, cartoesDoUsuario: [deOutroUsuario]);
+
+        act.Should().ThrowExactly<ArgumentException>().WithParameterName("cartoesDoUsuario");
     }
 
     [Theory, VinculoAutoData]
@@ -389,7 +437,7 @@ public sealed class VinculoTransacaoServiceTests
     {
         Pagamento original = despesa.Pagamento;
         Transacao transacao = transacoes.DaConta(saida.AVista());
-        VinculoTransacaoService.Vincular(transacao, despesa, despesaQueUsaATransacao: Maybe<Despesa>.None).Should().Succeed();
+        VinculoTransacaoService.Vincular(transacao, despesa, despesaQueUsaATransacao: Maybe<Despesa>.None, cartoesDoUsuario: []).Should().Succeed();
 
         UnitResult<Erro> result = VinculoTransacaoService.Desvincular(transacao, despesa);
 
@@ -406,7 +454,7 @@ public sealed class VinculoTransacaoServiceTests
     {
         Pagamento original = despesa.Pagamento;
         Transacao transacao = transacoes.DoCartao(cartao, saida.AVista());
-        VinculoTransacaoService.Vincular(transacao, despesa, despesaQueUsaATransacao: Maybe<Despesa>.None).Should().Succeed();
+        VinculoTransacaoService.Vincular(transacao, despesa, despesaQueUsaATransacao: Maybe<Despesa>.None, cartoesDoUsuario: [cartao]).Should().Succeed();
 
         UnitResult<Erro> result = VinculoTransacaoService.Desvincular(transacao, despesa);
 
@@ -436,7 +484,7 @@ public sealed class VinculoTransacaoServiceTests
         SaidaDeTeste outraSaida)
     {
         Transacao transacao = transacoes.DoCartao(cartao, saida.AVista());
-        VinculoTransacaoService.Vincular(transacao, despesa, despesaQueUsaATransacao: Maybe<Despesa>.None).Should().Succeed();
+        VinculoTransacaoService.Vincular(transacao, despesa, despesaQueUsaATransacao: Maybe<Despesa>.None, cartoesDoUsuario: [cartao]).Should().Succeed();
 
         UnitResult<Erro> result = VinculoTransacaoService.Desvincular(transacoes.DoCartao(cartao, outraSaida.AVista()), despesa);
 
@@ -464,7 +512,7 @@ public sealed class VinculoTransacaoServiceTests
     {
         Pagamento[] originais = despesa.Parcelas.Select(p => p.Pagamento).ToArray();
         Transacao transacao = transacoes.DoCartao(cartao, saida.DaCompra(despesa, numero: 3));
-        VinculoTransacaoService.Vincular(transacao, despesa, despesaQueUsaATransacao: Maybe<Despesa>.None).Should().Succeed();
+        VinculoTransacaoService.Vincular(transacao, despesa, despesaQueUsaATransacao: Maybe<Despesa>.None, cartoesDoUsuario: []).Should().Succeed();
 
         UnitResult<Erro> result = VinculoTransacaoService.Desvincular(transacao, despesa);
 
@@ -482,7 +530,7 @@ public sealed class VinculoTransacaoServiceTests
     {
         Pagamento paga = despesa.Parcelas[0].Pagamento;
         Transacao transacao = transacoes.DoCartao(cartao, saida.DaCompra(despesa, numero: 1));
-        VinculoTransacaoService.Vincular(transacao, despesa, despesaQueUsaATransacao: Maybe<Despesa>.None).Should().Succeed();
+        VinculoTransacaoService.Vincular(transacao, despesa, despesaQueUsaATransacao: Maybe<Despesa>.None, cartoesDoUsuario: []).Should().Succeed();
 
         UnitResult<Erro> result = VinculoTransacaoService.Desvincular(transacao, despesa);
 
@@ -500,7 +548,7 @@ public sealed class VinculoTransacaoServiceTests
         SaidaDeTeste pagamento)
     {
         Transacao transacao = transacoes.DoCartao(cartao, compra.AVista());
-        VinculoTransacaoService.Vincular(transacao, despesa, despesaQueUsaATransacao: Maybe<Despesa>.None).Should().Succeed();
+        VinculoTransacaoService.Vincular(transacao, despesa, despesaQueUsaATransacao: Maybe<Despesa>.None, cartoesDoUsuario: [cartao]).Should().Succeed();
         PagamentoFaturaService.Pagar(transacoes.DaConta(pagamento.AVista()), cartao, despesa.MesReferencia, [cartao], [despesa], despesasPagasPelaSaida: []).Should().Succeed();
         Cobranca cobranca = despesa.Cobranca!;
 
@@ -519,7 +567,7 @@ public sealed class VinculoTransacaoServiceTests
         SaidaDeTeste pagamento)
     {
         Transacao transacao = transacoes.DoCartao(cartao, compra.DaCompra(despesa, numero: 3));
-        VinculoTransacaoService.Vincular(transacao, despesa, despesaQueUsaATransacao: Maybe<Despesa>.None).Should().Succeed();
+        VinculoTransacaoService.Vincular(transacao, despesa, despesaQueUsaATransacao: Maybe<Despesa>.None, cartoesDoUsuario: []).Should().Succeed();
         PagamentoFaturaService.Pagar(transacoes.DaConta(pagamento.AVista()), cartao, despesa.Parcelas[2].MesReferencia, [cartao], [despesa], despesasPagasPelaSaida: []).Should().Succeed();
         Cobranca cobranca = despesa.Parcelas[2].Cobranca!;
 
@@ -550,7 +598,7 @@ public sealed class VinculoTransacaoServiceTests
         SaidaDeTeste outraSaida)
     {
         Transacao transacao = transacoes.DoCartao(cartao, saida.DaCompra(despesa, numero: 3));
-        VinculoTransacaoService.Vincular(transacao, despesa, despesaQueUsaATransacao: Maybe<Despesa>.None).Should().Succeed();
+        VinculoTransacaoService.Vincular(transacao, despesa, despesaQueUsaATransacao: Maybe<Despesa>.None, cartoesDoUsuario: []).Should().Succeed();
         Transacao outra = transacoes.DoCartao(cartao, outraSaida.DaCompra(despesa, numero: 3));
 
         UnitResult<Erro> result = VinculoTransacaoService.Desvincular(outra, despesa);
@@ -578,7 +626,7 @@ public sealed class VinculoTransacaoServiceTests
         SaidaDeTeste outraSaida)
     {
         Transacao transacao = transacoes.DaConta(saida.AVista());
-        VinculoTransacaoService.Vincular(transacao, despesa, despesaQueUsaATransacao: Maybe<Despesa>.None).Should().Succeed();
+        VinculoTransacaoService.Vincular(transacao, despesa, despesaQueUsaATransacao: Maybe<Despesa>.None, cartoesDoUsuario: []).Should().Succeed();
 
         UnitResult<Erro> result = VinculoTransacaoService.Desvincular(transacoes.DaConta(outraSaida.AVista()), despesa);
 
@@ -625,7 +673,7 @@ public sealed class VinculoTransacaoServiceTests
             .Value;
         Transacao transacao = transacoes.DaConta(saida.AVista());
 
-        UnitResult<Erro> result = VinculoTransacaoService.Vincular(transacao, despesa, despesaQueUsaATransacao: Maybe<Despesa>.None);
+        UnitResult<Erro> result = VinculoTransacaoService.Vincular(transacao, despesa, despesaQueUsaATransacao: Maybe<Despesa>.None, cartoesDoUsuario: []);
 
         result.Should().Succeed();
         despesa.Pagamento.IdTransacao.Should().Be(transacao.Id);
@@ -639,7 +687,7 @@ public sealed class VinculoTransacaoServiceTests
         SaidaDeTeste saida)
     {
         Transacao transacao = transacoes.DaConta(saida.AVista());
-        VinculoTransacaoService.Vincular(transacao, despesa, despesaQueUsaATransacao: Maybe<Despesa>.None).Should().Succeed();
+        VinculoTransacaoService.Vincular(transacao, despesa, despesaQueUsaATransacao: Maybe<Despesa>.None, cartoesDoUsuario: []).Should().Succeed();
 
         IReadOnlyList<Pagamento> result = despesa.PagamentosRealizadosPor(transacao.Id);
 
@@ -661,7 +709,7 @@ public sealed class VinculoTransacaoServiceTests
         SaidaDeTeste saida,
         IdTransacao outraTransacao)
     {
-        VinculoTransacaoService.Vincular(transacoes.DaConta(saida.AVista()), despesa, despesaQueUsaATransacao: Maybe<Despesa>.None).Should().Succeed();
+        VinculoTransacaoService.Vincular(transacoes.DaConta(saida.AVista()), despesa, despesaQueUsaATransacao: Maybe<Despesa>.None, cartoesDoUsuario: []).Should().Succeed();
 
         IReadOnlyList<Pagamento> result = despesa.PagamentosRealizadosPor(outraTransacao);
 
@@ -676,7 +724,7 @@ public sealed class VinculoTransacaoServiceTests
         SaidaDeTeste saida)
     {
         Transacao transacao = transacoes.DoCartao(cartao, saida.AVista());
-        VinculoTransacaoService.Vincular(transacao, despesa, despesaQueUsaATransacao: Maybe<Despesa>.None).Should().Succeed();
+        VinculoTransacaoService.Vincular(transacao, despesa, despesaQueUsaATransacao: Maybe<Despesa>.None, cartoesDoUsuario: [cartao]).Should().Succeed();
 
         IReadOnlyList<Pagamento> result = despesa.PagamentosRealizadosPor(transacao.Id);
 
@@ -691,7 +739,7 @@ public sealed class VinculoTransacaoServiceTests
         SaidaDeTeste saida)
     {
         Transacao transacao = transacoes.DoCartao(cartao, saida.AVista());
-        VinculoTransacaoService.Vincular(transacao, despesa, despesaQueUsaATransacao: Maybe<Despesa>.None).Should().Succeed();
+        VinculoTransacaoService.Vincular(transacao, despesa, despesaQueUsaATransacao: Maybe<Despesa>.None, cartoesDoUsuario: [cartao]).Should().Succeed();
 
         Maybe<Pagamento> result = despesa.PagamentoCobradoPor(transacao.Id);
 
@@ -706,7 +754,7 @@ public sealed class VinculoTransacaoServiceTests
         SaidaDeTeste saida,
         IdTransacao outraTransacao)
     {
-        VinculoTransacaoService.Vincular(transacoes.DoCartao(cartao, saida.AVista()), despesa, despesaQueUsaATransacao: Maybe<Despesa>.None).Should().Succeed();
+        VinculoTransacaoService.Vincular(transacoes.DoCartao(cartao, saida.AVista()), despesa, despesaQueUsaATransacao: Maybe<Despesa>.None, cartoesDoUsuario: [cartao]).Should().Succeed();
 
         Maybe<Pagamento> result = despesa.PagamentoCobradoPor(outraTransacao);
 
@@ -720,7 +768,7 @@ public sealed class VinculoTransacaoServiceTests
         SaidaDeTeste saida)
     {
         Transacao transacao = transacoes.DaConta(saida.AVista());
-        VinculoTransacaoService.Vincular(transacao, despesa, despesaQueUsaATransacao: Maybe<Despesa>.None).Should().Succeed();
+        VinculoTransacaoService.Vincular(transacao, despesa, despesaQueUsaATransacao: Maybe<Despesa>.None, cartoesDoUsuario: []).Should().Succeed();
 
         Maybe<Pagamento> result = despesa.PagamentoCobradoPor(transacao.Id);
 
@@ -735,7 +783,7 @@ public sealed class VinculoTransacaoServiceTests
         SaidaDeTeste saida)
     {
         Transacao transacao = transacoes.DoCartao(cartao, saida.DaCompra(despesa, numero: 3));
-        VinculoTransacaoService.Vincular(transacao, despesa, despesaQueUsaATransacao: Maybe<Despesa>.None).Should().Succeed();
+        VinculoTransacaoService.Vincular(transacao, despesa, despesaQueUsaATransacao: Maybe<Despesa>.None, cartoesDoUsuario: []).Should().Succeed();
 
         Maybe<Pagamento> result = despesa.PagamentoCobradoPor(transacao.Id);
 
@@ -750,7 +798,7 @@ public sealed class VinculoTransacaoServiceTests
         SaidaDeTeste saida)
     {
         Transacao transacao = transacoes.DoCartao(cartao, saida.DaCompra(despesa, numero: 3));
-        VinculoTransacaoService.Vincular(transacao, despesa, despesaQueUsaATransacao: Maybe<Despesa>.None).Should().Succeed();
+        VinculoTransacaoService.Vincular(transacao, despesa, despesaQueUsaATransacao: Maybe<Despesa>.None, cartoesDoUsuario: []).Should().Succeed();
 
         Maybe<ParcelaDespesa> result = despesa.ParcelaCobradaPor(transacao.Id);
 
@@ -773,7 +821,7 @@ public sealed class VinculoTransacaoServiceTests
         SaidaDeTeste saida)
     {
         Transacao transacao = transacoes.DoCartao(cartao, saida.DaCompra(despesa, numero: 3));
-        VinculoTransacaoService.Vincular(transacao, despesa, despesaQueUsaATransacao: Maybe<Despesa>.None).Should().Succeed();
+        VinculoTransacaoService.Vincular(transacao, despesa, despesaQueUsaATransacao: Maybe<Despesa>.None, cartoesDoUsuario: []).Should().Succeed();
         VinculoTransacaoService.Desvincular(transacao, despesa).Should().Succeed();
 
         Maybe<ParcelaDespesa> result = despesa.ParcelaCobradaPor(transacao.Id);
@@ -789,7 +837,7 @@ public sealed class VinculoTransacaoServiceTests
         SaidaDeTeste saida)
     {
         Transacao transacao = transacoes.DoCartao(cartao, saida.DaCompra(despesa, numero: 3));
-        VinculoTransacaoService.Vincular(transacao, despesa, despesaQueUsaATransacao: Maybe<Despesa>.None).Should().Succeed();
+        VinculoTransacaoService.Vincular(transacao, despesa, despesaQueUsaATransacao: Maybe<Despesa>.None, cartoesDoUsuario: []).Should().Succeed();
 
         IReadOnlyList<ParcelaDespesa> result = despesa.ParcelasPagasPor(transacao.Id);
 
@@ -803,7 +851,7 @@ public sealed class VinculoTransacaoServiceTests
         TransacoesDeTeste transacoes,
         SaidaDeTeste saida)
     {
-        VinculoTransacaoService.Vincular(transacoes.DoCartao(cartao, saida.AVista()), despesa, despesaQueUsaATransacao: Maybe<Despesa>.None).Should().Succeed();
+        VinculoTransacaoService.Vincular(transacoes.DoCartao(cartao, saida.AVista()), despesa, despesaQueUsaATransacao: Maybe<Despesa>.None, cartoesDoUsuario: [cartao]).Should().Succeed();
 
         Maybe<ReaisPositivo> result = despesa.ValorVigenteDoMes(despesa.MesReferencia);
 
@@ -817,7 +865,7 @@ public sealed class VinculoTransacaoServiceTests
         TransacoesDeTeste transacoes,
         SaidaDeTeste saida)
     {
-        VinculoTransacaoService.Vincular(transacoes.DoCartao(cartao, saida.DaCompra(despesa, numero: 3)), despesa, despesaQueUsaATransacao: Maybe<Despesa>.None).Should().Succeed();
+        VinculoTransacaoService.Vincular(transacoes.DoCartao(cartao, saida.DaCompra(despesa, numero: 3)), despesa, despesaQueUsaATransacao: Maybe<Despesa>.None, cartoesDoUsuario: []).Should().Succeed();
 
         Maybe<ReaisPositivo> result = despesa.ValorVigenteDoMes(despesa.Parcelas[2].MesReferencia);
 
@@ -832,7 +880,7 @@ public sealed class VinculoTransacaoServiceTests
         SaidaDeTeste saida)
     {
         ParcelaDespesa primeira = despesa.Parcelas[0];
-        VinculoTransacaoService.Vincular(transacoes.DoCartao(cartao, saida.DaCompra(despesa, numero: 1)), despesa, despesaQueUsaATransacao: Maybe<Despesa>.None).Should().Succeed();
+        VinculoTransacaoService.Vincular(transacoes.DoCartao(cartao, saida.DaCompra(despesa, numero: 1)), despesa, despesaQueUsaATransacao: Maybe<Despesa>.None, cartoesDoUsuario: []).Should().Succeed();
 
         Maybe<ReaisPositivo> result = despesa.ValorVigenteDoMes(primeira.MesReferencia);
 
@@ -845,7 +893,7 @@ public sealed class VinculoTransacaoServiceTests
         TransacoesDeTeste transacoes,
         SaidaDeTeste saida)
     {
-        VinculoTransacaoService.Vincular(transacoes.DaConta(saida.AVista()), despesa, despesaQueUsaATransacao: Maybe<Despesa>.None).Should().Succeed();
+        VinculoTransacaoService.Vincular(transacoes.DaConta(saida.AVista()), despesa, despesaQueUsaATransacao: Maybe<Despesa>.None, cartoesDoUsuario: []).Should().Succeed();
 
         Maybe<ReaisPositivo> result = despesa.ValorVigenteDoMes(despesa.MesReferencia);
 

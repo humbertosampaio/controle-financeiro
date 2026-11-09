@@ -73,8 +73,21 @@ public sealed class Transacao : AggregateRoot<IdTransacao>, IPertenceAoUsuario
     /// <summary>O texto do arquivo que diz quem recebeu o dinheiro de uma saída, pela regra do <see cref="Lancamento.TextoBeneficiario"/>.</summary>
     public string? TextoBeneficiario => Lancamento.TextoBeneficiarioDe(EhSaida, Descricao, Contraparte, Origem.Tipo);
 
+    /// <summary>O alias do <see cref="TextoBeneficiario"/>, pela regra do <see cref="Lancamento.AliasTextoBeneficiario"/>.</summary>
+    public Alias? AliasTextoBeneficiario => Alias.DoTextoOuNulo(TextoBeneficiario);
+
     /// <summary>A categoria que o banco deu à compra, quando o layout traz.</summary>
     public string? CategoriaBanco { get; private set; }
+
+    /// <summary>O alias da <see cref="CategoriaBanco"/>, pela regra do <see cref="Lancamento.AliasCategoriaBanco"/>.</summary>
+    public Alias? AliasCategoriaBanco => Alias.DoTextoOuNulo(CategoriaBanco);
+
+    /// <summary>
+    /// Verdadeiro na saída sem parcela da fatura de um cartão. A linha sem texto de beneficiário fica de fora porque a
+    /// despesa exige um beneficiário, como no <see cref="Lancamento.EhCompraParcelada"/>. O pagamento da fatura e o estorno
+    /// chegam como entrada e também ficam de fora.
+    /// </summary>
+    public bool EhCompraAVistaNoCartao => EhSaida && !EhParcelada && !EhOrigemConta && AliasTextoBeneficiario is not null;
 
     public ChaveDeduplicacao Chave { get; private set; } = null!;
 
