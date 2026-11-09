@@ -372,6 +372,162 @@ public sealed class PagamentoFaturaServiceTests
         act.Should().ThrowExactly<ArgumentException>().WithParameterName("despesasPagasPelaSaida");
     }
 
+    [Theory, PagamentoFaturaAutoData]
+    public void Desfazer_Quando_AdiadaPagaPelaSaida_Deve_VoltarAPendenteComACobranca(
+        [Frozen] Cartao cartao,
+        DespesaAdiada despesa,
+        TransacoesDeTeste transacoes,
+        SaidaDeTeste compra,
+        SaidaDeTeste pagamento)
+    {
+        Pagamento pendente = despesa.Pagamento;
+        Cobrar(despesa, cartao, transacoes.DoCartao(cartao, compra.AVista()));
+        Cobranca? cobranca = despesa.Cobranca;
+        Transacao saida = transacoes.DaConta(pagamento.AVista());
+        PagamentoFaturaService.Pagar(saida, cartao, despesa.MesReferencia, [cartao], [despesa], despesasPagasPelaSaida: []).Should().Succeed();
+
+        UnitResult<Erro> result = PagamentoFaturaService.Desfazer(saida, [despesa]);
+
+        result.Should().Succeed();
+        despesa.Pagamento.Should().Be(pendente);
+        despesa.Cobranca.Should().Be(cobranca);
+    }
+
+    [Theory, PagamentoFaturaAutoData]
+    public void Desfazer_Quando_ParcelasPagasPorSaidasDiferentes_Deve_VoltarSoADaSaida(
+        [Frozen] Cartao cartao,
+        DespesaParcelada despesa,
+        TransacoesDeTeste transacoes,
+        SaidaDeTeste compra,
+        SaidaDeTeste pagamento,
+        SaidaDeTeste outroPagamento)
+    {
+        Pagamento pendente = despesa.Parcelas[0].Pagamento;
+        Cobrar(despesa, cartao, transacoes.DoCartao(cartao, compra.DaCompra(despesa, numero: 1)));
+        Cobrar(despesa, cartao, transacoes.DoCartao(cartao, compra.DaCompra(despesa, numero: 2)));
+        Cobranca? cobranca = despesa.Parcelas[0].Cobranca;
+        Transacao saida = transacoes.DaConta(pagamento.AVista());
+        PagamentoFaturaService.Pagar(saida, cartao, despesa.Parcelas[0].MesReferencia, [cartao], [despesa], despesasPagasPelaSaida: []).Should().Succeed();
+        PagamentoFaturaService.Pagar(transacoes.DaConta(outroPagamento.AVista()), cartao, despesa.Parcelas[1].MesReferencia, [cartao], [despesa], despesasPagasPelaSaida: []).Should().Succeed();
+        Pagamento segunda = despesa.Parcelas[1].Pagamento;
+
+        UnitResult<Erro> result = PagamentoFaturaService.Desfazer(saida, [despesa]);
+
+        result.Should().Succeed();
+        despesa.Parcelas[0].Pagamento.Should().Be(pendente);
+        despesa.Parcelas[0].Cobranca.Should().Be(cobranca);
+        despesa.Parcelas[1].Pagamento.Should().Be(segunda);
+    }
+
+    [Theory, PagamentoFaturaAutoData]
+    public void Desfazer_Quando_ParcelaNasceuPaga_Deve_DeixarAParcelaPaga(
+        [Frozen] Cartao cartao,
+        TransacoesDeTeste transacoes,
+        SaidaDeTeste compra,
+        SaidaDeTeste pagamento,
+        Fixture fixture)
+    {
+        fixture.Inject((Parcela)(2, 10));
+        DespesaParcelada despesa = fixture.Create<DespesaParcelada>();
+        Cobrar(despesa, cartao, transacoes.DoCartao(cartao, compra.DaCompra(despesa, numero: 2)));
+        Transacao saida = transacoes.DaConta(pagamento.AVista());
+        PagamentoFaturaService.Pagar(saida, cartao, despesa.Parcelas[1].MesReferencia, [cartao], [despesa], despesasPagasPelaSaida: []).Should().Succeed();
+        Pagamento paga = despesa.Parcelas[0].Pagamento;
+
+        UnitResult<Erro> result = PagamentoFaturaService.Desfazer(saida, [despesa]);
+
+        result.Should().Succeed();
+        despesa.Parcelas[0].Pagamento.Should().Be(paga);
+        despesa.Parcelas[1].Pagamento.EstaPago.Should().BeFalse();
+    }
+
+    [Theory, PagamentoFaturaAutoData]
+    public void Desfazer_Quando_SimplesPagaPelaMesmaSaida_Deve_DeixarASimplesPaga(
+        [Frozen] Cartao cartao,
+        DespesaAdiada adiada,
+        DespesaSimples simples,
+        TransacoesDeTeste transacoes,
+        SaidaDeTeste compra,
+        SaidaDeTeste pagamento)
+    {
+        Cobrar(adiada, cartao, transacoes.DoCartao(cartao, compra.AVista()));
+        Transacao saida = transacoes.DaConta(pagamento.AVista());
+        PagamentoFaturaService.Pagar(saida, cartao, adiada.MesReferencia, [cartao], [adiada], despesasPagasPelaSaida: []).Should().Succeed();
+        VinculoTransacaoService.Vincular(saida, simples, despesaQueUsaATransacao: Maybe<Despesa>.None, cartoesDoUsuario: []).Should().Succeed();
+        Pagamento paga = simples.Pagamento;
+
+        UnitResult<Erro> result = PagamentoFaturaService.Desfazer(saida, [simples, adiada]);
+
+        result.Should().Succeed();
+        adiada.Pagamento.EstaPago.Should().BeFalse();
+        simples.Pagamento.Should().Be(paga);
+    }
+
+    [Theory, PagamentoFaturaAutoData]
+    public void Desfazer_Quando_SaidaSoPagouSimples_Deve_RetornarNaoPagouADespesaEDeixarASimplesPaga(
+        DespesaSimples simples,
+        TransacoesDeTeste transacoes,
+        SaidaDeTeste pagamento)
+    {
+        Transacao saida = transacoes.DaConta(pagamento.AVista());
+        VinculoTransacaoService.Vincular(saida, simples, despesaQueUsaATransacao: Maybe<Despesa>.None, cartoesDoUsuario: []).Should().Succeed();
+        Pagamento paga = simples.Pagamento;
+
+        UnitResult<Erro> result = PagamentoFaturaService.Desfazer(saida, [simples]);
+
+        result.Should().Fail().Which.Should().Be(ErroTransacaoNaoPagouADespesa.Instancia);
+        simples.Pagamento.Should().Be(paga);
+    }
+
+    [Theory, PagamentoFaturaAutoData]
+    public void Desfazer_Quando_DespesaDoCartaoNaoPagaPelaSaida_Deve_RetornarNaoPagouADespesa(
+        [Frozen] Cartao cartao,
+        DespesaAdiada despesa,
+        TransacoesDeTeste transacoes,
+        SaidaDeTeste compra,
+        SaidaDeTeste pagamento)
+    {
+        Cobrar(despesa, cartao, transacoes.DoCartao(cartao, compra.AVista()));
+        Pagamento pendente = despesa.Pagamento;
+
+        UnitResult<Erro> result = PagamentoFaturaService.Desfazer(transacoes.DaConta(pagamento.AVista()), [despesa]);
+
+        result.Should().Fail().Which.Should().Be(ErroTransacaoNaoPagouADespesa.Instancia);
+        despesa.Pagamento.Should().Be(pendente);
+    }
+
+    [Theory, PagamentoFaturaAutoData]
+    public void Desfazer_Quando_ParceladaSemParcelaPagaPelaSaida_Deve_RetornarNaoPagouADespesa(
+        [Frozen] Cartao cartao,
+        DespesaParcelada despesa,
+        TransacoesDeTeste transacoes,
+        SaidaDeTeste compra,
+        SaidaDeTeste pagamento)
+    {
+        Cobrar(despesa, cartao, transacoes.DoCartao(cartao, compra.DaCompra(despesa, numero: 1)));
+        Pagamento pendente = despesa.Parcelas[0].Pagamento;
+
+        UnitResult<Erro> result = PagamentoFaturaService.Desfazer(transacoes.DaConta(pagamento.AVista()), [despesa]);
+
+        result.Should().Fail().Which.Should().Be(ErroTransacaoNaoPagouADespesa.Instancia);
+        despesa.Parcelas[0].Pagamento.Should().Be(pendente);
+    }
+
+    [Theory, DomainAutoData]
+    public void Desfazer_Quando_DespesaDeOutroUsuario_Deve_LancarExcecao(
+        DespesaAdiada deOutroUsuario,
+        [Frozen] IdUsuario idUsuario,
+        TransacoesDeTeste transacoes,
+        SaidaDeTeste pagamento)
+    {
+        Transacao saida = transacoes.DaConta(pagamento.AVista());
+        saida.IdUsuario.Should().Be(idUsuario);
+
+        Action act = () => PagamentoFaturaService.Desfazer(saida, [deOutroUsuario]);
+
+        act.Should().ThrowExactly<ArgumentException>().WithParameterName("despesasPagasPelaSaida");
+    }
+
     private static void Cobrar(Despesa despesa, Cartao cartao, Transacao compra)
     {
         VinculoTransacaoService.Vincular(compra, despesa, despesaQueUsaATransacao: Maybe<Despesa>.None, cartoesDoUsuario: [cartao]).Should().Succeed();

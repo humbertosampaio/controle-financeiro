@@ -1,4 +1,5 @@
 using ControleFinanceiro.Domain.Cartoes;
+using ControleFinanceiro.Domain.Shared;
 using ControleFinanceiro.Domain.Transacoes;
 
 namespace ControleFinanceiro.Domain.Despesas;
@@ -26,4 +27,11 @@ public interface IDespesaDoCartao
     /// saída e a fatura.
     /// </remarks>
     internal bool PagarFatura(FaturaCartao fatura, IdTransacao idSaida, DateOnly dataPagamento);
+
+    /// <summary>
+    /// Devolve a pendente o que a saída que pagou a fatura pagou, com a cobrança preservada. A despesa que a saída não pagou
+    /// falha com <see cref="ErroTransacaoNaoPagouADespesa"/> e fica como está.
+    /// </summary>
+    /// <remarks>Interno, e implementado de forma explícita, porque só o <see cref="Services.PagamentoFaturaService"/> confere a saída.</remarks>
+    internal UnitResult<Erro> DesfazerPagamento(IdTransacao idSaida);
 }

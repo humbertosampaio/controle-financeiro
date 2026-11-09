@@ -1,3 +1,4 @@
+using ControleFinanceiro.Domain.Shared;
 using ControleFinanceiro.Domain.Shared.ValueObjects;
 using ControleFinanceiro.Domain.Transacoes;
 using System.Diagnostics.CodeAnalysis;
@@ -74,6 +75,18 @@ public sealed class Pagamento : ValueObject
 
     /// <summary>O mesmo pagamento de volta a pendente, sem os dados efetivos.</summary>
     public Pagamento Reabrir() => Pendente(ValorProjetado, DataProjetada);
+
+    /// <summary>
+    /// O mesmo pagamento de volta a pendente, quando a transação o pagou. Falha com
+    /// <see cref="ErroTransacaoNaoPagouADespesa"/> quando ele está pendente, nasceu pago ou foi pago por outra transação.
+    /// </summary>
+    public Result<Pagamento, Erro> Reabrir(IdTransacao idTransacao)
+    {
+        if (IdTransacao != idTransacao)
+            return ErroTransacaoNaoPagouADespesa.Instancia;
+
+        return Reabrir();
+    }
 
     protected override IEnumerable<object?> GetEqualityComponents()
     {

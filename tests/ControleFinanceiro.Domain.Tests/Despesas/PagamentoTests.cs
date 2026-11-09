@@ -1,4 +1,5 @@
 ﻿using ControleFinanceiro.Domain.Despesas;
+using ControleFinanceiro.Domain.Shared;
 using ControleFinanceiro.Domain.Shared.ValueObjects;
 using ControleFinanceiro.Domain.Transacoes;
 using ControleFinanceiro.Tests.Shared.AutoFixture.Attributes;
@@ -196,5 +197,56 @@ public sealed class PagamentoTests
         Pagamento result = pago.Reabrir();
 
         result.MesReferencia.Should().Be((MesReferencia)dataProjetada);
+    }
+
+    [Theory, DomainAutoData]
+    public void Reabrir_Quando_PagoPelaTransacao_Deve_VoltarParaPendenteSemOsEfetivos(
+        ReaisPositivo valor,
+        DateOnly dataProjetada,
+        IdTransacao idTransacao,
+        DateOnly dataEfetiva,
+        ReaisPositivo valorEfetivo)
+    {
+        Pagamento pago = Pagamento.Pendente(valor, dataProjetada).PagarCom(idTransacao, dataEfetiva, valorEfetivo);
+
+        Result<Pagamento, Erro> result = pago.Reabrir(idTransacao);
+
+        result.Should().Succeed().Which.Should().Be(Pagamento.Pendente(valor, dataProjetada));
+    }
+
+    [Theory, DomainAutoData]
+    public void Reabrir_Quando_PagoPorOutraTransacao_Deve_RetornarNaoPagouADespesa(
+        ReaisPositivo valor,
+        DateOnly dataProjetada,
+        IdTransacao idTransacao,
+        IdTransacao outraTransacao,
+        DateOnly dataEfetiva,
+        ReaisPositivo valorEfetivo)
+    {
+        Pagamento pago = Pagamento.Pendente(valor, dataProjetada).PagarCom(outraTransacao, dataEfetiva, valorEfetivo);
+
+        Result<Pagamento, Erro> result = pago.Reabrir(idTransacao);
+
+        result.Should().Fail().Which.Should().Be(ErroTransacaoNaoPagouADespesa.Instancia);
+    }
+
+    [Theory, DomainAutoData]
+    public void Reabrir_Quando_Pendente_Deve_RetornarNaoPagouADespesa(ReaisPositivo valor, DateOnly dataProjetada, IdTransacao idTransacao)
+    {
+        Result<Pagamento, Erro> result = Pagamento.Pendente(valor, dataProjetada).Reabrir(idTransacao);
+
+        result.Should().Fail().Which.Should().Be(ErroTransacaoNaoPagouADespesa.Instancia);
+    }
+
+    [Theory, DomainAutoData]
+    public void Reabrir_Quando_NasceuPago_Deve_RetornarNaoPagouADespesa(
+        ReaisPositivo valor,
+        DateOnly dataProjetada,
+        DateOnly dataEfetiva,
+        IdTransacao idTransacao)
+    {
+        Result<Pagamento, Erro> result = Pagamento.Pago(valor, dataProjetada, dataEfetiva).Reabrir(idTransacao);
+
+        result.Should().Fail().Which.Should().Be(ErroTransacaoNaoPagouADespesa.Instancia);
     }
 }

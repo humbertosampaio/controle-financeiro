@@ -132,6 +132,18 @@ public sealed class DespesaParcelada : Despesa, IDespesaDoCartao
             .GetValueOrDefault(defaultValue: false);
     }
 
+    UnitResult<Erro> IDespesaDoCartao.DesfazerPagamento(IdTransacao idSaida)
+    {
+        IReadOnlyList<ParcelaDespesa> pagas = ParcelasPagasPor(idSaida);
+        if (pagas.Count == 0)
+            return ErroTransacaoNaoPagouADespesa.Instancia;
+
+        foreach (ParcelaDespesa parcela in pagas)
+            parcela.DesfazerPagamento();
+
+        return UnitResult.Success<Erro>();
+    }
+
     /// <summary>Interno porque só o <see cref="Services.VinculoTransacaoService"/> confere a origem da transação.</summary>
     internal UnitResult<Erro> DesfazerCobranca(IdTransacao idTransacao)
     {

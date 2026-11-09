@@ -107,14 +107,7 @@ public sealed class DespesaSimples : DespesaInteira
     }
 
     /// <summary>Interno porque só o <see cref="Services.VinculoTransacaoService"/> confere a origem da transação.</summary>
-    internal UnitResult<Erro> DesfazerPagamento(IdTransacao idTransacao)
-    {
-        if (Pagamento.IdTransacao != idTransacao)
-            return ErroTransacaoNaoPagouADespesa.Instancia;
-
-        Pagamento = Pagamento.Reabrir();
-        return UnitResult.Success<Erro>();
-    }
+    internal UnitResult<Erro> DesfazerPagamento(IdTransacao idTransacao) => Pagamento.Reabrir(idTransacao).Map(p => Pagamento = p);
 
     /// <summary>Sempre nada: a simples não é cobrada, e a saída a paga direto.</summary>
     public override Maybe<Pagamento> PagamentoCobradoPor(IdTransacao idTransacao) => Maybe<Pagamento>.None;
