@@ -54,7 +54,7 @@ public static class PagamentoFaturaService
         }
 
         return pagas.Count > 0
-            ? new PagamentoFatura(pagas)
+            ? new PagamentoFatura(pagas, mesVencimento)
             : ErroFaturaSemCobrancaPendente.Instancia;
     }
 
