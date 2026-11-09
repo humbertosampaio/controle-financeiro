@@ -6,10 +6,13 @@ using ControleFinanceiro.Domain.Importacoes;
 using ControleFinanceiro.Domain.Shared.ValueObjects;
 using ControleFinanceiro.Domain.Transacoes;
 using ControleFinanceiro.Domain.Usuarios;
+using ControleFinanceiro.WebApi.Endpoints.Despesas.CadastrarRecorrente;
+using ControleFinanceiro.WebApi.Endpoints.Despesas.GerarDoMes;
 using ControleFinanceiro.WebApi.Endpoints.Importacoes.ImportarFatura;
 using ControleFinanceiro.WebApi.Endpoints.Usuarios.AdicionarCartao;
 using ControleFinanceiro.WebApi.Endpoints.Usuarios.Cadastrar;
 using ControleFinanceiro.WebApi.Tests.AutoFixture;
+using ControleFinanceiro.WebApi.Tests.Despesas.VincularTransacao;
 using ControleFinanceiro.WebApi.Tests.Importacoes.ImportarExtrato;
 using ControleFinanceiro.WebApi.Tests.Infraestrutura;
 using FastEndpoints;
@@ -473,6 +476,105 @@ public sealed class ImportarFaturaEndpointTests : IAsyncLifetime
         await ImportarComSucessoAsync(idOutro, FaturaCartaoC6.Completo());
 
         (await _api.ObterParceladasAsync()).Select(d => d.IdUsuario).Should().BeEquivalentTo([IdUsuario.From(idUsuario), IdUsuario.From(idOutro)]);
+    }
+
+    [Theory, ApiAutoData]
+    public async Task Post_Deve_CriarAAdiadaCobradaEPendenteDaCompraAVista(CadastrarUsuarioRequest cadastro)
+    {
+        Guid idUsuario = await _api.CadastrarUsuarioAsync(cadastro);
+        await ResolverPendenciasAsync(idUsuario, FaturaCartaoC6.Completo());
+
+        ImportarFaturaResponse corpo = await ImportarComSucessoAsync(idUsuario, FaturaCartaoC6.Completo());
+
+        corpo.Cartoes.Select(c => c.DespesasAdiadasCriadas).Should().Equal(2, 3);
+        Transacao compra = await _api.ObterTransacaoAsync(idUsuario, VinculoExtensions.CompraAVista);
+        DespesaAdiada despesa = await _api.ObterAdiadaDaCompraAsync(idUsuario, VinculoExtensions.CompraAVista);
+        Cartao fisico = (await _api.ObterTodosAsync(db => db.Cartoes)).Single(c => c.Sufixo == FaturaCartaoC6.SufixoFisico);
+        Beneficiario beneficiario = (await _api.ObterTodosAsync(db => db.Beneficiarios))
+            .Single(b => b.PossuiAlias((Alias)VinculoExtensions.CompraAVista));
+        CategoriaDespesa categoria = (await _api.ObterTodosAsync(db => db.Categorias))
+            .Single(c => c.PossuiAlias((Alias)"Supermercado"));
+
+        despesa.IdUsuario.Should().Be(IdUsuario.From(idUsuario));
+        despesa.IdCartao.Should().Be(fisico.Id);
+        despesa.IdBeneficiario.Should().Be(beneficiario.Id);
+        despesa.IdCategoria.Should().Be(categoria.Id);
+        despesa.IdDespesaRecorrente.Should().BeNull();
+        despesa.DataOcorrencia.Should().Be(new DateOnly(2026, 03, 05));
+        despesa.MesReferencia.Should().Be(FaturaCartaoC6.VencimentoComprasDeMarco);
+        despesa.Cobranca.Should().Be(new Cobranca(compra.Id, (ReaisPositivo)123.45m));
+        despesa.Pagamento.Status.Should().Be(StatusPagamento.Pendente);
+        despesa.Pagamento.ValorProjetado.Should().Be((ReaisPositivo)123.45m);
+        despesa.Pagamento.DataProjetada.Should().Be(new DateOnly(2026, 04, 10));
+    }
+
+    [Theory, ApiAutoData]
+    public async Task Post_Deve_DeixarPagamentoEstornoECompraParceladaSemAdiada(CadastrarUsuarioRequest cadastro)
+    {
+        Guid idUsuario = await _api.CadastrarUsuarioAsync(cadastro);
+        await ResolverPendenciasAsync(idUsuario, FaturaCartaoC6.Completo());
+
+        await ImportarComSucessoAsync(idUsuario, FaturaCartaoC6.Completo());
+
+        IReadOnlyList<Transacao> transacoes = await _api.ObterTodosAsync(db => db.Transacoes);
+        IReadOnlyList<DespesaAdiada> adiadas = await _api.ObterTodosAsync(db => db.Despesas.OfType<DespesaAdiada>());
+        adiadas
+            .Select(d => transacoes.Single(t => t.Id == d.Cobranca!.IdTransacao).Descricao.Value)
+            .Should()
+            .BeEquivalentTo(
+                VinculoExtensions.CompraAVista,
+                "PADARIA EXEMPLO",
+                VinculoExtensions.CompraInternacional,
+                VinculoExtensions.CompraRepetidaDoVirtual,
+                VinculoExtensions.CompraRepetidaDoVirtual);
+    }
+
+    [Theory, ApiAutoData]
+    public async Task Post_Quando_Reimportacao_Deve_NaoDuplicarAAdiada(CadastrarUsuarioRequest cadastro)
+    {
+        Guid idUsuario = await _api.CadastrarUsuarioAsync(cadastro);
+        await ResolverPendenciasAsync(idUsuario, FaturaCartaoC6.Completo());
+        await ImportarComSucessoAsync(idUsuario, FaturaCartaoC6.Completo());
+
+        ImportarFaturaResponse corpo = await ImportarComSucessoAsync(idUsuario, FaturaCartaoC6.Completo());
+
+        corpo.Cartoes.Should().OnlyContain(c => c.DespesasAdiadasCriadas == 0);
+        (await _api.ObterTodosAsync(db => db.Despesas.OfType<DespesaAdiada>())).Should().HaveCount(5);
+    }
+
+    [Theory, ApiAutoData]
+    public async Task Post_Quando_CompraPrevista_Deve_NaoCriarAAdiadaNemCobrarAPrevista(
+        CadastrarUsuarioRequest cadastro,
+        CadastrarDespesaRecorrenteRequest recorrente,
+        GerarDespesasDoMesRequest geracao)
+    {
+        Guid idUsuario = await _api.CadastrarUsuarioAsync(cadastro);
+
+        DespesaAdiada prevista = await _api.ImportarFaturaComPrevisaoAsync(idUsuario, VinculoExtensions.CompraAVista, recorrente, geracao);
+
+        Transacao compra = await _api.ObterTransacaoAsync(idUsuario, VinculoExtensions.CompraAVista);
+        IReadOnlyList<DespesaAdiada> adiadas = await _api.ObterTodosAsync(db => db.Despesas.OfType<DespesaAdiada>());
+        adiadas.Should().HaveCount(5);
+        adiadas.Single(d => d.Id == prevista.Id).Cobranca.Should().BeNull();
+        adiadas.Should().NotContain(d => d.Cobranca != null && d.Cobranca.IdTransacao == compra.Id);
+    }
+
+    [Theory, ApiAutoData]
+    public async Task Post_Quando_PrevistaEmOutroFinalDaMesmaFatura_Deve_CobrirUmaCompraSo(
+        CadastrarUsuarioRequest cadastro,
+        CadastrarDespesaRecorrenteRequest recorrente,
+        GerarDespesasDoMesRequest geracao)
+    {
+        Guid idUsuario = await _api.CadastrarUsuarioAsync(cadastro);
+
+        DespesaAdiada prevista = await _api.ImportarFaturaComPrevisaoAsync(idUsuario, VinculoExtensions.CompraRepetidaDoVirtual, recorrente, geracao);
+
+        IReadOnlyList<Transacao> repetidas = (await _api.ObterTodosAsync(db => db.Transacoes))
+            .Where(t => t.Descricao == VinculoExtensions.CompraRepetidaDoVirtual)
+            .ToList();
+        IReadOnlyList<DespesaAdiada> adiadas = await _api.ObterTodosAsync(db => db.Despesas.OfType<DespesaAdiada>());
+        repetidas.Should().HaveCount(2).And.OnlyContain(t => t.Origem.IdCartao != prevista.IdCartao);
+        repetidas.Count(t => adiadas.Any(d => d.Cobranca != null && d.Cobranca.IdTransacao == t.Id)).Should().Be(1);
     }
 
     [Theory, ApiAutoData]

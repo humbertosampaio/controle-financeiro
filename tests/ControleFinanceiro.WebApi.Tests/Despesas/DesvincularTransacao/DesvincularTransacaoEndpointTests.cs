@@ -65,22 +65,18 @@ public sealed class DesvincularTransacaoEndpointTests : IAsyncLifetime
     }
 
     [Theory, ApiAutoData]
-    public async Task Delete_Quando_AdiadaCobrada_Deve_TirarACobranca(
-        CadastrarUsuarioRequest cadastro,
-        CadastrarLoteBeneficiariosRequest beneficiarios,
-        CadastrarDespesaRecorrenteRequest recorrente,
-        GerarDespesasDoMesRequest geracao)
+    public async Task Delete_Quando_AdiadaCobrada_Deve_TirarACobranca(CadastrarUsuarioRequest cadastro)
     {
         Guid idUsuario = await _api.CadastrarUsuarioAsync(cadastro);
         await _api.ImportarFaturaC6Async(idUsuario);
-        DespesaAdiada despesa = await _api.GerarAdiadaAsync(idUsuario, beneficiarios, recorrente, geracao);
+        DespesaAdiada despesa = await _api.ObterAdiadaDaCompraAsync(idUsuario, VinculoExtensions.CompraAVista);
         Transacao transacao = await _api.ObterTransacaoAsync(idUsuario, VinculoExtensions.CompraAVista);
-        await _api.VincularComSucessoAsync(idUsuario, despesa.Id.Value, transacao.Id.Value);
 
         using HttpResponseMessage resposta = await DesvincularAsync(idUsuario, despesa.Id.Value, transacao.Id.Value);
 
         resposta.StatusCode.Should().Be(HttpStatusCode.NoContent);
-        DespesaAdiada gravada = (await _api.ObterTodosAsync(db => db.Despesas.OfType<DespesaAdiada>())).Single();
+        DespesaAdiada gravada = (await _api.ObterTodosAsync(db => db.Despesas.OfType<DespesaAdiada>()))
+            .Single(d => d.Id == despesa.Id);
         gravada.Cobranca.Should().BeNull();
         gravada.Pagamento.Should().Be(despesa.Pagamento);
     }
@@ -161,24 +157,22 @@ public sealed class DesvincularTransacaoEndpointTests : IAsyncLifetime
     [Theory, ApiAutoData]
     public async Task Delete_Quando_AdiadaPagaPelaFatura_Deve_RetornarConflitoEManterACobranca(
         CadastrarUsuarioRequest cadastro,
-        CadastrarLoteBeneficiariosRequest beneficiarios,
-        CadastrarDespesaRecorrenteRequest recorrente,
-        GerarDespesasDoMesRequest geracao,
         PagarFaturaRequest requisicao)
     {
         Guid idUsuario = await _api.CadastrarUsuarioAsync(cadastro);
         await _api.ImportarExtratoC6Async(idUsuario);
         await _api.ImportarFaturaC6Async(idUsuario);
-        DespesaAdiada despesa = await _api.GerarAdiadaAsync(idUsuario, beneficiarios, recorrente, geracao);
+        DespesaAdiada despesa = await _api.ObterAdiadaDaCompraAsync(idUsuario, VinculoExtensions.CompraAVista);
         Transacao compra = await _api.ObterTransacaoAsync(idUsuario, VinculoExtensions.CompraAVista);
-        await _api.VincularComSucessoAsync(idUsuario, despesa.Id.Value, compra.Id.Value);
         Transacao saida = await _api.ObterTransacaoAsync(idUsuario, VinculoExtensions.PixEnviado);
         await _api.PagarFaturaComSucessoAsync(idUsuario, requisicao.Pagando(saida, despesa.IdCartao, despesa.MesReferencia));
 
         using HttpResponseMessage resposta = await DesvincularAsync(idUsuario, despesa.Id.Value, compra.Id.Value);
 
         resposta.StatusCode.Should().Be(HttpStatusCode.Conflict);
-        (await _api.ObterTodosAsync(db => db.Despesas.OfType<DespesaAdiada>())).Single().Cobranca!.IdTransacao.Should().Be(compra.Id);
+        (await _api.ObterTodosAsync(db => db.Despesas.OfType<DespesaAdiada>()))
+            .Single(d => d.Id == despesa.Id)
+            .Cobranca!.IdTransacao.Should().Be(compra.Id);
     }
 
     [Fact]

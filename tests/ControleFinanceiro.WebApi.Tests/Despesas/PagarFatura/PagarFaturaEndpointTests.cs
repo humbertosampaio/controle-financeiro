@@ -22,7 +22,6 @@ public sealed class PagarFaturaEndpointTests : IAsyncLifetime
     private const string PixEnviado = VinculoExtensions.PixEnviado;
     private const string PixRecebido = "Pix recebido";
     private const string CompraAVista = VinculoExtensions.CompraAVista;
-    private const string CompraDoVirtual = "PADARIA EXEMPLO";
 
     private readonly ApiComPostgresFixture _api;
 
@@ -38,28 +37,36 @@ public sealed class PagarFaturaEndpointTests : IAsyncLifetime
     [Theory, ApiAutoData]
     public async Task Post_Quando_DoisFinaisDaMesmaFatura_Deve_PagarAsCobrancasDosDoisComADataDaSaida(
         CadastrarUsuarioRequest cadastro,
-        CadastrarLoteBeneficiariosRequest beneficiarios,
-        CadastrarDespesaRecorrenteRequest recorrente,
-        GerarDespesasDoMesRequest geracao,
         PagarFaturaRequest requisicao)
     {
         Guid idUsuario = await ImportarExtratoEFaturaAsync(cadastro);
-        (DespesaAdiada fisico, DespesaAdiada @virtual) = await _api.GerarAdiadaEmCadaFinalAsync(idUsuario, beneficiarios, recorrente, geracao);
-        await CobrarAsync(idUsuario, fisico, CompraAVista);
-        await CobrarAsync(idUsuario, @virtual, CompraDoVirtual);
+        DespesaAdiada fisico = await _api.ObterAdiadaDaCompraAsync(idUsuario, CompraAVista);
+        DespesaAdiada internacional = await _api.ObterAdiadaDaCompraAsync(idUsuario, VinculoExtensions.CompraInternacional);
+        IReadOnlyList<IdTransacao> idsCorridas = (await _api.ObterTodosAsync(db => db.Transacoes))
+            .Where(t => t.Descricao == VinculoExtensions.CompraRepetidaDoVirtual)
+            .Select(t => t.Id)
+            .ToList();
+        IReadOnlyList<DespesaAdiada> corridasDoVirtual = (await _api.ObterTodosAsync(db => db.Despesas.OfType<DespesaAdiada>()))
+            .Where(d => d.Cobranca != null && idsCorridas.Contains(d.Cobranca.IdTransacao))
+            .ToList();
         Transacao saida = await _api.ObterTransacaoAsync(idUsuario, PixEnviado);
 
         using HttpResponseMessage resposta = await _api.PagarFaturaAsync(idUsuario, requisicao.Pagando(saida, fisico.IdCartao, fisico.MesReferencia));
 
         resposta.StatusCode.Should().Be(HttpStatusCode.OK);
         PagarFaturaResponse? corpo = await resposta.Content.ReadFromJsonAsync<PagarFaturaResponse>();
+        corridasDoVirtual.Should().HaveCount(2).And.OnlyContain(d => d.IdCartao != fisico.IdCartao);
         corpo!.Pagas.Should().BeEquivalentTo([
             new PagarFaturaResponse.DespesaPaga(fisico.Id.Value, ValorEfetivo: 123.45m, saida.Data, Parcela: null),
-            new PagarFaturaResponse.DespesaPaga(@virtual.Id.Value, ValorEfetivo: 18.90m, saida.Data, Parcela: null),
+            new PagarFaturaResponse.DespesaPaga(internacional.Id.Value, ValorEfetivo: 55.00m, saida.Data, Parcela: null),
+            new PagarFaturaResponse.DespesaPaga(corridasDoVirtual[0].Id.Value, ValorEfetivo: 12.00m, saida.Data, Parcela: null),
+            new PagarFaturaResponse.DespesaPaga(corridasDoVirtual[1].Id.Value, ValorEfetivo: 12.00m, saida.Data, Parcela: null),
         ]);
-        IReadOnlyList<DespesaAdiada> gravadas = await _api.ObterTodosAsync(db => db.Despesas.OfType<DespesaAdiada>());
+        IReadOnlyList<DespesaAdiada> gravadas = (await _api.ObterTodosAsync(db => db.Despesas.OfType<DespesaAdiada>()))
+            .Where(d => d.MesReferencia == fisico.MesReferencia)
+            .ToList();
         gravadas.Select(d => d.Pagamento).Should().OnlyContain(p => p.Status == StatusPagamento.Pago && p.IdTransacao == saida.Id && p.DataEfetiva == saida.Data);
-        gravadas.Single(d => d.Id == @virtual.Id).Pagamento.ValorEfetivo.Should().Be((ReaisPositivo)18.90m);
+        gravadas.Single(d => d.Id == corridasDoVirtual[0].Id).Pagamento.ValorEfetivo.Should().Be((ReaisPositivo)12.00m);
     }
 
     [Theory, ApiAutoData]
@@ -95,7 +102,12 @@ public sealed class PagarFaturaEndpointTests : IAsyncLifetime
         PagarFaturaRequest requisicao)
     {
         Guid idUsuario = await ImportarExtratoEFaturaAsync(cadastro);
-        (DespesaAdiada fisico, _) = await _api.GerarAdiadaEmCadaFinalAsync(idUsuario, beneficiarios, recorrente, geracao);
+        MesReferencia semCompras = FaturaCartaoC6.VencimentoComprasDeMarco.Posterior();
+        (DespesaAdiada fisico, _) = await _api.GerarAdiadaEmCadaFinalAsync(
+            idUsuario,
+            beneficiarios,
+            recorrente,
+            geracao with { Ano = semCompras.Ano, Mes = semCompras.Mes });
         Transacao saida = await _api.ObterTransacaoAsync(idUsuario, PixEnviado);
 
         using HttpResponseMessage resposta = await _api.PagarFaturaAsync(idUsuario, requisicao.Pagando(saida, fisico.IdCartao, fisico.MesReferencia));
@@ -111,14 +123,10 @@ public sealed class PagarFaturaEndpointTests : IAsyncLifetime
     public async Task Post_Quando_TransacaoNaoEhSaidaDaConta_Deve_RetornarEntidadeNaoProcessavel(
         string descricao,
         CadastrarUsuarioRequest cadastro,
-        CadastrarLoteBeneficiariosRequest beneficiarios,
-        CadastrarDespesaRecorrenteRequest recorrente,
-        GerarDespesasDoMesRequest geracao,
         PagarFaturaRequest requisicao)
     {
         Guid idUsuario = await ImportarExtratoEFaturaAsync(cadastro);
-        (DespesaAdiada fisico, _) = await _api.GerarAdiadaEmCadaFinalAsync(idUsuario, beneficiarios, recorrente, geracao);
-        await CobrarAsync(idUsuario, fisico, CompraAVista);
+        DespesaAdiada fisico = await _api.ObterAdiadaDaCompraAsync(idUsuario, CompraAVista);
         Transacao transacao = await _api.ObterTransacaoAsync(idUsuario, descricao);
 
         using HttpResponseMessage resposta = await _api.PagarFaturaAsync(idUsuario, requisicao.Pagando(transacao, fisico.IdCartao, fisico.MesReferencia));
@@ -131,16 +139,13 @@ public sealed class PagarFaturaEndpointTests : IAsyncLifetime
     [Theory, ApiAutoData]
     public async Task Post_Quando_SaidaJaPagaUmaSimples_Deve_RetornarConflito(
         CadastrarUsuarioRequest cadastro,
-        CadastrarLoteBeneficiariosRequest beneficiarios,
-        CadastrarDespesaRecorrenteRequest recorrente,
-        GerarDespesasDoMesRequest geracao,
         CadastrarLoteBeneficiariosRequest beneficiariosDaSimples,
         CadastrarDespesaRecorrenteRequest recorrenteDaSimples,
+        GerarDespesasDoMesRequest geracao,
         PagarFaturaRequest requisicao)
     {
         Guid idUsuario = await ImportarExtratoEFaturaAsync(cadastro);
-        (DespesaAdiada fisico, _) = await _api.GerarAdiadaEmCadaFinalAsync(idUsuario, beneficiarios, recorrente, geracao);
-        await CobrarAsync(idUsuario, fisico, CompraAVista);
+        DespesaAdiada fisico = await _api.ObterAdiadaDaCompraAsync(idUsuario, CompraAVista);
         DespesaSimples simples = await _api.GerarSimplesAsync(idUsuario, beneficiariosDaSimples, recorrenteDaSimples, geracao);
         Transacao saida = await _api.ObterTransacaoAsync(idUsuario, PixEnviado);
         await _api.VincularComSucessoAsync(idUsuario, simples.Id.Value, saida.Id.Value);
@@ -153,16 +158,10 @@ public sealed class PagarFaturaEndpointTests : IAsyncLifetime
     }
 
     [Theory, ApiAutoData]
-    public async Task Post_Quando_SaidaJaPagouOutroMes_Deve_RetornarConflito(
-        CadastrarUsuarioRequest cadastro,
-        CadastrarLoteBeneficiariosRequest beneficiarios,
-        CadastrarDespesaRecorrenteRequest recorrente,
-        GerarDespesasDoMesRequest geracao,
-        PagarFaturaRequest requisicao)
+    public async Task Post_Quando_SaidaJaPagouOutroMes_Deve_RetornarConflito(CadastrarUsuarioRequest cadastro, PagarFaturaRequest requisicao)
     {
         Guid idUsuario = await ImportarExtratoEFaturaAsync(cadastro);
-        (DespesaAdiada fisico, _) = await _api.GerarAdiadaEmCadaFinalAsync(idUsuario, beneficiarios, recorrente, geracao);
-        await CobrarAsync(idUsuario, fisico, CompraAVista);
+        DespesaAdiada fisico = await _api.ObterAdiadaDaCompraAsync(idUsuario, CompraAVista);
         Transacao saida = await _api.ObterTransacaoAsync(idUsuario, PixEnviado);
         await _api.PagarFaturaComSucessoAsync(idUsuario, requisicao.Pagando(saida, fisico.IdCartao, fisico.MesReferencia));
 
@@ -173,15 +172,10 @@ public sealed class PagarFaturaEndpointTests : IAsyncLifetime
     }
 
     [Theory, ApiAutoData]
-    public async Task Post_Quando_TransacaoNaoExiste_Deve_RetornarNaoEncontrado(
-        CadastrarUsuarioRequest cadastro,
-        CadastrarLoteBeneficiariosRequest beneficiarios,
-        CadastrarDespesaRecorrenteRequest recorrente,
-        GerarDespesasDoMesRequest geracao,
-        PagarFaturaRequest requisicao)
+    public async Task Post_Quando_TransacaoNaoExiste_Deve_RetornarNaoEncontrado(CadastrarUsuarioRequest cadastro, PagarFaturaRequest requisicao)
     {
         Guid idUsuario = await ImportarExtratoEFaturaAsync(cadastro);
-        (DespesaAdiada fisico, _) = await _api.GerarAdiadaEmCadaFinalAsync(idUsuario, beneficiarios, recorrente, geracao);
+        DespesaAdiada fisico = await _api.ObterAdiadaDaCompraAsync(idUsuario, CompraAVista);
 
         using HttpResponseMessage resposta = await _api.PagarFaturaAsync(idUsuario, requisicao with { IdCartao = fisico.IdCartao.Value });
 
@@ -217,11 +211,5 @@ public sealed class PagarFaturaEndpointTests : IAsyncLifetime
         await _api.ImportarFaturaC6Async(idUsuario);
 
         return idUsuario;
-    }
-
-    private async Task CobrarAsync(Guid idUsuario, DespesaAdiada despesa, string descricaoCompra)
-    {
-        Transacao compra = await _api.ObterTransacaoAsync(idUsuario, descricaoCompra);
-        await _api.VincularComSucessoAsync(idUsuario, despesa.Id.Value, compra.Id.Value);
     }
 }

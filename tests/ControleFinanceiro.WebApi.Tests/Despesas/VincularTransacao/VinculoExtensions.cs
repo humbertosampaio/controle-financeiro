@@ -1,11 +1,15 @@
+using ControleFinanceiro.Domain.Beneficiarios;
 using ControleFinanceiro.Domain.Cartoes;
 using ControleFinanceiro.Domain.Despesas;
+using ControleFinanceiro.Domain.Importacoes;
+using ControleFinanceiro.Domain.Shared.ValueObjects;
 using ControleFinanceiro.Domain.Transacoes;
 using ControleFinanceiro.Domain.Usuarios;
 using ControleFinanceiro.WebApi.Endpoints.Beneficiarios.CadastrarLote;
 using ControleFinanceiro.WebApi.Endpoints.Despesas.CadastrarRecorrente;
 using ControleFinanceiro.WebApi.Endpoints.Despesas.GerarDoMes;
 using ControleFinanceiro.WebApi.Endpoints.Despesas.VincularTransacao;
+using ControleFinanceiro.WebApi.Tests.Importacoes;
 using ControleFinanceiro.WebApi.Tests.Importacoes.ImportarFatura;
 using ControleFinanceiro.WebApi.Tests.Infraestrutura;
 using System.Net;
@@ -24,6 +28,12 @@ internal static class VinculoExtensions
 
     /// <summary>A descrição da compra parcelada da fatura fictícia do C6.</summary>
     public const string CompraParcelada = "LOJA DE EXEMPLO";
+
+    /// <summary>A descrição de outra compra à vista do final físico da fatura fictícia do C6, no mesmo mês de vencimento.</summary>
+    public const string CompraInternacional = "SERVICO INTERNACIONAL FICTICIO";
+
+    /// <summary>A descrição da compra à vista do final virtual que aparece duas vezes na fatura fictícia do C6.</summary>
+    public const string CompraRepetidaDoVirtual = "APLICATIVO DE TRANSPORTE FICTICIO";
 
     extension(ApiComPostgresFixture api)
     {
@@ -53,21 +63,6 @@ internal static class VinculoExtensions
                 .Single(d => d.IdUsuario == IdUsuario.From(idUsuario));
         }
 
-        /// <summary>A despesa do mês gerada de uma recorrente no crédito do cartão físico da fatura fictícia, pendente.</summary>
-        public async Task<DespesaAdiada> GerarAdiadaAsync(
-            Guid idUsuario,
-            CadastrarLoteBeneficiariosRequest beneficiarios,
-            CadastrarDespesaRecorrenteRequest recorrente,
-            GerarDespesasDoMesRequest geracao)
-        {
-            Cartao fisico = (await api.ObterTodosAsync(db => db.Cartoes))
-                .Single(c => c.IdUsuario == IdUsuario.From(idUsuario) && c.Sufixo == FaturaCartaoC6.SufixoFisico);
-            await api.CadastrarRecorrenteEGerarAsync(idUsuario, beneficiarios, recorrente with { FormaPagamento = FormaPagamento.Credito.Value, IdCartao = fisico.Id.Value }, geracao);
-
-            return (await api.ObterTodosAsync(db => db.Despesas.OfType<DespesaAdiada>()))
-                .Single(d => d.IdUsuario == IdUsuario.From(idUsuario));
-        }
-
         /// <summary>
         /// Uma despesa do mês em cada final da fatura fictícia, gerada de uma recorrente no crédito, pendente: a do
         /// físico e a do virtual, que saem na mesma fatura.
@@ -92,8 +87,59 @@ internal static class VinculoExtensions
             await api.CadastrarDespesaRecorrenteAsync(idUsuario, noCredito with { IdBeneficiario = idsBeneficiarios[1], IdCartao = @virtual.Id.Value });
             await api.GerarDoMesAsync(idUsuario, geracao);
 
-            IReadOnlyList<DespesaAdiada> adiadas = await api.ObterTodosAsync(db => db.Despesas.OfType<DespesaAdiada>());
-            return (adiadas.Single(d => d.IdCartao == fisico.Id), adiadas.Single(d => d.IdCartao == @virtual.Id));
+            IReadOnlyList<DespesaAdiada> geradas = (await api.ObterTodosAsync(db => db.Despesas.OfType<DespesaAdiada>()))
+                .Where(d => d.IdDespesaRecorrente is not null)
+                .ToList();
+            return (geradas.Single(d => d.IdCartao == fisico.Id), geradas.Single(d => d.IdCartao == @virtual.Id));
+        }
+
+        /// <summary>
+        /// A fatura fictícia do C6 importada depois de gerada, no final físico, a despesa adiada que prevê a compra: a
+        /// importação não cria despesa para ela, e a compra fica livre para o vínculo. As demais compras à vista ganham
+        /// uma adiada já cobrada.
+        /// </summary>
+        /// <returns>A adiada prevista, pendente e sem cobrança.</returns>
+        public async Task<DespesaAdiada> ImportarFaturaComPrevisaoAsync(
+            Guid idUsuario,
+            string descricaoCompra,
+            CadastrarDespesaRecorrenteRequest recorrente,
+            GerarDespesasDoMesRequest geracao)
+        {
+            LayoutArquivoImportacao layout = LayoutArquivoImportacao.C6CartaoCsv;
+            byte[] arquivo = FaturaCartaoC6.Completo();
+            await api.ResolverCartoesDaFaturaAsync(idUsuario, layout, arquivo);
+            await api.ResolverBeneficiariosDaFaturaAsync(idUsuario, layout, arquivo);
+            await api.ResolverCategoriasDaFaturaAsync(idUsuario, layout, arquivo);
+
+            Cartao fisico = (await api.ObterTodosAsync(db => db.Cartoes))
+                .Single(c => c.IdUsuario == IdUsuario.From(idUsuario) && c.Sufixo == FaturaCartaoC6.SufixoFisico);
+            Beneficiario beneficiario = (await api.ObterTodosAsync(db => db.Beneficiarios))
+                .Single(b => b.IdUsuario == IdUsuario.From(idUsuario) && b.PossuiAlias((Alias)descricaoCompra));
+            Guid idCategoria = (await api.ObterTodosAsync(db => db.Categorias))
+                .First(c => c.IdUsuario == IdUsuario.From(idUsuario))
+                .Id.Value;
+            await api.CadastrarDespesaRecorrenteAsync(idUsuario, recorrente with
+            {
+                FormaPagamento = FormaPagamento.Credito.Value,
+                IdCartao = fisico.Id.Value,
+                IdBeneficiario = beneficiario.Id.Value,
+                IdCategoria = idCategoria,
+            });
+            MesReferencia vencimento = FaturaCartaoC6.VencimentoComprasDeMarco;
+            await api.GerarDoMesAsync(idUsuario, geracao with { Ano = vencimento.Ano, Mes = vencimento.Mes });
+            await api.ImportarFaturaComSucessoAsync(idUsuario, layout, arquivo);
+
+            return (await api.ObterTodosAsync(db => db.Despesas.OfType<DespesaAdiada>()))
+                .Single(d => d.IdUsuario == IdUsuario.From(idUsuario) && d.IdDespesaRecorrente is not null);
+        }
+
+        /// <summary>A despesa adiada que a importação da fatura criou para a compra à vista, já cobrada por ela.</summary>
+        public async Task<DespesaAdiada> ObterAdiadaDaCompraAsync(Guid idUsuario, string descricaoCompra)
+        {
+            Transacao compra = await api.ObterTransacaoAsync(idUsuario, descricaoCompra);
+
+            return (await api.ObterTodosAsync(db => db.Despesas.OfType<DespesaAdiada>()))
+                .Single(d => d.Cobranca != null && d.Cobranca.IdTransacao == compra.Id);
         }
 
         public async Task<Transacao> ObterTransacaoAsync(Guid idUsuario, string descricao)

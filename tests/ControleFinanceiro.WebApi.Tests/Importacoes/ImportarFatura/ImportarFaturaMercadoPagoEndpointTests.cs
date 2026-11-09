@@ -201,6 +201,24 @@ public sealed class ImportarFaturaMercadoPagoEndpointTests : IAsyncLifetime
     }
 
     [Theory, ApiAutoData]
+    public async Task Post_Deve_CriarAAdiadaDeCadaCompraAVistaSemCategoria(CadastrarUsuarioRequest cadastro)
+    {
+        Guid idUsuario = await _api.CadastrarUsuarioAsync(cadastro);
+        await ResolverPendenciasAsync(idUsuario, FaturaCartaoMercadoPago.Completo());
+
+        ImportarFaturaResponse corpo = await ImportarComSucessoAsync(idUsuario, FaturaCartaoMercadoPago.Completo());
+
+        corpo.Cartoes.Should().ContainSingle().Which.DespesasAdiadasCriadas.Should().Be(5);
+        IReadOnlyList<Transacao> transacoes = await _api.ObterTodosAsync(db => db.Transacoes);
+        IReadOnlyList<DespesaAdiada> adiadas = await _api.ObterTodosAsync(db => db.Despesas.OfType<DespesaAdiada>());
+        adiadas.Should().OnlyContain(d => d.IdCategoria == null && !d.Pagamento.EstaPago);
+        adiadas
+            .Select(d => transacoes.Single(t => t.Id == d.Cobranca!.IdTransacao).ValorAbsoluto.Value)
+            .Should()
+            .BeEquivalentTo([25.90m, 1234.56m, 49.90m, 9.50m, 9.50m]);
+    }
+
+    [Theory, ApiAutoData]
     public async Task Post_Quando_FaturaSeguinte_Deve_NaoDuplicarADespesa(CadastrarUsuarioRequest cadastro)
     {
         Guid idUsuario = await _api.CadastrarUsuarioAsync(cadastro);

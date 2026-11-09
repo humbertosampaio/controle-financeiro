@@ -24,6 +24,8 @@ public sealed class VincularTransacaoEndpointTests : IAsyncLifetime
     private const string BoletoPago = "Pagamento de boleto";
     private const string CompraAVista = VinculoExtensions.CompraAVista;
     private const string CompraParcelada = VinculoExtensions.CompraParcelada;
+    private const string CompraInternacional = VinculoExtensions.CompraInternacional;
+    private const string CompraRepetidaDoVirtual = VinculoExtensions.CompraRepetidaDoVirtual;
 
     private readonly ApiComPostgresFixture _api;
 
@@ -71,12 +73,11 @@ public sealed class VincularTransacaoEndpointTests : IAsyncLifetime
     [Theory, ApiAutoData]
     public async Task Post_Quando_AdiadaECompraAVistaNoCartao_Deve_CobrarSemPagar(
         CadastrarUsuarioRequest cadastro,
-        CadastrarLoteBeneficiariosRequest beneficiarios,
         CadastrarDespesaRecorrenteRequest recorrente,
         GerarDespesasDoMesRequest geracao)
     {
-        Guid idUsuario = await ImportarFaturaAsync(cadastro);
-        DespesaAdiada despesa = await _api.GerarAdiadaAsync(idUsuario, beneficiarios, recorrente, geracao);
+        Guid idUsuario = await _api.CadastrarUsuarioAsync(cadastro);
+        DespesaAdiada despesa = await _api.ImportarFaturaComPrevisaoAsync(idUsuario, CompraAVista, recorrente, geracao);
         Transacao transacao = await _api.ObterTransacaoAsync(idUsuario, CompraAVista);
 
         using HttpResponseMessage resposta = await _api.VincularAsync(idUsuario, despesa.Id.Value, new VincularTransacaoRequest { IdTransacao = transacao.Id.Value });
@@ -91,7 +92,8 @@ public sealed class VincularTransacaoEndpointTests : IAsyncLifetime
             ValorEfetivo: null,
             DataEfetiva: null,
             ValorCobrado: 123.45m));
-        DespesaAdiada gravada = (await _api.ObterTodosAsync(db => db.Despesas.OfType<DespesaAdiada>())).Single();
+        DespesaAdiada gravada = (await _api.ObterTodosAsync(db => db.Despesas.OfType<DespesaAdiada>()))
+            .Single(d => d.Id == despesa.Id);
         gravada.Cobranca.Should().Be(new Cobranca(transacao.Id, (ReaisPositivo)123.45m));
         gravada.Pagamento.Should().Be(despesa.Pagamento);
     }
@@ -99,40 +101,41 @@ public sealed class VincularTransacaoEndpointTests : IAsyncLifetime
     [Theory, ApiAutoData]
     public async Task Post_Quando_AdiadaECompraDeOutroFinalDaMesmaFatura_Deve_Cobrar(
         CadastrarUsuarioRequest cadastro,
-        CadastrarLoteBeneficiariosRequest beneficiarios,
         CadastrarDespesaRecorrenteRequest recorrente,
         GerarDespesasDoMesRequest geracao)
     {
-        Guid idUsuario = await ImportarFaturaAsync(cadastro);
-        DespesaAdiada despesa = await _api.GerarAdiadaAsync(idUsuario, beneficiarios, recorrente, geracao);
+        Guid idUsuario = await _api.CadastrarUsuarioAsync(cadastro);
+        DespesaAdiada despesa = await _api.ImportarFaturaComPrevisaoAsync(idUsuario, CompraRepetidaDoVirtual, recorrente, geracao);
+        IReadOnlyList<DespesaAdiada> adiadas = await _api.ObterTodosAsync(db => db.Despesas.OfType<DespesaAdiada>());
         Transacao doOutroFinal = (await _api.ObterTodosAsync(db => db.Transacoes))
-            .First(t => t.EhSaida && !t.EhParcelada && t.Origem.IdCartao != despesa.IdCartao);
+            .Single(t => t.Descricao == CompraRepetidaDoVirtual && adiadas.All(d => d.Cobranca?.IdTransacao != t.Id));
 
         using HttpResponseMessage resposta = await _api.VincularAsync(idUsuario, despesa.Id.Value, new VincularTransacaoRequest { IdTransacao = doOutroFinal.Id.Value });
 
         resposta.StatusCode.Should().Be(HttpStatusCode.OK);
-        DespesaAdiada gravada = (await _api.ObterTodosAsync(db => db.Despesas.OfType<DespesaAdiada>())).Single();
+        doOutroFinal.Origem.IdCartao.Should().NotBe(despesa.IdCartao);
+        DespesaAdiada gravada = (await _api.ObterTodosAsync(db => db.Despesas.OfType<DespesaAdiada>()))
+            .Single(d => d.Id == despesa.Id);
         gravada.Cobranca.Should().Be(new Cobranca(doOutroFinal.Id, doOutroFinal.ValorAbsoluto));
     }
 
     [Theory, ApiAutoData]
     public async Task Post_Quando_AdiadaJaCobradaPorOutraCompra_Deve_RetornarConflito(
         CadastrarUsuarioRequest cadastro,
-        CadastrarLoteBeneficiariosRequest beneficiarios,
         CadastrarDespesaRecorrenteRequest recorrente,
         GerarDespesasDoMesRequest geracao)
     {
-        Guid idUsuario = await ImportarFaturaAsync(cadastro);
-        DespesaAdiada despesa = await _api.GerarAdiadaAsync(idUsuario, beneficiarios, recorrente, geracao);
-        Transacao cobrada = await _api.ObterTransacaoAsync(idUsuario, CompraAVista);
-        await _api.VincularComSucessoAsync(idUsuario, despesa.Id.Value, cobrada.Id.Value);
-        Transacao outra = (await _api.ObterTodosAsync(db => db.Transacoes))
-            .First(t => t.Id != cobrada.Id && t.EhSaida && !t.EhParcelada && t.Origem.IdCartao == despesa.IdCartao);
+        Guid idUsuario = await _api.CadastrarUsuarioAsync(cadastro);
+        await _api.ImportarFaturaComPrevisaoAsync(idUsuario, CompraAVista, recorrente, geracao);
+        DespesaAdiada cobrada = await _api.ObterAdiadaDaCompraAsync(idUsuario, CompraInternacional);
+        Transacao livre = await _api.ObterTransacaoAsync(idUsuario, CompraAVista);
 
-        using HttpResponseMessage resposta = await _api.VincularAsync(idUsuario, despesa.Id.Value, new VincularTransacaoRequest { IdTransacao = outra.Id.Value });
+        using HttpResponseMessage resposta = await _api.VincularAsync(idUsuario, cobrada.Id.Value, new VincularTransacaoRequest { IdTransacao = livre.Id.Value });
 
         resposta.StatusCode.Should().Be(HttpStatusCode.Conflict);
-        (await _api.ObterTodosAsync(db => db.Despesas.OfType<DespesaAdiada>())).Single().Cobranca!.IdTransacao.Should().Be(cobrada.Id);
+        (await _api.ObterTodosAsync(db => db.Despesas.OfType<DespesaAdiada>()))
+            .Single(d => d.Id == cobrada.Id)
+            .Cobranca.Should().Be(cobrada.Cobranca);
     }
 
     [Theory, ApiAutoData]

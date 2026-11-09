@@ -1,4 +1,5 @@
 using ControleFinanceiro.Domain.Cartoes;
+using ControleFinanceiro.Domain.Shared.ValueObjects;
 using System.Text;
 
 namespace ControleFinanceiro.WebApi.Tests.Importacoes.ImportarFatura;
@@ -21,6 +22,12 @@ internal static class FaturaCartaoC6
     public const string TitularFicticio = "FULANA DE TAL FICTICIA";
     public static readonly DateOnly PrimeiraCompraFisico = new(2025, 7, 15);
     public static readonly DateOnly UltimaCompraFisico = new(2026, 3, 10);
+
+    /// <summary>
+    /// O vencimento das compras à vista de março, com o vencimento no dia 10 e o fechamento no dia 3 que os testes dão aos
+    /// cartões. A compra à vista de fevereiro vence em 03/2026.
+    /// </summary>
+    public static readonly MesReferencia VencimentoComprasDeMarco = (MesReferencia)(04, 2026);
 
     /// <summary>O arquivo como está em disco.</summary>
     public static byte[] Completo() => File.ReadAllBytes(_caminho);
