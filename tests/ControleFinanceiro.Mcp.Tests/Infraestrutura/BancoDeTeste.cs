@@ -1,5 +1,6 @@
 using AutoFixture;
 using ControleFinanceiro.Domain.Beneficiarios;
+using ControleFinanceiro.Domain.Cartoes;
 using ControleFinanceiro.Domain.Categorias;
 using ControleFinanceiro.Domain.Contas;
 using ControleFinanceiro.Domain.Despesas;
@@ -57,6 +58,50 @@ internal sealed class BancoDeTeste
         await dbContext.SaveChangesAsync();
 
         return transacoes;
+    }
+
+    /// <summary>Grava um cartão, sem fatura importada.</summary>
+    public async Task GravarCartaoAsync(Cartao cartao)
+    {
+        await using ControleFinanceiroDbContext dbContext = _servidor.CriarDbContext(cartao.IdUsuario);
+        await dbContext.Cartoes.AddAsync(cartao);
+        await dbContext.SaveChangesAsync();
+    }
+
+    /// <summary>
+    /// Grava o cartão, a importação, os beneficiários das compras e as transações dos lançamentos, como uma fatura
+    /// importada. Os lançamentos não podem ter categoria do banco.
+    /// </summary>
+    /// <param name="importacao">A importação do mesmo cartão.</param>
+    public async Task<IReadOnlyList<Transacao>> GravarFaturaAsync(
+        Cartao cartao,
+        ImportacaoArquivo importacao,
+        IReadOnlyList<Lancamento> lancamentos)
+    {
+        IReadOnlyList<Beneficiario> beneficiarios = BeneficiariosResolvidos.Dos(cartao.IdUsuario, lancamentos);
+        IReadOnlyList<Transacao> transacoes = LoteTransacoesFactory
+            .Criar(cartao.IdUsuario, beneficiarios, categoriasDoUsuario: [], cartao, importacao, lancamentos)
+            .Value;
+
+        await using ControleFinanceiroDbContext dbContext = _servidor.CriarDbContext(cartao.IdUsuario);
+        if (!await dbContext.Cartoes.AnyAsync(c => c.Id == cartao.Id))
+            await dbContext.Cartoes.AddAsync(cartao);
+
+        await dbContext.Importacoes.AddAsync(importacao);
+        await dbContext.Beneficiarios.AddRangeAsync(beneficiarios);
+        await dbContext.Transacoes.AddRangeAsync(transacoes);
+        await dbContext.SaveChangesAsync();
+
+        return transacoes;
+    }
+
+    /// <summary>Grava a despesa e o beneficiário dela, montados pelo teste.</summary>
+    public async Task GravarDespesaAsync(Despesa despesa, Beneficiario beneficiario)
+    {
+        await using ControleFinanceiroDbContext dbContext = _servidor.CriarDbContext(despesa.IdUsuario);
+        await dbContext.Beneficiarios.AddAsync(beneficiario);
+        await dbContext.Despesas.AddAsync(despesa);
+        await dbContext.SaveChangesAsync();
     }
 
     /// <summary>

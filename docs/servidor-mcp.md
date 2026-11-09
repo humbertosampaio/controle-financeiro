@@ -68,7 +68,7 @@ Acrescente o servidor em `mcpServers`, com o caminho absoluto da DLL publicada e
 
 Feche o Claude Desktop pela bandeja (fechar a janela não encerra o app) e abra de novo. O servidor aparece no menu de ferramentas da conversa. O log do servidor é o `mcp-server-controle-financeiro.log`, na pasta de logs da tabela.
 
-O Claude Desktop pede permissão a cada chamada de ferramenta, mostra os argumentos e permite aprovar só aquela chamada. Ele não lê a meta nem o `.claude/settings.json` do projeto e oferece "permitir sempre": **nunca dê "permitir sempre" à `confirmar_vinculo`**, ou o vínculo passa a ser gravado sem você ler o resumo. O risco é aceito por ser uma ferramenta de uso pessoal.
+O Claude Desktop pede permissão a cada chamada de ferramenta, mostra os argumentos e permite aprovar só aquela chamada. Ele não lê a meta nem o `.claude/settings.json` do projeto e oferece "permitir sempre": **nunca dê "permitir sempre" à `confirmar_vinculo` nem à `confirmar_pagamento_fatura`**, ou o vínculo e o pagamento passam a ser gravados sem você ler o resumo. O risco é aceito por ser uma ferramenta de uso pessoal.
 
 ## Vínculo em duas etapas
 
@@ -79,15 +79,25 @@ O vínculo de uma saída a uma despesa é gravado em duas chamadas, e só a segu
 
 Recusar a aprovação não chama a ferramenta, e nada é gravado. Se algo mudou entre as duas etapas, a confirmação devolve o erro e não grava: a transação já paga outra despesa (`TransacaoJaVinculada`), a despesa já foi paga por outra saída (`DespesaJaPaga`) ou o resumo não confere (`ResumoDivergente`, que manda pedir a prévia de novo). Confirmar duas vezes devolve `TransacaoJaVinculada`. O vínculo gravado se desfaz pelo endpoint de desvínculo da API.
 
-Quem pede a aprovação é o cliente, por duas travas na `confirmar_vinculo` (detalhes em [harness.md](harness.md#ferramentas-do-servidor-mcp-que-gravam)):
+Quem pede a aprovação é o cliente, por duas travas na `confirmar_vinculo` e na `confirmar_pagamento_fatura` (detalhes em [harness.md](harness.md#ferramentas-do-servidor-mcp-que-gravam)):
 
 | Cliente | O que faz ele perguntar |
 |---|---|
 | `claude` no terminal | a meta `anthropic/requiresUserInteraction` da ferramenta, em todos os modos, sem "não perguntar de novo" |
 | Claude Code do app desktop | a regra `ask` do `.claude/settings.json` do projeto: no modo auto, ele ignora a meta |
-| Claude Desktop | o pedido de permissão de toda chamada; nunca dê "permitir sempre" à `confirmar_vinculo` |
+| Claude Desktop | o pedido de permissão de toda chamada; nunca dê "permitir sempre" à `confirmar_vinculo` nem à `confirmar_pagamento_fatura` |
 
 Em `dontAsk` e com `--permission-prompt-tool`, o Claude Code nega a chamada, e o vínculo não acontece.
+
+## Pagamento da fatura em duas etapas
+
+A saída da conta que pagou a fatura do cartão paga, de uma vez, as despesas já cobradas e pendentes de todos os cartões da mesma fatura (mesmo banco e mesmos dias de fechamento e de vencimento, como os finais do C6) no mês em que ela vence, com o valor cobrado. Como no vínculo, só a segunda chamada grava, e com as mesmas travas de aprovação:
+
+1. **`listar_cartoes`** devolve os cartões, com id, banco, final e dias, para o modelo achar o cartão da fatura. Qualquer cartão da mesma fatura serve.
+2. **`prever_pagamento_fatura`** recebe o id da saída, o id do cartão e o ano e o mês do vencimento, aplica o pagamento em memória e devolve a saída, as despesas pagas, o total e um `resumo` em uma frase (valor e data da saída, descrição e contraparte, banco, final do cartão informado, mês de vencimento, quantidade de despesas e total, com os documentos mascarados e sem ids). Nada é gravado.
+3. **`confirmar_pagamento_fatura`** recebe o `resumo` da prévia, primeiro nos argumentos, e os mesmos ids e mês. O servidor refaz o pagamento do zero e só grava se o resumo recalculado for o mesmo.
+
+Uma cobrança que chegou entre as duas etapas muda o total, e a confirmação devolve `ResumoPagamentoFaturaDivergente` sem gravar. Sem nada cobrado e pendente no mês, inclusive ao confirmar duas vezes, o erro é `FaturaSemCobrancaPendente`, que costuma indicar o mês ou o cartão errado; a saída que já pagou outra fatura devolve `TransacaoPagaOutraFatura`. O pagamento gravado se desfaz pelo endpoint de desfazer o pagamento da fatura da API.
 
 **Cliente novo.** A trava humana é do host, não do servidor: o servidor só declara a meta e confere o resumo. Antes de registrar o servidor num cliente novo (um bot de WhatsApp, Telegram ou Discord, por exemplo), confira como ele confirma: ele precisa honrar a meta com uma confirmação que não passe pelo modelo, como um botão do chat tratado pelo próprio bot, e não o modelo interpretando a resposta do usuário.
 
@@ -104,5 +114,8 @@ Faça as perguntas em ordem, numa conversa nova, em cada cliente. Troque `<mês>
 | "Quais saídas de `<mês>` parecem pagar as despesas pendentes?" | `listar_transacoes` e `listar_despesas_fixas` | sugestões de pares transação e despesa, sem gravar nada |
 | "Vincule a saída `<saída>` à despesa `<despesa>`", e recuse o pedido de aprovação | `prever_vinculo` e o pedido da `confirmar_vinculo` | o resumo nos argumentos do pedido; recusado, a despesa continua pendente |
 | A mesma pergunta, aceitando o pedido | `prever_vinculo` e `confirmar_vinculo` | o pedido aparece também no modo auto; aceito, a despesa fica paga pela saída |
+| "Quais cartões eu tenho?" | `listar_cartoes` | os cartões com banco, final e dias de fechamento e de vencimento |
+| "A saída `<saída>` pagou a fatura do `<banco>` que vence em `<mês>`", e recuse o pedido de aprovação | `listar_cartoes`, `prever_pagamento_fatura` e o pedido da `confirmar_pagamento_fatura` | o resumo com o banco, o final, a quantidade e o total nos argumentos do pedido; recusado, as despesas continuam pendentes |
+| A mesma pergunta, aceitando o pedido | `prever_pagamento_fatura` e `confirmar_pagamento_fatura` | o pedido aparece também no modo auto; aceito, as despesas cobradas da fatura ficam pagas pela saída, com o valor cobrado |
 
 `banco indisponivel` no primeiro passo indica o Postgres parado ou a conexão errada no User Secret; uma ferramenta de leitura que falha com o banco disponível indica o `Mcp:IdUsuario` ausente.
