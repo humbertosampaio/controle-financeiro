@@ -61,6 +61,14 @@ function stripHeredocs(command) {
   return command.replace(/<<-?\s*(['"]?)([A-Za-z_][A-Za-z0-9_]*)\1[^\n]*\n[\s\S]*?\n[ \t]*\2[ \t]*(?=\n|$)/g, "<<heredoc");
 }
 
+// Opções globais do git (git -C pasta add, git -c chave=valor push, git --no-pager log) saem antes das
+// regras, para que "git <subcomando>" case do mesmo jeito com ou sem elas.
+function stripGitGlobalOptions(command) {
+  const valor = String.raw`(?:"[^"]*"|'[^']*'|\S+)`;
+  const opcoes = new RegExp(String.raw`\bgit(?:\s+(?:-[Cc]\s+${valor}|--[\w-]+(?:=${valor})?|-[pP]))+(?=\s)`, "g");
+  return command.replace(opcoes, "git");
+}
+
 // Comandos de shell (Bash e PowerShell).
 // Os argumentos de cada comando vão até o próximo |, ;, & ou quebra de linha: num comando de várias
 // linhas, uma regra não pode ler as linhas seguintes como se fossem dela. A continuação de linha
@@ -68,21 +76,47 @@ function stripHeredocs(command) {
 export function checkCommand(command, { branch } = {}) {
   // Secret vale no comando inteiro, heredoc incluído: o heredoc pode estar escrevendo um arquivo.
   const secret = findSecret(command ?? "");
-  const cmd = stripHeredocs(command ?? "").replace(/[\\`]\r?\n/g, " ");
+  const juntado = stripHeredocs(command ?? "").replace(/[\\`]\r?\n/g, " ");
+  // Uma opção entre aspas ("-f") é a mesma opção para o shell.
+  const cmd = stripGitGlobalOptions(juntado).replace(/(["'])(-[\w-]+)\1/g, "$2");
   if (secret) {
     return deny(`O comando contém o que parece ser um(a) ${secret}. Secrets ficam em User Secrets e nunca passam por comando que fica no histórico.`);
   }
 
-  if (/--no-verify\b/.test(cmd) || /\bgit\s+commit\b[^|;&"'\n]*\s-n\b/.test(cmd)) {
+  // Apontar os hooks para outro lugar só naquele comando tem o mesmo efeito do --no-verify: pelo
+  // -c core.hooksPath=..., pelo --config-env core.hooksPath=... ou pelas variáveis GIT_CONFIG_KEY_n e
+  // GIT_CONFIG_PARAMETERS. Conferido antes de as opções globais saírem.
+  const hooksPathNoComando = [
+    /\bgit\b[^|;&\n]*\s-c\s*["']?core\.hooksPath["']?\s*=/i,
+    /\bgit\b[^|;&\n]*\s--config-env[=\s]+["']?core\.hooksPath["']?\s*=/i,
+    /\bGIT_CONFIG_KEY_\d+\s*=\s*["']?core\.hooksPath\b/i,
+    /\bGIT_CONFIG_PARAMETERS\b[^\n]*core\.hooksPath/i,
+  ];
+  if (hooksPathNoComando.some((re) => re.test(juntado))) {
+    return deny("Trocar o core.hooksPath só para este comando pula os git hooks (varredura de secrets e de dados, Conventional Commits). Corrija o que o hook apontou em vez de contorná-lo.");
+  }
+  // Incluir outro arquivo de configuração só para o comando pode trazer um core.hooksPath de dentro dele.
+  if (/\bgit\b[^|;&\n]*\s-c\s*["']?include(If\.[^=\s]*)?\.path["']?\s*=|\bGIT_CONFIG_(GLOBAL|SYSTEM)\s*=/i.test(juntado)) {
+    return ask("Esse comando lê a configuração do git de outro arquivo, que pode trocar o core.hooksPath e pular os hooks. Confirme que é isso mesmo.");
+  }
+
+  // O texto entre aspas (a mensagem do -m, mesmo de várias linhas) sai antes de procurar o -n, para
+  // "-m \"x -n\"" não contar e um -n depois da mensagem contar. O -n pode vir agrupado depois de
+  // opções curtas sem valor (-an, -sn); o -uno é o -u com o valor "no", e não um -n.
+  const semTextoEntreAspas = cmd.replace(/"[^"]*"|'[^']*'/g, '""');
+  if (/--no-verify\b/.test(cmd) || /\bgit\s+commit\b[^|;&\n]*\s-[aeiopqsvz]*n[a-zA-Z]*(?![\w-])/.test(semTextoEntreAspas)) {
     return deny("--no-verify pula os git hooks (varredura de secrets e de dados, Conventional Commits). Corrija o que o hook apontou em vez de contorná-lo.");
   }
 
-  if (/\bgit\s+add\b[^|;&\n]*\s(-f|--force)(?![\w-])/.test(cmd)) {
+  // O -f pode vir agrupado com outras opções curtas (-Af, -fA).
+  if (/\bgit\s+add\b[^|;&\n]*\s(-[a-zA-Z]*f[a-zA-Z]*|--force)(?![\w-])/.test(cmd)) {
     return deny("git add --force ignora o .gitignore, que é o que mantém dados financeiros reais fora do git. Se o arquivo deve ser versionado, ajuste o .gitignore num commit próprio e explique no PR.");
   }
 
   for (const [, addArgs] of cmd.matchAll(/\bgit\s+add\b([^|;&\n]*)/g)) {
-    if (addArgs.split(/\s+/).some((arg) => arg && !arg.startsWith("-") && isRealDataPath(arg))) {
+    // As aspas saem do caminho: "dados/x.csv" é o mesmo arquivo que dados/x.csv.
+    const caminhos = addArgs.split(/\s+/).map((arg) => arg.replace(/["']/g, ""));
+    if (caminhos.some((arg) => arg && !arg.startsWith("-") && isRealDataPath(arg))) {
       return deny("Esse git add inclui dados/ ou um extrato fora de tests/**/Fixtures/. Dados financeiros reais nunca entram no git.");
     }
   }
@@ -93,7 +127,9 @@ export function checkCommand(command, { branch } = {}) {
 
   // Todo push do comando é conferido, e um que vai para a main vence o pedido de confirmação de outro.
   let pushForcado = false;
-  for (const [, args] of cmd.matchAll(/\bgit\s+push\b([^|;&\n]*)/g)) {
+  for (const [, argsComAspas] of cmd.matchAll(/\bgit\s+push\b([^|;&\n]*)/g)) {
+    // As aspas saem dos refspecs: "main" é a mesma branch que main.
+    const args = argsComAspas.replace(/["']/g, "");
     if (/(^|\s|:)(refs\/heads\/)?main(\s|$)/.test(args)) {
       return deny("Push na main não é permitido: tudo entra por PR (skill abrir-pr).");
     }
