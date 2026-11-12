@@ -15,7 +15,6 @@
     <PackageReference Include="Aspire.Hosting.PostgreSQL" />
     <!-- Corrige GHSA-qhrr-8q5h-9q3h: o StreamJsonRpc do Aspire ainda traz o MessagePack 2.5.302 -->
     <PackageReference Include="MessagePack" />
-    <PackageReference Include="ModelContextProtocol" VersionOverride="2.4.0" />
   </ItemGroup>
 
   <ItemGroup>
