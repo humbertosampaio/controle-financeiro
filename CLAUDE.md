@@ -111,4 +111,4 @@ Três camadas, descritas em [docs/harness.md](docs/harness.md):
 
 ## GitHub
 
-Repositório privado `humbertosampaio/controle-financeiro`. Trabalho organizado em Issues (labels `tipo:*`, `fase:*`, `area:*`), sub-issues sob um épico por fase e um GitHub Project. Use o `gh` CLI.
+Repositório público `humbertosampaio/controle-financeiro`, sob a licença MIT (`LICENSE`). Trabalho organizado em Issues (labels `tipo:*`, `fase:*`, `area:*`), sub-issues sob um épico por fase e um GitHub Project. Use o `gh` CLI.
