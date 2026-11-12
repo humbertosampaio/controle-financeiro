@@ -16,7 +16,10 @@ jobs:
 
       - uses: actions/setup-dotnet@v6
         with:
-          dotnet-version: "10.0.x"
+          # Fixo na 10.0.403: com a 10.0.404, o coverlet.msbuild 10.1.0 não grava os hits do
+          # domínio, a cobertura sai 0% e o gate de 95% falha. Voltar a "10.0.x" quando sair
+          # um coverlet que funcione com ela.
+          dotnet-version: "10.0.403"
 
       - name: Build
         run: dotnet build ControleFinanceiro.slnx --nologo
