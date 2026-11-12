@@ -88,6 +88,45 @@ test("texto dentro de heredoc não é comando", () => {
   assert.equal(decision(checkCommand(`cat > a.cs <<'EOF'\n${chaveAnthropic}\nEOF`, { branch: "feat/1-x" })), "deny");
 });
 
+test("argumentos de um comando não vazam para a linha seguinte", () => {
+  // O --force-with-lease do push não é um --force do git add da linha anterior.
+  const addEPush = "git add src/X.cs\ngit commit -m \"feat: X\"\ngit push --force-with-lease origin HEAD:feat/1-x";
+  assert.equal(decision(checkCommand(addEPush, { branch: "feat/1-x" })), "ask");
+  // As palavras da linha seguinte não viram refspec de um push sem refspec na main.
+  assert.equal(decision(checkCommand("git push\necho feito", { branch: "main" })), "deny");
+  // Um caminho de dados na linha seguinte não é argumento do git add.
+  assert.equal(decision(checkCommand("git add src/X.cs\nhead -5 dados/c6.csv", { branch: "feat/1-x" })), "allow");
+  // Um caminho de dados/ na mesma linha continua barrado.
+  assert.equal(decision(checkCommand("git add src/X.cs dados/c6.csv\necho feito", { branch: "feat/1-x" })), "deny");
+});
+
+test("continuação de linha segue o mesmo comando", () => {
+  for (const continua of ["\\\n", "\\\r\n", "`\n", "`\r\n"]) {
+    assert.equal(decision(checkCommand(`git add src/X.cs ${continua}dados/c6.csv`, { branch: "feat/1-x" })), "deny", JSON.stringify(continua));
+    assert.equal(decision(checkCommand(`git add ${continua}-f bin/x`, { branch: "feat/1-x" })), "deny", JSON.stringify(continua));
+    assert.equal(decision(checkCommand(`git push origin ${continua}main`, { branch: "feat/1-x" })), "deny", JSON.stringify(continua));
+    assert.equal(decision(checkCommand(`git push origin HEAD ${continua}--force-with-lease`, { branch: "feat/1-x" })), "ask", JSON.stringify(continua));
+    assert.equal(decision(checkCommand(`git reset ${continua}--hard`, { branch: "feat/1-x" })), "ask", JSON.stringify(continua));
+  }
+});
+
+test("git add --force colado num separador continua barrado", () => {
+  for (const command of ["git add bin/x -f; echo ok", "git add bin/x -f&& git commit -m \"feat: X\"", "git add bin/x -f| cat", "(git add bin/x -f)", "git add bin/x --force\"\""]) {
+    assert.equal(decision(checkCommand(command, { branch: "feat/1-x" })), "deny", command);
+  }
+  assert.equal(decision(checkCommand("git add --force-with-lease src/X.cs", { branch: "feat/1-x" })), "allow");
+});
+
+test("todo git add do comando é conferido", () => {
+  assert.equal(decision(checkCommand("git add src/X.cs\ngit add dados/c6.csv", { branch: "feat/1-x" })), "deny");
+});
+
+test("todo git push do comando é conferido", () => {
+  assert.equal(decision(checkCommand("git push -u origin HEAD\ngit push origin main", { branch: "feat/1-x" })), "deny");
+  // Um push na main vence o pedido de confirmação de um push forçado anterior.
+  assert.equal(decision(checkCommand("git push --force-with-lease origin HEAD\ngit push origin main", { branch: "feat/1-x" })), "deny");
+});
+
 test("push sem refspec depende da branch atual", () => {
   assert.equal(decision(checkCommand("git push", { branch: "main" })), "deny");
   assert.equal(decision(checkCommand("git push origin", { branch: "main" })), "deny");

@@ -62,34 +62,38 @@ function stripHeredocs(command) {
 }
 
 // Comandos de shell (Bash e PowerShell).
+// Os argumentos de cada comando vão até o próximo |, ;, & ou quebra de linha: num comando de várias
+// linhas, uma regra não pode ler as linhas seguintes como se fossem dela. A continuação de linha
+// (\ no Bash, crase no PowerShell) é juntada antes, porque para o shell ela segue o mesmo comando.
 export function checkCommand(command, { branch } = {}) {
   // Secret vale no comando inteiro, heredoc incluído: o heredoc pode estar escrevendo um arquivo.
   const secret = findSecret(command ?? "");
-  const cmd = stripHeredocs(command ?? "");
+  const cmd = stripHeredocs(command ?? "").replace(/[\\`]\r?\n/g, " ");
   if (secret) {
     return deny(`O comando contém o que parece ser um(a) ${secret}. Secrets ficam em User Secrets e nunca passam por comando que fica no histórico.`);
   }
 
-  if (/--no-verify\b/.test(cmd) || /\bgit\s+commit\b[^|;&"']*\s-n\b/.test(cmd)) {
+  if (/--no-verify\b/.test(cmd) || /\bgit\s+commit\b[^|;&"'\n]*\s-n\b/.test(cmd)) {
     return deny("--no-verify pula os git hooks (varredura de secrets e de dados, Conventional Commits). Corrija o que o hook apontou em vez de contorná-lo.");
   }
 
-  if (/\bgit\s+add\b[^|;&]*\s(-f|--force)\b/.test(cmd)) {
+  if (/\bgit\s+add\b[^|;&\n]*\s(-f|--force)(?![\w-])/.test(cmd)) {
     return deny("git add --force ignora o .gitignore, que é o que mantém dados financeiros reais fora do git. Se o arquivo deve ser versionado, ajuste o .gitignore num commit próprio e explique no PR.");
   }
 
-  const addArgs = cmd.match(/\bgit\s+add\b([^|;&]*)/);
-  if (addArgs && addArgs[1].split(/\s+/).some((arg) => arg && !arg.startsWith("-") && isRealDataPath(arg))) {
-    return deny("Esse git add inclui dados/ ou um extrato fora de tests/**/Fixtures/. Dados financeiros reais nunca entram no git.");
+  for (const [, addArgs] of cmd.matchAll(/\bgit\s+add\b([^|;&\n]*)/g)) {
+    if (addArgs.split(/\s+/).some((arg) => arg && !arg.startsWith("-") && isRealDataPath(arg))) {
+      return deny("Esse git add inclui dados/ ou um extrato fora de tests/**/Fixtures/. Dados financeiros reais nunca entram no git.");
+    }
   }
 
   if (/\bdotnet\s+user-secrets\s+list\b/.test(cmd)) {
     return deny("dotnet user-secrets list imprime os secrets no transcript. Para conferir uma chave, verifique só se ela existe, sem mostrar o valor.");
   }
 
-  const push = cmd.match(/\bgit\s+push\b([^|;&]*)/);
-  if (push) {
-    const args = push[1];
+  // Todo push do comando é conferido, e um que vai para a main vence o pedido de confirmação de outro.
+  let pushForcado = false;
+  for (const [, args] of cmd.matchAll(/\bgit\s+push\b([^|;&\n]*)/g)) {
     if (/(^|\s|:)(refs\/heads\/)?main(\s|$)/.test(args)) {
       return deny("Push na main não é permitido: tudo entra por PR (skill abrir-pr).");
     }
@@ -97,20 +101,21 @@ export function checkCommand(command, { branch } = {}) {
     if (refspecs.length <= 1 && branch === "main") {
       return deny("Você está na main e esse push a atualizaria. Crie uma branch <tipo>/<issue>-<slug> e abra um PR.");
     }
-    if (/\s(--force|-f)(\s|$)|\s--force-with-lease\b|\s\+\S/.test(` ${args}`)) {
-      return ask("Push forçado reescreve o histórico remoto. Confirme que é isso mesmo.");
-    }
+    pushForcado ||= /\s(--force|-f)(\s|$)|\s--force-with-lease\b|\s\+\S/.test(` ${args}`);
+  }
+  if (pushForcado) {
+    return ask("Push forçado reescreve o histórico remoto. Confirme que é isso mesmo.");
   }
 
   const guarded = [
-    [/\bgit\s+reset\b[^|;&]*--hard\b/, "git reset --hard descarta mudanças locais."],
-    [/\bgit\s+clean\b[^|;&]*\s-[a-zA-Z]*f/, "git clean -f apaga arquivos não versionados (inclusive dados/)."],
-    [/\bgit\s+branch\b[^|;&]*\s(-D|-d|--delete|-M|-m)\b/, "Apagar ou renomear branch."],
-    [/\bgit\s+(checkout|restore)\b[^|;&]*\s(--\s+)?\.(\s|$)/, "Descarta mudanças do working tree."],
+    [/\bgit\s+reset\b[^|;&\n]*--hard\b/, "git reset --hard descarta mudanças locais."],
+    [/\bgit\s+clean\b[^|;&\n]*\s-[a-zA-Z]*f/, "git clean -f apaga arquivos não versionados (inclusive dados/)."],
+    [/\bgit\s+branch\b[^|;&\n]*\s(-D|-d|--delete|-M|-m)\b/, "Apagar ou renomear branch."],
+    [/\bgit\s+(checkout|restore)\b[^|;&\n]*\s(--\s+)?\.(\s|$)/, "Descarta mudanças do working tree."],
     [/\bgit\s+(rebase|cherry-pick)\b/, "Reescreve commits."],
-    [/\bgit\s+config\b[^|;&]*core\.hooksPath/, "Muda onde os git hooks rodam."],
-    [/\brm\s+-[a-zA-Z]*r[a-zA-Z]*f|\brm\s+-[a-zA-Z]*f[a-zA-Z]*r|\bRemove-Item\b[^|;&]*-Recurse/, "Remoção recursiva de arquivos."],
-    [/\bdotnet\s+(add|remove)\b[^|;&]*\bpackage\b/, "Dependência nova ou removida: justifique (manutenção e cadeia de suprimentos)."],
+    [/\bgit\s+config\b[^|;&\n]*core\.hooksPath/, "Muda onde os git hooks rodam."],
+    [/\brm\s+-[a-zA-Z]*r[a-zA-Z]*f|\brm\s+-[a-zA-Z]*f[a-zA-Z]*r|\bRemove-Item\b[^|;&\n]*-Recurse/, "Remoção recursiva de arquivos."],
+    [/\bdotnet\s+(add|remove)\b[^|;&\n]*\bpackage\b/, "Dependência nova ou removida: justifique (manutenção e cadeia de suprimentos)."],
     [/\bdotnet\s+ef\s+(database\s+(drop|update)|migrations\s+remove)\b/, "Operação de banco ou migration com efeito no banco local, que tem dados reais."],
     [/\bdocker\s+(volume\s+rm|rm\b|system\s+prune)/, "Apaga container ou volume (o Postgres local guarda dados reais)."],
   ];
