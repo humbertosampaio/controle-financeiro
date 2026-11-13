@@ -26,7 +26,7 @@ public static class DependencyInjection
         /// <summary>Registra a <see cref="IOrigemArquivoImportacao"/> na pasta <paramref name="raiz"/>.</summary>
         public IServiceCollection AddOrigemArquivoImportacao(string raiz)
         {
-            return services.AddSingleton<IOrigemArquivoImportacao>(new OrigemArquivoImportacaoLocal(raiz));
+            return services.AddTransient<IOrigemArquivoImportacao>(_ => new OrigemArquivoImportacaoLocal(raiz));
         }
     }
 }

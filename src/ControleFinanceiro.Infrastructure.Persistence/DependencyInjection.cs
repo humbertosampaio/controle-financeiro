@@ -39,7 +39,7 @@ public static class DependencyInjection
                     npgsql => npgsql.UseQuerySplittingBehavior(QuerySplittingBehavior.SplitQuery)));
 
             return services
-                .AddScoped<IUnitOfWork, EntityFrameworkUnitOfWork>()
+                .AddTransient<IUnitOfWork, EntityFrameworkUnitOfWork>()
                 .AddTransient<IUsuarioRepository, UsuarioRepository>()
                 .AddTransient<ICartaoRepository, CartaoRepository>()
                 .AddTransient<IContaRepository, ContaRepository>()

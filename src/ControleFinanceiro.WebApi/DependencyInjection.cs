@@ -18,12 +18,12 @@ public static class DependencyInjection
                 .SwaggerDocument()
                 .AddSingleton(TimeProvider.System)
                 .AddHttpContextAccessor()
-                .AddScoped<IUsuarioAtual, UsuarioAtualRota>()
-                .AddScoped<ImportacaoExtratoService>()
-                .AddScoped<ImportacaoFaturaService>()
-                .AddScoped<LeituraExtratoService>()
-                .AddScoped<LeituraFaturaService>()
-                .AddScoped<PendenciasImportacaoService>();
+                .AddTransient<IUsuarioAtual, UsuarioAtualRota>()
+                .AddTransient<ImportacaoExtratoService>()
+                .AddTransient<ImportacaoFaturaService>()
+                .AddTransient<LeituraExtratoService>()
+                .AddTransient<LeituraFaturaService>()
+                .AddTransient<PendenciasImportacaoService>();
         }
     }
 }

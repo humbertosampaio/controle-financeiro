@@ -31,10 +31,10 @@ public static class DependencyInjection
                 .WithTools<ConfirmarImportacaoTool>();
 
             return services
-                .AddScoped<IUsuarioAtual, UsuarioAtualConfigurado>()
-                .AddScoped<LeituraParaModeloService>()
-                .AddScoped<VinculoParaModeloService>()
-                .AddScoped<PagamentoFaturaParaModeloService>()
+                .AddTransient<IUsuarioAtual, UsuarioAtualConfigurado>()
+                .AddTransient<LeituraParaModeloService>()
+                .AddTransient<VinculoParaModeloService>()
+                .AddTransient<PagamentoFaturaParaModeloService>()
                 .AddTransient<ImportacaoParaModeloService>()
                 .AddTransient<LeituraExtratoService>()
                 .AddTransient<LeituraFaturaService>()
