@@ -98,6 +98,43 @@ public sealed class ServidorMcpTests
         execucao.StandardOutput.Should().BeEmpty();
     }
 
+    // O SDK responde ao modelo só que houve um erro: a exceção, com o tipo e a pilha, fica no log do servidor.
+    [Fact]
+    public async Task ChamarFerramenta_Quando_LancaExcecao_Deve_GravarOTipoEAPilhaNoLog()
+    {
+        string caminhoLog = ServidorMcpFixture.NovoCaminhoLog();
+        string resposta;
+
+        // Descartar o cliente fecha o stdin, e o servidor esvazia o log ao sair.
+        await using (McpClient clienteMcp = await ServidorMcpFixture.IniciarClienteMcpAsync(_fixture.ConexaoDoContainer, idUsuario: null, caminhoLog))
+        {
+            CallToolResult resultado = await clienteMcp.CallToolAsync("listar_transacoes", new Dictionary<string, object?> { ["ano"] = 2026, ["mes"] = 3 });
+            resultado.IsError.Should().BeTrue();
+            resposta = resultado.Content.OfType<TextContentBlock>().Single().Text;
+        }
+
+        LerLog(Path.GetDirectoryName(caminhoLog)!).Should().Contain("\"listar_transacoes\" threw an unhandled exception")
+            .And.Contain("System.InvalidOperationException")
+            .And.Contain("UsuarioAtualConfigurado")
+            .And.Contain("   at ");
+        resposta.Should().NotContain("InvalidOperationException");
+    }
+
+    // No Windows, com o repositório e o temporário em discos diferentes, o caminho relativo entre eles não existe: o
+    // GetRelativePath devolve o absoluto, e o teste passa sem exercitar a âncora. No CI, em Linux, ele a exercita.
+    [Fact]
+    public async Task Executar_Quando_CaminhoDoLogRelativo_Deve_GravarAPartirDaPastaDoServidor()
+    {
+        string diretorioTrabalho = Directory.CreateDirectory(Path.Combine(ServidorMcpFixture.RepositorioDeTeste, Guid.NewGuid().ToString())).FullName;
+        string pastaDestino = Path.GetDirectoryName(ServidorMcpFixture.NovoCaminhoLog())!;
+        string caminhoRelativo = Path.Combine(Path.GetRelativePath(ServidorMcpFixture.PastaServidor, pastaDestino), "mcp-.log");
+
+        await ServidorMcpFixture.ExecutarSemClienteMcpAsync(_fixture.ConexaoDoContainer, caminhoRelativo, diretorioTrabalho);
+
+        LerLog(pastaDestino).Should().Contain("Application started");
+        Directory.EnumerateFileSystemEntries(diretorioTrabalho).Should().BeEmpty();
+    }
+
     [Fact]
     public async Task Publicacao_Deve_NaoDependerDeAspNetCore()
     {
@@ -107,6 +144,10 @@ public sealed class ServidorMcpTests
         runtimeConfig.Should().NotContain("Microsoft.AspNetCore.App");
         deps.Should().NotContain("ModelContextProtocol.AspNetCore");
     }
+
+    /// <summary>O texto de todos os arquivos da pasta, que o sink pode dividir por dia ou por tamanho.</summary>
+    private static string LerLog(string pasta) =>
+        string.Concat(Directory.EnumerateFiles(pasta).Order().Select(File.ReadAllText));
 
     private static async Task<string> VerificarAsync(McpClient clienteMcp)
     {
