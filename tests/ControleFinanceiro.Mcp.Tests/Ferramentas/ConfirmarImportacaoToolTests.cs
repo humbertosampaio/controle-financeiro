@@ -4,6 +4,7 @@ using ControleFinanceiro.Mcp.Tests.Infraestrutura;
 using ControleFinanceiro.Tests.Shared.Respostas;
 using ModelContextProtocol.Client;
 using ModelContextProtocol.Protocol;
+using System.Text.Json;
 
 namespace ControleFinanceiro.Mcp.Tests.Ferramentas;
 
@@ -40,6 +41,17 @@ public sealed class ConfirmarImportacaoToolTests : IAsyncLifetime
             .EnumerateObject()
             .Select(p => p.Name)
             .Should().Equal("resumo", "caminho", "layout", "sufixoConta");
+    }
+
+    // Sem o tipo, o cliente manda o sufixo como número, e o SDK não o converte para texto.
+    [Fact]
+    public async Task Esquema_Deve_TerOSufixoComoTextoOpcional()
+    {
+        McpClientTool ferramenta = await _servidor.ClienteMcp.ObterFerramentaAsync(NomeFerramenta);
+
+        JsonElement esquema = ferramenta.ProtocolTool.InputSchema;
+        esquema.GetProperty("properties").GetProperty("sufixoConta").GetProperty("type").GetString().Should().Be("string");
+        esquema.GetProperty("required").EnumerateArray().Select(obrigatorio => obrigatorio.GetString()).Should().NotContain("sufixoConta");
     }
 
     [Fact]

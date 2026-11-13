@@ -6,6 +6,11 @@ using System.ComponentModel;
 
 namespace ControleFinanceiro.Mcp.Ferramentas;
 
+/// <summary>
+/// Prevê a importação sem gravar. O sufixo da conta é opcional com o texto vazio, e não com o nulo: o <c>string?</c>
+/// sai no esquema com o tipo em lista (<c>["string", "null"]</c>), que o cliente descarta, e sem o tipo o modelo manda o
+/// sufixo como número, que o SDK não converte para texto. Vazio, o sufixo vale como não informado.
+/// </summary>
 [McpServerToolType]
 internal sealed class PreverImportacaoTool
 {
@@ -16,7 +21,7 @@ internal sealed class PreverImportacaoTool
         ImportacaoParaModeloService importacao,
         [Description("O caminho do arquivo, absoluto ou relativo à pasta que contém a pasta de origem (a raiz do repositório, por padrão), como dados/2026/extrato.csv.")] string caminho,
         [Description("O código do layout do arquivo.")] string layout,
-        [Description("Só no layout mercado-pago-conta-csv, em que é obrigatório: os 4 últimos caracteres do número da conta, que o usuário informa.")] string? sufixoConta = null,
+        [Description("Só no layout mercado-pago-conta-csv, em que é obrigatório: os 4 últimos caracteres do número da conta, que o usuário informa.")] string sufixoConta = "",
         CancellationToken cancellationToken = default)
     {
         return ArquivoDaOrigem.ImportarAsync(
