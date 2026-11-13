@@ -18,16 +18,46 @@ const decision = (r) => r?.decision ?? "allow";
 
 const commandCases = [
   // deny
+  // deny: pular os hooks
   ["git commit --no-verify -m \"x\"", "deny"],
   ["git commit -n -m \"feat: X\"", "deny"],
+  ["git commit -m \"feat: X\" -n", "deny"],
+  ["git commit -m \"feat: X\" '-n'", "deny"],
+  ["git commit -m \"feat: X\n\nRefs #7\" -n", "deny"],
+  ["git commit -an -m \"feat: X\"", "deny"],
+  ["git commit -sn -m \"feat: X\"", "deny"],
+  ["git -C . commit -n -m \"feat: X\"", "deny"],
+  ["git -c core.hooksPath=/dev/null commit -m \"feat: X\"", "deny"],
+  ["git --config-env=core.hooksPath=VAR commit -m \"feat: X\"", "deny"],
+  ["git --config-env core.hooksPath=VAR commit -m \"feat: X\"", "deny"],
+  ["GIT_CONFIG_COUNT=1 GIT_CONFIG_KEY_0=core.hooksPath GIT_CONFIG_VALUE_0=/dev/null git commit -m \"feat: X\"", "deny"],
+  ["$env:GIT_CONFIG_KEY_0 = 'core.hooksPath'; git commit -m \"feat: X\"", "deny"],
+  ["GIT_CONFIG_PARAMETERS=\"'core.hooksPath'='/x'\" git commit -m \"feat: X\"", "deny"],
+  ["git -c \"core.hooksPath\"=x commit -m \"feat: X\"", "deny"],
+  // deny: git add de dados ou forçado
   ["git add -f dados/c6.ofx", "deny"],
   ["git add --force .", "deny"],
+  ["git add -Af .", "deny"],
+  ["git add -fA .", "deny"],
+  ["git add bin/x \"-f\"", "deny"],
+  ["git -C . add -f bin/x", "deny"],
   ["git add dados/", "deny"],
   ["git add extrato.csv", "deny"],
   ["git add src/Importacao/extrato.ofx", "deny"],
+  ["git add \"dados/c6.csv\"", "deny"],
+  ["git add 'dados/c6.csv'", "deny"],
+  ["git -C . add dados/c6.csv", "deny"],
+  ["git -C 'D:/pasta com espaco' add dados/c6.csv", "deny"],
+  ["git -c core.quotepath=off add dados/c6.csv", "deny"],
+  // deny: push na main
   ["git push origin main", "deny"],
   ["git push origin HEAD:main", "deny"],
   ["git push --force-with-lease origin feat/x:main", "deny"],
+  ["git push origin \"main\"", "deny"],
+  ["git push origin 'HEAD:main'", "deny"],
+  ["git -C . push origin main", "deny"],
+  ["git -C \"D:/pasta com espaco\" push origin main", "deny"],
+  // deny: secrets
   ["dotnet user-secrets list --project src/ControleFinanceiro.AppHost", "deny"],
   [`curl -H "x-api-key: ${chaveAnthropic}" https://api.anthropic.com`, "deny"],
   [`export GH_TOKEN=${tokenGitHub}`, "deny"],
@@ -39,6 +69,10 @@ const commandCases = [
   ["git branch -D feat/velha", "ask"],
   ["git checkout -- .", "ask"],
   ["git rebase main", "ask"],
+  ["git -c include.path=/tmp/x commit -m \"feat: X\"", "ask"],
+  ["git -c includeIf.gitdir:/x/.path=/tmp/x commit -m \"feat: X\"", "ask"],
+  ["GIT_CONFIG_GLOBAL=/tmp/x git commit -m \"feat: X\"", "ask"],
+  ["GIT_CONFIG_SYSTEM=/tmp/x git commit -m \"feat: X\"", "ask"],
   ["git config core.hooksPath .githooks", "ask"],
   ["rm -rf bin", "ask"],
   ["Remove-Item -Recurse -Force obj", "ask"],
@@ -53,6 +87,13 @@ const commandCases = [
   ["git add -A", "allow"],
   ["git commit -m \"feat(importacao): Lê o extrato OFX do C6\"", "allow"],
   ["git commit -m \"docs: Explica a opção -n do comando\"", "allow"],
+  ["git commit --amend -m \"feat: X\"", "allow"],
+  ["git commit -uno -m \"feat: X\"", "allow"],
+  ["git -C src add Transacao.cs", "allow"],
+  ["git -C \"D:/pasta com espaco\" status", "allow"],
+  ["gh pr create --title \"docs: X\" --body \"Explica o core.hooksPath\"", "allow"],
+  ["git commit -m \"docs: Explica a opção -n\n\nRefs #7\"", "allow"],
+  ["git --no-pager log --oneline", "allow"],
   ["git push -u origin HEAD", "allow"],
   ["git push -n origin feat/1-x", "allow"],
   ["git push origin feat/7-importar-ofx-c6", "allow"],
@@ -86,6 +127,46 @@ test("texto dentro de heredoc não é comando", () => {
   assert.equal(decision(checkCommand(depois, { branch: "feat/1-x" })), "deny");
   // Secret dentro de heredoc continua bloqueado: o heredoc pode estar escrevendo um arquivo.
   assert.equal(decision(checkCommand(`cat > a.cs <<'EOF'\n${chaveAnthropic}\nEOF`, { branch: "feat/1-x" })), "deny");
+});
+
+test("argumentos de um comando não vazam para a linha seguinte", () => {
+  // O --force-with-lease do push não é um --force do git add da linha anterior.
+  const addEPush = "git add src/X.cs\ngit commit -m \"feat: X\"\ngit push --force-with-lease origin HEAD:feat/1-x";
+  assert.equal(decision(checkCommand(addEPush, { branch: "feat/1-x" })), "ask");
+  // As palavras da linha seguinte não viram refspec de um push sem refspec na main.
+  assert.equal(decision(checkCommand("git push\necho feito", { branch: "main" })), "deny");
+  // Um caminho de dados na linha seguinte não é argumento do git add.
+  assert.equal(decision(checkCommand("git add src/X.cs\nhead -5 dados/c6.csv", { branch: "feat/1-x" })), "allow");
+  // Um caminho de dados/ na mesma linha continua barrado.
+  assert.equal(decision(checkCommand("git add src/X.cs dados/c6.csv\necho feito", { branch: "feat/1-x" })), "deny");
+});
+
+test("continuação de linha segue o mesmo comando", () => {
+  for (const continua of ["\\\n", "\\\r\n", "`\n", "`\r\n"]) {
+    assert.equal(decision(checkCommand(`git add src/X.cs ${continua}dados/c6.csv`, { branch: "feat/1-x" })), "deny", JSON.stringify(continua));
+    assert.equal(decision(checkCommand(`git add ${continua}-f bin/x`, { branch: "feat/1-x" })), "deny", JSON.stringify(continua));
+    assert.equal(decision(checkCommand(`git push origin ${continua}main`, { branch: "feat/1-x" })), "deny", JSON.stringify(continua));
+    assert.equal(decision(checkCommand(`git push origin HEAD ${continua}--force-with-lease`, { branch: "feat/1-x" })), "ask", JSON.stringify(continua));
+    assert.equal(decision(checkCommand(`git reset ${continua}--hard`, { branch: "feat/1-x" })), "ask", JSON.stringify(continua));
+  }
+});
+
+test("git add --force colado num separador continua barrado", () => {
+  // O último caso é o --force seguido de aspas vazias, que o shell junta à opção: continua sendo --force.
+  for (const command of ["git add bin/x -f; echo ok", "git add bin/x -f&& git commit -m \"feat: X\"", "git add bin/x -f| cat", "(git add bin/x -f)", "git add bin/x --force\"\""]) {
+    assert.equal(decision(checkCommand(command, { branch: "feat/1-x" })), "deny", command);
+  }
+  assert.equal(decision(checkCommand("git add --force-with-lease src/X.cs", { branch: "feat/1-x" })), "allow");
+});
+
+test("todo git add do comando é conferido", () => {
+  assert.equal(decision(checkCommand("git add src/X.cs\ngit add dados/c6.csv", { branch: "feat/1-x" })), "deny");
+});
+
+test("todo git push do comando é conferido", () => {
+  assert.equal(decision(checkCommand("git push -u origin HEAD\ngit push origin main", { branch: "feat/1-x" })), "deny");
+  // Um push na main vence o pedido de confirmação de um push forçado anterior.
+  assert.equal(decision(checkCommand("git push --force-with-lease origin HEAD\ngit push origin main", { branch: "feat/1-x" })), "deny");
 });
 
 test("push sem refspec depende da branch atual", () => {
