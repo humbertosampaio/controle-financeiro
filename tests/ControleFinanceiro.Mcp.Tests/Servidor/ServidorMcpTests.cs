@@ -2,6 +2,7 @@ using CliWrap.Buffered;
 using ControleFinanceiro.Mcp.Tests.Infraestrutura;
 using ModelContextProtocol.Client;
 using ModelContextProtocol.Protocol;
+using System.Text.Json;
 
 namespace ControleFinanceiro.Mcp.Tests.Servidor;
 
@@ -32,6 +33,22 @@ public sealed class ServidorMcpTests
         ferramentas
             .Select(ferramenta => ferramenta.Name)
             .Should().BeEquivalentTo(NomeFerramenta, "listar_transacoes", "listar_despesas_fixas", "balanco_mensal", "prever_vinculo", "confirmar_vinculo", "listar_cartoes", "prever_pagamento_fatura", "confirmar_pagamento_fatura", "prever_importacao", "confirmar_importacao");
+    }
+
+    // O cliente descarta o tipo em lista, como o ["string", "null"] do parâmetro anulável, e sem o tipo o modelo
+    // escolhe o formato do argumento, que o SDK pode não converter.
+    [Fact]
+    public async Task ListarFerramentas_Deve_PublicarUmTipoSoEmCadaParametro()
+    {
+        IList<McpClientTool> ferramentas = await _fixture.ClienteMcp.ListToolsAsync();
+
+        IEnumerable<string> semTipoUnico = ferramentas
+            .SelectMany(ferramenta => ferramenta.ProtocolTool.InputSchema
+                .GetProperty("properties")
+                .EnumerateObject()
+                .Where(parametro => !parametro.Value.TryGetProperty("type", out JsonElement tipo) || tipo.ValueKind != JsonValueKind.String)
+                .Select(parametro => $"{ferramenta.Name}.{parametro.Name}"));
+        semTipoUnico.Should().BeEmpty();
     }
 
     [Fact]

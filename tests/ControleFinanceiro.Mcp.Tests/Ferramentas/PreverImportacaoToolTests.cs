@@ -6,7 +6,9 @@ using ControleFinanceiro.Domain.Services;
 using ControleFinanceiro.Domain.Transacoes;
 using ControleFinanceiro.Mcp.Tests.Infraestrutura;
 using ControleFinanceiro.Tests.Shared.Respostas;
+using ModelContextProtocol.Client;
 using ModelContextProtocol.Protocol;
+using System.Text.Json;
 
 namespace ControleFinanceiro.Mcp.Tests.Ferramentas;
 
@@ -37,6 +39,17 @@ public sealed class PreverImportacaoToolTests : IAsyncLifetime
     public Task InitializeAsync() => _servidor.ResetarBancoAsync();
 
     public Task DisposeAsync() => Task.CompletedTask;
+
+    // Sem o tipo, o cliente manda o sufixo como número, e o SDK não o converte para texto.
+    [Fact]
+    public async Task Esquema_Deve_TerOSufixoComoTextoOpcional()
+    {
+        McpClientTool ferramenta = await _servidor.ClienteMcp.ObterFerramentaAsync("prever_importacao");
+
+        JsonElement esquema = ferramenta.ProtocolTool.InputSchema;
+        esquema.GetProperty("properties").GetProperty("sufixoConta").GetProperty("type").GetString().Should().Be("string");
+        esquema.GetProperty("required").EnumerateArray().Select(obrigatorio => obrigatorio.GetString()).Should().NotContain("sufixoConta");
+    }
 
     [Theory, MemberData(nameof(Arquivos))]
     public async Task Prever_Quando_CadastrosResolvidos_Deve_ContarOsLancamentosSemGravar(string layout, string caminho)
