@@ -68,7 +68,7 @@ Acrescente o servidor em `mcpServers`, com o caminho absoluto da DLL publicada e
 
 Feche o Claude Desktop pela bandeja (fechar a janela não encerra o app) e abra de novo. O servidor aparece no menu de ferramentas da conversa. O log do servidor é o `mcp-server-controle-financeiro.log`, na pasta de logs da tabela.
 
-O Claude Desktop pede permissão a cada chamada de ferramenta, mostra os argumentos e permite aprovar só aquela chamada. Ele não lê a meta nem o `.claude/settings.json` do projeto e oferece "permitir sempre": **nunca dê "permitir sempre" à `confirmar_vinculo` nem à `confirmar_pagamento_fatura`**, ou o vínculo e o pagamento passam a ser gravados sem você ler o resumo. O risco é aceito por ser uma ferramenta de uso pessoal.
+O Claude Desktop pede permissão a cada chamada de ferramenta, mostra os argumentos e permite aprovar só aquela chamada. Ele não lê a meta nem o `.claude/settings.json` do projeto e oferece "permitir sempre": **nunca dê "permitir sempre" à `confirmar_vinculo`, à `confirmar_pagamento_fatura` nem à `confirmar_importacao`**, ou o vínculo, o pagamento e a importação passam a ser gravados sem você ler o resumo. O risco é aceito por ser uma ferramenta de uso pessoal.
 
 ## Vínculo em duas etapas
 
@@ -79,13 +79,13 @@ O vínculo de uma saída a uma despesa é gravado em duas chamadas, e só a segu
 
 Recusar a aprovação não chama a ferramenta, e nada é gravado. Se algo mudou entre as duas etapas, a confirmação devolve o erro e não grava: a transação já paga outra despesa (`TransacaoJaVinculada`), a despesa já foi paga por outra saída (`DespesaJaPaga`) ou o resumo não confere (`ResumoDivergente`, que manda pedir a prévia de novo). Confirmar duas vezes devolve `TransacaoJaVinculada`. O vínculo gravado se desfaz pelo endpoint de desvínculo da API.
 
-Quem pede a aprovação é o cliente, por duas travas na `confirmar_vinculo` e na `confirmar_pagamento_fatura` (detalhes em [harness.md](harness.md#ferramentas-do-servidor-mcp-que-gravam)):
+Quem pede a aprovação é o cliente, por duas travas na `confirmar_vinculo`, na `confirmar_pagamento_fatura` e na `confirmar_importacao` (detalhes em [harness.md](harness.md#ferramentas-do-servidor-mcp-que-gravam)):
 
 | Cliente | O que faz ele perguntar |
 |---|---|
 | `claude` no terminal | a meta `anthropic/requiresUserInteraction` da ferramenta, em todos os modos, sem "não perguntar de novo" |
 | Claude Code do app desktop | a regra `ask` do `.claude/settings.json` do projeto: no modo auto, ele ignora a meta |
-| Claude Desktop | o pedido de permissão de toda chamada; nunca dê "permitir sempre" à `confirmar_vinculo` nem à `confirmar_pagamento_fatura` |
+| Claude Desktop | o pedido de permissão de toda chamada; nunca dê "permitir sempre" a uma ferramenta `confirmar_*` |
 
 Em `dontAsk` e com `--permission-prompt-tool`, o Claude Code nega a chamada, e o vínculo não acontece.
 
@@ -97,9 +97,43 @@ A saída da conta que pagou a fatura do cartão paga, de uma vez, as despesas j�
 2. **`prever_pagamento_fatura`** recebe o id da saída, o id do cartão e o ano e o mês do vencimento, aplica o pagamento em memória e devolve a saída, as despesas pagas, o total e um `resumo` em uma frase (valor e data da saída, descrição e contraparte, banco, final do cartão informado, mês de vencimento, quantidade de despesas e total, com os documentos mascarados e sem ids). Nada é gravado.
 3. **`confirmar_pagamento_fatura`** recebe o `resumo` da prévia, primeiro nos argumentos, e os mesmos ids e mês. O servidor refaz o pagamento do zero e só grava se o resumo recalculado for o mesmo.
 
-Uma cobrança que chegou entre as duas etapas muda o total, e a confirmação devolve `ResumoPagamentoFaturaDivergente` sem gravar. Sem nada cobrado e pendente no mês, inclusive ao confirmar duas vezes, o erro é `FaturaSemCobrancaPendente`, que costuma indicar o mês ou o cartão errado; a saída que já pagou outra fatura devolve `TransacaoPagaOutraFatura`. O pagamento gravado se desfaz pelo endpoint de desfazer o pagamento da fatura da API.
+Uma cobrança que chegou entre as duas etapas muda o total, e a confirmação devolve `ResumoDivergente` sem gravar. Sem nada cobrado e pendente no mês, inclusive ao confirmar duas vezes, o erro é `FaturaSemCobrancaPendente`, que costuma indicar o mês ou o cartão errado; a saída que já pagou outra fatura devolve `TransacaoPagaOutraFatura`. O pagamento gravado se desfaz pelo endpoint de desfazer o pagamento da fatura da API.
 
 **Cliente novo.** A trava humana é do host, não do servidor: o servidor só declara a meta e confere o resumo. Antes de registrar o servidor num cliente novo (um bot de WhatsApp, Telegram ou Discord, por exemplo), confira como ele confirma: ele precisa honrar a meta com uma confirmação que não passe pelo modelo, como um botão do chat tratado pelo próprio bot, e não o modelo interpretando a resposta do usuário.
+
+## Importação em duas etapas
+
+O servidor importa os extratos e as faturas que estão na pasta `dados/` do repositório, ignorada pelo git, com a mesma regra da importação pela API. Como no vínculo, só a segunda chamada grava, e com as mesmas travas de aprovação:
+
+1. **`prever_importacao`** recebe o `caminho` do arquivo, o `layout` e, só no `mercado-pago-conta-csv`, o `sufixoConta` que você informa (os 4 últimos caracteres do número da conta, que esse arquivo não traz). O servidor lê o arquivo, aplica a importação em memória e devolve o banco, o período, os lançamentos lidos, novos e já existentes, os cartões da fatura, se a conta será criada e um `resumo` em uma frase. Nada é gravado.
+2. **`confirmar_importacao`** recebe o `resumo` da prévia, primeiro nos argumentos, e os mesmos caminho, layout e sufixo. O servidor lê o arquivo de novo, refaz a importação do zero e só grava se o resumo recalculado for o mesmo. O resumo traz o final da conta, e outro sufixo na confirmação muda o resumo e não grava. O caminho não entra no resumo, mas fica nos argumentos do pedido de aprovação.
+
+| Layout | Arquivo |
+|---|---|
+| `c6-conta-csv` | extrato CSV da conta do C6 |
+| `mercado-pago-conta-csv` | extrato CSV da conta do Mercado Pago, com o `sufixoConta` |
+| `c6-cartao-csv` | fatura CSV do cartão do C6 |
+| `mercado-pago-cartao-csv` | fatura CSV do cartão do Mercado Pago, no formato de [fatura-mercado-pago.md](fatura-mercado-pago.md) |
+
+**O que vai ao modelo.** Só contagens, as datas do período, o banco, o layout, os finais de cartão, o final da conta (no resumo), o número da linha com erro e mensagens fixas. Nenhuma linha do arquivo, nem a descrição, a contraparte ou o valor de um lançamento, nem o nome do arquivo, o número inteiro da conta ou os ids. A falha de leitura diz só a linha e o tipo (fora do layout, sem as colunas, lançamento inválido ou conteúdo inválido); para ver o motivo completo, importe o mesmo arquivo pela API.
+
+**Pasta de origem.** Por padrão, é a `dados/` duas pastas acima da cópia publicada: de `artifacts/mcp/`, a `dados/` da raiz do repositório. Para usar outra pasta, defina `Mcp:OrigemArquivoImportacao` no User Secret do servidor ou numa variável de ambiente. O caminho pode ser absoluto ou relativo à pasta que contém a pasta de origem, que, com a pasta padrão, é a raiz do repositório: `dados/2026/extrato.csv`. O servidor só abre um `.csv` de até 5 MB dentro dessa pasta, e recusa o caminho que sai dela por `..`, por uma pasta irmã com o mesmo prefixo ou por um link (symlink ou junction) no caminho. Fora do `artifacts/mcp/`, como no `bin/` do `src` ou dos testes, a pasta padrão não existe e a importação falha: o servidor nunca procura o repositório subindo pastas.
+
+**Cadastros que faltam.** A conta do extrato que ainda não existe é criada, e a prévia avisa (`conta_nova`). O cartão nunca é criado: a fatura com um final sem cartão é recusada (`CartoesNaoResolvidos`) e lista os finais em `pendencias.finais_sem_cartao`. Os textos de beneficiário e as categorias do banco que ainda não são alias também recusam a importação, e vão só como quantidade em `pendencias`. Nos três casos, resolva pela API (a prévia da importação na API lista os textos) e importe de novo.
+
+**Erros.** Confirmar duas vezes, ou confirmar depois que o arquivo mudou, devolve `ResumoDivergente` sem gravar: a segunda leitura daria outras contagens. Uma prévia nova do mesmo arquivo já importado mostra 0 novas. A importação gravada se desfaz só no banco, pelo roteiro abaixo; desfazer uma importação pela API é a #54.
+
+**Parcelas.** Depois de importar uma fatura, as despesas parceladas só ganham a cobrança das parcelas pela conciliação da API, `POST usuarios/{idUsuario}/despesas/conciliacoes`. A conciliação automática é a #160; até lá, rode esse passo à mão.
+
+### Reimportar do zero
+
+Para recomeçar o banco local a partir dos arquivos de `dados/`:
+
+1. Publique o servidor (`pwsh scripts/PublicarMcp.ps1`) e reconecte o cliente.
+2. Limpe os dados importados com o seu script SQL local, fora do git. A limpeza não é uma ferramenta do servidor.
+3. Importe pelo servidor os arquivos de `dados/`, extratos e faturas em ordem cronológica, cada um pela prévia e pela confirmação, resolvendo pela API o que a prévia pedir.
+4. Concilie as parcelas pela API.
+5. Rode o roteiro de conferência abaixo de ponta a ponta.
 
 ## Roteiro de conferência
 
@@ -117,5 +151,8 @@ Faça as perguntas em ordem, numa conversa nova, em cada cliente. Troque `<mês>
 | "Quais cartões eu tenho?" | `listar_cartoes` | os cartões com banco, final e dias de fechamento e de vencimento |
 | "A saída `<saída>` pagou a fatura do `<banco>` que vence em `<mês>`", e recuse o pedido de aprovação | `listar_cartoes`, `prever_pagamento_fatura` e o pedido da `confirmar_pagamento_fatura` | o resumo com o banco, o final, a quantidade e o total nos argumentos do pedido; recusado, as despesas continuam pendentes |
 | A mesma pergunta, aceitando o pedido | `prever_pagamento_fatura` e `confirmar_pagamento_fatura` | o pedido aparece também no modo auto; aceito, as despesas cobradas da fatura ficam pagas pela saída, com o valor cobrado |
+| "Importe o extrato `dados/<arquivo>` do C6", e recuse o pedido de aprovação | `prever_importacao` e o pedido da `confirmar_importacao` | o resumo com o layout, o final da conta (4 caracteres, nunca o número inteiro do cabeçalho), o banco, o período e as contagens nos argumentos do pedido, e nenhuma descrição de lançamento na conversa; recusado, nada é importado |
+| A mesma pergunta, aceitando o pedido | `prever_importacao` e `confirmar_importacao` | aceito, as transações aparecem em `listar_transacoes`; uma nova prévia do mesmo arquivo mostra 0 novas |
+| "Importe a fatura `dados/<arquivo>` do Mercado Pago" com um final sem cartão | `prever_importacao` | o erro com os finais sem cartão, e nada gravado |
 
 `banco indisponivel` no primeiro passo indica o Postgres parado ou a conexão errada no User Secret; uma ferramenta de leitura que falha com o banco disponível indica o `Mcp:IdUsuario` ausente.

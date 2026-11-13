@@ -15,14 +15,14 @@ Organizador financeiro pessoal: importa extratos e faturas de vários bancos, ca
 | `src/ControleFinanceiro.Infrastructure.Importacao` | Leitores de extrato e fatura, um adaptador por layout | Application |
 | `src/ControleFinanceiro.Infrastructure.Persistence` | EF Core + Postgres, repositórios, migrations | Domain, Application |
 | `src/ControleFinanceiro.WebApi` | Endpoints FastEndpoints | Application, Persistence |
-| `src/ControleFinanceiro.Mcp` | Servidor MCP local por stdio, iniciado pelo cliente MCP | Application, Persistence |
+| `src/ControleFinanceiro.Mcp` | Servidor MCP local por stdio, iniciado pelo cliente MCP | Application, Persistence, Importacao (só o registro dos leitores e da origem dos arquivos) |
 | `src/ControleFinanceiro.AppHost` | Aspire: sobe o Postgres e a API localmente | WebApi |
 | `src/ControleFinanceiro.ServiceDefaults` | Telemetria e health checks do Aspire | — |
 | `tests/ControleFinanceiro.Domain.Tests` | Testes de domínio (xUnit + AutoFixture + FluentAssertions) | Domain |
 | `tests/ControleFinanceiro.Infrastructure.Importacao.Tests` | Testes dos leitores de extrato com arquivos fictícios em `Fixtures/` | Importacao, Tests.Shared |
 | `tests/ControleFinanceiro.WebApi.Tests` | Testes de integração dos endpoints: API em memória + Postgres do Testcontainers (precisa do Docker) | WebApi, Tests.Shared |
 | `tests/ControleFinanceiro.Mcp.Tests` | Testes do servidor MCP: processo real + Postgres do Testcontainers (precisa do Docker) | Mcp, Tests.Shared |
-| `tests/ControleFinanceiro.SaidaModelo.Tests` | Payload dos tipos de saída para o modelo e regras de arquitetura da fronteira (ArchUnitNET); sem Docker | Mcp, Tests.Shared |
+| `tests/ControleFinanceiro.SaidaModelo.Tests` | Payload dos tipos de saída para o modelo e regras de arquitetura da fronteira (ArchUnitNET); sem Docker | Mcp, Importacao, Tests.Shared |
 | `tests/ControleFinanceiro.Tests.Shared` | Customizações do AutoFixture compartilhadas | Domain |
 
 ## Regras invioláveis
