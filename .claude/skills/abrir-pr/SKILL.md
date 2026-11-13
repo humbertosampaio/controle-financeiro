@@ -75,10 +75,18 @@ O dono do repositório é o único que trabalha nele e revisa cada commit antes 
 gh pr checks <numero> --watch --interval 30
 ```
 
-- **CI verde:** merge com merge commit (squash e rebase estão desligados no repositório), depois volte para a `main` atualizada:
+- **CI verde:** merge com merge commit (squash e rebase estão desligados no repositório). O `--delete-branch` apaga a branch remota:
   ```bash
   gh pr merge <numero> --merge --delete-branch
   ```
+  Depois, limpe o clone. O `gh` tenta trocar para a `main` e apagar a branch local, mas falha em silêncio quando a sessão roda num worktree, e não limpa as refs de branches remotas já apagadas:
+  ```bash
+  git fetch --prune origin
+  git switch main && git pull --ff-only   # num worktree: git switch --detach origin/main
+  git branch -d <branch-do-pr>            # se ainda existir; -d só apaga o que já está mergeado
+  git branch --merged origin/main         # deve listar só a main
+  ```
+  Se a última lista trouxer outras branches, são sobras de PRs anteriores: mostre-as ao dono e apague com `git branch -d` só depois do ok dele. Nunca use `-D`.
 - **CI vermelho:** corrija na branch, com commit normal (o PR já está aberto), faça o push e espere de novo.
 - **Conflito com a `main`, ou um comentário de revisão no PR:** pare e pergunte ao dono antes do merge.
 
