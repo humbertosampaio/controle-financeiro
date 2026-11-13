@@ -1,4 +1,5 @@
 using ControleFinanceiro.Application.Importacoes;
+using ControleFinanceiro.Infrastructure.Importacao.Arquivos;
 using ControleFinanceiro.Infrastructure.Importacao.C6;
 using ControleFinanceiro.Infrastructure.Importacao.MercadoPago;
 using Microsoft.Extensions.DependencyInjection;
@@ -20,6 +21,12 @@ public static class DependencyInjection
                 .AddTransient<ILeitorExtratoContaInformada, LeitorExtratoContaMercadoPago>()
                 .AddTransient<ILeitorFatura, LeitorFaturaCartaoC6>()
                 .AddTransient<ILeitorFatura, LeitorFaturaCartaoMercadoPago>();
+        }
+
+        /// <summary>Registra a <see cref="IOrigemArquivoImportacao"/> na pasta <paramref name="raiz"/>.</summary>
+        public IServiceCollection AddOrigemArquivoImportacao(string raiz)
+        {
+            return services.AddTransient<IOrigemArquivoImportacao>(_ => new OrigemArquivoImportacaoLocal(raiz));
         }
     }
 }

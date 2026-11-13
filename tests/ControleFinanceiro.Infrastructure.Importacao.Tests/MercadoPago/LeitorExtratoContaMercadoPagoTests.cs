@@ -1,3 +1,4 @@
+using ControleFinanceiro.Application.Importacoes;
 using ControleFinanceiro.Domain.Contas;
 using ControleFinanceiro.Domain.Importacoes;
 using ControleFinanceiro.Domain.Shared.ValueObjects;
@@ -115,9 +116,9 @@ public sealed class LeitorExtratoContaMercadoPagoTests
     {
         Stream arquivo = _fixture.ComLinha(LinhaSaldos, "1.250,01;3.500,77;-2.019,92;2.730,85");
 
-        Result<Extrato> result = await _leitor.LerAsync(arquivo, _sufixo, CancellationToken.None);
+        Result<Extrato, FalhaLeituraArquivo> result = await _leitor.LerAsync(arquivo, _sufixo, CancellationToken.None);
 
-        result.Should().FailWith("O saldo do dia 02/03/2026 não fecha com os lançamentos do extrato.");
+        result.Should().FailWith(new FalhaLeituraArquivo(Linha: null, TipoFalhaLeituraArquivo.ConteudoInvalido, "O saldo do dia 02/03/2026 não fecha com os lançamentos do extrato."));
     }
 
     [Fact]
@@ -125,9 +126,9 @@ public sealed class LeitorExtratoContaMercadoPagoTests
     {
         Stream arquivo = _fixture.ComLinha(LinhaSaldos, "1.250,00;3.500,77;-2.019,92;2.730,86");
 
-        Result<Extrato> result = await _leitor.LerAsync(arquivo, _sufixo, CancellationToken.None);
+        Result<Extrato, FalhaLeituraArquivo> result = await _leitor.LerAsync(arquivo, _sufixo, CancellationToken.None);
 
-        result.Should().FailWith("O saldo final do arquivo não fecha com o saldo da última transação.");
+        result.Should().FailWith(new FalhaLeituraArquivo(Linha: null, TipoFalhaLeituraArquivo.ConteudoInvalido, "O saldo final do arquivo não fecha com o saldo da última transação."));
     }
 
     [Theory]
@@ -144,9 +145,9 @@ public sealed class LeitorExtratoContaMercadoPagoTests
     {
         Stream arquivo = _fixture.ComLinha(LinhaSegundoLancamento, linha);
 
-        Result<Extrato> result = await _leitor.LerAsync(arquivo, _sufixo, CancellationToken.None);
+        Result<Extrato, FalhaLeituraArquivo> result = await _leitor.LerAsync(arquivo, _sufixo, CancellationToken.None);
 
-        result.Should().FailWith("A linha 6 do arquivo não está no layout do extrato da conta do Mercado Pago.");
+        result.Should().FailWith(new FalhaLeituraArquivo(Linha: 6, TipoFalhaLeituraArquivo.ForaDoLayout, "A linha 6 do arquivo não está no layout do extrato da conta do Mercado Pago."));
     }
 
     [Fact]
@@ -154,7 +155,7 @@ public sealed class LeitorExtratoContaMercadoPagoTests
     {
         Stream arquivo = _fixture.ComLinha(LinhaSegundoLancamento, "03-03-2026; 123.456.789-09 ;1000000002;-120,00;1.130,35");
 
-        Result<Extrato> result = await _leitor.LerAsync(arquivo, _sufixo, CancellationToken.None);
+        Result<Extrato, FalhaLeituraArquivo> result = await _leitor.LerAsync(arquivo, _sufixo, CancellationToken.None);
 
         result.Should().Succeed().Which.Lancamentos.Should().Contain(l => l.Descricao == (TextoObrigatorio)"123.456.789-09");
     }
@@ -164,9 +165,9 @@ public sealed class LeitorExtratoContaMercadoPagoTests
     {
         Stream arquivo = _fixture.ComLinha(LinhaSegundoLancamento, "03-03-2026; ;1000000002;-120,00;1.130,35");
 
-        Result<Extrato> result = await _leitor.LerAsync(arquivo, _sufixo, CancellationToken.None);
+        Result<Extrato, FalhaLeituraArquivo> result = await _leitor.LerAsync(arquivo, _sufixo, CancellationToken.None);
 
-        result.Should().FailWith("A linha 6 do arquivo não tem descrição.");
+        result.Should().FailWith(new FalhaLeituraArquivo(Linha: 6, TipoFalhaLeituraArquivo.LancamentoInvalido, "A linha 6 do arquivo não tem descrição."));
     }
 
     [Fact]
@@ -174,9 +175,9 @@ public sealed class LeitorExtratoContaMercadoPagoTests
     {
         Stream arquivo = _fixture.ComLinha(LinhaSegundoLancamento, "03-03-2026;Pix enviado FULANO FICTICIO; ;-120,00;1.130,35");
 
-        Result<Extrato> result = await _leitor.LerAsync(arquivo, _sufixo, CancellationToken.None);
+        Result<Extrato, FalhaLeituraArquivo> result = await _leitor.LerAsync(arquivo, _sufixo, CancellationToken.None);
 
-        result.Should().FailWith("A linha 6 do arquivo não tem o identificador da transação.");
+        result.Should().FailWith(new FalhaLeituraArquivo(Linha: 6, TipoFalhaLeituraArquivo.LancamentoInvalido, "A linha 6 do arquivo não tem o identificador da transação."));
     }
 
     [Theory]
@@ -186,9 +187,9 @@ public sealed class LeitorExtratoContaMercadoPagoTests
     {
         Stream arquivo = _fixture.ComLinha(LinhaColunas, colunas);
 
-        Result<Extrato> result = await _leitor.LerAsync(arquivo, _sufixo, CancellationToken.None);
+        Result<Extrato, FalhaLeituraArquivo> result = await _leitor.LerAsync(arquivo, _sufixo, CancellationToken.None);
 
-        result.Should().FailWith("A linha 4 do arquivo não traz as colunas do extrato da conta do Mercado Pago.");
+        result.Should().FailWith(new FalhaLeituraArquivo(Linha: 4, TipoFalhaLeituraArquivo.SemColunas, "A linha 4 do arquivo não traz as colunas do extrato da conta do Mercado Pago."));
     }
 
     [Fact]
@@ -197,21 +198,21 @@ public sealed class LeitorExtratoContaMercadoPagoTests
         List<string> linhas = _fixture.Linhas().ToList();
         linhas.Insert(index: LinhaColunas - 1, item: "sep=;");
 
-        Result<Extrato> result = await _leitor.LerAsync(_fixture.ComLinhas(linhas), _sufixo, CancellationToken.None);
+        Result<Extrato, FalhaLeituraArquivo> result = await _leitor.LerAsync(_fixture.ComLinhas(linhas), _sufixo, CancellationToken.None);
 
-        result.Should().FailWith("A linha 4 do arquivo não traz as colunas do extrato da conta do Mercado Pago.");
+        result.Should().FailWith(new FalhaLeituraArquivo(Linha: 4, TipoFalhaLeituraArquivo.SemColunas, "A linha 4 do arquivo não traz as colunas do extrato da conta do Mercado Pago."));
     }
 
     [Theory]
-    [InlineData("02-03-2026;\"TIPO\nFICTICIO\";1000000002;abc;1,00", "não está no layout do extrato da conta do Mercado Pago.")]
-    [InlineData("02-03-2026;\" \n \";1000000002;1,00;1,00", "não tem descrição.")]
-    public async Task LerAsync_Quando_ErroEmRegistroComQuebraDeLinha_Deve_CitarALinhaOndeORegistroComeca(string linha, string erro)
+    [InlineData("02-03-2026;\"TIPO\nFICTICIO\";1000000002;abc;1,00", nameof(TipoFalhaLeituraArquivo.ForaDoLayout), "não está no layout do extrato da conta do Mercado Pago.")]
+    [InlineData("02-03-2026;\" \n \";1000000002;1,00;1,00", nameof(TipoFalhaLeituraArquivo.LancamentoInvalido), "não tem descrição.")]
+    public async Task LerAsync_Quando_ErroEmRegistroComQuebraDeLinha_Deve_CitarALinhaOndeORegistroComeca(string linha, string tipo, string erro)
     {
         Stream arquivo = _fixture.ComLinha(LinhaSegundoLancamento, linha);
 
-        Result<Extrato> result = await _leitor.LerAsync(arquivo, _sufixo, CancellationToken.None);
+        Result<Extrato, FalhaLeituraArquivo> result = await _leitor.LerAsync(arquivo, _sufixo, CancellationToken.None);
 
-        result.Should().FailWith($"A linha 6 do arquivo {erro}");
+        result.Should().FailWith(new FalhaLeituraArquivo(Linha: 6, TipoFalhaLeituraArquivo.FromName(tipo), $"A linha 6 do arquivo {erro}"));
     }
 
     [Fact]
@@ -219,23 +220,23 @@ public sealed class LeitorExtratoContaMercadoPagoTests
     {
         Stream arquivo = _fixture.ComLinha(LinhaColunas, "RELEASE_DATE;TRANSACTION_TYPE;TRANSACTION_NET_AMOUNT;PARTIAL_BALANCE");
 
-        Result<Extrato> result = await _leitor.LerAsync(arquivo, _sufixo, CancellationToken.None);
+        Result<Extrato, FalhaLeituraArquivo> result = await _leitor.LerAsync(arquivo, _sufixo, CancellationToken.None);
 
-        result.Should().FailWith("A linha 4 do arquivo não traz as colunas do extrato da conta do Mercado Pago.");
+        result.Should().FailWith(new FalhaLeituraArquivo(Linha: 4, TipoFalhaLeituraArquivo.SemColunas, "A linha 4 do arquivo não traz as colunas do extrato da conta do Mercado Pago."));
     }
 
     [Theory]
-    [InlineData(1, "INITIAL_BALANCE;CREDITS;DEBITS", "A linha 1 do arquivo não traz as colunas do resumo do extrato da conta do Mercado Pago.")]
-    [InlineData(2, "1.250,00;3.500,77;-2.019,92", "A linha 2 do arquivo não está no layout do resumo do extrato da conta do Mercado Pago.")]
-    [InlineData(2, "1250.00;3.500,77;-2.019,92;2.730,85", "A linha 2 do arquivo não está no layout do resumo do extrato da conta do Mercado Pago.")]
-    [InlineData(3, "TEXTO-DO-ARQUIVO", "A linha 3 do arquivo deveria estar em branco no extrato da conta do Mercado Pago.")]
-    public async Task LerAsync_Quando_ResumoForaDoLayout_Deve_RetornarFalhaSoComONumeroDaLinha(int numero, string linha, string erro)
+    [InlineData(1, "INITIAL_BALANCE;CREDITS;DEBITS", nameof(TipoFalhaLeituraArquivo.SemColunas), "A linha 1 do arquivo não traz as colunas do resumo do extrato da conta do Mercado Pago.")]
+    [InlineData(2, "1.250,00;3.500,77;-2.019,92", nameof(TipoFalhaLeituraArquivo.ForaDoLayout), "A linha 2 do arquivo não está no layout do resumo do extrato da conta do Mercado Pago.")]
+    [InlineData(2, "1250.00;3.500,77;-2.019,92;2.730,85", nameof(TipoFalhaLeituraArquivo.ForaDoLayout), "A linha 2 do arquivo não está no layout do resumo do extrato da conta do Mercado Pago.")]
+    [InlineData(3, "TEXTO-DO-ARQUIVO", nameof(TipoFalhaLeituraArquivo.ForaDoLayout), "A linha 3 do arquivo deveria estar em branco no extrato da conta do Mercado Pago.")]
+    public async Task LerAsync_Quando_ResumoForaDoLayout_Deve_RetornarFalhaSoComONumeroDaLinha(int numero, string linha, string tipo, string erro)
     {
         Stream arquivo = _fixture.ComLinha(numero, linha);
 
-        Result<Extrato> result = await _leitor.LerAsync(arquivo, _sufixo, CancellationToken.None);
+        Result<Extrato, FalhaLeituraArquivo> result = await _leitor.LerAsync(arquivo, _sufixo, CancellationToken.None);
 
-        result.Should().FailWith(erro);
+        result.Should().FailWith(new FalhaLeituraArquivo(numero, TipoFalhaLeituraArquivo.FromName(tipo), erro));
     }
 
     [Fact]
@@ -243,9 +244,9 @@ public sealed class LeitorExtratoContaMercadoPagoTests
     {
         Stream arquivo = _fixture.ComLinhas(_fixture.Linhas().Take(LinhaColunas - 2));
 
-        Result<Extrato> result = await _leitor.LerAsync(arquivo, _sufixo, CancellationToken.None);
+        Result<Extrato, FalhaLeituraArquivo> result = await _leitor.LerAsync(arquivo, _sufixo, CancellationToken.None);
 
-        result.Should().FailWith("O arquivo termina antes das colunas do extrato da conta do Mercado Pago.");
+        result.Should().FailWith(new FalhaLeituraArquivo(Linha: null, TipoFalhaLeituraArquivo.SemColunas, "O arquivo termina antes das colunas do extrato da conta do Mercado Pago."));
     }
 
     [Fact]
@@ -253,15 +254,15 @@ public sealed class LeitorExtratoContaMercadoPagoTests
     {
         Stream arquivo = _fixture.ComLinhas(_fixture.Linhas().Take(LinhaColunas));
 
-        Result<Extrato> result = await _leitor.LerAsync(arquivo, _sufixo, CancellationToken.None);
+        Result<Extrato, FalhaLeituraArquivo> result = await _leitor.LerAsync(arquivo, _sufixo, CancellationToken.None);
 
-        result.Should().FailWith("O arquivo não traz transações.");
+        result.Should().FailWith(new FalhaLeituraArquivo(Linha: null, TipoFalhaLeituraArquivo.ConteudoInvalido, "O arquivo não traz transações."));
     }
 
     private async Task<Extrato> LerFixtureAsync()
     {
         await using FileStream arquivo = File.OpenRead(_fixture.Caminho);
-        Result<Extrato> result = await _leitor.LerAsync(arquivo, _sufixo, CancellationToken.None);
+        Result<Extrato, FalhaLeituraArquivo> result = await _leitor.LerAsync(arquivo, _sufixo, CancellationToken.None);
         return result.Should().Succeed().Which;
     }
 

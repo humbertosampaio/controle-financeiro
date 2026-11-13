@@ -86,7 +86,7 @@ public sealed class ConfirmarVinculoToolTests : IAsyncLifetime
             despesa.Id.Value,
             resumo.Replace("despesa", "despesas", StringComparison.Ordinal));
 
-        ErroLido.DoEnvelope(resultado.Json).Mensagem.Should().Be(ErroParaModelo.ResumoDivergente.Mensagem);
+        ErroLido.DoEnvelope(resultado.Json).Mensagem.Should().Be(ErrosParaModelo.Vinculo.ResumoDivergente.Mensagem);
         await _vinculo.DeveEstarPendenteAsync(despesa, mes);
     }
 
@@ -100,7 +100,7 @@ public sealed class ConfirmarVinculoToolTests : IAsyncLifetime
 
         CallToolResult resultado = await _servidor.ClienteMcp.ConfirmarVinculoAsync(transacao.Id.Value, despesa.Id.Value, resumoDaOutra);
 
-        ErroLido.DoEnvelope(resultado.Json).Mensagem.Should().Be(ErroParaModelo.ResumoDivergente.Mensagem);
+        ErroLido.DoEnvelope(resultado.Json).Mensagem.Should().Be(ErrosParaModelo.Vinculo.ResumoDivergente.Mensagem);
         await _vinculo.DeveEstarPendenteAsync(despesa, mes);
         await _vinculo.DeveEstarPendenteAsync(outra, mes);
     }
@@ -120,7 +120,7 @@ public sealed class ConfirmarVinculoToolTests : IAsyncLifetime
 
         CallToolResult resultado = await _servidor.ClienteMcp.ConfirmarVinculoAsync(transacao.Id.Value, despesa.Id.Value, resumo);
 
-        ErroLido.DoEnvelope(resultado.Json).Mensagem.Should().Be(ErroParaModelo.DespesaJaPaga.Mensagem);
+        ErroLido.DoEnvelope(resultado.Json).Mensagem.Should().Be(ErrosParaModelo.Vinculo.DespesaJaPaga.Mensagem);
         Despesa gravada = await _banco.LerDespesaAsync(despesa);
         gravada.PagamentosRealizadosPor(transacao.Id).Should().BeEmpty();
         gravada.PagamentosRealizadosPor(outraSaida.Id).Should().ContainSingle().Which.MesReferencia.Should().Be(mes);
@@ -138,7 +138,7 @@ public sealed class ConfirmarVinculoToolTests : IAsyncLifetime
 
         CallToolResult resultado = await _servidor.ClienteMcp.ConfirmarVinculoAsync(transacao.Id.Value, despesa.Id.Value, resumo);
 
-        ErroLido.DoEnvelope(resultado.Json).Mensagem.Should().Be(ErroParaModelo.TransacaoJaVinculada.Mensagem);
+        ErroLido.DoEnvelope(resultado.Json).Mensagem.Should().Be(ErrosParaModelo.Vinculo.TransacaoJaVinculada.Mensagem);
         await _vinculo.DeveEstarPendenteAsync(despesa, mes);
     }
 
@@ -151,7 +151,7 @@ public sealed class ConfirmarVinculoToolTests : IAsyncLifetime
 
         CallToolResult resultado = await _servidor.ClienteMcp.ConfirmarVinculoAsync(transacao.Id.Value, despesa.Id.Value, resumo);
 
-        ErroLido.DoEnvelope(resultado.Json).Mensagem.Should().Be(ErroParaModelo.TransacaoJaVinculada.Mensagem);
+        ErroLido.DoEnvelope(resultado.Json).Mensagem.Should().Be(ErrosParaModelo.Vinculo.TransacaoJaVinculada.Mensagem);
         Despesa gravada = await _banco.LerDespesaAsync(despesa);
         gravada.PagamentosRealizadosPor(transacao.Id).Should().ContainSingle().Which.MesReferencia.Should().Be(mes);
     }
@@ -167,7 +167,7 @@ public sealed class ConfirmarVinculoToolTests : IAsyncLifetime
 
         CallToolResult resultado = await _servidor.ClienteMcp.ConfirmarVinculoAsync(inexistente.Value, despesa.Id.Value, resumo);
 
-        ErroLido.DoEnvelope(resultado.Json).Mensagem.Should().Be(ErroParaModelo.TransacaoNaoEncontrada.Mensagem);
+        ErroLido.DoEnvelope(resultado.Json).Mensagem.Should().Be(ErrosParaModelo.Consulta.TransacaoNaoEncontrada.Mensagem);
         await _vinculo.DeveEstarPendenteAsync(despesa, mes);
     }
 
@@ -182,7 +182,7 @@ public sealed class ConfirmarVinculoToolTests : IAsyncLifetime
 
         CallToolResult resultado = await _servidor.ClienteMcp.ConfirmarVinculoAsync(transacao.Id.Value, inexistente.Value, resumo);
 
-        ErroLido.DoEnvelope(resultado.Json).Mensagem.Should().Be(ErroParaModelo.DespesaNaoEncontrada.Mensagem);
+        ErroLido.DoEnvelope(resultado.Json).Mensagem.Should().Be(ErrosParaModelo.Consulta.DespesaNaoEncontrada.Mensagem);
     }
 
     [Theory, DomainAutoData]
@@ -197,7 +197,7 @@ public sealed class ConfirmarVinculoToolTests : IAsyncLifetime
 
         CallToolResult resultado = await _servidor.ClienteMcp.ConfirmarVinculoAsync(transacao.Id.Value, deOutroUsuario.Id.Value, resumo);
 
-        ErroLido.DoEnvelope(resultado.Json).Mensagem.Should().Be(ErroParaModelo.DespesaNaoEncontrada.Mensagem);
+        ErroLido.DoEnvelope(resultado.Json).Mensagem.Should().Be(ErrosParaModelo.Consulta.DespesaNaoEncontrada.Mensagem);
         await _vinculo.DeveEstarPendenteAsync(deOutroUsuario, mes);
     }
 
@@ -210,7 +210,7 @@ public sealed class ConfirmarVinculoToolTests : IAsyncLifetime
 
         CallToolResult resultado = await _servidor.ClienteMcp.ConfirmarVinculoAsync(entrada.Id.Value, despesa.Id.Value, resumo);
 
-        ErroLido.DoEnvelope(resultado.Json).Mensagem.Should().Be(ErroParaModelo.TransacaoNaoEhSaida.Mensagem);
+        ErroLido.DoEnvelope(resultado.Json).Mensagem.Should().Be(ErrosParaModelo.Vinculo.TransacaoNaoEhSaida.Mensagem);
         await _vinculo.DeveEstarPendenteAsync(despesa, mes);
     }
 

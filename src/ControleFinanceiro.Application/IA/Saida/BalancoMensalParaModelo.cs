@@ -8,29 +8,23 @@ public sealed record BalancoMensalParaModelo : ISaidaModelo
 {
     /// <summary>O mês, como <c>03/2026</c>.</summary>
     [JsonPropertyName("mes")]
-    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public string? Mes { get; }
 
     /// <summary>A renda atual do usuário, sem histórico: um mês passado usa a de hoje.</summary>
     [JsonPropertyName("rendaLiquida")]
-    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public decimal? RendaLiquida { get; }
 
     [JsonPropertyName("pago")]
-    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public decimal? TotalPago { get; }
 
     [JsonPropertyName("pendente")]
-    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public decimal? TotalPendente { get; }
 
     /// <summary>A renda líquida menos o pago e o pendente, negativo quando as despesas passam dela.</summary>
     [JsonPropertyName("saldo")]
-    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public decimal? SaldoPrevisto { get; }
 
     [JsonPropertyName("erro")]
-    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public ErroParaModelo? Erro { get; }
 
     private BalancoMensalParaModelo(MesReferencia mes, Reais rendaLiquida, Reais totalPago, Reais totalPendente, Reais saldoPrevisto)

@@ -1,3 +1,4 @@
+using ControleFinanceiro.Application.Importacoes;
 using ControleFinanceiro.Domain.Contas;
 using ControleFinanceiro.Domain.Importacoes;
 using ControleFinanceiro.Domain.Shared.ValueObjects;
@@ -84,9 +85,9 @@ public sealed class LeitorExtratoContaC6Tests
     {
         Stream arquivo = _fixture.ComLinha(numero: 14, "03/03/2026,03/03/2026,Tarifa de exemplo,,0.00,5.00,-252.96");
 
-        Result<Extrato> result = await _leitor.LerAsync(arquivo, CancellationToken.None);
+        Result<Extrato, FalhaLeituraArquivo> result = await _leitor.LerAsync(arquivo, CancellationToken.None);
 
-        result.Should().FailWith("O extrato traz mais de um saldo nestes dias: 03/03/2026.");
+        result.Should().FailWith(new FalhaLeituraArquivo(Linha: null, TipoFalhaLeituraArquivo.ConteudoInvalido, "O extrato traz mais de um saldo nestes dias: 03/03/2026."));
     }
 
     [Fact]
@@ -146,9 +147,9 @@ public sealed class LeitorExtratoContaC6Tests
     {
         Stream arquivo = _fixture.ComLinha(numero: 12, "03/03/2026,03/03/2026,Pagamento de boleto,,1.00,230.45,-252.95");
 
-        Result<Extrato> result = await _leitor.LerAsync(arquivo, CancellationToken.None);
+        Result<Extrato, FalhaLeituraArquivo> result = await _leitor.LerAsync(arquivo, CancellationToken.None);
 
-        result.Should().FailWith("A linha 12 do arquivo tem entrada e saída no mesmo lançamento.");
+        result.Should().FailWith(new FalhaLeituraArquivo(Linha: 12, TipoFalhaLeituraArquivo.LancamentoInvalido, "A linha 12 do arquivo tem entrada e saída no mesmo lançamento."));
     }
 
     [Fact]
@@ -156,7 +157,7 @@ public sealed class LeitorExtratoContaC6Tests
     {
         Stream arquivo = _fixture.ComLinha(numero: 15, "04/03/2026,04/03/2026,Pix recebido de 384.716.205-53,,12.34,0.00,-240.61");
 
-        Result<Extrato> result = await _leitor.LerAsync(arquivo, CancellationToken.None);
+        Result<Extrato, FalhaLeituraArquivo> result = await _leitor.LerAsync(arquivo, CancellationToken.None);
 
         result.Should().Succeed().Which.Lancamentos.Should().ContainSingle(l => l.Contraparte == "384.716.205-53");
     }
@@ -166,9 +167,9 @@ public sealed class LeitorExtratoContaC6Tests
     {
         Stream arquivo = _fixture.ComLinha(numero: 15, "04/03/2026,04/03/2026,\" \",ABCD11,12.34,0.00,-240.61");
 
-        Result<Extrato> result = await _leitor.LerAsync(arquivo, CancellationToken.None);
+        Result<Extrato, FalhaLeituraArquivo> result = await _leitor.LerAsync(arquivo, CancellationToken.None);
 
-        result.Should().FailWith("A linha 15 do arquivo não tem título.");
+        result.Should().FailWith(new FalhaLeituraArquivo(Linha: 15, TipoFalhaLeituraArquivo.LancamentoInvalido, "A linha 15 do arquivo não tem título."));
     }
 
     [Theory]
@@ -182,9 +183,9 @@ public sealed class LeitorExtratoContaC6Tests
     {
         Stream arquivo = _fixture.ComLinha(numero: 13, linha);
 
-        Result<Extrato> result = await _leitor.LerAsync(arquivo, CancellationToken.None);
+        Result<Extrato, FalhaLeituraArquivo> result = await _leitor.LerAsync(arquivo, CancellationToken.None);
 
-        result.Should().FailWith("A linha 13 do arquivo não está no layout do extrato da conta do C6.");
+        result.Should().FailWith(new FalhaLeituraArquivo(Linha: 13, TipoFalhaLeituraArquivo.ForaDoLayout, "A linha 13 do arquivo não está no layout do extrato da conta do C6."));
     }
 
     [Theory]
@@ -194,9 +195,9 @@ public sealed class LeitorExtratoContaC6Tests
     {
         Stream arquivo = _fixture.ComLinha(LinhaColunas, colunas);
 
-        Result<Extrato> result = await _leitor.LerAsync(arquivo, CancellationToken.None);
+        Result<Extrato, FalhaLeituraArquivo> result = await _leitor.LerAsync(arquivo, CancellationToken.None);
 
-        result.Should().FailWith("A linha 9 do arquivo não traz as colunas do extrato da conta do C6.");
+        result.Should().FailWith(new FalhaLeituraArquivo(Linha: 9, TipoFalhaLeituraArquivo.SemColunas, "A linha 9 do arquivo não traz as colunas do extrato da conta do C6."));
     }
 
     [Theory]
@@ -206,9 +207,9 @@ public sealed class LeitorExtratoContaC6Tests
     {
         Stream arquivo = _fixture.ComLinha(LinhaPrimeiroLancamento, linha);
 
-        Result<Extrato> result = await _leitor.LerAsync(arquivo, CancellationToken.None);
+        Result<Extrato, FalhaLeituraArquivo> result = await _leitor.LerAsync(arquivo, CancellationToken.None);
 
-        result.Should().FailWith("A linha 10 do arquivo não está no layout do extrato da conta do C6.");
+        result.Should().FailWith(new FalhaLeituraArquivo(Linha: 10, TipoFalhaLeituraArquivo.ForaDoLayout, "A linha 10 do arquivo não está no layout do extrato da conta do C6."));
     }
 
     [Fact]
@@ -217,21 +218,21 @@ public sealed class LeitorExtratoContaC6Tests
         List<string> linhas = _fixture.Linhas().ToList();
         linhas.Insert(index: LinhaColunas - 1, item: "sep=,");
 
-        Result<Extrato> result = await _leitor.LerAsync(_fixture.ComLinhas(linhas), CancellationToken.None);
+        Result<Extrato, FalhaLeituraArquivo> result = await _leitor.LerAsync(_fixture.ComLinhas(linhas), CancellationToken.None);
 
-        result.Should().FailWith("A linha 9 do arquivo não traz as colunas do extrato da conta do C6.");
+        result.Should().FailWith(new FalhaLeituraArquivo(Linha: 9, TipoFalhaLeituraArquivo.SemColunas, "A linha 9 do arquivo não traz as colunas do extrato da conta do C6."));
     }
 
     [Theory]
-    [InlineData("02/03/2026,02/03/2026,\"TITULO\nFICTICIO\",,-150.00,0.00,-12.50", "não está no layout do extrato da conta do C6.")]
-    [InlineData("02/03/2026,02/03/2026,\" \n \",,150.00,0.00,-12.50", "não tem título.")]
-    public async Task LerAsync_Quando_ErroEmRegistroComQuebraDeLinha_Deve_CitarALinhaOndeORegistroComeca(string linha, string erro)
+    [InlineData("02/03/2026,02/03/2026,\"TITULO\nFICTICIO\",,-150.00,0.00,-12.50", nameof(TipoFalhaLeituraArquivo.ForaDoLayout), "não está no layout do extrato da conta do C6.")]
+    [InlineData("02/03/2026,02/03/2026,\" \n \",,150.00,0.00,-12.50", nameof(TipoFalhaLeituraArquivo.LancamentoInvalido), "não tem título.")]
+    public async Task LerAsync_Quando_ErroEmRegistroComQuebraDeLinha_Deve_CitarALinhaOndeORegistroComeca(string linha, string tipo, string erro)
     {
         Stream arquivo = _fixture.ComLinha(LinhaPrimeiroLancamento, linha);
 
-        Result<Extrato> result = await _leitor.LerAsync(arquivo, CancellationToken.None);
+        Result<Extrato, FalhaLeituraArquivo> result = await _leitor.LerAsync(arquivo, CancellationToken.None);
 
-        result.Should().FailWith($"A linha 10 do arquivo {erro}");
+        result.Should().FailWith(new FalhaLeituraArquivo(Linha: 10, TipoFalhaLeituraArquivo.FromName(tipo), $"A linha 10 do arquivo {erro}"));
     }
 
     [Fact]
@@ -239,9 +240,9 @@ public sealed class LeitorExtratoContaC6Tests
     {
         Stream arquivo = _fixture.ComLinha(LinhaColunas, "Data,Descrição,Valor");
 
-        Result<Extrato> result = await _leitor.LerAsync(arquivo, CancellationToken.None);
+        Result<Extrato, FalhaLeituraArquivo> result = await _leitor.LerAsync(arquivo, CancellationToken.None);
 
-        result.Should().FailWith("A linha 9 do arquivo não traz as colunas do extrato da conta do C6.");
+        result.Should().FailWith(new FalhaLeituraArquivo(Linha: 9, TipoFalhaLeituraArquivo.SemColunas, "A linha 9 do arquivo não traz as colunas do extrato da conta do C6."));
     }
 
     [Fact]
@@ -249,9 +250,9 @@ public sealed class LeitorExtratoContaC6Tests
     {
         Stream arquivo = _fixture.ComLinhas(_fixture.Linhas().Take(LinhaColunas - 2));
 
-        Result<Extrato> result = await _leitor.LerAsync(arquivo, CancellationToken.None);
+        Result<Extrato, FalhaLeituraArquivo> result = await _leitor.LerAsync(arquivo, CancellationToken.None);
 
-        result.Should().FailWith("O arquivo termina antes das colunas do extrato da conta do C6.");
+        result.Should().FailWith(new FalhaLeituraArquivo(Linha: null, TipoFalhaLeituraArquivo.SemColunas, "O arquivo termina antes das colunas do extrato da conta do C6."));
     }
 
     [Fact]
@@ -259,9 +260,9 @@ public sealed class LeitorExtratoContaC6Tests
     {
         Stream arquivo = _fixture.ComLinha(numero: 2, "Agência: 1");
 
-        Result<Extrato> result = await _leitor.LerAsync(arquivo, CancellationToken.None);
+        Result<Extrato, FalhaLeituraArquivo> result = await _leitor.LerAsync(arquivo, CancellationToken.None);
 
-        result.Should().FailWith("O cabeçalho do arquivo não traz a conta do extrato.");
+        result.Should().FailWith(new FalhaLeituraArquivo(Linha: null, TipoFalhaLeituraArquivo.ConteudoInvalido, "O cabeçalho do arquivo não traz a conta do extrato."));
     }
 
     [Theory]
@@ -271,9 +272,9 @@ public sealed class LeitorExtratoContaC6Tests
     {
         Stream arquivo = _fixture.ComLinha(numero: 2, linha);
 
-        Result<Extrato> result = await _leitor.LerAsync(arquivo, CancellationToken.None);
+        Result<Extrato, FalhaLeituraArquivo> result = await _leitor.LerAsync(arquivo, CancellationToken.None);
 
-        result.Should().FailWith(erro);
+        result.Should().FailWith(new FalhaLeituraArquivo(Linha: null, TipoFalhaLeituraArquivo.ConteudoInvalido, erro));
     }
 
     [Fact]
@@ -293,9 +294,9 @@ public sealed class LeitorExtratoContaC6Tests
     {
         Stream arquivo = _fixture.ComLinha(numero: 4, linha);
 
-        Result<Extrato> result = await _leitor.LerAsync(arquivo, CancellationToken.None);
+        Result<Extrato, FalhaLeituraArquivo> result = await _leitor.LerAsync(arquivo, CancellationToken.None);
 
-        result.Should().FailWith(erro);
+        result.Should().FailWith(new FalhaLeituraArquivo(Linha: null, TipoFalhaLeituraArquivo.ConteudoInvalido, erro));
     }
 
     [Fact]
@@ -303,9 +304,9 @@ public sealed class LeitorExtratoContaC6Tests
     {
         Stream arquivo = _fixture.ComLinha(numero: 4, "Extrato do mês");
 
-        Result<Extrato> result = await _leitor.LerAsync(arquivo, CancellationToken.None);
+        Result<Extrato, FalhaLeituraArquivo> result = await _leitor.LerAsync(arquivo, CancellationToken.None);
 
-        result.Should().FailWith("O cabeçalho do arquivo não traz o período do extrato.");
+        result.Should().FailWith(new FalhaLeituraArquivo(Linha: null, TipoFalhaLeituraArquivo.ConteudoInvalido, "O cabeçalho do arquivo não traz o período do extrato."));
     }
 
     [Fact]
@@ -322,7 +323,7 @@ public sealed class LeitorExtratoContaC6Tests
     private async Task<Extrato> LerFixtureAsync()
     {
         await using FileStream arquivo = File.OpenRead(_fixture.Caminho);
-        Result<Extrato> result = await _leitor.LerAsync(arquivo, CancellationToken.None);
+        Result<Extrato, FalhaLeituraArquivo> result = await _leitor.LerAsync(arquivo, CancellationToken.None);
         return result.Should().Succeed().Which;
     }
 

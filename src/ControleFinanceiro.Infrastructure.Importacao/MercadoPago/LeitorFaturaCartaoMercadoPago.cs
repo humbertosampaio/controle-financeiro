@@ -60,44 +60,52 @@ public sealed partial class LeitorFaturaCartaoMercadoPago : ILeitorFatura
 
     private static readonly CsvReaderOptions _opcoes = OpcoesLeituraCsv.Criar(separador: ';');
 
+    private static readonly FalhaLeituraArquivo _arquivoTerminaAntesColunas = FalhaLeituraArquivo.NoArquivo(
+        TipoFalhaLeituraArquivo.SemColunas,
+        "O arquivo termina antes das colunas da fatura do cartão do Mercado Pago.");
+
+    private static readonly FalhaLeituraArquivo _semAsColunas = FalhaLeituraArquivo.NaLinha(
+        TipoFalhaLeituraArquivo.SemColunas,
+        linha: 1,
+        "não traz as colunas do prompt da fatura do cartão do Mercado Pago (docs/fatura-mercado-pago.md).");
+
     public LayoutArquivoImportacao Layout => LayoutArquivoImportacao.MercadoPagoCartaoCsv;
 
     /// <summary>Confere as colunas, lê cada lançamento, põe o pagamento num cartão e monta a fatura.</summary>
-    public async Task<Result<Fatura>> LerAsync(Stream arquivo, CancellationToken cancellationToken)
+    public async Task<Result<Fatura, FalhaLeituraArquivo>> LerAsync(Stream arquivo, CancellationToken cancellationToken)
     {
         using StreamReader leitor = new(arquivo, Encoding.UTF8, detectEncodingFromByteOrderMarks: true, leaveOpen: true);
         using CsvReader csv = CsvReader.Create(leitor, _opcoes);
 
         return await LerColunasAsync(csv)
             .Bind(() => LerLinhasAsync(csv, cancellationToken))
-            .Bind(PorNoMenorFinal)
-            .Bind(lancamentos => Fatura.Criar(Banco.MercadoPago, lancamentos));
+            .Bind(lidos => PorNoMenorFinal(lidos).MapError(ConteudoInvalido))
+            .Bind(lancamentos => Fatura.Criar(Banco.MercadoPago, lancamentos).MapError(ConteudoInvalido));
     }
 
     /// <summary>
     /// As colunas têm de ser exatamente as do prompt, na ordem e com a mesma grafia.
     /// </summary>
-    private static async Task<Result> LerColunasAsync(CsvReader csv)
+    private static async Task<UnitResult<FalhaLeituraArquivo>> LerColunasAsync(CsvReader csv)
     {
         try
         {
             await csv.ReadHeaderAsync();
             if (csv.Headers.Count == 0)
-                return Result.Failure("O arquivo termina antes das colunas da fatura do cartão do Mercado Pago.");
+                return _arquivoTerminaAntesColunas;
 
-            return Result.FailureIf(
-                !csv.Headers.SequenceEqual(_colunas, StringComparer.Ordinal),
-                "A linha 1 do arquivo não traz as colunas do prompt da fatura do cartão do Mercado Pago (docs/fatura-mercado-pago.md).");
+            return UnitResult.FailureIf(!csv.Headers.SequenceEqual(_colunas, StringComparer.Ordinal), _semAsColunas);
         }
         catch (CsvFormatException)
         {
-            return Result.Failure(
-                "A linha 1 do arquivo não traz as colunas do prompt da fatura do cartão do Mercado Pago (docs/fatura-mercado-pago.md).");
+            return _semAsColunas;
         }
     }
 
     /// <summary>Para na primeira linha que não está no layout.</summary>
-    private static async Task<Result<IReadOnlyList<LancamentoLido>>> LerLinhasAsync(CsvReader csv, CancellationToken cancellationToken)
+    private static async Task<Result<IReadOnlyList<LancamentoLido>, FalhaLeituraArquivo>> LerLinhasAsync(
+        CsvReader csv,
+        CancellationToken cancellationToken)
     {
         List<LancamentoLido> lidos = [];
 
@@ -105,11 +113,11 @@ public sealed partial class LeitorFaturaCartaoMercadoPago : ILeitorFatura
         {
             cancellationToken.ThrowIfCancellationRequested();
 
-            Result<Maybe<LancamentoLido>> proximo = await LerProximaLinhaAsync(csv)
+            Result<Maybe<LancamentoLido>, FalhaLeituraArquivo> proximo = await LerProximaLinhaAsync(csv)
                 .Bind(linha => ConverterSeHouver(csv, linha));
 
             if (proximo.IsFailure)
-                return Result.Failure<IReadOnlyList<LancamentoLido>>(proximo.Error);
+                return proximo.Error;
 
             if (proximo.Value.HasNoValue)
                 return lidos;
@@ -120,7 +128,7 @@ public sealed partial class LeitorFaturaCartaoMercadoPago : ILeitorFatura
     }
 
     /// <returns>Vazio no fim do arquivo.</returns>
-    private static async Task<Result<Maybe<LinhaFaturaMercadoPago>>> LerProximaLinhaAsync(CsvReader csv)
+    private static async Task<Result<Maybe<LinhaFaturaMercadoPago>, FalhaLeituraArquivo>> LerProximaLinhaAsync(CsvReader csv)
     {
         try
         {
@@ -128,20 +136,22 @@ public sealed partial class LeitorFaturaCartaoMercadoPago : ILeitorFatura
         }
         catch (CsvFormatException erro)
         {
-            return Result.Failure<Maybe<LinhaFaturaMercadoPago>>(
-                $"A linha {erro.LineNumber} do arquivo não está no layout da fatura do cartão do Mercado Pago.");
+            return FalhaLeituraArquivo.NaLinha(
+                TipoFalhaLeituraArquivo.ForaDoLayout,
+                erro.LineNumber,
+                "não está no layout da fatura do cartão do Mercado Pago.");
         }
     }
 
     /// <param name="linha">Vazia no fim do arquivo.</param>
-    private static Result<Maybe<LancamentoLido>> ConverterSeHouver(CsvReader csv, Maybe<LinhaFaturaMercadoPago> linha)
+    private static Result<Maybe<LancamentoLido>, FalhaLeituraArquivo> ConverterSeHouver(CsvReader csv, Maybe<LinhaFaturaMercadoPago> linha)
     {
         if (linha.HasNoValue)
             return Maybe<LancamentoLido>.None;
 
         return Converter(linha.Value)
             .Map(Maybe.From)
-            .MapError(erro => $"A linha {csv.LineNumber} do arquivo {erro}");
+            .MapError(erro => FalhaLeituraArquivo.NaLinha(TipoFalhaLeituraArquivo.LancamentoInvalido, csv.LineNumber, erro));
     }
 
     /// <param name="linha">A linha já lida, com as colunas cruas.</param>
@@ -252,6 +262,11 @@ public sealed partial class LeitorFaturaCartaoMercadoPago : ILeitorFatura
             return Result.Failure<IReadOnlyList<LancamentoFatura>>("O arquivo não traz o final de nenhum cartão.");
 
         return lidos.Select(l => LancamentoFatura.Criar(l.Lancamento, l.Sufixo ?? menor)).ToList();
+    }
+
+    private static FalhaLeituraArquivo ConteudoInvalido(string mensagem)
+    {
+        return FalhaLeituraArquivo.NoArquivo(TipoFalhaLeituraArquivo.ConteudoInvalido, mensagem);
     }
 
     [GeneratedRegex("^[0-9]{1,3}$")]

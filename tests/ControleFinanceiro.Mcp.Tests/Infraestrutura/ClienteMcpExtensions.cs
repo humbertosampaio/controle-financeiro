@@ -60,6 +60,34 @@ internal static class ClienteMcpExtensions
         }
     }
 
+    extension(McpClient clienteMcp)
+    {
+        /// <param name="sufixoConta">Só no extrato sem a conta no arquivo; nulo, o argumento não vai.</param>
+        public ValueTask<CallToolResult> PreverImportacaoAsync(string caminho, string layout, string? sufixoConta = null)
+        {
+            return clienteMcp.CallToolAsync("prever_importacao", ArgumentosDaImportacao(caminho, layout, sufixoConta));
+        }
+
+        /// <summary>Chama a confirmação como o cliente a envia depois que o usuário aprova a chamada, com o resumo primeiro.</summary>
+        public ValueTask<CallToolResult> ConfirmarImportacaoAsync(string resumo, string caminho, string layout, string? sufixoConta = null)
+        {
+            Dictionary<string, object?> argumentos = new() { ["resumo"] = resumo };
+            foreach ((string nome, object? valor) in ArgumentosDaImportacao(caminho, layout, sufixoConta))
+                argumentos[nome] = valor;
+
+            return clienteMcp.CallToolAsync("confirmar_importacao", argumentos);
+        }
+    }
+
+    private static Dictionary<string, object?> ArgumentosDaImportacao(string caminho, string layout, string? sufixoConta)
+    {
+        Dictionary<string, object?> argumentos = new() { ["caminho"] = caminho, ["layout"] = layout };
+        if (sufixoConta is not null)
+            argumentos["sufixoConta"] = sufixoConta;
+
+        return argumentos;
+    }
+
     private static Dictionary<string, object?> ArgumentosDoPagamento(Guid idTransacao, Guid idCartao, MesReferencia mesVencimento)
     {
         return new Dictionary<string, object?>

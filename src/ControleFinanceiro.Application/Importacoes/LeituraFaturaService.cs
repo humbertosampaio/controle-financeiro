@@ -14,7 +14,7 @@ public sealed class LeituraFaturaService
     }
 
     /// <param name="layout">Um layout de fatura.</param>
-    public Task<Result<Fatura>> LerAsync(LayoutArquivoImportacao layout, Stream arquivo, CancellationToken ct)
+    public Task<Result<Fatura, FalhaLeituraArquivo>> LerAsync(LayoutArquivoImportacao layout, Stream arquivo, CancellationToken ct)
     {
         return _leitores.Single(l => l.Layout == layout).LerAsync(arquivo, ct);
     }

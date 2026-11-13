@@ -10,8 +10,8 @@ namespace ControleFinanceiro.Domain.Importacoes;
 /// só o final: o número completo e o titular não entram nela.
 /// </summary>
 /// <remarks>
-/// A fatura não declara período nem saldo. O período de cada cartão vai da menor à maior data de compra, e a
-/// parcela de uma compra antiga traz a data da compra original, então ele pode cobrir vários meses.
+/// A fatura não declara período nem saldo. O período de cada cartão, e o da fatura inteira, vai da menor à maior data
+/// de compra, e a parcela de uma compra antiga traz a data da compra original, então ele pode cobrir vários meses.
 /// </remarks>
 public sealed class Fatura : ValueObject
 {
@@ -58,13 +58,16 @@ public sealed class Fatura : ValueObject
             .AsReadOnly();
     }
 
+    /// <summary>Da menor à maior data de compra de todos os cartões.</summary>
+    public PeriodoArquivo Periodo => PeriodoDe(_lancamentos.Select(l => l.Lancamento).ToList());
+
     /// <summary>Da menor à maior data de compra do cartão.</summary>
     /// <exception cref="ArgumentException">Quando o final não está na fatura.</exception>
-    public PeriodoArquivo PeriodoCartao(SufixoCartao sufixo)
-    {
-        IReadOnlyList<Lancamento> lancamentos = LancamentosCartao(sufixo);
-        return (PeriodoArquivo)(lancamentos.Min(l => l.Data), lancamentos.Max(l => l.Data));
-    }
+    public PeriodoArquivo PeriodoCartao(SufixoCartao sufixo) => PeriodoDe(LancamentosCartao(sufixo));
+
+    /// <param name="lancamentos">Pelo menos um.</param>
+    private static PeriodoArquivo PeriodoDe(IReadOnlyList<Lancamento> lancamentos) =>
+        (PeriodoArquivo)(lancamentos.Min(l => l.Data), lancamentos.Max(l => l.Data));
 
     private void GarantirSufixo(SufixoCartao sufixo)
     {

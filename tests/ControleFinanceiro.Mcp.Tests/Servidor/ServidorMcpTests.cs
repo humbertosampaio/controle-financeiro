@@ -25,13 +25,13 @@ public sealed class ServidorMcpTests
     }
 
     [Fact]
-    public async Task ListarFerramentas_Deve_TerAVerificacaoAsLeiturasEAsDuasEtapasDoVinculoEDoPagamentoDaFatura()
+    public async Task ListarFerramentas_Deve_TerAVerificacaoAsLeiturasEAsDuasEtapasDoVinculoDoPagamentoDaFaturaEDaImportacao()
     {
         IList<McpClientTool> ferramentas = await _fixture.ClienteMcp.ListToolsAsync();
 
         ferramentas
             .Select(ferramenta => ferramenta.Name)
-            .Should().BeEquivalentTo(NomeFerramenta, "listar_transacoes", "listar_despesas_fixas", "balanco_mensal", "prever_vinculo", "confirmar_vinculo", "listar_cartoes", "prever_pagamento_fatura", "confirmar_pagamento_fatura");
+            .Should().BeEquivalentTo(NomeFerramenta, "listar_transacoes", "listar_despesas_fixas", "balanco_mensal", "prever_vinculo", "confirmar_vinculo", "listar_cartoes", "prever_pagamento_fatura", "confirmar_pagamento_fatura", "prever_importacao", "confirmar_importacao");
     }
 
     [Fact]

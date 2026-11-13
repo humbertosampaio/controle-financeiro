@@ -52,7 +52,7 @@ public sealed class VinculoParaModeloService
         CancellationToken cancellationToken)
     {
         return await AplicarAsync(idTransacao, idDespesa, cancellationToken)
-            .Ensure(vinculo => vinculo.ConfereResumo(resumo), ErroParaModelo.ResumoDivergente)
+            .Ensure(vinculo => vinculo.ConfereResumo(resumo), ErrosParaModelo.Vinculo.ResumoDivergente)
             .Tap(() => _unitOfWork.CommitAsync(cancellationToken))
             .Match(vinculo => vinculo, VinculoParaModelo.Falha);
     }
@@ -64,18 +64,18 @@ public sealed class VinculoParaModeloService
     {
         Maybe<Transacao> transacao = await ObterTransacaoAsync(idTransacao, cancellationToken);
         if (transacao.HasNoValue)
-            return ErroParaModelo.TransacaoNaoEncontrada;
+            return ErrosParaModelo.Consulta.TransacaoNaoEncontrada;
 
         Maybe<Despesa> despesa = await ObterDespesaAsync(idDespesa, cancellationToken);
         if (despesa.HasNoValue)
-            return ErroParaModelo.DespesaNaoEncontrada;
+            return ErrosParaModelo.Consulta.DespesaNaoEncontrada;
 
         Maybe<Despesa> despesaQueUsaATransacao = await _despesas.ObterQueUsaAsync(transacao.Value, cancellationToken);
         IReadOnlyList<Cartao> cartoesDoUsuario = await _cartoes.ListarAsync(cancellationToken);
 
         return VinculoTransacaoService
             .Vincular(transacao.Value, despesa.Value, despesaQueUsaATransacao, cartoesDoUsuario)
-            .MapError(ErroParaModelo.De)
+            .MapError(ErrosParaModelo.De)
             .Map(() => VinculoParaModelo.De(transacao.Value, despesa.Value));
     }
 

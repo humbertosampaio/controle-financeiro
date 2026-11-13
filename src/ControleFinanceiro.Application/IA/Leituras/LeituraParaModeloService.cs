@@ -44,7 +44,7 @@ public sealed class LeituraParaModeloService
     {
         Result<MesReferencia> mesValido = MesReferencia.Criar(mes, ano);
         if (mesValido.IsFailure)
-            return TransacoesDoMesParaModelo.Falha(ErroParaModelo.MesInvalido);
+            return TransacoesDoMesParaModelo.Falha(ErrosParaModelo.Consulta.MesInvalido);
 
         MesReferencia mesReferencia = mesValido.Value;
 
@@ -63,7 +63,7 @@ public sealed class LeituraParaModeloService
     {
         Result<MesReferencia> mesValido = MesReferencia.Criar(mes, ano);
         if (mesValido.IsFailure)
-            return DespesasFixasDoMesParaModelo.Falha(ErroParaModelo.MesInvalido);
+            return DespesasFixasDoMesParaModelo.Falha(ErrosParaModelo.Consulta.MesInvalido);
 
         MesReferencia mesReferencia = mesValido.Value;
 
@@ -90,13 +90,13 @@ public sealed class LeituraParaModeloService
     {
         Result<MesReferencia> mesValido = MesReferencia.Criar(mes, ano);
         if (mesValido.IsFailure)
-            return BalancoMensalParaModelo.Falha(ErroParaModelo.MesInvalido);
+            return BalancoMensalParaModelo.Falha(ErrosParaModelo.Consulta.MesInvalido);
 
         MesReferencia mesReferencia = mesValido.Value;
 
         Maybe<Usuario> usuario = await _usuarios.ObterPorIdAsync(_usuarioAtual.Id, cancellationToken);
         if (usuario.HasNoValue)
-            return BalancoMensalParaModelo.Falha(ErroParaModelo.UsuarioNaoEncontrado);
+            return BalancoMensalParaModelo.Falha(ErrosParaModelo.Consulta.UsuarioNaoEncontrado);
 
         IReadOnlyList<Despesa> despesasDoMes = await _despesas.ListarDoMesAsync(mesReferencia, cancellationToken);
 

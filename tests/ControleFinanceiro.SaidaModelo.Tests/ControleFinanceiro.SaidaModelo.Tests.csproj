@@ -20,6 +20,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\..\src\ControleFinanceiro.Infrastructure.Importacao\ControleFinanceiro.Infrastructure.Importacao.csproj" />
     <ProjectReference Include="..\..\src\ControleFinanceiro.Mcp\ControleFinanceiro.Mcp.csproj" />
     <ProjectReference Include="..\ControleFinanceiro.Tests.Shared\ControleFinanceiro.Tests.Shared.csproj" />
   </ItemGroup>

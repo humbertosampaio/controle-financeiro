@@ -1,5 +1,6 @@
 using ControleFinanceiro.Application.Abstractions;
 using ControleFinanceiro.Application.Importacoes;
+using ControleFinanceiro.Domain.Contas;
 using ControleFinanceiro.Domain.Importacoes;
 using ControleFinanceiro.Domain.Shared.ValueObjects;
 using ControleFinanceiro.Domain.Usuarios;
@@ -58,8 +59,16 @@ public sealed class PreVisualizarExtratoEndpoint : Endpoint<ImportarExtratoReque
         await using Stream conteudo = req.Arquivo!.OpenReadStream();
 
         return await _leituraExtrato
-            .LerAsync(layout, conteudo, req.SufixoConta, ct)
+            .LerAsync(layout, conteudo, SufixoDoLayout(layout, req), ct)
             .MapError(Falha.ArquivoInvalido);
+    }
+
+    /// <summary>O validator já garantiu o sufixo no layout de conta informada; nos outros, ele não vale.</summary>
+    private static Maybe<SufixoConta> SufixoDoLayout(LayoutArquivoImportacao layout, ImportarExtratoRequest req)
+    {
+        return LayoutArquivoImportacao.ExtratosContaInformada.Contains(layout)
+            ? (SufixoConta)req.SufixoConta
+            : Maybe<SufixoConta>.None;
     }
 
     private async Task<PreVisualizarExtratoResponse> PreVisualizarAsync(IdUsuario idUsuario, Extrato extrato, CancellationToken ct)
@@ -89,7 +98,7 @@ public sealed class PreVisualizarExtratoEndpoint : Endpoint<ImportarExtratoReque
     /// </summary>
     private abstract record Falha
     {
-        public static Falha ArquivoInvalido(string mensagem) => new Arquivo(mensagem);
+        public static Falha ArquivoInvalido(FalhaLeituraArquivo falha) => new Arquivo(falha.Mensagem);
 
         public sealed record Arquivo(string Mensagem) : Falha;
     }

@@ -2,7 +2,8 @@
   "permissions": {
     "ask": [
       "mcp__controle-financeiro__confirmar_vinculo",
-      "mcp__controle-financeiro__confirmar_pagamento_fatura"
+      "mcp__controle-financeiro__confirmar_pagamento_fatura",
+      "mcp__controle-financeiro__confirmar_importacao"
     ]
   },
   "hooks": {

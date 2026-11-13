@@ -84,7 +84,7 @@ public sealed class PreverPagamentoFaturaToolTests : IAsyncLifetime
 
         CallToolResult resultado = await _servidor.ClienteMcp.PreverPagamentoFaturaAsync(saida.Id.Value, cartao.Id.Value, adiada.MesReferencia.Posterior());
 
-        ErroLido.DoEnvelope(resultado.Json).Mensagem.Should().Be(ErroParaModelo.FaturaSemCobrancaPendente.Mensagem);
+        ErroLido.DoEnvelope(resultado.Json).Mensagem.Should().Be(ErrosParaModelo.PagamentoFatura.FaturaSemCobrancaPendente.Mensagem);
     }
 
     [Theory, DomainAutoData]
@@ -102,7 +102,7 @@ public sealed class PreverPagamentoFaturaToolTests : IAsyncLifetime
                 ["mes"] = 13,
             });
 
-        ErroLido.DoEnvelope(resultado.Json).Mensagem.Should().Be(ErroParaModelo.MesInvalido.Mensagem);
+        ErroLido.DoEnvelope(resultado.Json).Mensagem.Should().Be(ErrosParaModelo.Consulta.MesInvalido.Mensagem);
     }
 
     // A saída que pagou a fatura de um mês não paga a do mês seguinte.
@@ -114,7 +114,7 @@ public sealed class PreverPagamentoFaturaToolTests : IAsyncLifetime
 
         CallToolResult resultado = await _servidor.ClienteMcp.PreverPagamentoFaturaAsync(saida.Id.Value, cartao.Id.Value, adiada.MesReferencia.Posterior());
 
-        ErroLido.DoEnvelope(resultado.Json).Mensagem.Should().Be(ErroParaModelo.TransacaoPagaOutraFatura.Mensagem);
+        ErroLido.DoEnvelope(resultado.Json).Mensagem.Should().Be(ErrosParaModelo.PagamentoFatura.TransacaoPagaOutraFatura.Mensagem);
     }
 
     [Theory, DomainAutoData]
@@ -124,7 +124,7 @@ public sealed class PreverPagamentoFaturaToolTests : IAsyncLifetime
 
         CallToolResult resultado = await _servidor.ClienteMcp.PreverPagamentoFaturaAsync(saida.Id.Value, inexistente.Value, adiada.MesReferencia);
 
-        ErroLido.DoEnvelope(resultado.Json).Mensagem.Should().Be(ErroParaModelo.CartaoNaoEncontrado.Mensagem);
+        ErroLido.DoEnvelope(resultado.Json).Mensagem.Should().Be(ErrosParaModelo.Consulta.CartaoNaoEncontrado.Mensagem);
     }
 
     [Theory, DomainAutoData]
@@ -134,7 +134,7 @@ public sealed class PreverPagamentoFaturaToolTests : IAsyncLifetime
 
         CallToolResult resultado = await _servidor.ClienteMcp.PreverPagamentoFaturaAsync(inexistente.Value, cartao.Id.Value, adiada.MesReferencia);
 
-        ErroLido.DoEnvelope(resultado.Json).Mensagem.Should().Be(ErroParaModelo.TransacaoNaoEncontrada.Mensagem);
+        ErroLido.DoEnvelope(resultado.Json).Mensagem.Should().Be(ErrosParaModelo.Consulta.TransacaoNaoEncontrada.Mensagem);
     }
 
     // A compra do cartão não paga a fatura: só a saída da conta.
@@ -145,6 +145,6 @@ public sealed class PreverPagamentoFaturaToolTests : IAsyncLifetime
 
         CallToolResult resultado = await _servidor.ClienteMcp.PreverPagamentoFaturaAsync(adiada.Cobranca!.IdTransacao.Value, cartao.Id.Value, adiada.MesReferencia);
 
-        ErroLido.DoEnvelope(resultado.Json).Mensagem.Should().Be(ErroParaModelo.OrigemIncompativel.Mensagem);
+        ErroLido.DoEnvelope(resultado.Json).Mensagem.Should().Be(ErrosParaModelo.Vinculo.OrigemIncompativel.Mensagem);
     }
 }

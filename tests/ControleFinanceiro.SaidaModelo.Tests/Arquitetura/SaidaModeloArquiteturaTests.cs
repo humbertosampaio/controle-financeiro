@@ -1,4 +1,5 @@
 using ArchUnitNET.xUnit;
+using Ardalis.SmartEnum;
 using ControleFinanceiro.Application.IA.Saida;
 using ControleFinanceiro.Domain.Shared.ValueObjects;
 using ControleFinanceiro.Infrastructure.Persistence;
@@ -11,18 +12,16 @@ using System.Xml.Linq;
 using static ArchUnitNET.Fluent.ArchRuleDefinition;
 using Architecture = ArchUnitNET.Domain.Architecture;
 using ArchLoader = ArchUnitNET.Loader.ArchLoader;
+using DependencyInjectionImportacao = ControleFinanceiro.Infrastructure.Importacao.DependencyInjection;
 using DependencyInjectionMcp = ControleFinanceiro.Mcp.DependencyInjection;
 using DependencyInjectionPersistence = ControleFinanceiro.Infrastructure.Persistence.DependencyInjection;
 using DiaFechamentoCartao = ControleFinanceiro.Domain.Cartoes.DiaFechamentoCartao;
 using DiaOcorrenciaRecorrente = ControleFinanceiro.Domain.Despesas.DiaOcorrenciaRecorrente;
 using DiaVencimentoCartao = ControleFinanceiro.Domain.Cartoes.DiaVencimentoCartao;
-using IdBeneficiario = ControleFinanceiro.Domain.Beneficiarios.IdBeneficiario;
-using IdCartao = ControleFinanceiro.Domain.Cartoes.IdCartao;
-using IdDespesa = ControleFinanceiro.Domain.Despesas.IdDespesa;
-using IdDespesaRecorrente = ControleFinanceiro.Domain.Despesas.IdDespesaRecorrente;
 using IdTransacao = ControleFinanceiro.Domain.Transacoes.IdTransacao;
-using StatusPagamento = ControleFinanceiro.Domain.Despesas.StatusPagamento;
+using PeriodoArquivo = ControleFinanceiro.Domain.Importacoes.PeriodoArquivo;
 using SufixoCartao = ControleFinanceiro.Domain.Cartoes.SufixoCartao;
+using SufixoConta = ControleFinanceiro.Domain.Contas.SufixoConta;
 
 namespace ControleFinanceiro.SaidaModelo.Tests.Arquitetura;
 
@@ -37,12 +36,13 @@ public sealed class SaidaModeloArquiteturaTests
     private static readonly Assembly _application = typeof(ISaidaModelo).Assembly;
     private static readonly Assembly _domain = typeof(IdTransacao).Assembly;
     private static readonly Assembly _persistence = typeof(ControleFinanceiroDbContext).Assembly;
+    private static readonly Assembly _importacao = typeof(DependencyInjectionImportacao).Assembly;
     private static readonly Assembly _efCore = typeof(DbContext).Assembly;
     private static readonly Assembly _efRelational = typeof(RelationalDatabaseFacadeExtensions).Assembly;
     private static readonly Assembly _sdkMcp = typeof(McpServer).Assembly;
 
     private static readonly Architecture _arquitetura = new ArchLoader()
-        .LoadAssemblies(_mcp, _application, _domain, _persistence, _efCore, _efRelational, _sdkMcp)
+        .LoadAssemblies(_mcp, _application, _domain, _persistence, _importacao, _efCore, _efRelational, _sdkMcp)
         .Build();
 
     private const string NomeVerificacaoServidor = "ControleFinanceiro.Mcp.Ferramentas.VerificacaoServidor";
@@ -61,9 +61,25 @@ public sealed class SaidaModeloArquiteturaTests
         "ControleFinanceiro.WebApi"
     ];
 
+    /// <summary>
+    /// Os value objects que só guardam número, data, período, mês, o final do cartão ou o da conta, ou o texto já
+    /// mascarado. O final tem 4 caracteres e nunca é o número inteiro.
+    /// </summary>
+    private static readonly Type[] _valueObjectsSemTextoLivre =
+    [
+        typeof(DocumentoMascarado),
+        typeof(Reais),
+        typeof(MesReferencia),
+        typeof(PeriodoArquivo),
+        typeof(DiaOcorrenciaRecorrente),
+        typeof(DiaFechamentoCartao),
+        typeof(DiaVencimentoCartao),
+        typeof(SufixoCartao),
+        typeof(SufixoConta)
+    ];
+
     [Theory]
     [InlineData("ControleFinanceiro.WebApi")]
-    [InlineData("ControleFinanceiro.Infrastructure.Importacao")]
     [InlineData("Npgsql")]
     public void QuemFalaComOModelo_Deve_NaoReferenciarOAssembly(string assembly)
     {
@@ -87,6 +103,18 @@ public sealed class SaidaModeloArquiteturaTests
         Type[] proibidos = TiposDe(_persistence)
             .Where(tipo => tipo != typeof(ControleFinanceiroDbContext) && tipo != typeof(DependencyInjectionPersistence))
             .ToArray();
+
+        TiposDeQuemFala().Should().NotDependOnAny(proibidos).Check(_arquitetura);
+    }
+
+    /// <summary>
+    /// Os leitores e a origem dos arquivos entram pelas portas da Application: do projeto da importação, quem fala com
+    /// o modelo só chama o registro.
+    /// </summary>
+    [Fact]
+    public void QuemFalaComOModelo_Deve_UsarDaImportacaoSoORegistro()
+    {
+        Type[] proibidos = TiposDe(_importacao).Where(tipo => tipo != typeof(DependencyInjectionImportacao)).ToArray();
 
         TiposDeQuemFala().Should().NotDependOnAny(proibidos).Check(_arquitetura);
     }
@@ -252,35 +280,51 @@ public sealed class SaidaModeloArquiteturaTests
 
     private static bool EhIdVogen(Type tipo) => tipo.IsValueType && !tipo.IsEnum && tipo.Name.StartsWith("Id", StringComparison.Ordinal);
 
+    /// <summary>
+    /// A lista é de permitidos, e não de proibidos, para falhar fechado: um tipo novo que carregue texto quebra o
+    /// teste até entrar num dos grupos. O único caminho do texto é o <see cref="DocumentoMascarado"/>.
+    /// </summary>
     private static bool EhPermitidoNoConstrutor(Type tipo)
     {
-        return tipo == typeof(DocumentoMascarado)
-            || tipo == typeof(IReadOnlyList<DocumentoMascarado>)
-            || tipo == typeof(DateOnly)
-            || tipo == typeof(Reais)
-            || tipo == typeof(MesReferencia)
-            || tipo == typeof(StatusPagamento)
-            || tipo == typeof(Banco)
-            || tipo == typeof(DiaOcorrenciaRecorrente)
-            || tipo == typeof(DiaFechamentoCartao)
-            || tipo == typeof(DiaVencimentoCartao)
-            || tipo == typeof(SufixoCartao)
-            || tipo == typeof(IdTransacao)
-            || tipo == typeof(IdDespesa)
-            || tipo == typeof(IdDespesaRecorrente)
-            || tipo == typeof(IdBeneficiario)
-            || tipo == typeof(IdCartao)
+        Type? anulavel = Nullable.GetUnderlyingType(tipo);
+        if (anulavel is not null)
+            return EhPermitidoNoConstrutor(anulavel);
+
+        return EhPrimitivoSemTexto(tipo)
+            || EhIdVogenSobreGuid(tipo)
+            || EhSmartEnum(tipo)
+            || _valueObjectsSemTextoLivre.Contains(tipo)
             || EhSaida(tipo)
-            || EhListaDeSaida(tipo);
+            || EhLista(tipo);
+    }
+
+    /// <summary>
+    /// Os primitivos do .NET, menos o <see cref="char"/>, não carregam texto: a string não é primitiva, mas uma lista de
+    /// <see cref="char"/> passaria por ela. O DateOnly entra à parte.
+    /// </summary>
+    private static bool EhPrimitivoSemTexto(Type tipo) => (tipo.IsPrimitive && tipo != typeof(char)) || tipo == typeof(DateOnly);
+
+    private static bool EhIdVogenSobreGuid(Type tipo) => EhIdVogen(tipo) && tipo.GetProperty("Value")?.PropertyType == typeof(Guid);
+
+    /// <summary>O nome e o valor de um SmartEnum são fixos no código, e não dado do usuário.</summary>
+    private static bool EhSmartEnum(Type tipo)
+    {
+        for (Type? atual = tipo.BaseType; atual is not null; atual = atual.BaseType)
+        {
+            if (atual.IsGenericType && atual.GetGenericTypeDefinition() == typeof(SmartEnum<,>))
+                return true;
+        }
+
+        return false;
     }
 
     private static bool EhSaida(Type tipo) => !tipo.IsInterface && tipo.IsAssignableTo(typeof(ISaidaModelo));
 
-    private static bool EhListaDeSaida(Type tipo)
+    private static bool EhLista(Type tipo)
     {
         return tipo.IsGenericType
             && tipo.GetGenericTypeDefinition() == typeof(IReadOnlyList<>)
-            && EhSaida(tipo.GetGenericArguments()[0]);
+            && EhPermitidoNoConstrutor(tipo.GetGenericArguments()[0]);
     }
 
     /// <summary>

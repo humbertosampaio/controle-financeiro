@@ -22,7 +22,6 @@ public sealed record DespesaFixaParaModelo : ISaidaModelo
 
     /// <summary>Omitida quando a despesa do mês ainda não foi gerada.</summary>
     [JsonPropertyName("despesaDoMes")]
-    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public DespesaParaModelo? DespesaDoMes { get; }
 
     private DespesaFixaParaModelo(

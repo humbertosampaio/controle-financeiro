@@ -8,15 +8,12 @@ public sealed record DespesasFixasDoMesParaModelo : ISaidaModelo
 {
     /// <summary>O mês, como <c>03/2026</c>.</summary>
     [JsonPropertyName("mes")]
-    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public string? Mes { get; }
 
     [JsonPropertyName("despesasFixas")]
-    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public IReadOnlyList<DespesaFixaParaModelo>? DespesasFixas { get; }
 
     [JsonPropertyName("erro")]
-    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public ErroParaModelo? Erro { get; }
 
     private DespesasFixasDoMesParaModelo(MesReferencia mes, IReadOnlyList<DespesaFixaParaModelo> despesasFixas)
