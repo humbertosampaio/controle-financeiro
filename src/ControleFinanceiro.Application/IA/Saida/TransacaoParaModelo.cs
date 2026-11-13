@@ -22,7 +22,6 @@ public sealed record TransacaoParaModelo : ISaidaModelo
 
     /// <summary>Omitida quando não há ou quando só havia documento nela. Nos Pix do C6, é ela que diz quem recebeu.</summary>
     [JsonPropertyName("contraparte")]
-    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public string? Contraparte { get; }
 
     private TransacaoParaModelo(IdTransacao id, DateOnly data, Reais valor, DocumentoMascarado descricao, DocumentoMascarado contraparte)

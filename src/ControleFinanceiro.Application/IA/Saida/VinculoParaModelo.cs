@@ -14,7 +14,6 @@ namespace ControleFinanceiro.Application.IA.Saida;
 public sealed record VinculoParaModelo : ISaidaModelo
 {
     [JsonPropertyName("transacao")]
-    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public TransacaoParaModelo? Transacao { get; }
 
     /// <summary>
@@ -22,16 +21,13 @@ public sealed record VinculoParaModelo : ISaidaModelo
     /// cobrado.
     /// </summary>
     [JsonPropertyName("despesa")]
-    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public DespesaParaModelo? Despesa { get; }
 
     /// <summary>O valor previsto do pagamento, para comparar com o da transação.</summary>
     [JsonPropertyName("valorProjetado")]
-    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public decimal? ValorProjetado { get; }
 
     [JsonPropertyName("erro")]
-    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public ErroParaModelo? Erro { get; }
 
     /// <summary>
@@ -39,7 +35,6 @@ public sealed record VinculoParaModelo : ISaidaModelo
     /// aprovação da confirmação.
     /// </summary>
     [JsonPropertyName("resumo")]
-    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public string? Resumo { get; }
 
     private VinculoParaModelo(

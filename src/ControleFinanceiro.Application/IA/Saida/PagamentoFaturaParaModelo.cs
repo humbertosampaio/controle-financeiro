@@ -16,21 +16,17 @@ public sealed record PagamentoFaturaParaModelo : ISaidaModelo
 {
     /// <summary>A saída da conta que paga a fatura.</summary>
     [JsonPropertyName("transacao")]
-    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public TransacaoParaModelo? Transacao { get; }
 
     /// <summary>As despesas que a saída paga nesta chamada, no mês de vencimento, já pagas com o valor cobrado.</summary>
     [JsonPropertyName("despesas")]
-    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public IReadOnlyList<DespesaParaModelo>? Despesas { get; }
 
     /// <summary>A soma do que a saída paga nesta chamada, para comparar com o valor dela.</summary>
     [JsonPropertyName("total")]
-    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public decimal? Total { get; }
 
     [JsonPropertyName("erro")]
-    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public ErroParaModelo? Erro { get; }
 
     /// <summary>
@@ -38,7 +34,6 @@ public sealed record PagamentoFaturaParaModelo : ISaidaModelo
     /// vencimento, sem ids e com espaços comuns, para o usuário ler no pedido de aprovação da confirmação.
     /// </summary>
     [JsonPropertyName("resumo")]
-    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public string? Resumo { get; }
 
     private PagamentoFaturaParaModelo(
