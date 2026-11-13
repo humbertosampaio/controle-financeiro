@@ -40,7 +40,7 @@ O servidor está registrado no projeto, em [`.mcp.json`](../.mcp.json), com o no
 
 3. `/mcp` lista o servidor como conectado e reconecta depois de uma nova publicação.
 
-Os logs do servidor (o stderr dele) ficam em `%LOCALAPPDATA%/claude-cli-nodejs/Cache/<projeto>/mcp-logs-controle-financeiro/`, em que `<projeto>` é o caminho do repositório com os separadores trocados por hífen (ex.: `D--Git-controle-financeiro`).
+O stderr do servidor fica em `%LOCALAPPDATA%/claude-cli-nodejs/Cache/<projeto>/mcp-logs-controle-financeiro/`, em que `<projeto>` é o caminho do repositório com os separadores trocados por hífen (ex.: `D--Git-controle-financeiro`). O Claude Code só o grava quando o processo cai ou reinicia: a exceção de uma ferramenta fica no [log do servidor](#log-do-servidor).
 
 ## Claude Desktop
 
@@ -66,9 +66,30 @@ Acrescente o servidor em `mcpServers`, com o caminho absoluto da DLL publicada e
 }
 ```
 
-Feche o Claude Desktop pela bandeja (fechar a janela não encerra o app) e abra de novo. O servidor aparece no menu de ferramentas da conversa. O log do servidor é o `mcp-server-controle-financeiro.log`, na pasta de logs da tabela.
+Feche o Claude Desktop pela bandeja (fechar a janela não encerra o app) e abra de novo. O servidor aparece no menu de ferramentas da conversa. O stderr do servidor vai para o `mcp-server-controle-financeiro.log`, na pasta de logs da tabela, e o servidor também grava o [log dele](#log-do-servidor).
 
 O Claude Desktop pede permissão a cada chamada de ferramenta, mostra os argumentos e permite aprovar só aquela chamada. Ele não lê a meta nem o `.claude/settings.json` do projeto e oferece "permitir sempre": **nunca dê "permitir sempre" à `confirmar_vinculo`, à `confirmar_pagamento_fatura` nem à `confirmar_importacao`**, ou o vínculo, o pagamento e a importação passam a ser gravados sem você ler o resumo. O risco é aceito por ser uma ferramenta de uso pessoal.
+
+## Log do servidor
+
+O servidor grava o próprio log com o Serilog, configurado pelo [`appsettings.json`](../src/ControleFinanceiro.Mcp/appsettings.json) do projeto, em dois lugares:
+
+- **no arquivo** `artifacts/mcp/logs/mcp-AAAAMMDD.log`, ao lado da DLL publicada, seja qual for o diretório de trabalho do cliente. Ele vira um arquivo novo a cada dia e a cada 10 MB, e só os 14 mais recentes ficam. O Claude Code e o Claude Desktop podem subir a mesma cópia ao mesmo tempo e dividem o arquivo: as linhas "Application started" e "Application is shutting down" separam os processos;
+- **no stderr**, que vai para o log do cliente (seções acima). O stdout é do protocolo e não recebe log.
+
+Fica registrado o que for `Warning` ou mais grave, além do início e da parada do processo. A exceção de uma ferramenta aparece em `Error`, com o tipo e a pilha, enquanto o modelo recebe só "An error occurred invoking '<ferramenta>'.". Uma falha na partida, como a connection string ausente, aparece em `Fatal`.
+
+Para ver mais detalhes, suba o nível por variável de ambiente, só durante a investigação, e nunca no `appsettings.json` versionado. Por exemplo, num terminal na raiz do repositório:
+
+```powershell
+$env:Serilog__MinimumLevel__Override__ModelContextProtocol = 'Debug'; claude
+```
+
+A variável continua no terminal depois que o `claude` fecha: remova-a com `Remove-Item Env:Serilog__MinimumLevel__Override__ModelContextProtocol` ou feche o terminal.
+
+Em `Debug` ou `Verbose` (o Serilog não tem `Trace`), o SDK pode registrar as mensagens JSON-RPC inteiras, com os argumentos e as respostas das ferramentas, ou seja, as transações que o modelo viu. Elas vão para o arquivo e para o stderr que o cliente guarda. Ao terminar a investigação, remova a variável e apague os arquivos de `artifacts/mcp/logs/` gravados durante ela.
+
+O arquivo pode trazer dados do arquivo importado (a mensagem de uma exceção do leitor cita o registro), além do host e do nome do banco. Ele fica só na máquina: o `.gitignore` o ignora, o `pre-commit` barra um `*.log` ou uma pasta `logs/` no stage, e nenhuma ferramenta o lê. Pode ser apagado à vontade.
 
 ## Vínculo em duas etapas
 
