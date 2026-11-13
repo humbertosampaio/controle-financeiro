@@ -1,6 +1,7 @@
 using ControleFinanceiro.Application.Abstractions;
 using ControleFinanceiro.Application.IA.Escritas;
 using ControleFinanceiro.Application.IA.Leituras;
+using ControleFinanceiro.Application.Importacoes;
 using ControleFinanceiro.Mcp.Autenticacao;
 using ControleFinanceiro.Mcp.Ferramentas;
 using Microsoft.Extensions.DependencyInjection;
@@ -25,13 +26,22 @@ public static class DependencyInjection
                 .WithTools<ConfirmarVinculoTool>()
                 .WithTools<ListarCartoesTool>()
                 .WithTools<PreverPagamentoFaturaTool>()
-                .WithTools<ConfirmarPagamentoFaturaTool>();
+                .WithTools<ConfirmarPagamentoFaturaTool>()
+                .WithTools<PreverImportacaoTool>()
+                .WithTools<ConfirmarImportacaoTool>();
 
             return services
                 .AddScoped<IUsuarioAtual, UsuarioAtualConfigurado>()
                 .AddScoped<LeituraParaModeloService>()
                 .AddScoped<VinculoParaModeloService>()
-                .AddScoped<PagamentoFaturaParaModeloService>();
+                .AddScoped<PagamentoFaturaParaModeloService>()
+                .AddTransient<ImportacaoParaModeloService>()
+                .AddTransient<LeituraExtratoService>()
+                .AddTransient<LeituraFaturaService>()
+                .AddTransient<ImportacaoExtratoService>()
+                .AddTransient<ImportacaoFaturaService>()
+                .AddTransient<PendenciasImportacaoService>()
+                .AddSingleton(TimeProvider.System);
         }
     }
 }

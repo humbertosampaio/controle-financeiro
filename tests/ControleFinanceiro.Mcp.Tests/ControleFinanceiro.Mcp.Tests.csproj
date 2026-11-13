@@ -27,6 +27,11 @@
     <ProjectReference Include="..\ControleFinanceiro.Tests.Shared\ControleFinanceiro.Tests.Shared.csproj" />
   </ItemGroup>
 
+  <!-- Os arquivos fictícios dos leitores, que a fixture copia para a pasta de origem temporária do servidor. -->
+  <ItemGroup>
+    <None Include="..\ControleFinanceiro.Infrastructure.Importacao.Tests\Fixtures\**\*.csv" Link="Importacao\Fixtures\%(RecursiveDir)%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
   <!-- A imagem do Postgres é a mesma do AppHost. -->
   <ItemGroup>
     <Compile Include="..\..\src\ControleFinanceiro.AppHost\Resources\PostgresImagem.cs" Link="Infraestrutura\PostgresImagem.cs" />

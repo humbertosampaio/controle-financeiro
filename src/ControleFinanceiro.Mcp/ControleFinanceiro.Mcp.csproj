@@ -15,6 +15,8 @@
 
   <ItemGroup>
     <ProjectReference Include="..\ControleFinanceiro.Application\ControleFinanceiro.Application.csproj" />
+    <!-- Só para o registro dos leitores e da origem dos arquivos: as ferramentas usam as portas da Application. -->
+    <ProjectReference Include="..\ControleFinanceiro.Infrastructure.Importacao\ControleFinanceiro.Infrastructure.Importacao.csproj" />
     <ProjectReference Include="..\ControleFinanceiro.Infrastructure.Persistence\ControleFinanceiro.Infrastructure.Persistence.csproj" />
   </ItemGroup>
 

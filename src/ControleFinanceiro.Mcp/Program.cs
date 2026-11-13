@@ -1,3 +1,4 @@
+using ControleFinanceiro.Infrastructure.Importacao;
 using ControleFinanceiro.Infrastructure.Persistence;
 using ControleFinanceiro.Mcp;
 using Microsoft.Extensions.Configuration;
@@ -23,8 +24,16 @@ builder.Logging.ClearProviders();
 builder.Logging.AddConsole(options => options.LogToStandardErrorThreshold = LogLevel.Trace);
 builder.Logging.SetMinimumLevel(LogLevel.Warning);
 
+// A pasta dados/ do repositório, de onde a cópia publicada em artifacts/mcp/ sobe duas pastas. Fora dela, como no bin
+// do src ou dos testes, a pasta padrão não existe e a importação falha fechado: nunca se procura o repositório subindo
+// pastas, porque nos testes isso acharia os dados reais.
+string origemImportacao = builder.Configuration["Mcp:OrigemArquivoImportacao"]
+    ?? Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "..", "..", "dados"));
+
 builder.Services
     .AddInfrastructurePersistence(builder.Configuration)
+    .AddInfrastructureImportacao()
+    .AddOrigemArquivoImportacao(origemImportacao)
     .AddMcp();
 
 await builder.Build().RunAsync();

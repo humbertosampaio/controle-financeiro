@@ -15,14 +15,16 @@ namespace ControleFinanceiro.Mcp.Tests.Infraestrutura;
 
 /// <summary>
 /// Sobe um Postgres descartável, aplica as migrations reais, cadastra o usuário do servidor e inicia o processo real
-/// dele, como um cliente MCP faria. A conexão e o usuário vão por variável de ambiente, que vence os User Secrets:
-/// nenhum teste chega ao banco local com dados reais. Sem Docker, a fixture falha e os testes falham junto: não são
-/// pulados.
+/// dele, como um cliente MCP faria. A conexão, o usuário e a pasta de origem da importação vão por variável de ambiente,
+/// que vence os User Secrets: nenhum teste chega ao banco local nem à pasta dados/ do repositório, com dados reais. A
+/// pasta de origem é temporária, com as fixtures fictícias dos leitores. Sem Docker, a fixture falha e os testes falham
+/// junto: não são pulados.
 /// </summary>
 public sealed class ServidorMcpFixture : IAsyncLifetime
 {
     private const string VariavelConexao = "ConnectionStrings__controlefinanceiro";
     private const string VariavelIdUsuario = "Mcp__IdUsuario";
+    private const string VariavelOrigemImportacao = "Mcp__OrigemArquivoImportacao";
 
     /// <summary>A meta com que a ferramenta pede ao cliente a aprovação do usuário a cada chamada.</summary>
     public const string MetaInteracaoDoUsuario = "anthropic/requiresUserInteraction";
@@ -34,6 +36,14 @@ public sealed class ServidorMcpFixture : IAsyncLifetime
     private const string SemIdUsuario = "sem-usuario";
 
     private static readonly TimeSpan _tempoMaximoExecucao = TimeSpan.FromMinutes(1);
+
+    /// <summary>Faz o papel da raiz do repositório: o caminho relativo das ferramentas de importação parte dela.</summary>
+    public static string RepositorioDeTeste { get; } = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString());
+
+    /// <summary>A pasta de origem da importação, com as fixtures copiadas de <c>Importacao/Fixtures</c>.</summary>
+    public static string PastaOrigemImportacao => Path.Combine(RepositorioDeTeste, "dados");
+
+    private static string FixturesImportacao => Path.Combine(PastaServidor, "Importacao", "Fixtures");
 
     private readonly PostgreSqlContainer _postgres = new PostgreSqlBuilder(PostgresImagem.Completa).Build();
 
@@ -55,6 +65,7 @@ public sealed class ServidorMcpFixture : IAsyncLifetime
 
     public async Task InitializeAsync()
     {
+        CopiarFixturesImportacao();
         await _postgres.StartAsync();
 
         await using (ControleFinanceiroDbContext dbContext = CriarDbContext(Usuario.Id))
@@ -113,6 +124,7 @@ public sealed class ServidorMcpFixture : IAsyncLifetime
                 ["DOTNET_ENVIRONMENT"] = "Production",
                 [VariavelConexao] = conexao,
                 [VariavelIdUsuario] = idUsuario?.ToString() ?? SemIdUsuario,
+                [VariavelOrigemImportacao] = PastaOrigemImportacao,
             },
         });
 
@@ -144,6 +156,19 @@ public sealed class ServidorMcpFixture : IAsyncLifetime
         if (ClienteMcp is not null)
             await ClienteMcp.DisposeAsync();
         await _postgres.DisposeAsync();
+
+        if (Directory.Exists(RepositorioDeTeste))
+            Directory.Delete(RepositorioDeTeste, recursive: true);
+    }
+
+    private static void CopiarFixturesImportacao()
+    {
+        foreach (string arquivo in Directory.EnumerateFiles(FixturesImportacao, "*", SearchOption.AllDirectories))
+        {
+            string destino = Path.Combine(PastaOrigemImportacao, Path.GetRelativePath(FixturesImportacao, arquivo));
+            Directory.CreateDirectory(Path.GetDirectoryName(destino)!);
+            File.Copy(arquivo, destino);
+        }
     }
 
     private async Task<NpgsqlConnection> AbrirConexaoAsync()
