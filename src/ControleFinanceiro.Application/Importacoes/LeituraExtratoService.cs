@@ -1,9 +1,8 @@
-using ControleFinanceiro.Application.Importacoes;
 using ControleFinanceiro.Domain.Contas;
 using ControleFinanceiro.Domain.Importacoes;
 using CSharpFunctionalExtensions;
 
-namespace ControleFinanceiro.WebApi.Endpoints.Importacoes;
+namespace ControleFinanceiro.Application.Importacoes;
 
 /// <summary>
 /// Escolhe o leitor do extrato pelo layout, em qualquer rota: o layout cujo arquivo não traz a conta é lido com o

@@ -1,6 +1,6 @@
 using ControleFinanceiro.Application.Abstractions;
+using ControleFinanceiro.Application.Importacoes;
 using ControleFinanceiro.WebApi.Autenticacao;
-using ControleFinanceiro.WebApi.Endpoints.Importacoes;
 using FastEndpoints;
 using FastEndpoints.Swagger;
 
@@ -20,7 +20,10 @@ public static class DependencyInjection
                 .AddHttpContextAccessor()
                 .AddScoped<IUsuarioAtual, UsuarioAtualRota>()
                 .AddScoped<ImportacaoExtratoService>()
-                .AddScoped<LeituraExtratoService>();
+                .AddScoped<ImportacaoFaturaService>()
+                .AddScoped<LeituraExtratoService>()
+                .AddScoped<LeituraFaturaService>()
+                .AddScoped<PendenciasImportacaoService>();
         }
     }
 }

@@ -1,12 +1,6 @@
 using ControleFinanceiro.Application.Abstractions;
 using ControleFinanceiro.Application.Importacoes;
-using ControleFinanceiro.Domain.Beneficiarios;
-using ControleFinanceiro.Domain.Cartoes;
-using ControleFinanceiro.Domain.Categorias;
 using ControleFinanceiro.Domain.Importacoes;
-using ControleFinanceiro.Domain.Services;
-using ControleFinanceiro.Domain.Shared.ValueObjects;
-using ControleFinanceiro.Domain.Transacoes;
 using ControleFinanceiro.Domain.Usuarios;
 using CSharpFunctionalExtensions;
 using FastEndpoints;
@@ -28,23 +22,17 @@ public sealed class PreVisualizarFaturaEndpoint : Endpoint<PreVisualizarFaturaRe
     public const long TamanhoMaximoFormulario = PreVisualizarFaturaValidator.TamanhoMaximoArquivo + 1024 * 1024;
 
     private readonly IUsuarioAtual _usuarioAtual;
-    private readonly ICartaoRepository _cartaoRepository;
-    private readonly IBeneficiarioRepository _beneficiarioRepository;
-    private readonly ICategoriaDespesaRepository _categoriaDespesaRepository;
-    private readonly IEnumerable<ILeitorFatura> _leitores;
+    private readonly LeituraFaturaService _leituraFatura;
+    private readonly PendenciasImportacaoService _pendencias;
 
     public PreVisualizarFaturaEndpoint(
         IUsuarioAtual usuarioAtual,
-        ICartaoRepository cartaoRepository,
-        IBeneficiarioRepository beneficiarioRepository,
-        ICategoriaDespesaRepository categoriaDespesaRepository,
-        IEnumerable<ILeitorFatura> leitores)
+        LeituraFaturaService leituraFatura,
+        PendenciasImportacaoService pendencias)
     {
         _usuarioAtual = usuarioAtual;
-        _cartaoRepository = cartaoRepository;
-        _beneficiarioRepository = beneficiarioRepository;
-        _categoriaDespesaRepository = categoriaDespesaRepository;
-        _leitores = leitores;
+        _leituraFatura = leituraFatura;
+        _pendencias = pendencias;
     }
 
     public override void Configure()
@@ -72,42 +60,28 @@ public sealed class PreVisualizarFaturaEndpoint : Endpoint<PreVisualizarFaturaRe
 
     private async Task<Result<Fatura, Falha>> LerAsync(LayoutArquivoImportacao layout, IFormFile arquivo, CancellationToken ct)
     {
-        ILeitorFatura leitor = _leitores.Single(l => l.Layout == layout);
         await using Stream conteudo = arquivo.OpenReadStream();
 
-        return await leitor
-            .LerAsync(conteudo, ct)
+        return await _leituraFatura
+            .LerAsync(layout, conteudo, ct)
             .MapError(Falha.ArquivoInvalido);
     }
 
     private async Task<PreVisualizarFaturaResponse> PreVisualizarAsync(IdUsuario idUsuario, Fatura fatura, CancellationToken ct)
     {
-        IReadOnlyList<Cartao> cartoes = await _cartaoRepository.ListarAsync(ct);
-        IReadOnlyList<Beneficiario> beneficiarios = await _beneficiarioRepository.ListarAsync(ct);
-        IReadOnlyList<CategoriaDespesa> categorias = await _categoriaDespesaRepository.ListarAsync(ct);
-        IReadOnlyList<Lancamento> lancamentos = fatura.Lancamentos.Select(l => l.Lancamento).ToArray();
-        IReadOnlyList<Alias> beneficiariosPendentes = AliasesBeneficiarioPendentes.Listar(idUsuario, beneficiarios, lancamentos);
-        IReadOnlyList<Alias> categoriasPendentes = AliasesCategoriaPendentes.Listar(idUsuario, categorias, lancamentos);
+        PendenciasFatura pendencias = await _pendencias.ListarDaFaturaAsync(idUsuario, fatura, ct);
 
         return new PreVisualizarFaturaResponse(
-            fatura.Sufixos
-                .Select(sufixo => LerFinal(idUsuario, cartoes, fatura.Banco, sufixo))
-                .ToArray(),
-            beneficiariosPendentes.Select(a => a.TextoOriginal).ToArray(),
-            categoriasPendentes.Select(a => a.TextoOriginal).ToArray());
+            pendencias.Finais.Select(LerFinal).ToArray(),
+            pendencias.Beneficiarios.Select(a => a.TextoOriginal).ToArray(),
+            pendencias.CategoriasBanco.Select(a => a.TextoOriginal).ToArray());
     }
 
-    private static PreVisualizarFaturaResponse.FinalCartao LerFinal(
-        IdUsuario idUsuario,
-        IReadOnlyList<Cartao> cartoes,
-        Banco banco,
-        SufixoCartao sufixo)
+    private static PreVisualizarFaturaResponse.FinalCartao LerFinal(PendenciasFatura.FinalCartao final)
     {
-        return CartaoFactory
-            .ObterDoFinal(idUsuario, cartoes, banco, sufixo)
-            .Match(
-                cartao => new PreVisualizarFaturaResponse.FinalCartao(sufixo, Cadastrado: true, cartao.DiaVencimento, cartao.DiaFechamento),
-                () => new PreVisualizarFaturaResponse.FinalCartao(sufixo, Cadastrado: false, DiaVencimento: null, DiaFechamento: null));
+        return final.Cartao.Match(
+            Some: cartao => new PreVisualizarFaturaResponse.FinalCartao(final.Sufixo, Cadastrado: true, cartao.DiaVencimento, cartao.DiaFechamento),
+            None: () => new PreVisualizarFaturaResponse.FinalCartao(final.Sufixo, Cadastrado: false, DiaVencimento: null, DiaFechamento: null));
     }
 
     private async Task EnviarFalhaAsync(Falha falha, CancellationToken ct)
