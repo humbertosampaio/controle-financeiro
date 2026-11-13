@@ -40,6 +40,13 @@ for f in $files; do
       continue ;;
   esac
 
+  # O Windows não diferencia maiúsculas no nome do arquivo.
+  case "$(printf '%s' "$f" | tr '[:upper:]' '[:lower:]')" in
+    *.log|logs/*|*/logs/*)
+      erro "$f: log do servidor (pode trazer dados do arquivo importado)"
+      continue ;;
+  esac
+
   case "$f" in
     tests/*/Fixtures/*) ;;
     *.ofx|*.OFX|*.csv|*.CSV|*.xlsx|*.XLSX|*.db|*.sqlite)

@@ -85,7 +85,7 @@ git config core.hooksPath .githooks
 
 | Gate | O que confere |
 |---|---|
-| `pre-commit` | `scan-staged.sh`: arquivo de `dados/`, extrato fora de Fixtures, chave da Anthropic, token do GitHub, chave privada, senha em appsettings ou `.mcp.json` |
+| `pre-commit` | `scan-staged.sh`: arquivo de `dados/`, log do servidor (`*.log` ou pasta `logs/`), extrato fora de Fixtures, chave da Anthropic, token do GitHub, chave privada, senha em appsettings ou `.mcp.json` |
 | `commit-msg` | Conventional Commits em PT-BR, descrição com maiúscula e sem ponto final |
 | `pre-push` | nada vai para a `main`; branch `<tipo>/<issue>-<slug>` ou `dependabot/...` (para ajustar um PR do Dependabot, como acompanhar no código a versão que ele subiu); testes do guardrail e de `testes-afetados.mjs`; build; testes de unidade; testes de integração dos endpoints afetados e do servidor MCP, se afetado (precisam do Docker) |
 | Teste de arquitetura (`SaidaModeloArquiteturaTests`) | quem fala com o modelo só devolve `ISaidaModelo` (a exceção é a `VerificacaoServidor`, só com o estado do banco), não usa agregados, responses da WebApi, SQL direto, prompts, resources nem os outros canais do SDK, e projeto novo em `src/` precisa ser classificado; roda na suíte de unidade, no `pre-push` e no CI |
