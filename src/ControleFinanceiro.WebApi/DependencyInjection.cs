@@ -1,6 +1,6 @@
 using ControleFinanceiro.Application.Abstractions;
+using ControleFinanceiro.Application.Importacoes;
 using ControleFinanceiro.WebApi.Autenticacao;
-using ControleFinanceiro.WebApi.Endpoints.Importacoes;
 using FastEndpoints;
 using FastEndpoints.Swagger;
 

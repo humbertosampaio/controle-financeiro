@@ -7,16 +7,17 @@ using ControleFinanceiro.Domain.Services;
 using ControleFinanceiro.Domain.Shared;
 using ControleFinanceiro.Domain.Transacoes;
 using ControleFinanceiro.Domain.Usuarios;
-using ControleFinanceiro.WebApi.Endpoints.Importacoes.ImportarExtrato;
 using CSharpFunctionalExtensions;
 using LoteConta = (ControleFinanceiro.Domain.Contas.ContaBancaria Conta, ControleFinanceiro.Domain.Importacoes.ImportacaoArquivo Importacao, System.Collections.Generic.IReadOnlyList<ControleFinanceiro.Domain.Transacoes.Transacao> Transacoes);
 
-namespace ControleFinanceiro.WebApi.Endpoints.Importacoes;
+namespace ControleFinanceiro.Application.Importacoes;
 
 /// <summary>
 /// O que a importação de um extrato faz depois de ler o arquivo, em qualquer rota: obtém ou cria a conta, registra a
 /// importação, monta o lote, confere que todo texto de beneficiário e toda categoria do banco do arquivo já são alias
-/// e grava só as transações novas, junto com a conta nova e a importação, num commit só. Nada é gravado quando o resultado é de erro.
+/// e acrescenta só as transações novas, junto com a conta nova e a importação. O <see cref="AplicarAsync"/> deixa tudo
+/// no escopo sem gravar, para a prévia que descarta o escopo; o <see cref="ImportarAsync"/> grava num commit só. Nada é
+/// gravado quando o resultado é de erro.
 /// </summary>
 public sealed class ImportacaoExtratoService
 {
@@ -46,11 +47,23 @@ public sealed class ImportacaoExtratoService
         _unitOfWork = unitOfWork;
     }
 
+    /// <summary>Aplica a importação e grava, num commit só, se nada falhar.</summary>
+    /// <param name="idUsuario">Um usuário que existe.</param>
+    public async Task<Result<ExtratoImportado, Erro>> ImportarAsync(
+        IdUsuario idUsuario,
+        LayoutArquivoImportacao layout,
+        Extrato extrato,
+        CancellationToken ct)
+    {
+        return await AplicarAsync(idUsuario, layout, extrato, ct)
+            .Tap(() => _unitOfWork.CommitAsync(ct));
+    }
+
     /// <summary>
-    /// Obtém a conta, registra a importação e monta o lote; só grava se nenhum deles falhar.
+    /// Obtém a conta, registra a importação e monta o lote; só acrescenta ao escopo se nenhum deles falhar. Não grava.
     /// </summary>
     /// <param name="idUsuario">Um usuário que existe.</param>
-    public async Task<Result<ImportarExtratoResponse, Erro>> ImportarAsync(
+    public async Task<Result<ExtratoImportado, Erro>> AplicarAsync(
         IdUsuario idUsuario,
         LayoutArquivoImportacao layout,
         Extrato extrato,
@@ -63,7 +76,7 @@ public sealed class ImportacaoExtratoService
         return await ContaBancariaFactory
             .ObterOuCriar(idUsuario, contasDoUsuario, extrato.Banco, extrato.TipoConta, extrato.SufixoConta)
             .Bind(conta => MontarLote(idUsuario, beneficiariosDoUsuario, categoriasDoUsuario, layout, extrato, conta))
-            .Map(lote => GravarAsync(extrato, contasDoUsuario, lote, ct));
+            .Map(lote => AcrescentarAsync(extrato, contasDoUsuario, lote, ct));
     }
 
     /// <summary>Registra a importação do arquivo na conta e monta o lote das transações ligadas a ela.</summary>
@@ -87,7 +100,7 @@ public sealed class ImportacaoExtratoService
             .Map(transacoes => (conta, importacao, transacoes));
     }
 
-    private async Task<ImportarExtratoResponse> GravarAsync(
+    private async Task<ExtratoImportado> AcrescentarAsync(
         Extrato extrato,
         IReadOnlyList<ContaBancaria> contasDoUsuario,
         LoteConta lote,
@@ -101,24 +114,24 @@ public sealed class ImportacaoExtratoService
         // Lidas antes de adicionar as novas: a consulta só traz o que já estava gravado.
         IReadOnlyList<Transacao> transacoesPeriodo = await _transacaoRepository.ListarNoPeriodoAsync(origem, extrato.Periodo, ct);
 
-        if (!contasDoUsuario.Contains(conta))
+        bool contaNova = !contasDoUsuario.Contains(conta);
+        if (contaNova)
             await _contaRepository.AdicionarAsync(conta, ct);
 
         await _importacaoRepository.AdicionarAsync(importacao, ct);
         IReadOnlyList<Transacao> novas = await _transacaoRepository.AdicionarNovasAsync(transacoes, ct);
 
-        Result somaPeriodo = ConferenciaSomaPeriodo.Conferir(extrato, transacoesPeriodo, novas);
-        Maybe<PeriodoArquivo> periodoNaoImportado = importacao.PeriodoNaoImportado(importacaoAnterior);
-
-        await _unitOfWork.CommitAsync(ct);
-
-        return new ImportarExtratoResponse(
+        return new ExtratoImportado(
             importacao.Id,
             conta.Id,
+            contaNova,
+            conta.Banco,
+            conta.Tipo,
+            extrato.Periodo,
             importacao.Lidas,
             novas.Count,
             importacao.Lidas - novas.Count,
-            periodoNaoImportado.Map(p => new ImportarExtratoResponse.Periodo(p.Inicio, p.Fim)).GetValueOrDefault(),
-            somaPeriodo.IsFailure ? somaPeriodo.Error : null);
+            importacao.PeriodoNaoImportado(importacaoAnterior),
+            ConferenciaSomaPeriodo.Conferir(extrato, transacoesPeriodo, novas));
     }
 }

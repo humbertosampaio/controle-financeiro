@@ -1,4 +1,5 @@
 using ControleFinanceiro.Application.Abstractions;
+using ControleFinanceiro.Application.Importacoes;
 using ControleFinanceiro.Domain.Beneficiarios;
 using ControleFinanceiro.Domain.Categorias;
 using ControleFinanceiro.Domain.Contas;
@@ -58,6 +59,7 @@ public sealed class ImportarExtratoEndpoint : Endpoint<ImportarExtratoRequest, I
             .Bind(extrato => _importacaoExtrato
                 .ImportarAsync(idUsuario, layout, extrato, ct)
                 .MapError(Falha.DeDominio))
+            .Map(Responder)
             .Match(
                 resposta => Send.OkAsync(resposta, ct),
                 falha => EnviarFalhaAsync(layout, falha, ct));
@@ -71,6 +73,18 @@ public sealed class ImportarExtratoEndpoint : Endpoint<ImportarExtratoRequest, I
         return await _leituraExtrato
             .LerAsync(layout, conteudo, req.SufixoConta, ct)
             .MapError(Falha.ArquivoInvalido);
+    }
+
+    private static ImportarExtratoResponse Responder(ExtratoImportado importado)
+    {
+        return new ImportarExtratoResponse(
+            importado.IdImportacao,
+            importado.IdConta,
+            importado.Lidas,
+            importado.Novas,
+            importado.JaExistentes,
+            importado.PeriodoNaoImportado.Map(p => new ImportarExtratoResponse.Periodo(p.Inicio, p.Fim)).GetValueOrDefault(),
+            importado.SomaPeriodo.IsFailure ? importado.SomaPeriodo.Error : null);
     }
 
     private async Task EnviarFalhaAsync(LayoutArquivoImportacao layout, Falha falha, CancellationToken ct)
