@@ -21,7 +21,7 @@ public sealed class LeituraExtratoService
 
     /// <param name="layout">Um layout de extrato.</param>
     /// <param name="sufixoConta">Válido quando o layout é de conta informada; nos outros, não é lido.</param>
-    public Task<Result<Extrato>> LerAsync(LayoutArquivoImportacao layout, Stream arquivo, string? sufixoConta, CancellationToken ct)
+    public Task<Result<Extrato, FalhaLeituraArquivo>> LerAsync(LayoutArquivoImportacao layout, Stream arquivo, string? sufixoConta, CancellationToken ct)
     {
         return LayoutArquivoImportacao.ExtratosContaInformada.Contains(layout)
             ? _leitoresContaInformada.Single(l => l.Layout == layout).LerAsync(arquivo, (SufixoConta)sufixoConta, ct)

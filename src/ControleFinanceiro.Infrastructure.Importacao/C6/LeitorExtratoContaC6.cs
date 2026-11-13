@@ -41,12 +41,21 @@ public sealed partial class LeitorExtratoContaC6 : ILeitorExtrato
     private static readonly string[] _colunas =
         ["Data Lançamento", "Data Contábil", "Título", "Descrição", "Entrada(R$)", "Saída(R$)", "Saldo do Dia(R$)"];
 
+    private static readonly FalhaLeituraArquivo _arquivoTerminaAntesColunas = FalhaLeituraArquivo.NoArquivo(
+        TipoFalhaLeituraArquivo.SemColunas,
+        "O arquivo termina antes das colunas do extrato da conta do C6.");
+
+    private static readonly FalhaLeituraArquivo _semAsColunas = FalhaLeituraArquivo.NaLinha(
+        TipoFalhaLeituraArquivo.SemColunas,
+        LinhasAntesColunas + 1,
+        "não traz as colunas do extrato da conta do C6.");
+
     public LayoutArquivoImportacao Layout => LayoutArquivoImportacao.C6ContaCsv;
 
     /// <summary>
     /// Lê o cabeçalho, tira dele a conta e o período, e depois lê os lançamentos e monta o extrato.
     /// </summary>
-    public async Task<Result<Extrato>> LerAsync(Stream arquivo, CancellationToken cancellationToken)
+    public async Task<Result<Extrato, FalhaLeituraArquivo>> LerAsync(Stream arquivo, CancellationToken cancellationToken)
     {
         using StreamReader leitor = new(arquivo, Encoding.UTF8, detectEncodingFromByteOrderMarks: true, leaveOpen: true);
 
@@ -55,14 +64,16 @@ public sealed partial class LeitorExtratoContaC6 : ILeitorExtrato
             .Bind(contaEPeriodo => LerExtratoAsync(leitor, contaEPeriodo.Sufixo, contaEPeriodo.Periodo, cancellationToken));
     }
 
-    private static async Task<Result<IReadOnlyList<string>>> LerCabecalhoAsync(StreamReader leitor, CancellationToken cancellationToken)
+    private static async Task<Result<IReadOnlyList<string>, FalhaLeituraArquivo>> LerCabecalhoAsync(
+        StreamReader leitor,
+        CancellationToken cancellationToken)
     {
         List<string> linhas = [];
         for (int i = 0; i < LinhasAntesColunas; i++)
         {
             string? linha = await leitor.ReadLineAsync(cancellationToken);
             if (linha is null)
-                return Result.Failure<IReadOnlyList<string>>("O arquivo termina antes das colunas do extrato da conta do C6.");
+                return _arquivoTerminaAntesColunas;
 
             linhas.Add(linha);
         }
@@ -70,10 +81,11 @@ public sealed partial class LeitorExtratoContaC6 : ILeitorExtrato
         return linhas;
     }
 
-    private static Result<ContaEPeriodo> LerContaEPeriodo(IReadOnlyList<string> cabecalho)
+    private static Result<ContaEPeriodo, FalhaLeituraArquivo> LerContaEPeriodo(IReadOnlyList<string> cabecalho)
     {
         return LerSufixoConta(cabecalho)
-            .Bind(sufixo => LerPeriodo(cabecalho).Map(periodo => (sufixo, periodo)));
+            .Bind(sufixo => LerPeriodo(cabecalho).Map(periodo => (sufixo, periodo)))
+            .MapError(ConteudoInvalido);
     }
 
     private static Result<SufixoConta> LerSufixoConta(IEnumerable<string> cabecalho)
@@ -114,7 +126,7 @@ public sealed partial class LeitorExtratoContaC6 : ILeitorExtrato
             "O período no cabeçalho do arquivo não tem datas válidas.");
     }
 
-    private static async Task<Result<Extrato>> LerExtratoAsync(
+    private static async Task<Result<Extrato, FalhaLeituraArquivo>> LerExtratoAsync(
         StreamReader leitor,
         SufixoConta sufixo,
         PeriodoArquivo periodo,
@@ -129,7 +141,8 @@ public sealed partial class LeitorExtratoContaC6 : ILeitorExtrato
                 sufixo,
                 periodo,
                 lidos.Select(l => l.Lancamento),
-                lidos.Select(l => l.Saldo).Distinct()));
+                lidos.Select(l => l.Saldo).Distinct())
+                .MapError(ConteudoInvalido));
     }
 
     /// <summary>
@@ -137,7 +150,7 @@ public sealed partial class LeitorExtratoContaC6 : ILeitorExtrato
     /// não está no layout.
     /// </summary>
     /// <remarks>O CSV fecha o <paramref name="leitor"/> ao terminar.</remarks>
-    private static async Task<Result<IReadOnlyList<LancamentoComSaldo>>> LerLancamentosAsync(
+    private static async Task<Result<IReadOnlyList<LancamentoComSaldo>, FalhaLeituraArquivo>> LerLancamentosAsync(
         StreamReader leitor,
         CancellationToken cancellationToken)
     {
@@ -147,25 +160,23 @@ public sealed partial class LeitorExtratoContaC6 : ILeitorExtrato
             .Bind(() => LerLinhasAsync(csv, cancellationToken));
     }
 
-    private static async Task<Result> LerColunasAsync(CsvReader csv)
+    private static async Task<UnitResult<FalhaLeituraArquivo>> LerColunasAsync(CsvReader csv)
     {
         try
         {
             await csv.ReadHeaderAsync();
             if (csv.Headers.Count == 0)
-                return Result.Failure("O arquivo termina antes das colunas do extrato da conta do C6.");
+                return _arquivoTerminaAntesColunas;
 
-            return Result.FailureIf(
-                !_colunas.All(csv.Headers.Contains),
-                $"A linha {LinhasAntesColunas + 1} do arquivo não traz as colunas do extrato da conta do C6.");
+            return UnitResult.FailureIf(!_colunas.All(csv.Headers.Contains), _semAsColunas);
         }
         catch (CsvFormatException)
         {
-            return Result.Failure($"A linha {LinhasAntesColunas + 1} do arquivo não traz as colunas do extrato da conta do C6.");
+            return _semAsColunas;
         }
     }
 
-    private static async Task<Result<IReadOnlyList<LancamentoComSaldo>>> LerLinhasAsync(
+    private static async Task<Result<IReadOnlyList<LancamentoComSaldo>, FalhaLeituraArquivo>> LerLinhasAsync(
         CsvReader csv,
         CancellationToken cancellationToken)
     {
@@ -175,9 +186,9 @@ public sealed partial class LeitorExtratoContaC6 : ILeitorExtrato
         {
             cancellationToken.ThrowIfCancellationRequested();
 
-            Result<Maybe<LinhaExtratoC6>> proxima = await LerProximaLinhaAsync(csv);
+            Result<Maybe<LinhaExtratoC6>, FalhaLeituraArquivo> proxima = await LerProximaLinhaAsync(csv);
             if (proxima.IsFailure)
-                return Result.Failure<IReadOnlyList<LancamentoComSaldo>>(proxima.Error);
+                return proxima.Error;
 
             if (proxima.Value.HasNoValue)
                 return lidos;
@@ -185,14 +196,14 @@ public sealed partial class LeitorExtratoContaC6 : ILeitorExtrato
             LinhaExtratoC6 linha = proxima.Value.Value;
             Result<LancamentoContabilizado> lancamento = Converter(linha);
             if (lancamento.IsFailure)
-                return Result.Failure<IReadOnlyList<LancamentoComSaldo>>($"A linha {NumeroLinha(csv)} do arquivo {lancamento.Error}");
+                return FalhaLeituraArquivo.NaLinha(TipoFalhaLeituraArquivo.LancamentoInvalido, NumeroLinha(csv), lancamento.Error);
 
             lidos.Add((lancamento.Value, SaldoDiario.Criar(linha.DataContabil, linha.SaldoDia)));
         }
     }
 
     /// <returns>Vazio no fim do arquivo.</returns>
-    private static async Task<Result<Maybe<LinhaExtratoC6>>> LerProximaLinhaAsync(CsvReader csv)
+    private static async Task<Result<Maybe<LinhaExtratoC6>, FalhaLeituraArquivo>> LerProximaLinhaAsync(CsvReader csv)
     {
         try
         {
@@ -200,7 +211,10 @@ public sealed partial class LeitorExtratoContaC6 : ILeitorExtrato
         }
         catch (CsvFormatException erro)
         {
-            return Result.Failure<Maybe<LinhaExtratoC6>>($"A linha {LinhasAntesColunas + erro.LineNumber} do arquivo não está no layout do extrato da conta do C6.");
+            return FalhaLeituraArquivo.NaLinha(
+                TipoFalhaLeituraArquivo.ForaDoLayout,
+                LinhasAntesColunas + erro.LineNumber,
+                "não está no layout do extrato da conta do C6.");
         }
     }
 
@@ -255,6 +269,11 @@ public sealed partial class LeitorExtratoContaC6 : ILeitorExtrato
     }
 
     private static long NumeroLinha(CsvReader csv) => LinhasAntesColunas + csv.LineNumber;
+
+    private static FalhaLeituraArquivo ConteudoInvalido(string mensagem)
+    {
+        return FalhaLeituraArquivo.NoArquivo(TipoFalhaLeituraArquivo.ConteudoInvalido, mensagem);
+    }
 
     [GeneratedRegex(@"Conta:\s*(?<numero>\S+)")]
     private static partial Regex NumeroConta();

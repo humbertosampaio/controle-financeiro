@@ -89,7 +89,7 @@ public sealed class PreVisualizarExtratoEndpoint : Endpoint<ImportarExtratoReque
     /// </summary>
     private abstract record Falha
     {
-        public static Falha ArquivoInvalido(string mensagem) => new Arquivo(mensagem);
+        public static Falha ArquivoInvalido(FalhaLeituraArquivo falha) => new Arquivo(falha.Mensagem);
 
         public sealed record Arquivo(string Mensagem) : Falha;
     }

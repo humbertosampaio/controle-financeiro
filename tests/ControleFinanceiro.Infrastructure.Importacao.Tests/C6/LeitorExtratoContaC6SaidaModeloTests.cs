@@ -1,4 +1,5 @@
 using ControleFinanceiro.Application.IA.Saida;
+using ControleFinanceiro.Application.Importacoes;
 using ControleFinanceiro.Domain.Importacoes;
 using ControleFinanceiro.Domain.Transacoes;
 using ControleFinanceiro.Infrastructure.Importacao.C6;
@@ -79,7 +80,7 @@ public sealed class LeitorExtratoContaC6SaidaModeloTests
     private async Task<TransacaoParaModelo> LerAsync(TransacoesDeTeste transacoes, string titulo, string descricao)
     {
         Stream arquivo = _fixture.ComLinha(LinhaPixEnviado, $"02/03/2026,02/03/2026,{titulo},{descricao},0.00,89.90,-12.50");
-        Result<Extrato> extrato = await _leitor.LerAsync(arquivo, CancellationToken.None);
+        Result<Extrato, FalhaLeituraArquivo> extrato = await _leitor.LerAsync(arquivo, CancellationToken.None);
         Lancamento lancamento = extrato.Should().Succeed().Which.Lancamentos[IndiceLancamentoPixEnviado];
         return transacoes.DaConta(lancamento).ParaModelo();
     }

@@ -52,10 +52,19 @@ public sealed partial class LeitorExtratoContaMercadoPago : ILeitorExtratoContaI
     private static readonly string[] _colunas =
         ["RELEASE_DATE", "TRANSACTION_TYPE", "REFERENCE_ID", "TRANSACTION_NET_AMOUNT", "PARTIAL_BALANCE"];
 
+    private static readonly FalhaLeituraArquivo _arquivoTerminaAntesColunas = FalhaLeituraArquivo.NoArquivo(
+        TipoFalhaLeituraArquivo.SemColunas,
+        "O arquivo termina antes das colunas do extrato da conta do Mercado Pago.");
+
+    private static readonly FalhaLeituraArquivo _semAsColunas = FalhaLeituraArquivo.NaLinha(
+        TipoFalhaLeituraArquivo.SemColunas,
+        LinhasAntesColunas + 1,
+        "não traz as colunas do extrato da conta do Mercado Pago.");
+
     public LayoutArquivoImportacao Layout => LayoutArquivoImportacao.MercadoPagoContaCsv;
 
     /// <summary>Lê o resumo, tira dele os saldos inicial e final, e depois lê as transações e monta o extrato.</summary>
-    public async Task<Result<Extrato>> LerAsync(Stream arquivo, SufixoConta sufixoConta, CancellationToken cancellationToken)
+    public async Task<Result<Extrato, FalhaLeituraArquivo>> LerAsync(Stream arquivo, SufixoConta sufixoConta, CancellationToken cancellationToken)
     {
         using StreamReader leitor = new(arquivo, Encoding.UTF8, detectEncodingFromByteOrderMarks: true, leaveOpen: true);
 
@@ -64,14 +73,16 @@ public sealed partial class LeitorExtratoContaMercadoPago : ILeitorExtratoContaI
             .Bind(saldos => LerExtratoAsync(leitor, sufixoConta, saldos, cancellationToken));
     }
 
-    private static async Task<Result<IReadOnlyList<string>>> LerResumoAsync(StreamReader leitor, CancellationToken cancellationToken)
+    private static async Task<Result<IReadOnlyList<string>, FalhaLeituraArquivo>> LerResumoAsync(
+        StreamReader leitor,
+        CancellationToken cancellationToken)
     {
         List<string> linhas = [];
         for (int i = 0; i < LinhasAntesColunas; i++)
         {
             string? linha = await leitor.ReadLineAsync(cancellationToken);
             if (linha is null)
-                return Result.Failure<IReadOnlyList<string>>("O arquivo termina antes das colunas do extrato da conta do Mercado Pago.");
+                return _arquivoTerminaAntesColunas;
 
             linhas.Add(linha);
         }
@@ -80,29 +91,44 @@ public sealed partial class LeitorExtratoContaMercadoPago : ILeitorExtratoContaI
     }
 
     /// <param name="resumo">As 3 linhas antes das colunas: os nomes, os valores e a linha em branco.</param>
-    private static Result<SaldosArquivo> LerSaldos(IReadOnlyList<string> resumo)
+    private static Result<SaldosArquivo, FalhaLeituraArquivo> LerSaldos(IReadOnlyList<string> resumo)
     {
         string[] valores = resumo[1].Split(Separador);
 
-        return Result
-            .FailureIf(resumo[0] != ColunasResumo, "A linha 1 do arquivo não traz as colunas do resumo do extrato da conta do Mercado Pago.")
+        return UnitResult
+            .FailureIf(
+                resumo[0] != ColunasResumo,
+                FalhaLeituraArquivo.NaLinha(
+                    TipoFalhaLeituraArquivo.SemColunas,
+                    linha: 1,
+                    "não traz as colunas do resumo do extrato da conta do Mercado Pago."))
             .Ensure(
                 () => valores.Length == ColunasResumo.Split(Separador).Length && valores.All(ValorMercadoPagoConverter.EhValor),
-                "A linha 2 do arquivo não está no layout do resumo do extrato da conta do Mercado Pago.")
-            .Ensure(() => resumo[2].Length == 0, "A linha 3 do arquivo deveria estar em branco no extrato da conta do Mercado Pago.")
+                FalhaLeituraArquivo.NaLinha(
+                    TipoFalhaLeituraArquivo.ForaDoLayout,
+                    linha: 2,
+                    "não está no layout do resumo do extrato da conta do Mercado Pago."))
+            .Ensure(
+                () => resumo[2].Length == 0,
+                FalhaLeituraArquivo.NaLinha(
+                    TipoFalhaLeituraArquivo.ForaDoLayout,
+                    linha: 3,
+                    "deveria estar em branco no extrato da conta do Mercado Pago."))
             .Map(() => ((Reais)ValorMercadoPagoConverter.Ler(valores[0]), (Reais)ValorMercadoPagoConverter.Ler(valores[3])));
     }
 
-    private static async Task<Result<Extrato>> LerExtratoAsync(
+    private static async Task<Result<Extrato, FalhaLeituraArquivo>> LerExtratoAsync(
         StreamReader leitor,
         SufixoConta sufixoConta,
         SaldosArquivo saldos,
         CancellationToken cancellationToken)
     {
         return await LerLancamentosAsync(leitor, cancellationToken)
-            .Ensure(lidos => lidos.Count > 0, "O arquivo não traz transações.")
-            .Ensure(lidos => lidos[^1].SaldoParcial == saldos.Final, "O saldo final do arquivo não fecha com o saldo da última transação.")
-            .Bind(lidos => MontarExtrato(sufixoConta, saldos.Inicial, lidos));
+            .Ensure(lidos => lidos.Count > 0, ConteudoInvalido("O arquivo não traz transações."))
+            .Ensure(
+                lidos => lidos[^1].SaldoParcial == saldos.Final,
+                ConteudoInvalido("O saldo final do arquivo não fecha com o saldo da última transação."))
+            .Bind(lidos => MontarExtrato(sufixoConta, saldos.Inicial, lidos).MapError(ConteudoInvalido));
     }
 
     /// <param name="lidos">Pelo menos uma transação, na ordem do arquivo.</param>
@@ -132,7 +158,7 @@ public sealed partial class LeitorExtratoContaMercadoPago : ILeitorExtratoContaI
     /// layout.
     /// </summary>
     /// <remarks>O CSV fecha o <paramref name="leitor"/> ao terminar.</remarks>
-    private static async Task<Result<IReadOnlyList<LancamentoComSaldo>>> LerLancamentosAsync(
+    private static async Task<Result<IReadOnlyList<LancamentoComSaldo>, FalhaLeituraArquivo>> LerLancamentosAsync(
         StreamReader leitor,
         CancellationToken cancellationToken)
     {
@@ -142,25 +168,23 @@ public sealed partial class LeitorExtratoContaMercadoPago : ILeitorExtratoContaI
             .Bind(() => LerLinhasAsync(csv, cancellationToken));
     }
 
-    private static async Task<Result> LerColunasAsync(CsvReader csv)
+    private static async Task<UnitResult<FalhaLeituraArquivo>> LerColunasAsync(CsvReader csv)
     {
         try
         {
             await csv.ReadHeaderAsync();
             if (csv.Headers.Count == 0)
-                return Result.Failure("O arquivo termina antes das colunas do extrato da conta do Mercado Pago.");
+                return _arquivoTerminaAntesColunas;
 
-            return Result.FailureIf(
-                !_colunas.All(csv.Headers.Contains),
-                $"A linha {LinhasAntesColunas + 1} do arquivo não traz as colunas do extrato da conta do Mercado Pago.");
+            return UnitResult.FailureIf(!_colunas.All(csv.Headers.Contains), _semAsColunas);
         }
         catch (CsvFormatException)
         {
-            return Result.Failure($"A linha {LinhasAntesColunas + 1} do arquivo não traz as colunas do extrato da conta do Mercado Pago.");
+            return _semAsColunas;
         }
     }
 
-    private static async Task<Result<IReadOnlyList<LancamentoComSaldo>>> LerLinhasAsync(
+    private static async Task<Result<IReadOnlyList<LancamentoComSaldo>, FalhaLeituraArquivo>> LerLinhasAsync(
         CsvReader csv,
         CancellationToken cancellationToken)
     {
@@ -170,9 +194,9 @@ public sealed partial class LeitorExtratoContaMercadoPago : ILeitorExtratoContaI
         {
             cancellationToken.ThrowIfCancellationRequested();
 
-            Result<Maybe<LinhaExtratoMercadoPago>> proxima = await LerProximaLinhaAsync(csv);
+            Result<Maybe<LinhaExtratoMercadoPago>, FalhaLeituraArquivo> proxima = await LerProximaLinhaAsync(csv);
             if (proxima.IsFailure)
-                return Result.Failure<IReadOnlyList<LancamentoComSaldo>>(proxima.Error);
+                return proxima.Error;
 
             if (proxima.Value.HasNoValue)
                 return lidos;
@@ -180,14 +204,14 @@ public sealed partial class LeitorExtratoContaMercadoPago : ILeitorExtratoContaI
             LinhaExtratoMercadoPago linha = proxima.Value.Value;
             Result<LancamentoContabilizado> lancamento = Converter(linha);
             if (lancamento.IsFailure)
-                return Result.Failure<IReadOnlyList<LancamentoComSaldo>>($"A linha {NumeroLinha(csv)} do arquivo {lancamento.Error}");
+                return FalhaLeituraArquivo.NaLinha(TipoFalhaLeituraArquivo.LancamentoInvalido, NumeroLinha(csv), lancamento.Error);
 
             lidos.Add((lancamento.Value, linha.SaldoParcial));
         }
     }
 
     /// <returns>Vazio no fim do arquivo.</returns>
-    private static async Task<Result<Maybe<LinhaExtratoMercadoPago>>> LerProximaLinhaAsync(CsvReader csv)
+    private static async Task<Result<Maybe<LinhaExtratoMercadoPago>, FalhaLeituraArquivo>> LerProximaLinhaAsync(CsvReader csv)
     {
         try
         {
@@ -195,8 +219,10 @@ public sealed partial class LeitorExtratoContaMercadoPago : ILeitorExtratoContaI
         }
         catch (CsvFormatException erro)
         {
-            return Result.Failure<Maybe<LinhaExtratoMercadoPago>>(
-                $"A linha {LinhasAntesColunas + erro.LineNumber} do arquivo não está no layout do extrato da conta do Mercado Pago.");
+            return FalhaLeituraArquivo.NaLinha(
+                TipoFalhaLeituraArquivo.ForaDoLayout,
+                LinhasAntesColunas + erro.LineNumber,
+                "não está no layout do extrato da conta do Mercado Pago.");
         }
     }
 
@@ -243,6 +269,11 @@ public sealed partial class LeitorExtratoContaMercadoPago : ILeitorExtratoContaI
     }
 
     private static long NumeroLinha(CsvReader csv) => LinhasAntesColunas + csv.LineNumber;
+
+    private static FalhaLeituraArquivo ConteudoInvalido(string mensagem)
+    {
+        return FalhaLeituraArquivo.NoArquivo(TipoFalhaLeituraArquivo.ConteudoInvalido, mensagem);
+    }
 
     [CsvRecord]
     internal sealed partial class LinhaExtratoMercadoPago

@@ -36,39 +36,48 @@ public sealed partial class LeitorFaturaCartaoC6 : ILeitorFatura
     /// <summary>As colunas mapeadas, com a grafia exata: o CsvHelper aceitaria outra caixa e espaços em volta.</summary>
     private static readonly string[] _colunas = ["Data de Compra", "Final do Cartão", "Categoria", "Descrição", "Parcela", "Valor (em R$)"];
 
+    private static readonly FalhaLeituraArquivo _arquivoTerminaAntesColunas = FalhaLeituraArquivo.NoArquivo(
+        TipoFalhaLeituraArquivo.SemColunas,
+        "O arquivo termina antes das colunas da fatura do cartão do C6.");
+
+    private static readonly FalhaLeituraArquivo _semAsColunas = FalhaLeituraArquivo.NaLinha(
+        TipoFalhaLeituraArquivo.SemColunas,
+        linha: 1,
+        "não traz as colunas da fatura do cartão do C6.");
+
     public LayoutArquivoImportacao Layout => LayoutArquivoImportacao.C6CartaoCsv;
 
     /// <summary>Lê as colunas, depois cada compra, e monta a fatura.</summary>
-    public async Task<Result<Fatura>> LerAsync(Stream arquivo, CancellationToken cancellationToken)
+    public async Task<Result<Fatura, FalhaLeituraArquivo>> LerAsync(Stream arquivo, CancellationToken cancellationToken)
     {
         using StreamReader leitor = new(arquivo, Encoding.UTF8, detectEncodingFromByteOrderMarks: true, leaveOpen: true);
         using CsvReader csv = CsvReader.Create(leitor, _opcoes);
 
         return await LerColunasAsync(csv)
             .Bind(() => LerLinhasAsync(csv, cancellationToken))
-            .Bind(lancamentos => Fatura.Criar(Banco.C6, lancamentos));
+            .Bind(lancamentos => Fatura
+                .Criar(Banco.C6, lancamentos)
+                .MapError(erro => FalhaLeituraArquivo.NoArquivo(TipoFalhaLeituraArquivo.ConteudoInvalido, erro)));
     }
 
-    private static async Task<Result> LerColunasAsync(CsvReader csv)
+    private static async Task<UnitResult<FalhaLeituraArquivo>> LerColunasAsync(CsvReader csv)
     {
         try
         {
             await csv.ReadHeaderAsync();
             if (csv.Headers.Count == 0)
-                return Result.Failure("O arquivo termina antes das colunas da fatura do cartão do C6.");
+                return _arquivoTerminaAntesColunas;
 
-            return Result.FailureIf(
-                !_colunas.All(csv.Headers.Contains),
-                "A linha 1 do arquivo não traz as colunas da fatura do cartão do C6.");
+            return UnitResult.FailureIf(!_colunas.All(csv.Headers.Contains), _semAsColunas);
         }
         catch (CsvFormatException)
         {
-            return Result.Failure("A linha 1 do arquivo não traz as colunas da fatura do cartão do C6.");
+            return _semAsColunas;
         }
     }
 
     /// <summary>Para na primeira linha que não está no layout.</summary>
-    private static async Task<Result<IReadOnlyList<LancamentoFatura>>> LerLinhasAsync(
+    private static async Task<Result<IReadOnlyList<LancamentoFatura>, FalhaLeituraArquivo>> LerLinhasAsync(
         CsvReader csv,
         CancellationToken cancellationToken)
     {
@@ -78,11 +87,11 @@ public sealed partial class LeitorFaturaCartaoC6 : ILeitorFatura
         {
             cancellationToken.ThrowIfCancellationRequested();
 
-            Result<Maybe<LancamentoFatura>> proximo = await LerProximaLinhaAsync(csv)
+            Result<Maybe<LancamentoFatura>, FalhaLeituraArquivo> proximo = await LerProximaLinhaAsync(csv)
                 .Bind(linha => ConverterSeHouver(csv, linha));
 
             if (proximo.IsFailure)
-                return Result.Failure<IReadOnlyList<LancamentoFatura>>(proximo.Error);
+                return proximo.Error;
 
             if (proximo.Value.HasNoValue)
                 return lidos;
@@ -92,18 +101,18 @@ public sealed partial class LeitorFaturaCartaoC6 : ILeitorFatura
     }
 
     /// <param name="linha">Vazia no fim do arquivo.</param>
-    private static Result<Maybe<LancamentoFatura>> ConverterSeHouver(CsvReader csv, Maybe<LinhaFaturaC6> linha)
+    private static Result<Maybe<LancamentoFatura>, FalhaLeituraArquivo> ConverterSeHouver(CsvReader csv, Maybe<LinhaFaturaC6> linha)
     {
         if (linha.HasNoValue)
             return Maybe<LancamentoFatura>.None;
 
         return Converter(linha.Value)
             .Map(Maybe.From)
-            .MapError(erro => $"A linha {csv.LineNumber} do arquivo {erro}");
+            .MapError(erro => FalhaLeituraArquivo.NaLinha(TipoFalhaLeituraArquivo.LancamentoInvalido, csv.LineNumber, erro));
     }
 
     /// <returns>Vazio no fim do arquivo.</returns>
-    private static async Task<Result<Maybe<LinhaFaturaC6>>> LerProximaLinhaAsync(CsvReader csv)
+    private static async Task<Result<Maybe<LinhaFaturaC6>, FalhaLeituraArquivo>> LerProximaLinhaAsync(CsvReader csv)
     {
         try
         {
@@ -111,7 +120,10 @@ public sealed partial class LeitorFaturaCartaoC6 : ILeitorFatura
         }
         catch (CsvFormatException erro)
         {
-            return Result.Failure<Maybe<LinhaFaturaC6>>($"A linha {erro.LineNumber} do arquivo não está no layout da fatura do cartão do C6.");
+            return FalhaLeituraArquivo.NaLinha(
+                TipoFalhaLeituraArquivo.ForaDoLayout,
+                erro.LineNumber,
+                "não está no layout da fatura do cartão do C6.");
         }
     }
 

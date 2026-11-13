@@ -16,5 +16,5 @@ public interface ILeitorFatura
     /// lançamentos (<see cref="Fatura.Criar"/>); a mensagem cita no máximo o número da linha, e nunca o conteúdo do
     /// arquivo.
     /// </summary>
-    Task<Result<Fatura>> LerAsync(Stream arquivo, CancellationToken cancellationToken);
+    Task<Result<Fatura, FalhaLeituraArquivo>> LerAsync(Stream arquivo, CancellationToken cancellationToken);
 }

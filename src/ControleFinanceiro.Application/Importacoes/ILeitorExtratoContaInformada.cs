@@ -18,5 +18,5 @@ public interface ILeitorExtratoContaInformada
     /// datas, e nunca o conteúdo do arquivo.
     /// </summary>
     /// <param name="sufixoConta">O sufixo da conta de onde veio o arquivo, como o usuário informou.</param>
-    Task<Result<Extrato>> LerAsync(Stream arquivo, SufixoConta sufixoConta, CancellationToken cancellationToken);
+    Task<Result<Extrato, FalhaLeituraArquivo>> LerAsync(Stream arquivo, SufixoConta sufixoConta, CancellationToken cancellationToken);
 }

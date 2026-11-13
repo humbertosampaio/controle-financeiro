@@ -129,7 +129,7 @@ public sealed class ImportarFaturaEndpoint : Endpoint<ImportarFaturaRequest, Imp
     /// </summary>
     private abstract record Falha
     {
-        public static Falha ArquivoInvalido(string mensagem) => new Arquivo(mensagem);
+        public static Falha ArquivoInvalido(FalhaLeituraArquivo falha) => new Arquivo(falha.Mensagem);
 
         public static Falha DeDominio(Erro erro) => new Dominio(erro);
 

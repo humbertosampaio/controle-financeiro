@@ -16,5 +16,5 @@ public interface ILeitorExtrato
     /// não fecham com os lançamentos (<see cref="Extrato.Criar"/>); a mensagem cita no máximo o número da
     /// linha ou as datas, e nunca o conteúdo do arquivo.
     /// </summary>
-    Task<Result<Extrato>> LerAsync(Stream arquivo, CancellationToken cancellationToken);
+    Task<Result<Extrato, FalhaLeituraArquivo>> LerAsync(Stream arquivo, CancellationToken cancellationToken);
 }
