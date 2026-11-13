@@ -20,7 +20,9 @@ public static class DependencyInjection
                 .AddHttpContextAccessor()
                 .AddScoped<IUsuarioAtual, UsuarioAtualRota>()
                 .AddScoped<ImportacaoExtratoService>()
-                .AddScoped<LeituraExtratoService>();
+                .AddScoped<ImportacaoFaturaService>()
+                .AddScoped<LeituraExtratoService>()
+                .AddScoped<LeituraFaturaService>();
         }
     }
 }
