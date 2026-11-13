@@ -90,6 +90,27 @@ public sealed class FaturaTests
     }
 
     [Theory, DomainAutoData]
+    public void Periodo_Quando_VariosCartoes_Deve_IrDaMenorAMaiorDataDeCompraDeTodos(
+        Banco banco,
+        Lancamento lancamento,
+        DateOnly dia,
+        SufixoCartao sufixo,
+        SufixoCartao outroSufixo)
+    {
+        Fatura sut = Fatura.Criar(
+                banco,
+                [
+                    LancamentoFatura.Criar(NaData(lancamento, dia), sufixo),
+                    LancamentoFatura.Criar(NaData(lancamento, dia.AddDays(-400)), outroSufixo),
+                    LancamentoFatura.Criar(NaData(lancamento, dia.AddDays(-10)), sufixo),
+                    LancamentoFatura.Criar(NaData(lancamento, dia.AddDays(5)), outroSufixo),
+                ])
+            .Value;
+
+        sut.Periodo.Should().Be((PeriodoArquivo)(dia.AddDays(-400), dia.AddDays(5)));
+    }
+
+    [Theory, DomainAutoData]
     public void LancamentosCartao_Quando_FinalForaDaFatura_Deve_LancarExcecao(Fatura sut, SufixoCartao foraDaFatura)
     {
         Func<IReadOnlyList<Lancamento>> act = () => sut.LancamentosCartao(foraDaFatura);

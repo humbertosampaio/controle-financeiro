@@ -1,6 +1,12 @@
+using ControleFinanceiro.Application.Importacoes;
+using ControleFinanceiro.Domain.Beneficiarios;
+using ControleFinanceiro.Domain.Cartoes;
+using ControleFinanceiro.Domain.Categorias;
+using ControleFinanceiro.Domain.Contas;
 using ControleFinanceiro.Domain.Despesas;
 using ControleFinanceiro.Domain.Shared;
 using ControleFinanceiro.Domain.Shared.ValueObjects;
+using ControleFinanceiro.Domain.Transacoes;
 
 namespace ControleFinanceiro.Application.IA.Saida;
 
@@ -49,6 +55,67 @@ public static class ErrosParaModelo
         public static readonly ErroParaModelo ResumoDivergente = Fixo("O resumo não corresponde ao pagamento da fatura com essa saída, esse cartão e esse mês, e nada foi gravado: chame prever_pagamento_fatura de novo, mostre o novo resumo ao usuário e confirme com ele sem alteração.");
     }
 
+    /// <summary>A importação de um extrato ou de uma fatura: a origem do arquivo, a leitura dele e o que falta cadastrar.</summary>
+    public static class Importacao
+    {
+        public static readonly ErroParaModelo OrigemIndisponivel = Fixo("A pasta de origem da importação não existe no servidor: peça ao usuário para criar a pasta dados/ do repositório ou configurar Mcp:OrigemArquivoImportacao.");
+
+        public static readonly ErroParaModelo ArquivoForaDaOrigem = Fixo("O caminho não aponta para um arquivo dentro da pasta de origem da importação, a dados/ do repositório: peça ao usuário o caminho de um arquivo dessa pasta, sem passar por links.");
+
+        public static readonly ErroParaModelo ExtensaoNaoAceita = Fixo("A importação só lê arquivos .csv.");
+
+        public static readonly ErroParaModelo ArquivoNaoEncontrado = Fixo("O arquivo não existe na pasta de origem da importação: confira o caminho com o usuário.");
+
+        public static readonly ErroParaModelo ArquivoGrandeDemais = Fixo("O arquivo passa de 5 MB, o tamanho máximo da importação.");
+
+        public static readonly ErroParaModelo LayoutInvalido = Fixo("Layout inválido: use um dos códigos de layout da descrição da ferramenta.");
+
+        public static readonly ErroParaModelo SufixoContaInvalido = Fixo("O layout mercado-pago-conta-csv pede o sufixo da conta: os 4 últimos caracteres do número da conta, que o usuário informa.");
+
+        public static readonly ErroParaModelo ContaDeOutroTipo = Fixo("O usuário já tem uma conta nesse banco com esse final, mas de outro tipo: peça a ele para resolver pela API antes de importar.");
+
+        public static readonly ErroParaModelo CartoesNaoResolvidos = Fixo("A fatura tem finais de cartão sem cartão cadastrado, em pendencias.finais_sem_cartao, e nada foi importado: peça ao usuário para cadastrar os cartões pela API e importe de novo.");
+
+        public static readonly ErroParaModelo BeneficiariosNaoResolvidos = Fixo("O arquivo tem textos de beneficiário que ainda não são alias de nenhum beneficiário, contados em pendencias.beneficiarios, e nada foi importado: peça ao usuário para cadastrar os aliases pela API, que lista os textos na prévia da importação, e importe de novo.");
+
+        public static readonly ErroParaModelo CategoriasNaoResolvidas = Fixo("O arquivo tem categorias do banco que ainda não são alias de nenhuma categoria, contadas em pendencias.categorias, e nada foi importado: peça ao usuário para cadastrar os aliases pela API, que lista as categorias na prévia da importação, e importe de novo.");
+
+        public static readonly ErroParaModelo IdentificadorRepetido = Fixo("O arquivo repete o identificador de um lançamento, e nada foi importado: peça ao usuário para conferir o arquivo.");
+
+        public static readonly ErroParaModelo ResumoDivergente = Fixo("O resumo não corresponde à importação desse arquivo, e nada foi gravado: o arquivo mudou ou já foi importado. Chame prever_importacao de novo, mostre o novo resumo ao usuário e confirme com ele sem alteração.");
+
+        private static readonly Dictionary<FalhaOrigemArquivoImportacao, ErroParaModelo> _porFalhaOrigem = new()
+        {
+            [FalhaOrigemArquivoImportacao.OrigemIndisponivel] = OrigemIndisponivel,
+            [FalhaOrigemArquivoImportacao.ForaDaOrigem] = ArquivoForaDaOrigem,
+            [FalhaOrigemArquivoImportacao.ExtensaoNaoAceita] = ExtensaoNaoAceita,
+            [FalhaOrigemArquivoImportacao.NaoEncontrado] = ArquivoNaoEncontrado,
+            [FalhaOrigemArquivoImportacao.GrandeDemais] = ArquivoGrandeDemais,
+        };
+
+        /// <summary>O fim da frase que começa com "A linha N do arquivo" ou com "O arquivo".</summary>
+        private static readonly Dictionary<TipoFalhaLeituraArquivo, string> _fimPorTipoFalhaLeitura = new()
+        {
+            [TipoFalhaLeituraArquivo.ForaDoLayout] = "não está no layout escolhido, e nada foi importado: confira o layout com o usuário.",
+            [TipoFalhaLeituraArquivo.SemColunas] = "não traz as colunas do layout escolhido, e nada foi importado: confira o layout com o usuário.",
+            [TipoFalhaLeituraArquivo.LancamentoInvalido] = "traz um lançamento que a importação não aceita, e nada foi importado: peça ao usuário para conferir essa linha.",
+            [TipoFalhaLeituraArquivo.ConteudoInvalido] = "não fecha com o layout escolhido, no cabeçalho, nos saldos ou nos lançamentos, e nada foi importado: peça ao usuário para importar pela API, que mostra o motivo.",
+        };
+
+        /// <summary>A mensagem fixa de quando a origem não abriu o arquivo, sem repetir o caminho.</summary>
+        public static ErroParaModelo De(FalhaOrigemArquivoImportacao falha) => _porFalhaOrigem[falha];
+
+        /// <summary>
+        /// A mensagem fixa de quando o leitor recusou o arquivo: só o número da linha, quando há um, e o tipo da falha. A
+        /// mensagem do leitor fica de fora, porque pode citar datas do arquivo.
+        /// </summary>
+        public static ErroParaModelo ArquivoInvalido(FalhaLeituraArquivo falha)
+        {
+            string inicio = falha.Linha is long linha ? $"A linha {linha} do arquivo" : "O arquivo";
+            return Fixo($"{inicio} {_fimPorTipoFalhaLeitura[falha.Tipo]}");
+        }
+    }
+
     /// <summary>
     /// A mensagem fixa de um erro do domínio, sem a descrição dele nem a despesa que já usa a transação.
     /// </summary>
@@ -65,6 +132,11 @@ public static class ErrosParaModelo
             ErroParcelaIncompativelComDespesa => Vinculo.ParcelaIncompativel,
             ErroTransacaoPagaOutraFatura => PagamentoFatura.TransacaoPagaOutraFatura,
             ErroFaturaSemCobrancaPendente => PagamentoFatura.FaturaSemCobrancaPendente,
+            ErroContaDeOutroTipo => Importacao.ContaDeOutroTipo,
+            ErroCartoesNaoResolvidos => Importacao.CartoesNaoResolvidos,
+            ErroBeneficiariosNaoResolvidos => Importacao.BeneficiariosNaoResolvidos,
+            ErroCategoriasBancoNaoResolvidas => Importacao.CategoriasNaoResolvidas,
+            ErroIdentificadorRepetido => Importacao.IdentificadorRepetido,
             _ => throw new InvalidOperationException($"Erro sem mensagem mapeada: {erro}"),
         };
     }

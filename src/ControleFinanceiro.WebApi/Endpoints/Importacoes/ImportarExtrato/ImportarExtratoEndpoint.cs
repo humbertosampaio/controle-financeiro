@@ -71,8 +71,16 @@ public sealed class ImportarExtratoEndpoint : Endpoint<ImportarExtratoRequest, I
         await using Stream conteudo = req.Arquivo!.OpenReadStream();
 
         return await _leituraExtrato
-            .LerAsync(layout, conteudo, req.SufixoConta, ct)
+            .LerAsync(layout, conteudo, SufixoDoLayout(layout, req), ct)
             .MapError(Falha.ArquivoInvalido);
+    }
+
+    /// <summary>O validator já garantiu o sufixo no layout de conta informada; nos outros, ele não vale.</summary>
+    private static Maybe<SufixoConta> SufixoDoLayout(LayoutArquivoImportacao layout, ImportarExtratoRequest req)
+    {
+        return LayoutArquivoImportacao.ExtratosContaInformada.Contains(layout)
+            ? (SufixoConta)req.SufixoConta
+            : Maybe<SufixoConta>.None;
     }
 
     private static ImportarExtratoResponse Responder(ExtratoImportado importado)

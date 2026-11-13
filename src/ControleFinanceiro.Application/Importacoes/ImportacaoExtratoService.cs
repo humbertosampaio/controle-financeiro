@@ -127,6 +127,7 @@ public sealed class ImportacaoExtratoService
             contaNova,
             conta.Banco,
             conta.Tipo,
+            conta.Sufixo,
             extrato.Periodo,
             importacao.Lidas,
             novas.Count,

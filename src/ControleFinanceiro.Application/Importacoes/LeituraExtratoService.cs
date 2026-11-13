@@ -20,11 +20,18 @@ public sealed class LeituraExtratoService
     }
 
     /// <param name="layout">Um layout de extrato.</param>
-    /// <param name="sufixoConta">Válido quando o layout é de conta informada; nos outros, não é lido.</param>
-    public Task<Result<Extrato, FalhaLeituraArquivo>> LerAsync(LayoutArquivoImportacao layout, Stream arquivo, string? sufixoConta, CancellationToken ct)
+    /// <param name="sufixoConta">Presente quando o layout é de conta informada; nos outros, não é lido.</param>
+    /// <exception cref="InvalidOperationException">Quando o layout é de conta informada e o sufixo não veio.</exception>
+    public Task<Result<Extrato, FalhaLeituraArquivo>> LerAsync(
+        LayoutArquivoImportacao layout,
+        Stream arquivo,
+        Maybe<SufixoConta> sufixoConta,
+        CancellationToken ct)
     {
         return LayoutArquivoImportacao.ExtratosContaInformada.Contains(layout)
-            ? _leitoresContaInformada.Single(l => l.Layout == layout).LerAsync(arquivo, (SufixoConta)sufixoConta, ct)
+            ? _leitoresContaInformada
+                .Single(l => l.Layout == layout)
+                .LerAsync(arquivo, sufixoConta.GetValueOrThrow($"O layout {layout.Value} pede o sufixo da conta."), ct)
             : _leitores.Single(l => l.Layout == layout).LerAsync(arquivo, ct);
     }
 }

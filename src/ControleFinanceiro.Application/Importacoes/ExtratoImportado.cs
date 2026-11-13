@@ -18,6 +18,7 @@ public sealed record ExtratoImportado(
     bool ContaNova,
     Banco Banco,
     TipoConta TipoConta,
+    SufixoConta SufixoConta,
     PeriodoArquivo Periodo,
     int Lidas,
     int Novas,
