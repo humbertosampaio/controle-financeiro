@@ -81,7 +81,7 @@ public sealed class ConfirmarPagamentoFaturaToolTests : IAsyncLifetime
             adiada.MesReferencia,
             resumo.Replace("1 despesa", "2 despesas", StringComparison.Ordinal));
 
-        ErroLido.DoEnvelope(resultado.Json).Mensagem.Should().Be(ErroParaModelo.ResumoPagamentoFaturaDivergente.Mensagem);
+        ErroLido.DoEnvelope(resultado.Json).Mensagem.Should().Be(ErrosParaModelo.PagamentoFatura.ResumoDivergente.Mensagem);
         await _fatura.DeveEstarPendenteAsync(adiada);
     }
 
@@ -95,7 +95,7 @@ public sealed class ConfirmarPagamentoFaturaToolTests : IAsyncLifetime
 
         CallToolResult resultado = await _servidor.ClienteMcp.ConfirmarPagamentoFaturaAsync(saida.Id.Value, cartao.Id.Value, adiada.MesReferencia, resumo);
 
-        ErroLido.DoEnvelope(resultado.Json).Mensagem.Should().Be(ErroParaModelo.ResumoPagamentoFaturaDivergente.Mensagem);
+        ErroLido.DoEnvelope(resultado.Json).Mensagem.Should().Be(ErrosParaModelo.PagamentoFatura.ResumoDivergente.Mensagem);
         await _fatura.DeveEstarPendenteAsync(adiada);
         await _fatura.DeveEstarPendenteAsync(nova);
     }
@@ -109,7 +109,7 @@ public sealed class ConfirmarPagamentoFaturaToolTests : IAsyncLifetime
 
         CallToolResult resultado = await _servidor.ClienteMcp.ConfirmarPagamentoFaturaAsync(saida.Id.Value, cartao.Id.Value, adiada.MesReferencia, resumo);
 
-        ErroLido.DoEnvelope(resultado.Json).Mensagem.Should().Be(ErroParaModelo.FaturaSemCobrancaPendente.Mensagem);
+        ErroLido.DoEnvelope(resultado.Json).Mensagem.Should().Be(ErrosParaModelo.PagamentoFatura.FaturaSemCobrancaPendente.Mensagem);
         await _fatura.DeveEstarPagaPelaSaidaAsync(adiada, saida);
     }
 
@@ -120,7 +120,7 @@ public sealed class ConfirmarPagamentoFaturaToolTests : IAsyncLifetime
 
         CallToolResult resultado = await _servidor.ClienteMcp.ConfirmarPagamentoFaturaAsync(saida.Id.Value, inexistente.Value, adiada.MesReferencia, resumo);
 
-        ErroLido.DoEnvelope(resultado.Json).Mensagem.Should().Be(ErroParaModelo.CartaoNaoEncontrado.Mensagem);
+        ErroLido.DoEnvelope(resultado.Json).Mensagem.Should().Be(ErrosParaModelo.Consulta.CartaoNaoEncontrado.Mensagem);
         await _fatura.DeveEstarPendenteAsync(adiada);
     }
 

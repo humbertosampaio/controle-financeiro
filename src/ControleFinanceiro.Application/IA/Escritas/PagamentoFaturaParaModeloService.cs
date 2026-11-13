@@ -64,7 +64,7 @@ public sealed class PagamentoFaturaParaModeloService
         CancellationToken cancellationToken)
     {
         return await AplicarAsync(idTransacao, idCartao, ano, mes, cancellationToken)
-            .Ensure(pagamento => pagamento.ConfereResumo(resumo), ErroParaModelo.ResumoPagamentoFaturaDivergente)
+            .Ensure(pagamento => pagamento.ConfereResumo(resumo), ErrosParaModelo.PagamentoFatura.ResumoDivergente)
             .Tap(() => _unitOfWork.CommitAsync(cancellationToken))
             .Match(pagamento => pagamento, PagamentoFaturaParaModelo.Falha);
     }
@@ -78,15 +78,15 @@ public sealed class PagamentoFaturaParaModeloService
     {
         Result<MesReferencia> mesValido = MesReferencia.Criar(mes, ano);
         if (mesValido.IsFailure)
-            return ErroParaModelo.MesInvalido;
+            return ErrosParaModelo.Consulta.MesInvalido;
 
         Maybe<Transacao> saida = await ObterTransacaoAsync(idTransacao, cancellationToken);
         if (saida.HasNoValue)
-            return ErroParaModelo.TransacaoNaoEncontrada;
+            return ErrosParaModelo.Consulta.TransacaoNaoEncontrada;
 
         Maybe<Cartao> cartao = await ObterCartaoAsync(idCartao, cancellationToken);
         if (cartao.HasNoValue)
-            return ErroParaModelo.CartaoNaoEncontrado;
+            return ErrosParaModelo.Consulta.CartaoNaoEncontrado;
 
         MesReferencia mesVencimento = mesValido.Value;
         IReadOnlyList<Cartao> cartoesDoUsuario = await _cartoes.ListarAsync(cancellationToken);
@@ -95,7 +95,7 @@ public sealed class PagamentoFaturaParaModeloService
 
         return PagamentoFaturaService
             .Pagar(saida.Value, cartao.Value, mesVencimento, cartoesDoUsuario, despesasDoMes, despesasPagasPelaSaida)
-            .MapError(ErroParaModelo.De)
+            .MapError(ErrosParaModelo.De)
             .Map(pagamento => PagamentoFaturaParaModelo.De(saida.Value, cartao.Value, pagamento));
     }
 

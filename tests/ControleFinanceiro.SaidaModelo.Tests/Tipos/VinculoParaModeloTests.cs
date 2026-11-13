@@ -64,10 +64,10 @@ public sealed class VinculoParaModeloTests
     [Fact]
     public void Serializar_Quando_Falha_Deve_TerSoOErro()
     {
-        JsonObject json = VinculoParaModelo.Falha(ErroParaModelo.ResumoDivergente).Serializar();
+        JsonObject json = VinculoParaModelo.Falha(ErrosParaModelo.Vinculo.ResumoDivergente).Serializar();
 
         json.Select(campo => campo.Key).Should().Equal("erro");
-        ErroLido.DoEnvelope(json).Mensagem.Should().Be(ErroParaModelo.ResumoDivergente.Mensagem);
+        ErroLido.DoEnvelope(json).Mensagem.Should().Be(ErrosParaModelo.Vinculo.ResumoDivergente.Mensagem);
     }
 
     [Theory, UsuarioUnicoAutoData]
@@ -173,7 +173,7 @@ public sealed class VinculoParaModeloTests
     [Fact]
     public void ConfereResumo_Quando_Falha_Deve_NaoConferir()
     {
-        VinculoParaModelo.Falha(ErroParaModelo.DespesaJaPaga).ConfereResumo(string.Empty).Should().BeFalse();
+        VinculoParaModelo.Falha(ErrosParaModelo.Vinculo.DespesaJaPaga).ConfereResumo(string.Empty).Should().BeFalse();
     }
 
     [Theory, UsuarioUnicoAutoData]

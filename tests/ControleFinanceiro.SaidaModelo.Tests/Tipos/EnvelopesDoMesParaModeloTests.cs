@@ -59,7 +59,7 @@ public sealed class EnvelopesDoMesParaModeloTests
     [Fact]
     public void SerializarTransacoes_Quando_Falha_Deve_TerSoOErro()
     {
-        JsonObject json = TransacoesDoMesParaModelo.Falha(ErroParaModelo.MesInvalido).Serializar();
+        JsonObject json = TransacoesDoMesParaModelo.Falha(ErrosParaModelo.Consulta.MesInvalido).Serializar();
 
         json.Select(campo => campo.Key).Should().Equal("erro");
     }
@@ -67,7 +67,7 @@ public sealed class EnvelopesDoMesParaModeloTests
     [Fact]
     public void SerializarDespesasFixas_Quando_Falha_Deve_TerSoOErro()
     {
-        JsonObject json = DespesasFixasDoMesParaModelo.Falha(ErroParaModelo.MesInvalido).Serializar();
+        JsonObject json = DespesasFixasDoMesParaModelo.Falha(ErrosParaModelo.Consulta.MesInvalido).Serializar();
 
         json.Select(campo => campo.Key).Should().Equal("erro");
     }
@@ -75,9 +75,9 @@ public sealed class EnvelopesDoMesParaModeloTests
     [Fact]
     public void SerializarBalanco_Quando_Falha_Deve_TerSoOErro()
     {
-        JsonObject json = BalancoMensalParaModelo.Falha(ErroParaModelo.UsuarioNaoEncontrado).Serializar();
+        JsonObject json = BalancoMensalParaModelo.Falha(ErrosParaModelo.Consulta.UsuarioNaoEncontrado).Serializar();
 
         json.Select(campo => campo.Key).Should().Equal("erro");
-        ErroLido.DoEnvelope(json).Mensagem.Should().Be(ErroParaModelo.UsuarioNaoEncontrado.Mensagem);
+        ErroLido.DoEnvelope(json).Mensagem.Should().Be(ErrosParaModelo.Consulta.UsuarioNaoEncontrado.Mensagem);
     }
 }

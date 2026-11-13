@@ -39,10 +39,10 @@ public sealed class PagamentoFaturaParaModeloTests
     [Fact]
     public void Serializar_Quando_Falha_Deve_TerSoOErro()
     {
-        JsonObject json = PagamentoFaturaParaModelo.Falha(ErroParaModelo.FaturaSemCobrancaPendente).Serializar();
+        JsonObject json = PagamentoFaturaParaModelo.Falha(ErrosParaModelo.PagamentoFatura.FaturaSemCobrancaPendente).Serializar();
 
         json.Select(campo => campo.Key).Should().Equal("erro");
-        ErroLido.DoEnvelope(json).Mensagem.Should().Be(ErroParaModelo.FaturaSemCobrancaPendente.Mensagem);
+        ErroLido.DoEnvelope(json).Mensagem.Should().Be(ErrosParaModelo.PagamentoFatura.FaturaSemCobrancaPendente.Mensagem);
     }
 
     [Theory, PagamentoFaturaAutoData]
@@ -102,7 +102,7 @@ public sealed class PagamentoFaturaParaModeloTests
     [Fact]
     public void ConfereResumo_Quando_Falha_Deve_NaoConferir()
     {
-        PagamentoFaturaParaModelo.Falha(ErroParaModelo.FaturaSemCobrancaPendente).ConfereResumo(string.Empty).Should().BeFalse();
+        PagamentoFaturaParaModelo.Falha(ErrosParaModelo.PagamentoFatura.FaturaSemCobrancaPendente).ConfereResumo(string.Empty).Should().BeFalse();
     }
 
     private const string EspacoNaoSeparavel = " ";

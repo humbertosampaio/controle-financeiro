@@ -89,7 +89,7 @@ public sealed class PreverVinculoToolTests : IAsyncLifetime
 
         CallToolResult resultado = await _servidor.ClienteMcp.PreverVinculoAsync(inexistente.Value, despesa.Id.Value);
 
-        ErroLido.DoEnvelope(resultado.Json).Mensagem.Should().Be(ErroParaModelo.TransacaoNaoEncontrada.Mensagem);
+        ErroLido.DoEnvelope(resultado.Json).Mensagem.Should().Be(ErrosParaModelo.Consulta.TransacaoNaoEncontrada.Mensagem);
     }
 
     [Theory, DomainAutoData]
@@ -99,7 +99,7 @@ public sealed class PreverVinculoToolTests : IAsyncLifetime
 
         CallToolResult resultado = await _servidor.ClienteMcp.PreverVinculoAsync(transacao.Id.Value, inexistente.Value);
 
-        ErroLido.DoEnvelope(resultado.Json).Mensagem.Should().Be(ErroParaModelo.DespesaNaoEncontrada.Mensagem);
+        ErroLido.DoEnvelope(resultado.Json).Mensagem.Should().Be(ErrosParaModelo.Consulta.DespesaNaoEncontrada.Mensagem);
     }
 
     [Theory, DomainAutoData]
@@ -113,7 +113,7 @@ public sealed class PreverVinculoToolTests : IAsyncLifetime
 
         CallToolResult resultado = await _servidor.ClienteMcp.PreverVinculoAsync(transacao.Id.Value, deOutroUsuario.Id.Value);
 
-        ErroLido.DoEnvelope(resultado.Json).Mensagem.Should().Be(ErroParaModelo.DespesaNaoEncontrada.Mensagem);
+        ErroLido.DoEnvelope(resultado.Json).Mensagem.Should().Be(ErrosParaModelo.Consulta.DespesaNaoEncontrada.Mensagem);
     }
 
     // O lançamento gerado tem valor positivo: é uma entrada.
@@ -125,7 +125,7 @@ public sealed class PreverVinculoToolTests : IAsyncLifetime
 
         CallToolResult resultado = await _servidor.ClienteMcp.PreverVinculoAsync(entrada.Id.Value, despesa.Id.Value);
 
-        ErroLido.DoEnvelope(resultado.Json).Mensagem.Should().Be(ErroParaModelo.TransacaoNaoEhSaida.Mensagem);
+        ErroLido.DoEnvelope(resultado.Json).Mensagem.Should().Be(ErrosParaModelo.Vinculo.TransacaoNaoEhSaida.Mensagem);
     }
 
     [Theory]

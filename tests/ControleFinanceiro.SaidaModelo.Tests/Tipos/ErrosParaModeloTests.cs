@@ -10,34 +10,34 @@ using ControleFinanceiro.Tests.Shared.Respostas;
 
 namespace ControleFinanceiro.SaidaModelo.Tests.Tipos;
 
-public sealed class ErroParaModeloTests
+public sealed class ErrosParaModeloTests
 {
     public static readonly TheoryData<ErroParaModelo> Erros = new(
-        ErroParaModelo.MesInvalido,
-        ErroParaModelo.UsuarioNaoEncontrado,
-        ErroParaModelo.TransacaoNaoEncontrada,
-        ErroParaModelo.DespesaNaoEncontrada,
-        ErroParaModelo.CartaoNaoEncontrado,
-        ErroParaModelo.TransacaoJaVinculada,
-        ErroParaModelo.DespesaJaPaga,
-        ErroParaModelo.DespesaJaCobrada,
-        ErroParaModelo.TransacaoNaoEhSaida,
-        ErroParaModelo.OrigemIncompativel,
-        ErroParaModelo.ParcelaIncompativel,
-        ErroParaModelo.TransacaoPagaOutraFatura,
-        ErroParaModelo.FaturaSemCobrancaPendente,
-        ErroParaModelo.ResumoDivergente,
-        ErroParaModelo.ResumoPagamentoFaturaDivergente);
+        ErrosParaModelo.Consulta.MesInvalido,
+        ErrosParaModelo.Consulta.UsuarioNaoEncontrado,
+        ErrosParaModelo.Consulta.TransacaoNaoEncontrada,
+        ErrosParaModelo.Consulta.DespesaNaoEncontrada,
+        ErrosParaModelo.Consulta.CartaoNaoEncontrado,
+        ErrosParaModelo.Vinculo.TransacaoJaVinculada,
+        ErrosParaModelo.Vinculo.DespesaJaPaga,
+        ErrosParaModelo.Vinculo.DespesaJaCobrada,
+        ErrosParaModelo.Vinculo.TransacaoNaoEhSaida,
+        ErrosParaModelo.Vinculo.OrigemIncompativel,
+        ErrosParaModelo.Vinculo.ParcelaIncompativel,
+        ErrosParaModelo.PagamentoFatura.TransacaoPagaOutraFatura,
+        ErrosParaModelo.PagamentoFatura.FaturaSemCobrancaPendente,
+        ErrosParaModelo.Vinculo.ResumoDivergente,
+        ErrosParaModelo.PagamentoFatura.ResumoDivergente);
 
     public static readonly TheoryData<Erro, ErroParaModelo> ErrosDoDominio = new()
     {
-        { ErroDespesaJaPaga.Instancia, ErroParaModelo.DespesaJaPaga },
-        { ErroDespesaJaCobrada.Instancia, ErroParaModelo.DespesaJaCobrada },
-        { ErroTransacaoNaoEhSaida.Instancia, ErroParaModelo.TransacaoNaoEhSaida },
-        { ErroOrigemIncompativelComDespesa.Instancia, ErroParaModelo.OrigemIncompativel },
-        { ErroParcelaIncompativelComDespesa.Instancia, ErroParaModelo.ParcelaIncompativel },
-        { ErroTransacaoPagaOutraFatura.Instancia, ErroParaModelo.TransacaoPagaOutraFatura },
-        { ErroFaturaSemCobrancaPendente.Instancia, ErroParaModelo.FaturaSemCobrancaPendente },
+        { ErroDespesaJaPaga.Instancia, ErrosParaModelo.Vinculo.DespesaJaPaga },
+        { ErroDespesaJaCobrada.Instancia, ErrosParaModelo.Vinculo.DespesaJaCobrada },
+        { ErroTransacaoNaoEhSaida.Instancia, ErrosParaModelo.Vinculo.TransacaoNaoEhSaida },
+        { ErroOrigemIncompativelComDespesa.Instancia, ErrosParaModelo.Vinculo.OrigemIncompativel },
+        { ErroParcelaIncompativelComDespesa.Instancia, ErrosParaModelo.Vinculo.ParcelaIncompativel },
+        { ErroTransacaoPagaOutraFatura.Instancia, ErrosParaModelo.PagamentoFatura.TransacaoPagaOutraFatura },
+        { ErroFaturaSemCobrancaPendente.Instancia, ErrosParaModelo.PagamentoFatura.FaturaSemCobrancaPendente },
     };
 
     [Theory, MemberData(nameof(Erros))]
@@ -52,7 +52,7 @@ public sealed class ErroParaModeloTests
     [Theory, MemberData(nameof(ErrosDoDominio))]
     public void De_Quando_ErroDoDominio_Deve_RetornarAMensagemFixa(Erro erro, ErroParaModelo esperado)
     {
-        ErroParaModelo.De(erro).Should().BeSameAs(esperado);
+        ErrosParaModelo.De(erro).Should().BeSameAs(esperado);
     }
 
     // O erro só nasce no serviço, com a despesa que já usa a transação, e ela não vai à mensagem.
@@ -66,13 +66,13 @@ public sealed class ErroParaModeloTests
         Transacao transacao = transacoes.DaConta(lancamento.SemCategoria().ComoSaida());
         Erro erro = VinculoTransacaoService.Vincular(transacao, despesa, outra, cartoesDoUsuario: []).Error;
 
-        ErroParaModelo.De(erro).Should().BeSameAs(ErroParaModelo.TransacaoJaVinculada);
+        ErrosParaModelo.De(erro).Should().BeSameAs(ErrosParaModelo.Vinculo.TransacaoJaVinculada);
     }
 
     [Fact]
     public void De_Quando_ErroSemMensagemMapeada_Deve_LancarExcecao()
     {
-        Action act = () => ErroParaModelo.De(ErroTransacaoNaoCobrouADespesa.Instancia);
+        Action act = () => ErrosParaModelo.De(ErroTransacaoNaoCobrouADespesa.Instancia);
 
         act.Should().ThrowExactly<InvalidOperationException>();
     }
