@@ -1,8 +1,6 @@
 using ControleFinanceiro.Application.Abstractions;
 using ControleFinanceiro.Application.Importacoes;
-using ControleFinanceiro.Domain.Beneficiarios;
 using ControleFinanceiro.Domain.Importacoes;
-using ControleFinanceiro.Domain.Services;
 using ControleFinanceiro.Domain.Shared.ValueObjects;
 using ControleFinanceiro.Domain.Usuarios;
 using ControleFinanceiro.WebApi.Endpoints.Importacoes.ImportarExtrato;
@@ -19,17 +17,17 @@ namespace ControleFinanceiro.WebApi.Endpoints.Importacoes.PreVisualizarExtrato;
 public sealed class PreVisualizarExtratoEndpoint : Endpoint<ImportarExtratoRequest, PreVisualizarExtratoResponse>
 {
     private readonly IUsuarioAtual _usuarioAtual;
-    private readonly IBeneficiarioRepository _beneficiarioRepository;
     private readonly LeituraExtratoService _leituraExtrato;
+    private readonly PendenciasImportacaoService _pendencias;
 
     public PreVisualizarExtratoEndpoint(
         IUsuarioAtual usuarioAtual,
-        IBeneficiarioRepository beneficiarioRepository,
-        LeituraExtratoService leituraExtrato)
+        LeituraExtratoService leituraExtrato,
+        PendenciasImportacaoService pendencias)
     {
         _usuarioAtual = usuarioAtual;
-        _beneficiarioRepository = beneficiarioRepository;
         _leituraExtrato = leituraExtrato;
+        _pendencias = pendencias;
     }
 
     public override void Configure()
@@ -66,8 +64,7 @@ public sealed class PreVisualizarExtratoEndpoint : Endpoint<ImportarExtratoReque
 
     private async Task<PreVisualizarExtratoResponse> PreVisualizarAsync(IdUsuario idUsuario, Extrato extrato, CancellationToken ct)
     {
-        IReadOnlyList<Beneficiario> beneficiarios = await _beneficiarioRepository.ListarAsync(ct);
-        IReadOnlyList<Alias> pendentes = AliasesBeneficiarioPendentes.Listar(idUsuario, beneficiarios, extrato.Lancamentos);
+        IReadOnlyList<Alias> pendentes = await _pendencias.ListarDoExtratoAsync(idUsuario, extrato, ct);
 
         return new PreVisualizarExtratoResponse(pendentes.Select(a => a.TextoOriginal).ToList());
     }

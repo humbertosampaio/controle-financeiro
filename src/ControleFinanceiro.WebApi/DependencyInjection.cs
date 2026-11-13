@@ -22,7 +22,8 @@ public static class DependencyInjection
                 .AddScoped<ImportacaoExtratoService>()
                 .AddScoped<ImportacaoFaturaService>()
                 .AddScoped<LeituraExtratoService>()
-                .AddScoped<LeituraFaturaService>();
+                .AddScoped<LeituraFaturaService>()
+                .AddScoped<PendenciasImportacaoService>();
         }
     }
 }
