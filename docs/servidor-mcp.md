@@ -25,7 +25,7 @@ Como registrar o servidor MCP (`src/ControleFinanceiro.Mcp`) no Claude Code e no
    pwsh scripts/PublicarMcp.ps1
    ```
 
-   O cliente executa essa cópia, e não a saída de `bin/`: no Windows o processo do servidor trava a DLL carregada, e um `dotnet build` com uma sessão aberta falharia. O `dotnet run` também não serve, porque escreve a saída do build no stdout, que é do protocolo. Depois de mudar o servidor, feche as sessões que o usam, publique de novo e reconecte.
+   O cliente executa essa cópia, e não a saída de `bin/`: no Windows o processo do servidor trava a DLL carregada, e um `dotnet build` com uma sessão aberta falharia. O `dotnet run` também não serve, porque escreve a saída do build no stdout, que é do protocolo. Depois de mudar o servidor, publique de novo e reconecte. Com uma sessão usando o servidor, a publicação falha por arquivo travado: feche a sessão antes, ou publique com `pwsh scripts/PublicarMcp.ps1 -EncerrarServidores`, que encerra só os processos que executam esta cópia publicada e lista os PIDs encerrados. As sessões continuam abertas e voltam a ter as ferramentas ao reconectar (`/mcp` no Claude Code; no Claude Desktop, reinicie o app pela bandeja). Uma chamada de ferramenta em andamento é interrompida.
 
 ## Claude Code
 
