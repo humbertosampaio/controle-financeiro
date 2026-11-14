@@ -26,6 +26,9 @@ public sealed class ServidorMcpFixture : IAsyncLifetime
     private const string VariavelIdUsuario = "Mcp__IdUsuario";
     private const string VariavelOrigemImportacao = "Mcp__OrigemArquivoImportacao";
 
+    /// <summary>O caminho do arquivo de log, dentro do sink <c>Async</c> da chave <c>Arquivo</c> do <c>appsettings.json</c>.</summary>
+    private const string VariavelCaminhoLog = "Serilog__WriteTo__Arquivo__Args__configure__0__Args__path";
+
     /// <summary>A meta com que a ferramenta pede ao cliente a aprovação do usuário a cada chamada.</summary>
     public const string MetaInteracaoDoUsuario = "anthropic/requiresUserInteraction";
 
@@ -42,6 +45,9 @@ public sealed class ServidorMcpFixture : IAsyncLifetime
 
     /// <summary>A pasta de origem da importação, com as fixtures copiadas de <c>Importacao/Fixtures</c>.</summary>
     public static string PastaOrigemImportacao => Path.Combine(RepositorioDeTeste, "dados");
+
+    /// <summary>Recebe o log de cada processo do servidor, numa pasta própria: nenhum teste grava log no bin.</summary>
+    public static string PastaLogs => Path.Combine(RepositorioDeTeste, "logs");
 
     private static string FixturesImportacao => Path.Combine(PastaServidor, "Importacao", "Fixtures");
 
@@ -113,7 +119,8 @@ public sealed class ServidorMcpFixture : IAsyncLifetime
     /// Inicia outro processo do servidor apontando para <paramref name="conexao"/> e faz o handshake.
     /// </summary>
     /// <param name="idUsuario">O usuário do servidor, ou nulo para iniciá-lo sem um usuário válido.</param>
-    public static Task<McpClient> IniciarClienteMcpAsync(string conexao, IdUsuario? idUsuario)
+    /// <param name="caminhoLog">O caminho do arquivo de log, ou nulo para uma pasta nova em <see cref="PastaLogs"/>.</param>
+    public static Task<McpClient> IniciarClienteMcpAsync(string conexao, IdUsuario? idUsuario, string? caminhoLog = null)
     {
         StdioClientTransport transporte = new(new StdioClientTransportOptions
         {
@@ -125,6 +132,7 @@ public sealed class ServidorMcpFixture : IAsyncLifetime
                 [VariavelConexao] = conexao,
                 [VariavelIdUsuario] = idUsuario?.ToString() ?? SemIdUsuario,
                 [VariavelOrigemImportacao] = PastaOrigemImportacao,
+                [VariavelCaminhoLog] = caminhoLog ?? NovoCaminhoLog(),
             },
         });
 
@@ -135,7 +143,9 @@ public sealed class ServidorMcpFixture : IAsyncLifetime
     /// Executa o servidor sem cliente MCP, com o stdin já fechado, e devolve como o processo terminou.
     /// Sem o SDK no meio, o stdout chega aqui como o processo o escreveu.
     /// </summary>
-    public static async Task<BufferedCommandResult> ExecutarSemClienteMcpAsync(string conexao)
+    /// <param name="caminhoLog">O caminho do arquivo de log, ou nulo para uma pasta nova em <see cref="PastaLogs"/>.</param>
+    /// <param name="diretorioTrabalho">O diretório de trabalho do processo, ou nulo para o do processo de teste.</param>
+    public static async Task<BufferedCommandResult> ExecutarSemClienteMcpAsync(string conexao, string? caminhoLog = null, string? diretorioTrabalho = null)
     {
         using CancellationTokenSource limite = new(_tempoMaximoExecucao);
 
@@ -145,7 +155,9 @@ public sealed class ServidorMcpFixture : IAsyncLifetime
             {
                 ["DOTNET_ENVIRONMENT"] = "Production",
                 [VariavelConexao] = conexao,
+                [VariavelCaminhoLog] = caminhoLog ?? NovoCaminhoLog(),
             })
+            .WithWorkingDirectory(diretorioTrabalho ?? Directory.GetCurrentDirectory())
             .WithStandardInputPipe(PipeSource.Null)
             .WithValidation(CommandResultValidation.None)
             .ExecuteBufferedAsync(limite.Token);
@@ -160,6 +172,9 @@ public sealed class ServidorMcpFixture : IAsyncLifetime
         if (Directory.Exists(RepositorioDeTeste))
             Directory.Delete(RepositorioDeTeste, recursive: true);
     }
+
+    /// <summary>Um arquivo de log numa pasta nova: o servidor da fixture segue de pé enquanto outros testes sobem o seu.</summary>
+    public static string NovoCaminhoLog() => Path.Combine(PastaLogs, Guid.NewGuid().ToString(), "mcp-.log");
 
     private static void CopiarFixturesImportacao()
     {
