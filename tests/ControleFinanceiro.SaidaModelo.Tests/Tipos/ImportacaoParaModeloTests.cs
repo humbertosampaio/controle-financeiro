@@ -63,7 +63,9 @@ public sealed class ImportacaoParaModeloTests
     [Theory, DomainAutoData]
     public void Serializar_Quando_Fatura_Deve_TerSomenteOsCamposPermitidos(Fatura fatura, FaturaImportada importada)
     {
-        JsonObject json = ImportacaoParaModelo.DaFatura(LayoutArquivoImportacao.C6CartaoCsv, fatura, importada).Serializar();
+        FaturaImportada comPagamento = importada with { PagamentoFaturaAnterior = Result.Success() };
+
+        JsonObject json = ImportacaoParaModelo.DaFatura(LayoutArquivoImportacao.C6CartaoCsv, fatura, comPagamento).Serializar();
 
         json.Select(campo => campo.Key).Should().BeEquivalentTo(
             "layout", "banco", "periodo", "cartoes", "lidas", "novas", "ja_existentes", "resumo");
@@ -89,6 +91,16 @@ public sealed class ImportacaoParaModeloTests
         JsonObject json = ImportacaoParaModelo.DaFatura(LayoutArquivoImportacao.C6CartaoCsv, fatura, importada).Serializar();
 
         Periodo(json, "periodo").Should().Be((fatura.Periodo.Inicio, fatura.Periodo.Fim));
+    }
+
+    [Theory, DomainAutoData]
+    public void Serializar_Quando_FaturaSemPagamentoAnterior_Deve_LevarOAvisoFixo(Fatura fatura, FaturaImportada importada, string erro)
+    {
+        FaturaImportada semPagamento = importada with { PagamentoFaturaAnterior = Result.Failure(erro) };
+
+        JsonObject json = ImportacaoParaModelo.DaFatura(LayoutArquivoImportacao.C6CartaoCsv, fatura, semPagamento).Serializar();
+
+        json["avisos"]!.AsArray().Select(aviso => aviso!.GetValue<string>()).Should().Equal(Fatura.AvisoSemPagamentoAnterior);
     }
 
     [Fact]

@@ -7,11 +7,13 @@ namespace ControleFinanceiro.WebApi.Tests.Importacoes.ImportarFatura;
 /// <summary>
 /// Variações da fatura fictícia do C6 (<c>Fixtures/C6/fatura-cartao.csv</c>, do projeto de testes da importação), no
 /// mesmo layout: UTF-8 sem BOM e CRLF. O arquivo tem 8 lançamentos, 4 de cada final (1111, depois 2222), com a
-/// parcela 3/10 de uma compra de 15/07/2025 no final 1111 e duas compras idênticas no final 2222.
+/// parcela 3/10 de uma compra de 15/07/2025 no final 1111, o pagamento da fatura anterior no final 1111 e duas compras
+/// idênticas no final 2222.
 /// </summary>
 internal static class FaturaCartaoC6
 {
     private const string ParcelaCompraAntiga = "LOJA DE EXEMPLO;3/10";
+    private const string RotuloPagamento = "Inclusao de Pagamento";
 
     private static readonly string _caminho = Path.Combine(AppContext.BaseDirectory, "Importacoes", "ImportarFatura", "Fixtures", "fatura-cartao.csv");
 
@@ -36,6 +38,13 @@ internal static class FaturaCartaoC6
     public static byte[] ComParcelaSeguinte()
     {
         string conteudo = File.ReadAllText(_caminho, Encoding.UTF8).Replace(ParcelaCompraAntiga, "LOJA DE EXEMPLO;4/10", StringComparison.Ordinal);
+        return Encoding.UTF8.GetBytes(conteudo);
+    }
+
+    /// <summary>A fatura em que a linha do pagamento da fatura anterior vira outra entrada, como num rótulo novo do banco.</summary>
+    public static byte[] SemPagamento()
+    {
+        string conteudo = File.ReadAllText(_caminho, Encoding.UTF8).Replace(RotuloPagamento, "CREDITO FICTICIO", StringComparison.Ordinal);
         return Encoding.UTF8.GetBytes(conteudo);
     }
 

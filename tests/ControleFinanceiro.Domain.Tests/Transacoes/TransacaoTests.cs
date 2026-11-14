@@ -97,6 +97,30 @@ public sealed class TransacaoTests
         transacao.AliasTextoBeneficiario.Should().Be(compra.AliasTextoBeneficiario);
     }
 
+    [Theory, TransacaoAutoData]
+    public void EhPagamentoFatura_Quando_LancamentoDePagamentoFatura_Deve_SerVerdadeiro(TransacoesDeTeste transacoes, Cartao cartao, Lancamento lancamento)
+    {
+        Transacao transacao = transacoes.DoCartao(cartao, lancamento.SemCategoria().ComoPagamentoFatura());
+
+        transacao.EhPagamentoFatura.Should().BeTrue();
+    }
+
+    [Theory, TransacaoAutoData]
+    public void EhPagamentoFatura_Quando_CompraNoCartao_Deve_SerFalso(TransacoesDeTeste transacoes, Cartao cartao, Lancamento lancamento)
+    {
+        Transacao transacao = transacoes.DoCartao(cartao, lancamento.SemCategoria().ComoSaida());
+
+        transacao.EhPagamentoFatura.Should().BeFalse();
+    }
+
+    [Theory, TransacaoAutoData]
+    public void EhCompraAVistaNoCartao_Quando_PagamentoFatura_Deve_SerFalso(TransacoesDeTeste transacoes, Cartao cartao, Lancamento lancamento)
+    {
+        Transacao transacao = transacoes.DoCartao(cartao, lancamento.SemCategoria().ComoPagamentoFatura());
+
+        transacao.EhCompraAVistaNoCartao.Should().BeFalse();
+    }
+
     /// <summary>Tudo sai do mesmo usuário.</summary>
     private sealed class TransacaoAutoDataAttribute : DomainAutoDataAttribute
     {

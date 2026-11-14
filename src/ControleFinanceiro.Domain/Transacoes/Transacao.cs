@@ -89,6 +89,12 @@ public sealed class Transacao : AggregateRoot<IdTransacao>, IPertenceAoUsuario
     /// </summary>
     public bool EhCompraAVistaNoCartao => EhSaida && !EhParcelada && !EhOrigemConta && AliasTextoBeneficiario is not null;
 
+    /// <summary>
+    /// Verdadeiro quando a transação é a entrada no cartão que pagou a fatura anterior, copiado do
+    /// <see cref="Lancamento.EhPagamentoFatura"/>. A transação importada antes da marca fica falsa.
+    /// </summary>
+    public bool EhPagamentoFatura { get; private set; }
+
     public ChaveDeduplicacao Chave { get; private set; } = null!;
 
     private Transacao()
@@ -114,6 +120,7 @@ public sealed class Transacao : AggregateRoot<IdTransacao>, IPertenceAoUsuario
         Contraparte = lancamento.Contraparte;
         Parcela = lancamento.Parcela;
         CategoriaBanco = lancamento.CategoriaBanco;
+        EhPagamentoFatura = lancamento.EhPagamentoFatura;
         Chave = chave;
     }
 

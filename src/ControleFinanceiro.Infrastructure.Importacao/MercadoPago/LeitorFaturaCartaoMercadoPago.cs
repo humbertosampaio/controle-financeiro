@@ -9,7 +9,7 @@ using System.Text;
 using System.Text.RegularExpressions;
 using LancamentoLido = (ControleFinanceiro.Domain.Transacoes.Lancamento Lancamento, ControleFinanceiro.Domain.Cartoes.SufixoCartao? Sufixo);
 using TipoEValor = (ControleFinanceiro.Infrastructure.Importacao.MercadoPago.LeitorFaturaCartaoMercadoPago.TipoLancamento Tipo, ControleFinanceiro.Domain.Shared.ValueObjects.Reais Valor);
-using ValorSufixoEParcela = (ControleFinanceiro.Domain.Shared.ValueObjects.Reais Valor, ControleFinanceiro.Domain.Cartoes.SufixoCartao? Sufixo, ControleFinanceiro.Domain.Transacoes.Parcela? Parcela);
+using TipoValorSufixoEParcela = (ControleFinanceiro.Infrastructure.Importacao.MercadoPago.LeitorFaturaCartaoMercadoPago.TipoLancamento Tipo, ControleFinanceiro.Domain.Shared.ValueObjects.Reais Valor, ControleFinanceiro.Domain.Cartoes.SufixoCartao? Sufixo, ControleFinanceiro.Domain.Transacoes.Parcela? Parcela);
 
 namespace ControleFinanceiro.Infrastructure.Importacao.MercadoPago;
 
@@ -20,8 +20,8 @@ namespace ControleFinanceiro.Infrastructure.Importacao.MercadoPago;
 /// <remarks>
 /// <para>
 /// Como o arquivo é gerado por IA, o leitor não dá palpite: as colunas têm de ser as do prompt, na ordem, e o tipo de
-/// lançamento tem de ser um dos conhecidos, que diz a coluna do valor e se o final do cartão é obrigatório. Um tipo
-/// novo entra na lista quando aparecer num arquivo.
+/// lançamento tem de ser um dos conhecidos, que diz a coluna do valor, se o final do cartão é obrigatório e se a linha é
+/// o pagamento da fatura anterior. Um tipo novo entra na lista quando aparecer num arquivo, declarando se é pagamento.
 /// </para>
 /// <para>
 /// O lançamento é reconhecido numa reimportação pelo <c>numero_transacao</c>, pela parcela e pelo valor
@@ -29,8 +29,15 @@ namespace ControleFinanceiro.Infrastructure.Importacao.MercadoPago;
 /// traz o mesmo número.
 /// </para>
 /// <para>
-/// O pagamento da fatura vem sem final e vai para o menor final do arquivo, para que a escolha não dependa da ordem
-/// das linhas.
+/// O que o arquivo traz, pelo prompt e pelas faturas reais, e de que o leitor depende:
+/// <list type="bullet">
+/// <item>os valores vêm sem sinal: a compra na coluna da cobrança, e o crédito na do crédito, com a outra coluna vazia;</item>
+/// <item>o tipo <c>pagamento_debito_automatico_pos_fechamento</c> é o pagamento da fatura anterior: vem na coluna do
+/// crédito, sem final e sem parcela, e é lido pelo <see cref="Lancamento.PagamentoFaturaCartao"/>, com a marca de
+/// pagamento da fatura;</item>
+/// <item>o pagamento vai para o menor final do arquivo, para que a escolha não dependa da ordem das linhas;</item>
+/// <item>nenhum tipo conhecido é estorno: o primeiro que aparecer entra na lista como crédito, sem a marca.</item>
+/// </list>
 /// </para>
 /// <para>
 /// O CPF e o CNPJ da descrição e do vendedor ficam: quem os tira é a saída para o modelo. Os produtos e o número do
@@ -53,9 +60,9 @@ public sealed partial class LeitorFaturaCartaoMercadoPago : ILeitorFatura
 
     private static readonly Dictionary<string, TipoLancamento> _tipos = new(StringComparer.Ordinal)
     {
-        ["compra_a_vista"] = new(Credito: false, FinalObrigatorio: true, Parcelado: false),
-        ["compra_parcelada"] = new(Credito: false, FinalObrigatorio: true, Parcelado: true),
-        ["pagamento_debito_automatico_pos_fechamento"] = new(Credito: true, FinalObrigatorio: false, Parcelado: false),
+        ["compra_a_vista"] = new(Credito: false, FinalObrigatorio: true, Parcelado: false, PagamentoFatura: false),
+        ["compra_parcelada"] = new(Credito: false, FinalObrigatorio: true, Parcelado: true, PagamentoFatura: false),
+        ["pagamento_debito_automatico_pos_fechamento"] = new(Credito: true, FinalObrigatorio: false, Parcelado: false, PagamentoFatura: true),
     };
 
     private static readonly CsvReaderOptions _opcoes = OpcoesLeituraCsv.Criar(separador: ';');
@@ -188,10 +195,10 @@ public sealed partial class LeitorFaturaCartaoMercadoPago : ILeitorFatura
         return (tipo, tipo.Credito ? valor : -valor);
     }
 
-    private static Result<ValorSufixoEParcela> LerSufixoEParcela(LinhaFaturaMercadoPago linha, TipoEValor tipoEValor)
+    private static Result<TipoValorSufixoEParcela> LerSufixoEParcela(LinhaFaturaMercadoPago linha, TipoEValor tipoEValor)
     {
         return LerSufixo(linha.CartaoFinal, tipoEValor.Tipo)
-            .Bind(sufixo => LerParcela(linha, tipoEValor.Tipo).Map(parcela => (tipoEValor.Valor, sufixo, parcela)));
+            .Bind(sufixo => LerParcela(linha, tipoEValor.Tipo).Map(parcela => (tipoEValor.Tipo, tipoEValor.Valor, sufixo, parcela)));
     }
 
     /// <returns>Nulo quando o tipo não exige o final e a linha não o traz.</returns>
@@ -230,22 +237,47 @@ public sealed partial class LeitorFaturaCartaoMercadoPago : ILeitorFatura
 
     /// <param name="linha">Com a data da compra ou a do lançamento.</param>
     /// <param name="descricao">Aparada e não vazia.</param>
-    private static Result<LancamentoLido> Lancar(LinhaFaturaMercadoPago linha, string descricao, ValorSufixoEParcela valorSufixoEParcela)
+    private static Result<LancamentoLido> Lancar(LinhaFaturaMercadoPago linha, string descricao, TipoValorSufixoEParcela tipoValorSufixoEParcela)
     {
         return IdentidadeLancamento
             .Composta(linha.NumeroTransacao)
             .MapError(_ => "não tem o número da transação.")
-            .Map(identidade => identidade.ComParcela(valorSufixoEParcela.Parcela).ComValor(valorSufixoEParcela.Valor))
-            .Map(identidade => Lancamento.DoCartao(
-                linha.DataCompra ?? linha.DataLancamento.GetValueOrDefault(),
+            .Map(identidade => identidade.ComParcela(tipoValorSufixoEParcela.Parcela).ComValor(tipoValorSufixoEParcela.Valor))
+            .Map(identidade => Montar(linha, descricao, tipoValorSufixoEParcela, identidade))
+            .Map(lancamento => (lancamento, tipoValorSufixoEParcela.Sufixo));
+    }
+
+    /// <summary>
+    /// O pagamento da fatura sai pelo <see cref="Lancamento.PagamentoFaturaCartao"/>, sem parcela. O valor nunca é negativo:
+    /// o tipo dele é crédito, que o <see cref="LerTipoEValor"/> devolve com o sinal da coluna, e o
+    /// <see cref="ValorFaturaConverter"/> recusa a coluna com sinal. Os demais tipos saem pelo <see cref="Lancamento.DoCartao"/>.
+    /// </summary>
+    private static Lancamento Montar(
+        LinhaFaturaMercadoPago linha,
+        string descricao,
+        TipoValorSufixoEParcela tipoValorSufixoEParcela,
+        IdentidadeLancamento identidade)
+    {
+        DateOnly data = linha.DataCompra ?? linha.DataLancamento.GetValueOrDefault();
+
+        return tipoValorSufixoEParcela.Tipo.PagamentoFatura
+            ? Lancamento.PagamentoFaturaCartao(
+                data,
                 hora: null,
-                valorSufixoEParcela.Valor,
+                (ReaisPositivo)tipoValorSufixoEParcela.Valor.Value,
                 (TextoObrigatorio)descricao,
                 linha.Vendedor,
-                valorSufixoEParcela.Parcela,
                 categoriaBanco: null,
-                identidade))
-            .Map(lancamento => (lancamento, valorSufixoEParcela.Sufixo));
+                identidade)
+            : Lancamento.DoCartao(
+                data,
+                hora: null,
+                tipoValorSufixoEParcela.Valor,
+                (TextoObrigatorio)descricao,
+                linha.Vendedor,
+                tipoValorSufixoEParcela.Parcela,
+                categoriaBanco: null,
+                identidade);
     }
 
     /// <summary>
@@ -272,8 +304,11 @@ public sealed partial class LeitorFaturaCartaoMercadoPago : ILeitorFatura
     [GeneratedRegex("^[0-9]{1,3}$")]
     private static partial Regex NumeroParcela();
 
-    /// <summary>A coluna do valor e se o final do cartão é obrigatório, conforme o código do tipo de lançamento.</summary>
-    internal sealed record TipoLancamento(bool Credito, bool FinalObrigatorio, bool Parcelado);
+    /// <summary>
+    /// A coluna do valor, se o final do cartão é obrigatório, se há parcela e se a linha é o pagamento da fatura anterior,
+    /// conforme o código do tipo de lançamento.
+    /// </summary>
+    internal sealed record TipoLancamento(bool Credito, bool FinalObrigatorio, bool Parcelado, bool PagamentoFatura);
 
     [CsvRecord]
     internal sealed partial class LinhaFaturaMercadoPago

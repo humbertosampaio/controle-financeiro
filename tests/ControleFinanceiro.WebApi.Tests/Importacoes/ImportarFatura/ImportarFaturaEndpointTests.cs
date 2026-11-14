@@ -101,6 +101,43 @@ public sealed class ImportarFaturaEndpointTests : IAsyncLifetime
     }
 
     [Theory, ApiAutoData]
+    public async Task Post_Deve_MarcarSoOPagamentoDaFatura(CadastrarUsuarioRequest cadastro)
+    {
+        Guid idUsuario = await _api.CadastrarUsuarioAsync(cadastro);
+        await ResolverPendenciasAsync(idUsuario, FaturaCartaoC6.Completo());
+
+        await ImportarComSucessoAsync(idUsuario, FaturaCartaoC6.Completo());
+
+        List<Transacao> transacoes = await _api.ObterTodosAsync(db => db.Transacoes);
+        transacoes.Should().ContainSingle(t => t.EhPagamentoFatura)
+            .Which.Valor.Should().Be((Reais)500.00m);
+    }
+
+    [Theory, ApiAutoData]
+    public async Task Post_Quando_FaturaSemPagamento_Deve_AvisarEGravar(CadastrarUsuarioRequest cadastro)
+    {
+        Guid idUsuario = await _api.CadastrarUsuarioAsync(cadastro);
+        await ResolverPendenciasAsync(idUsuario, FaturaCartaoC6.SemPagamento());
+
+        ImportarFaturaResponse corpo = await ImportarComSucessoAsync(idUsuario, FaturaCartaoC6.SemPagamento());
+
+        corpo.AvisoPagamentoFaturaAnterior.Should().Be(Fatura.AvisoSemPagamentoAnterior);
+        (await _api.ObterTodosAsync(db => db.Transacoes)).Should().HaveCount(FaturaCartaoC6.QuantidadeLancamentos)
+            .And.NotContain(t => t.EhPagamentoFatura);
+    }
+
+    [Theory, ApiAutoData]
+    public async Task Post_Deve_NaoAvisarPagamentoFaturaAnterior(CadastrarUsuarioRequest cadastro)
+    {
+        Guid idUsuario = await _api.CadastrarUsuarioAsync(cadastro);
+        await ResolverPendenciasAsync(idUsuario, FaturaCartaoC6.Completo());
+
+        ImportarFaturaResponse corpo = await ImportarComSucessoAsync(idUsuario, FaturaCartaoC6.Completo());
+
+        corpo.AvisoPagamentoFaturaAnterior.Should().BeNull();
+    }
+
+    [Theory, ApiAutoData]
     public async Task Post_Deve_DeixarONomeDoTitularForaDoQueEGravado(CadastrarUsuarioRequest cadastro)
     {
         Guid idUsuario = await _api.CadastrarUsuarioAsync(cadastro);

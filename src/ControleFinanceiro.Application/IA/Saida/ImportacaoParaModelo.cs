@@ -105,7 +105,8 @@ public sealed record ImportacaoParaModelo : ISaidaModelo
         LayoutArquivoImportacao layout,
         Banco banco,
         PeriodoArquivo periodo,
-        IReadOnlyList<CartaoImportadoParaModelo> cartoes)
+        IReadOnlyList<CartaoImportadoParaModelo> cartoes,
+        bool trazPagamentoFaturaAnterior)
     {
         Layout = layout.Value;
         Banco = banco.Name;
@@ -114,6 +115,7 @@ public sealed record ImportacaoParaModelo : ISaidaModelo
         Lidas = cartoes.Sum(cartao => cartao.Lidas);
         Novas = cartoes.Sum(cartao => cartao.Novas);
         JaExistentes = cartoes.Sum(cartao => cartao.JaExistentes);
+        Avisos = trazPagamentoFaturaAnterior ? null : [Fatura.AvisoSemPagamentoAnterior];
 
         Resumo = ResumoAprovado.Normalizar(
             $"Importa a fatura {layout.Value} do {banco.Name}, {Datas(periodo)}: "
@@ -150,7 +152,8 @@ public sealed record ImportacaoParaModelo : ISaidaModelo
             layout,
             importada.Banco,
             fatura.Periodo,
-            importada.Cartoes.Select(CartaoImportadoParaModelo.De).ToArray());
+            importada.Cartoes.Select(CartaoImportadoParaModelo.De).ToArray(),
+            importada.PagamentoFaturaAnterior.IsSuccess);
     }
 
     public static ImportacaoParaModelo Falha(ErroParaModelo erro) => new(erro, pendencias: null);

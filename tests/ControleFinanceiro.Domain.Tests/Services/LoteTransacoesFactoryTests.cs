@@ -133,6 +133,34 @@ public sealed class LoteTransacoesFactoryTests
         transacao.Chave.Should().Be(ChaveDeduplicacao.Calcular(cartao.Banco, origem, lancamento.Identidade, 1));
     }
 
+    [Theory, ImportacaoDoCartaoAutoData]
+    public void Criar_Quando_PagamentoFatura_Deve_CopiarAMarcaParaATransacao(
+        [Frozen] IdUsuario idUsuario,
+        [Frozen] Cartao cartao,
+        ImportacaoArquivo importacao,
+        Lancamento lancamento)
+    {
+        Result<IReadOnlyList<Transacao>, Erro> result = CriarComAliasesResolvidos(idUsuario, cartao, importacao, [lancamento.ComoPagamentoFatura()]);
+
+        result.Should().Succeed()
+            .Which.Should().ContainSingle()
+            .Which.EhPagamentoFatura.Should().BeTrue();
+    }
+
+    [Theory, ImportacaoDoCartaoAutoData]
+    public void Criar_Quando_SoAMarcaDePagamentoFaturaDifere_Deve_GerarAMesmaChave(
+        [Frozen] IdUsuario idUsuario,
+        [Frozen] Cartao cartao,
+        ImportacaoArquivo importacao,
+        Lancamento lancamento)
+    {
+        Transacao semMarca = CriarComAliasesResolvidos(idUsuario, cartao, importacao, [lancamento]).Value.Single();
+
+        Transacao comMarca = CriarComAliasesResolvidos(idUsuario, cartao, importacao, [lancamento.ComoPagamentoFatura()]).Value.Single();
+
+        comMarca.Chave.Should().Be(semMarca.Chave);
+    }
+
     [Theory, DomainAutoData]
     public void Criar_Quando_LancamentosIdenticosSemIdExterno_Deve_GerarUmaTransacaoParaCada(
         [Frozen] IdUsuario idUsuario,

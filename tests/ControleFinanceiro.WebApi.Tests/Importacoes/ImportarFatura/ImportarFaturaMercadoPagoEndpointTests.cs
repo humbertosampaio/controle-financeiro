@@ -93,6 +93,19 @@ public sealed class ImportarFaturaMercadoPagoEndpointTests : IAsyncLifetime
     }
 
     [Theory, ApiAutoData]
+    public async Task Post_Deve_MarcarSoOPagamentoDaFatura(CadastrarUsuarioRequest cadastro)
+    {
+        Guid idUsuario = await _api.CadastrarUsuarioAsync(cadastro);
+        await ResolverPendenciasAsync(idUsuario, FaturaCartaoMercadoPago.Completo());
+
+        _ = await ImportarComSucessoAsync(idUsuario, FaturaCartaoMercadoPago.Completo());
+
+        List<Transacao> transacoes = await _api.ObterTodosAsync(db => db.Transacoes);
+        transacoes.Should().ContainSingle(t => t.EhPagamentoFatura)
+            .Which.Valor.Should().Be((Reais)1429.36m);
+    }
+
+    [Theory, ApiAutoData]
     public async Task Post_Quando_ReimportaAMesmaFatura_Deve_ManterAsTransacoes(CadastrarUsuarioRequest cadastro)
     {
         Guid idUsuario = await _api.CadastrarUsuarioAsync(cadastro);

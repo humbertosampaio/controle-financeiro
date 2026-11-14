@@ -75,17 +75,19 @@ public sealed class ImportarFaturaEndpoint : Endpoint<ImportarFaturaRequest, Imp
 
     private static ImportarFaturaResponse Responder(FaturaImportada importada)
     {
-        return new ImportarFaturaResponse(importada.Cartoes
-            .Select(cartao => new ImportarFaturaResponse.CartaoImportado(
-                cartao.IdImportacao,
-                cartao.IdCartao,
-                cartao.Sufixo,
-                cartao.Lidas,
-                cartao.Novas,
-                cartao.JaExistentes,
-                cartao.DespesasParceladasCriadas,
-                cartao.DespesasAdiadasCriadas))
-            .ToArray());
+        return new ImportarFaturaResponse(
+            importada.Cartoes
+                .Select(cartao => new ImportarFaturaResponse.CartaoImportado(
+                    cartao.IdImportacao,
+                    cartao.IdCartao,
+                    cartao.Sufixo,
+                    cartao.Lidas,
+                    cartao.Novas,
+                    cartao.JaExistentes,
+                    cartao.DespesasParceladasCriadas,
+                    cartao.DespesasAdiadasCriadas))
+                .ToArray(),
+            importada.PagamentoFaturaAnterior.IsFailure ? importada.PagamentoFaturaAnterior.Error : null);
     }
 
     private async Task EnviarFalhaAsync(Falha falha, CancellationToken ct)
