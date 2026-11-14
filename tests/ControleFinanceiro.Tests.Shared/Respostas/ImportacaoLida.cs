@@ -19,6 +19,9 @@ public sealed class ImportacaoLida
     public int DespesasAdiadas { get; }
     public string Resumo { get; }
 
+    /// <summary>Os avisos fixos, que não impedem a importação; vazio quando não há.</summary>
+    public IReadOnlyList<string> Avisos { get; }
+
     public ImportacaoLida(JsonObject json)
     {
         Lidas = json["lidas"]!.GetValue<int>();
@@ -32,5 +35,6 @@ public sealed class ImportacaoLida
         DespesasAdiadas = cartoes.Sum(cartao => cartao["despesas_adiadas"]!.GetValue<int>());
 
         Resumo = json.Texto("resumo");
+        Avisos = json["avisos"]?.AsArray().Select(aviso => aviso!.GetValue<string>()).ToArray() ?? [];
     }
 }

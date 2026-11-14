@@ -130,6 +130,23 @@ public sealed class ConfirmarImportacaoToolTests : IAsyncLifetime
     }
 
     [Fact]
+    public async Task Confirmar_Quando_FaturaSemPagamento_Deve_GravarETrazerOAviso()
+    {
+        string caminho = ImportacaoDeTeste.GravarComLinhaTrocada(
+            ImportacaoDeTeste.FaturaC6,
+            numero: 6,
+            "02/03/2026;FULANA DE TAL FICTICIA;1111;-;CREDITO FICTICIO;Única;0;0;-500.00");
+        await _importacao.ResolverAsync(LayoutArquivoImportacao.C6CartaoCsv, caminho);
+        string resumo = await PreverAsync(caminho, "c6-cartao-csv");
+
+        CallToolResult resultado = await _servidor.ClienteMcp.ConfirmarImportacaoAsync(resumo, caminho, "c6-cartao-csv");
+
+        ImportacaoLida importacao = new(resultado.Json);
+        importacao.Avisos.Should().Equal(Fatura.AvisoSemPagamentoAnterior);
+        (await _importacao.LerGravadoAsync()).Transacoes.Should().Be(importacao.Novas).And.BePositive();
+    }
+
+    [Fact]
     public async Task Confirmar_Quando_ResumoAlterado_Deve_DevolverResumoDivergenteSemGravar()
     {
         await _importacao.ResolverAsync(LayoutArquivoImportacao.C6ContaCsv, ImportacaoDeTeste.ExtratoC6);

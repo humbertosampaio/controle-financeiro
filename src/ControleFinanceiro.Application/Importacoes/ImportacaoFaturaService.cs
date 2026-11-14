@@ -85,7 +85,7 @@ public sealed class ImportacaoFaturaService
         return await CartaoFactory
             .ObterDosFinais(idUsuario, cartoesDoUsuario, fatura.Banco, fatura.Sufixos)
             .Bind(cartoes => MontarLotes(idUsuario, beneficiariosDoUsuario, categoriasDoUsuario, parceladasDoUsuario, layout, fatura, cartoes))
-            .Map(lotes => AcrescentarAsync(fatura.Banco, lotes, novas => DespesaAdiadaFactory.CriarDaFatura(
+            .Map(lotes => AcrescentarAsync(fatura, lotes, novas => DespesaAdiadaFactory.CriarDaFatura(
                 idUsuario,
                 beneficiariosDoUsuario,
                 categoriasDoUsuario,
@@ -166,7 +166,7 @@ public sealed class ImportacaoFaturaService
     /// compra de outro final da mesma fatura uma vez só.
     /// </param>
     private async Task<FaturaImportada> AcrescentarAsync(
-        Banco banco,
+        Fatura fatura,
         IReadOnlyList<LoteCartao> lotes,
         Func<IReadOnlyList<Transacao>, IReadOnlyList<DespesaAdiada>> criarAdiadas,
         CancellationToken ct)
@@ -187,16 +187,19 @@ public sealed class ImportacaoFaturaService
         IReadOnlyList<DespesaAdiada> despesasAdiadas = criarAdiadas(novasDaFatura);
         await _despesaRepository.AdicionarAsync(despesasAdiadas, ct);
 
-        return new FaturaImportada(banco, acrescentados
-            .Select(acrescentado => new FaturaImportada.CartaoImportado(
-                acrescentado.Lote.Importacao.Id,
-                acrescentado.Lote.Cartao.Id,
-                acrescentado.Lote.Cartao.Sufixo,
-                acrescentado.Lote.Importacao.Lidas,
-                acrescentado.Novas,
-                acrescentado.Lote.Importacao.Lidas - acrescentado.Novas,
-                acrescentado.Lote.DespesasParceladas.Count,
-                despesasAdiadas.Count(d => d.IdCartao == acrescentado.Lote.Cartao.Id)))
-            .ToArray());
+        return new FaturaImportada(
+            fatura.Banco,
+            acrescentados
+                .Select(acrescentado => new FaturaImportada.CartaoImportado(
+                    acrescentado.Lote.Importacao.Id,
+                    acrescentado.Lote.Cartao.Id,
+                    acrescentado.Lote.Cartao.Sufixo,
+                    acrescentado.Lote.Importacao.Lidas,
+                    acrescentado.Novas,
+                    acrescentado.Lote.Importacao.Lidas - acrescentado.Novas,
+                    acrescentado.Lote.DespesasParceladas.Count,
+                    despesasAdiadas.Count(d => d.IdCartao == acrescentado.Lote.Cartao.Id)))
+                .ToArray(),
+            fatura.ConferirPagamentoAnterior());
     }
 }

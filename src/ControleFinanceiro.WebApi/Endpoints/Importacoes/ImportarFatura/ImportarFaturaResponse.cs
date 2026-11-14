@@ -1,10 +1,13 @@
 namespace ControleFinanceiro.WebApi.Endpoints.Importacoes.ImportarFatura;
 
 /// <summary>
-/// O resumo da importação, com uma linha por cartão, na ordem em que os finais aparecem no arquivo. Nada do conteúdo
-/// dos lançamentos volta na resposta.
+/// O resumo da importação, com uma linha por cartão, na ordem em que os finais aparecem no arquivo, e o aviso, que não
+/// impede a gravação. Nada do conteúdo dos lançamentos volta na resposta.
 /// </summary>
-public sealed record class ImportarFaturaResponse(IReadOnlyList<ImportarFaturaResponse.CartaoImportado> Cartoes)
+/// <param name="AvisoPagamentoFaturaAnterior">Presente quando a fatura não traz o pagamento da anterior.</param>
+public sealed record class ImportarFaturaResponse(
+    IReadOnlyList<ImportarFaturaResponse.CartaoImportado> Cartoes,
+    string? AvisoPagamentoFaturaAnterior)
 {
     public sealed record class CartaoImportado(
         Guid IdImportacao,

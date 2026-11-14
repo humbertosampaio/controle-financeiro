@@ -2,6 +2,7 @@ using ControleFinanceiro.Domain.Cartoes;
 using ControleFinanceiro.Domain.Importacoes;
 using ControleFinanceiro.Domain.Shared.ValueObjects;
 using ControleFinanceiro.Domain.Transacoes;
+using ControleFinanceiro.Tests.Shared;
 using ControleFinanceiro.Tests.Shared.AutoFixture.Attributes;
 using CSharpFunctionalExtensions;
 
@@ -160,6 +161,28 @@ public sealed class FaturaTests
         Fatura outra = Fatura.Criar(banco, [segundo, primeiro]).Value;
 
         outra.Should().NotBe(fatura);
+    }
+
+    [Theory, DomainAutoData]
+    public void ConferirPagamentoAnterior_Quando_HaLancamentoDePagamentoFatura_Deve_TerSucesso(
+        Banco banco,
+        LancamentoFatura compra,
+        Lancamento lancamento)
+    {
+        LancamentoFatura pagamento = LancamentoFatura.Criar(lancamento.ComoPagamentoFatura(), compra.SufixoCartao);
+        Fatura fatura = Fatura.Criar(banco, [compra, pagamento]).Value;
+
+        Result result = fatura.ConferirPagamentoAnterior();
+
+        result.Should().Succeed();
+    }
+
+    [Theory, DomainAutoData]
+    public void ConferirPagamentoAnterior_Quando_NenhumLancamentoDePagamentoFatura_Deve_Falhar(Fatura fatura)
+    {
+        Result result = fatura.ConferirPagamentoAnterior();
+
+        result.Should().FailWith(Fatura.AvisoSemPagamentoAnterior);
     }
 
     private static Lancamento NaData(Lancamento lancamento, DateOnly data)

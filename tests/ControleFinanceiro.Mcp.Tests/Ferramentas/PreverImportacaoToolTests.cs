@@ -127,6 +127,31 @@ public sealed class PreverImportacaoToolTests : IAsyncLifetime
     }
 
     [Fact]
+    public async Task Prever_Quando_FaturaSemPagamento_Deve_TrazerOAviso()
+    {
+        string caminho = ImportacaoDeTeste.GravarComLinhaTrocada(
+            ImportacaoDeTeste.FaturaC6,
+            numero: 6,
+            "02/03/2026;FULANA DE TAL FICTICIA;1111;-;CREDITO FICTICIO;Única;0;0;-500.00");
+        await _importacao.ResolverAsync(LayoutArquivoImportacao.C6CartaoCsv, caminho);
+
+        CallToolResult resultado = await _servidor.ClienteMcp.PreverImportacaoAsync(caminho, "c6-cartao-csv");
+
+        new ImportacaoLida(resultado.Json).Avisos.Should().ContainSingle()
+            .Which.Should().Be(Fatura.AvisoSemPagamentoAnterior);
+    }
+
+    [Fact]
+    public async Task Prever_Quando_FaturaComPagamento_Deve_NaoTrazerAviso()
+    {
+        await _importacao.ResolverAsync(LayoutArquivoImportacao.C6CartaoCsv, ImportacaoDeTeste.FaturaC6);
+
+        CallToolResult resultado = await _servidor.ClienteMcp.PreverImportacaoAsync(ImportacaoDeTeste.FaturaC6, "c6-cartao-csv");
+
+        new ImportacaoLida(resultado.Json).Avisos.Should().BeEmpty();
+    }
+
+    [Fact]
     public async Task Prever_Quando_BeneficiarioSemAlias_Deve_DevolverAQuantidade()
     {
         CallToolResult resultado = await _servidor.ClienteMcp.PreverImportacaoAsync(ImportacaoDeTeste.ExtratoC6, "c6-conta-csv");
