@@ -21,6 +21,10 @@ namespace ControleFinanceiro.Infrastructure.Importacao.C6;
 /// reais já é o cobrado.
 /// </para>
 /// <para>
+/// A categoria <c>-</c> é a falta de categoria, e o leitor a lê como nula. Nas faturas reais, ela aparece em algumas
+/// compras e nas entradas que não são estorno.
+/// </para>
+/// <para>
 /// As mensagens de falha citam só o número da linha. A <see cref="CsvFormatException"/> pode trazer dados do registro, com o
 /// titular, então ela é capturada e trocada por uma mensagem própria.
 /// </para>
@@ -30,6 +34,9 @@ public sealed partial class LeitorFaturaCartaoC6 : ILeitorFatura
     private const string ParcelaUnica = "Única";
 
     private const string FormatoData = "dd/MM/yyyy";
+
+    /// <summary>A categoria que o C6 põe quando não dá categoria ao lançamento.</summary>
+    private const string SemCategoria = "-";
 
     private static readonly CsvReaderOptions _opcoes = OpcoesLeituraCsv.Criar(separador: ';');
 
@@ -190,6 +197,8 @@ public sealed partial class LeitorFaturaCartaoC6 : ILeitorFatura
             .ComTexto(linha.Descricao)
             .ComParcela(sufixoEParcela.Parcela);
 
+        string? categoriaBanco = linha.Categoria.Trim() == SemCategoria ? null : linha.Categoria;
+
         Lancamento lancamento = Lancamento.DoCartao(
             linha.DataCompra,
             hora: null,
@@ -197,7 +206,7 @@ public sealed partial class LeitorFaturaCartaoC6 : ILeitorFatura
             (TextoObrigatorio)linha.Descricao,
             contraparte: null,
             sufixoEParcela.Parcela,
-            linha.Categoria,
+            categoriaBanco,
             identidade);
 
         return LancamentoFatura.Criar(lancamento, sufixoEParcela.Sufixo);

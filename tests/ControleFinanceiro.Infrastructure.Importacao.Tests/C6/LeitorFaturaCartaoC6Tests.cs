@@ -107,6 +107,18 @@ public sealed class LeitorFaturaCartaoC6Tests
             "Supermercado", "Restaurante", "Eletrônicos", "Serviços", null, "Vestuário", "Transporte", "Transporte");
     }
 
+    [Theory]
+    [InlineData("")]
+    [InlineData(" - ")]
+    public async Task LerAsync_Quando_CategoriaEmBrancoOuTraco_Deve_DeixarSemCategoria(string categoria)
+    {
+        Stream arquivo = _fixture.ComLinha(numero: 2, $"05/03/2026;{TitularFicticio};1111;{categoria};MERCADO FICTICIO;Única;0;0;123.45");
+
+        Fatura fatura = (await _leitor.LerAsync(arquivo, CancellationToken.None)).Value;
+
+        fatura.Lancamentos[0].Lancamento.CategoriaBanco.Should().BeNull();
+    }
+
     [Fact]
     public async Task LerAsync_Deve_ApararADescricaoSemContraparteNemHora()
     {
