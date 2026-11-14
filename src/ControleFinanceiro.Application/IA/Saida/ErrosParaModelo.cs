@@ -4,6 +4,7 @@ using ControleFinanceiro.Domain.Cartoes;
 using ControleFinanceiro.Domain.Categorias;
 using ControleFinanceiro.Domain.Contas;
 using ControleFinanceiro.Domain.Despesas;
+using ControleFinanceiro.Domain.Importacoes;
 using ControleFinanceiro.Domain.Shared;
 using ControleFinanceiro.Domain.Shared.ValueObjects;
 using ControleFinanceiro.Domain.Transacoes;
@@ -70,7 +71,7 @@ public static class ErrosParaModelo
 
         public static readonly ErroParaModelo LayoutInvalido = Fixo("Layout inválido: use um dos códigos de layout da descrição da ferramenta.");
 
-        public static readonly ErroParaModelo SufixoContaInvalido = Fixo("O layout mercado-pago-conta-csv pede o sufixo da conta: os 4 últimos caracteres do número da conta, que o usuário informa.");
+        public static readonly ErroParaModelo SufixoContaInvalido = Fixo($"O layout {LayoutArquivoImportacao.MercadoPagoContaCsv.Value} pede o sufixo da conta: os 4 últimos caracteres do número da conta, que o usuário informa.");
 
         public static readonly ErroParaModelo ContaDeOutroTipo = Fixo("O usuário já tem uma conta nesse banco com esse final, mas de outro tipo: peça a ele para resolver pela API antes de importar.");
 
