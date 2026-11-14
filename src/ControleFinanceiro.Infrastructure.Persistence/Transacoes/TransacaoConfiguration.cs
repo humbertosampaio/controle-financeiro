@@ -20,6 +20,9 @@ internal sealed class TransacaoConfiguration : IEntityTypeConfiguration<Transaca
             tabela.HasCheckConstraint(
                 "CK_transacoes_parcela",
                 "num_nulls(parcela_numero, parcela_total) = 2 OR (num_nulls(parcela_numero, parcela_total) = 0 AND parcela_total >= 2 AND parcela_numero BETWEEN 1 AND parcela_total AND id_cartao IS NOT NULL)");
+            tabela.HasCheckConstraint(
+                "CK_transacoes_pagamento_fatura",
+                "NOT eh_pagamento_fatura OR (id_cartao IS NOT NULL AND valor >= 0 AND parcela_numero IS NULL)");
         });
 
         entity.HasKey(t => t.Id);
@@ -84,6 +87,11 @@ internal sealed class TransacaoConfiguration : IEntityTypeConfiguration<Transaca
 
         entity.Property(t => t.CategoriaBanco)
             .HasColumnName("categoria_banco");
+
+        // Sem HasDefaultValue: num bool, o EF avisaria do sentinel false. O DEFAULT false fica só na migration, que preenche
+        // as transações importadas antes da marca.
+        entity.Property(t => t.EhPagamentoFatura)
+            .HasColumnName("eh_pagamento_fatura");
 
         entity.Property(t => t.Chave)
             .HasColumnName("chave_deduplicacao")

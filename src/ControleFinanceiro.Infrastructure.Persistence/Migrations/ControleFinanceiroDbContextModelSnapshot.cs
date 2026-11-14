@@ -490,6 +490,10 @@ namespace ControleFinanceiro.Infrastructure.Persistence.Migrations
                         .HasColumnType("text")
                         .HasColumnName("descricao");
 
+                    b.Property<bool>("EhPagamentoFatura")
+                        .HasColumnType("boolean")
+                        .HasColumnName("eh_pagamento_fatura");
+
                     b.Property<TimeOnly?>("Hora")
                         .HasColumnType("time without time zone")
                         .HasColumnName("hora");
@@ -545,6 +549,8 @@ namespace ControleFinanceiro.Infrastructure.Persistence.Migrations
                             t.HasCheckConstraint("CK_transacoes_chave_deduplicacao", "chave_deduplicacao ~ '^[0-9a-f]{64}$'");
 
                             t.HasCheckConstraint("CK_transacoes_origem", "num_nonnulls(id_conta, id_cartao) = 1");
+
+                            t.HasCheckConstraint("CK_transacoes_pagamento_fatura", "NOT eh_pagamento_fatura OR (id_cartao IS NOT NULL AND valor >= 0 AND parcela_numero IS NULL)");
 
                             t.HasCheckConstraint("CK_transacoes_parcela", "num_nulls(parcela_numero, parcela_total) = 2 OR (num_nulls(parcela_numero, parcela_total) = 0 AND parcela_total >= 2 AND parcela_numero BETWEEN 1 AND parcela_total AND id_cartao IS NOT NULL)");
                         });
