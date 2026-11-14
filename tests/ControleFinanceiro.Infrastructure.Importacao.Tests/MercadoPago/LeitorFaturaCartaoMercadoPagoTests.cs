@@ -161,6 +161,31 @@ public sealed class LeitorFaturaCartaoMercadoPagoTests
     }
 
     [Fact]
+    public async Task LerAsync_Quando_TipoPagamento_Deve_MarcarComoPagamentoFatura()
+    {
+        Fatura fatura = await LerFixtureAsync();
+
+        fatura.Lancamentos[LinhaPagamento - 2].Lancamento.EhPagamentoFatura.Should().BeTrue();
+    }
+
+    [Fact]
+    public async Task LerAsync_Quando_CompraAVistaOuParcelada_Deve_NaoMarcarComoPagamentoFatura()
+    {
+        Fatura fatura = await LerFixtureAsync();
+
+        fatura.Lancamentos.Take(LinhaPagamento - 2).Should().AllSatisfy(l => l.Lancamento.EhPagamentoFatura.Should().BeFalse());
+    }
+
+    [Fact]
+    public async Task LerAsync_Quando_PagamentoFatura_Deve_ManterAIdentidadeDoNumeroDaTransacao()
+    {
+        Fatura fatura = await LerFixtureAsync();
+
+        fatura.Lancamentos[LinhaPagamento - 2].Lancamento.Identidade.Should().Be(
+            IdentidadeLancamento.Composta("100000000007_1").Value.ComParcela(parcela: null).ComValor(1429.36m));
+    }
+
+    [Fact]
     public async Task LerAsync_Quando_DoisFinais_Deve_PorOPagamentoNoMenor()
     {
         Stream arquivo = ComCampos(LinhaCompraVista, ("cartao_final", "0042"));
@@ -237,6 +262,16 @@ public sealed class LeitorFaturaCartaoMercadoPagoTests
         Result<Fatura, FalhaLeituraArquivo> result = await _leitor.LerAsync(arquivo, CancellationToken.None);
 
         result.Should().FailWith(new FalhaLeituraArquivo(Linha: 3, TipoFalhaLeituraArquivo.LancamentoInvalido, "A linha 3 do arquivo não traz o valor na coluna do tipo de lançamento."));
+    }
+
+    [Fact]
+    public async Task LerAsync_Quando_PagamentoComCreditoNegativo_Deve_RetornarFalhaSoComONumeroDaLinha()
+    {
+        Stream arquivo = ComCampos(LinhaPagamento, ("valor_creditado_fatura", "-1429,36"));
+
+        Result<Fatura, FalhaLeituraArquivo> result = await _leitor.LerAsync(arquivo, CancellationToken.None);
+
+        result.Should().FailWith(new FalhaLeituraArquivo(Linha: 8, TipoFalhaLeituraArquivo.ForaDoLayout, "A linha 8 do arquivo não está no layout da fatura do cartão do Mercado Pago."));
     }
 
     [Fact]
