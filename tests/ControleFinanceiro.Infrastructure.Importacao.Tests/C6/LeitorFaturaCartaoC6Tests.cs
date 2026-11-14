@@ -15,6 +15,8 @@ namespace ControleFinanceiro.Infrastructure.Importacao.Tests.C6;
 public sealed class LeitorFaturaCartaoC6Tests
 {
     private const int LinhaColunas = 1;
+    private const int LinhaPagamento = 6;
+    private const int LinhaEstorno = 7;
     private const string TitularFicticio = "FULANA DE TAL FICTICIA";
 
     /// <summary>O arquivo como o banco exporta: UTF-8 sem BOM e CRLF.</summary>
@@ -99,7 +101,7 @@ public sealed class LeitorFaturaCartaoC6Tests
     }
 
     [Fact]
-    public async Task LerAsync_Deve_GuardarACategoriaDoBancoENenhumaQuandoEmBranco()
+    public async Task LerAsync_Deve_GuardarACategoriaDoBancoENenhumaQuandoTraco()
     {
         Fatura fatura = await LerFixtureAsync();
 
@@ -117,6 +119,60 @@ public sealed class LeitorFaturaCartaoC6Tests
         Fatura fatura = (await _leitor.LerAsync(arquivo, CancellationToken.None)).Value;
 
         fatura.Lancamentos[0].Lancamento.CategoriaBanco.Should().BeNull();
+    }
+
+    [Fact]
+    public async Task LerAsync_Quando_LinhaDePagamentoDaFatura_Deve_MarcarComoPagamentoFatura()
+    {
+        Fatura fatura = await LerFixtureAsync();
+
+        fatura.Lancamentos[LinhaPagamento - 2].Lancamento.EhPagamentoFatura.Should().BeTrue();
+    }
+
+    [Fact]
+    public async Task LerAsync_Quando_Estorno_Deve_NaoMarcarComoPagamentoFatura()
+    {
+        Fatura fatura = await LerFixtureAsync();
+
+        fatura.Lancamentos[LinhaEstorno - 2].Lancamento.EhPagamentoFatura.Should().BeFalse();
+    }
+
+    [Fact]
+    public async Task LerAsync_Quando_Compra_Deve_NaoMarcarComoPagamentoFatura()
+    {
+        Fatura fatura = await LerFixtureAsync();
+
+        fatura.Lancamentos.Where(l => l.Lancamento.EhSaida).Should().AllSatisfy(l => l.Lancamento.EhPagamentoFatura.Should().BeFalse());
+    }
+
+    [Fact]
+    public async Task LerAsync_Quando_IsencaoDaAnuidadeSemCategoria_Deve_NaoMarcarComoPagamentoFatura()
+    {
+        Stream arquivo = _fixture.ComLinha(LinhaEstorno, $"08/03/2026;{TitularFicticio};2222;-;ANUIDADE FICTICIA;Única;0;0;-35.00");
+
+        Fatura fatura = (await _leitor.LerAsync(arquivo, CancellationToken.None)).Value;
+
+        fatura.Lancamentos[LinhaEstorno - 2].Lancamento.EhPagamentoFatura.Should().BeFalse();
+    }
+
+    [Fact]
+    public async Task LerAsync_Quando_RotuloComOutraCaixaEAcento_Deve_MarcarComoPagamentoFatura()
+    {
+        Stream arquivo = _fixture.ComLinha(LinhaPagamento, $"02/03/2026;{TitularFicticio};1111;-;INCLUSÃO  DE PAGAMENTO;Única;0;0;-500.00");
+
+        Fatura fatura = (await _leitor.LerAsync(arquivo, CancellationToken.None)).Value;
+
+        fatura.Lancamentos[LinhaPagamento - 2].Lancamento.EhPagamentoFatura.Should().BeTrue();
+    }
+
+    [Fact]
+    public async Task LerAsync_Quando_CompraComORotuloDoPagamento_Deve_NaoMarcar()
+    {
+        Stream arquivo = _fixture.ComLinha(LinhaPagamento, $"02/03/2026;{TitularFicticio};1111;-;Inclusao de Pagamento;Única;0;0;500.00");
+
+        Fatura fatura = (await _leitor.LerAsync(arquivo, CancellationToken.None)).Value;
+
+        fatura.Lancamentos[LinhaPagamento - 2].Lancamento.EhPagamentoFatura.Should().BeFalse();
     }
 
     [Fact]

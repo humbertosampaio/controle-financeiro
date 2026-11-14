@@ -21,8 +21,18 @@ namespace ControleFinanceiro.Infrastructure.Importacao.C6;
 /// reais já é o cobrado.
 /// </para>
 /// <para>
-/// A categoria <c>-</c> é a falta de categoria, e o leitor a lê como nula. Nas faturas reais, ela aparece em algumas
-/// compras e nas entradas que não são estorno.
+/// O que o arquivo traz, visto nas faturas reais, e de que o leitor depende:
+/// <list type="bullet">
+/// <item>a compra vem positiva, e toda entrada no cartão, negativa;</item>
+/// <item>a categoria <c>-</c> é a falta de categoria, e o leitor a lê como nula. Ela aparece em algumas compras e nas
+/// entradas que não são estorno;</item>
+/// <item>a entrada com categoria é o estorno de uma compra;</item>
+/// <item>a entrada sem categoria é o pagamento da fatura anterior ou a isenção de uma parcela da anuidade;</item>
+/// <item>o pagamento da fatura anterior é a entrada sem parcela cuja descrição é o rótulo fixo do banco, comparado sem
+/// caixa, sem acento e sem espaços a mais. Se o C6 mudar o rótulo, a linha deixa de ser marcada.</item>
+/// </list>
+/// Não há coluna de tipo: a categoria não separa o pagamento da isenção da anuidade, e por isso o pagamento é
+/// reconhecido pela descrição.
 /// </para>
 /// <para>
 /// As mensagens de falha citam só o número da linha. A <see cref="CsvFormatException"/> pode trazer dados do registro, com o
@@ -37,6 +47,9 @@ public sealed partial class LeitorFaturaCartaoC6 : ILeitorFatura
 
     /// <summary>A categoria que o C6 põe quando não dá categoria ao lançamento.</summary>
     private const string SemCategoria = "-";
+
+    /// <summary>O texto fixo que o C6 põe na descrição da linha do pagamento da fatura anterior.</summary>
+    private static readonly TextoNormalizado _rotuloPagamentoFatura = (TextoNormalizado)"Inclusao de Pagamento";
 
     private static readonly CsvReaderOptions _opcoes = OpcoesLeituraCsv.Criar(separador: ';');
 
@@ -199,17 +212,36 @@ public sealed partial class LeitorFaturaCartaoC6 : ILeitorFatura
 
         string? categoriaBanco = linha.Categoria.Trim() == SemCategoria ? null : linha.Categoria;
 
-        Lancamento lancamento = Lancamento.DoCartao(
-            linha.DataCompra,
-            hora: null,
-            valor,
-            (TextoObrigatorio)linha.Descricao,
-            contraparte: null,
-            sufixoEParcela.Parcela,
-            categoriaBanco,
-            identidade);
+        Lancamento lancamento = EhPagamentoFatura(linha, valor, sufixoEParcela.Parcela)
+            ? Lancamento.PagamentoFaturaCartao(
+                linha.DataCompra,
+                hora: null,
+                (ReaisPositivo)valor.Value,
+                (TextoObrigatorio)linha.Descricao,
+                contraparte: null,
+                categoriaBanco,
+                identidade)
+            : Lancamento.DoCartao(
+                linha.DataCompra,
+                hora: null,
+                valor,
+                (TextoObrigatorio)linha.Descricao,
+                contraparte: null,
+                sufixoEParcela.Parcela,
+                categoriaBanco,
+                identidade);
 
         return LancamentoFatura.Criar(lancamento, sufixoEParcela.Sufixo);
+    }
+
+    /// <summary>
+    /// A entrada sem parcela com o rótulo do pagamento. A comparação é com o rótulo inteiro, e não com o começo dele,
+    /// para não marcar outra linha que comece igual; a compra com o mesmo texto sai como compra.
+    /// </summary>
+    /// <param name="valor">Do ponto de vista do usuário.</param>
+    private static bool EhPagamentoFatura(LinhaFaturaC6 linha, Reais valor, Parcela? parcela)
+    {
+        return valor > 0 && parcela is null && (TextoNormalizado)linha.Descricao == _rotuloPagamentoFatura;
     }
 
     [GeneratedRegex(@"^(?<numero>\d{1,3})/(?<total>\d{1,3})$")]
