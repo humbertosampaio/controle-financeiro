@@ -48,6 +48,12 @@ public sealed class Lancamento : ValueObject
     /// <summary>De onde o lançamento veio: o extrato de uma conta ou a fatura de um cartão.</summary>
     public TipoOrigem TipoOrigem { get; }
 
+    /// <summary>
+    /// Verdadeiro na linha da fatura que é o pagamento da fatura anterior, que só nasce pelo <see cref="PagamentoFaturaCartao"/>.
+    /// Não entra na <see cref="Identidade"/>: reimportar a linha não muda a chave dela.
+    /// </summary>
+    public bool EhPagamentoFatura { get; }
+
     private Lancamento(
         DateOnly data,
         TimeOnly? hora,
@@ -57,7 +63,8 @@ public sealed class Lancamento : ValueObject
         Parcela? parcela,
         string? categoriaBanco,
         IdentidadeLancamento identidade,
-        TipoOrigem tipoOrigem)
+        TipoOrigem tipoOrigem,
+        bool ehPagamentoFatura)
     {
         Data = data;
         Hora = hora;
@@ -68,6 +75,7 @@ public sealed class Lancamento : ValueObject
         CategoriaBanco = Aparar(categoriaBanco);
         Identidade = identidade;
         TipoOrigem = tipoOrigem;
+        EhPagamentoFatura = ehPagamentoFatura;
     }
 
     /// <summary>Uma linha do extrato de uma conta, que nunca traz parcela.</summary>
@@ -80,7 +88,7 @@ public sealed class Lancamento : ValueObject
         string? categoriaBanco,
         IdentidadeLancamento identidade)
     {
-        return new Lancamento(data, hora, valor, descricao, contraparte, parcela: null, categoriaBanco, identidade, TipoOrigem.Conta);
+        return new Lancamento(data, hora, valor, descricao, contraparte, parcela: null, categoriaBanco, identidade, TipoOrigem.Conta, ehPagamentoFatura: false);
     }
 
     /// <summary>Uma linha da fatura de um cartão.</summary>
@@ -94,7 +102,24 @@ public sealed class Lancamento : ValueObject
         string? categoriaBanco,
         IdentidadeLancamento identidade)
     {
-        return new Lancamento(data, hora, valor, descricao, contraparte, parcela, categoriaBanco, identidade, TipoOrigem.Cartao);
+        return new Lancamento(data, hora, valor, descricao, contraparte, parcela, categoriaBanco, identidade, TipoOrigem.Cartao, ehPagamentoFatura: false);
+    }
+
+    /// <summary>
+    /// A linha da fatura de um cartão que é o pagamento da fatura anterior: entra no cartão com valor não negativo e sem
+    /// parcela. Continua sendo uma entrada no cartão e não paga despesa; quem paga a fatura é a saída da conta.
+    /// </summary>
+    public static Lancamento PagamentoFaturaCartao(
+        DateOnly data,
+        TimeOnly? hora,
+        ReaisPositivo valor,
+        TextoObrigatorio descricao,
+        string? contraparte,
+        string? categoriaBanco,
+        IdentidadeLancamento identidade)
+    {
+        // O valor vai como Reais, e não como o ReaisPositivo recebido: a igualdade dos value objects compara o tipo.
+        return new Lancamento(data, hora, valor.Value, descricao, contraparte, parcela: null, categoriaBanco, identidade, TipoOrigem.Cartao, ehPagamentoFatura: true);
     }
 
     /// <summary>
@@ -147,5 +172,6 @@ public sealed class Lancamento : ValueObject
         yield return CategoriaBanco;
         yield return Identidade;
         yield return TipoOrigem;
+        yield return EhPagamentoFatura;
     }
 }

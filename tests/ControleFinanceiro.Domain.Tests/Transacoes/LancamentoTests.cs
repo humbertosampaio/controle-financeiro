@@ -376,6 +376,101 @@ public sealed class LancamentoTests
         noCartao.Should().NotBe(lancamento);
     }
 
+    [Theory, DomainAutoData]
+    public void PagamentoFaturaCartao_Deve_MarcarComoPagamentoFatura(Lancamento lancamento)
+    {
+        Lancamento result = lancamento.ComoPagamentoFatura();
+
+        result.EhPagamentoFatura.Should().BeTrue();
+    }
+
+    [Theory, DomainAutoData]
+    public void PagamentoFaturaCartao_Deve_TerOTipoDeOrigemCartaoSemParcela(Lancamento lancamento)
+    {
+        Lancamento result = lancamento.ComoPagamentoFatura();
+
+        result.TipoOrigem.Should().Be(TipoOrigem.Cartao);
+        result.Parcela.Should().BeNull();
+    }
+
+    [Theory, DomainAutoData]
+    public void PagamentoFaturaCartao_Deve_SerEntrada(
+        DateOnly data,
+        ReaisPositivo valor,
+        TextoObrigatorio descricao,
+        IdentidadeLancamento identidade)
+    {
+        Lancamento result = Lancamento.PagamentoFaturaCartao(data, hora: null, valor, descricao, contraparte: null, categoriaBanco: null, identidade);
+
+        result.EhEntrada.Should().BeTrue();
+        result.Valor.Should().Be((Reais)valor.Value);
+    }
+
+    [Theory, DomainAutoData]
+    public void PagamentoFaturaCartao_Quando_ValorZero_Deve_NaoSerEntradaNemSaida(
+        DateOnly data,
+        TextoObrigatorio descricao,
+        IdentidadeLancamento identidade)
+    {
+        Lancamento result = Lancamento.PagamentoFaturaCartao(data, hora: null, valor: (ReaisPositivo)0m, descricao, contraparte: null, categoriaBanco: null, identidade);
+
+        result.EhEntrada.Should().BeFalse();
+        result.EhSaida.Should().BeFalse();
+    }
+
+    [Theory, DomainAutoData]
+    public void PagamentoFaturaCartao_Quando_ContraparteECategoriaComEspacosNasPontas_Deve_Aparar(
+        DateOnly data,
+        ReaisPositivo valor,
+        TextoObrigatorio descricao,
+        string contraparte,
+        string categoriaBanco,
+        IdentidadeLancamento identidade)
+    {
+        Lancamento result = Lancamento.PagamentoFaturaCartao(data, hora: null, valor, descricao, $" {contraparte} ", $" {categoriaBanco} ", identidade);
+
+        result.Contraparte.Should().Be(contraparte);
+        result.CategoriaBanco.Should().Be(categoriaBanco);
+    }
+
+    [Theory, DomainAutoData]
+    public void DoCartao_Deve_NaoMarcarComoPagamentoFatura(DateOnly data, Reais valor, TextoObrigatorio descricao, IdentidadeLancamento identidade)
+    {
+        Lancamento result = Lancamento.DoCartao(data, hora: null, valor, descricao, contraparte: null, parcela: null, categoriaBanco: null, identidade);
+
+        result.EhPagamentoFatura.Should().BeFalse();
+    }
+
+    [Theory, DomainAutoData]
+    public void DaConta_Deve_NaoMarcarComoPagamentoFatura(DateOnly data, Reais valor, TextoObrigatorio descricao, IdentidadeLancamento identidade)
+    {
+        Lancamento result = Lancamento.DaConta(data, hora: null, valor, descricao, contraparte: null, categoriaBanco: null, identidade);
+
+        result.EhPagamentoFatura.Should().BeFalse();
+    }
+
+    [Theory, DomainAutoData]
+    public void Equals_Quando_SoAMarcaDePagamentoFaturaDifere_Deve_SerDiferente(Lancamento lancamento)
+    {
+        Lancamento entrada = NoCartao(lancamento, lancamento.ValorAbsoluto);
+
+        Lancamento pagamento = entrada.ComoPagamentoFatura();
+
+        pagamento.Should().NotBe(entrada);
+    }
+
+    [Theory, DomainAutoData]
+    public void Identidade_Quando_PagamentoFatura_Deve_SerAMesmaRecebida(
+        DateOnly data,
+        ReaisPositivo valor,
+        TextoObrigatorio descricao,
+        IdentidadeLancamento identidade)
+    {
+        Lancamento result = Lancamento.PagamentoFaturaCartao(data, hora: null, valor, descricao, contraparte: null, categoriaBanco: null, identidade);
+
+        result.Identidade.Should().Be(identidade);
+    }
+
     /// <summary>A linha de fatura com o valor pedido e, além da descrição, só os campos opcionais que o caso informa.</summary>
     private static Lancamento NoCartao(
         Lancamento lancamento,
