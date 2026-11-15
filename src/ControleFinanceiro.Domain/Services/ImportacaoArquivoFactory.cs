@@ -19,17 +19,26 @@ public static class ImportacaoArquivoFactory
         int lidas,
         DateTimeOffset importadaEm)
     {
-        return ImportacaoArquivo.Registrar(conta.IdUsuario, OrigemTransacao.DaConta(conta.Id), layout, periodo, lidas, importadaEm);
+        return ImportacaoArquivo.RegistrarExtrato(conta.IdUsuario, OrigemTransacao.DaConta(conta.Id), layout, periodo, lidas, importadaEm);
     }
 
+    /// <param name="vencimento">A data em que a fatura do arquivo vence.</param>
     /// <param name="lidas">Quantos lançamentos o arquivo trazia.</param>
     public static ImportacaoArquivo Registrar(
         Cartao cartao,
         LayoutArquivoImportacao layout,
         PeriodoArquivo periodo,
+        DateOnly vencimento,
         int lidas,
         DateTimeOffset importadaEm)
     {
-        return ImportacaoArquivo.Registrar(cartao.IdUsuario, OrigemTransacao.DoCartao(cartao.Id), layout, periodo, lidas, importadaEm);
+        return ImportacaoArquivo.RegistrarFatura(
+            cartao.IdUsuario,
+            OrigemTransacao.DoCartao(cartao.Id),
+            layout,
+            periodo,
+            vencimento,
+            lidas,
+            importadaEm);
     }
 }

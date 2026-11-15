@@ -364,6 +364,7 @@ public sealed class DespesaAdiadaFactoryTests
         private readonly IdUsuario _idUsuario;
         private readonly LayoutArquivoImportacao _layout;
         private readonly PeriodoArquivo _periodo;
+        private readonly DateOnly _vencimento;
         private readonly DateTimeOffset _importadaEm;
         private readonly List<Beneficiario> _beneficiarios = [];
         private readonly List<CategoriaDespesa> _categorias = [];
@@ -371,18 +372,24 @@ public sealed class DespesaAdiadaFactoryTests
         public IReadOnlyList<Beneficiario> Beneficiarios => _beneficiarios;
         public IReadOnlyList<CategoriaDespesa> Categorias => _categorias;
 
-        public FaturaDeTeste(IdUsuario idUsuario, LayoutArquivoImportacao layout, PeriodoArquivo periodo, DateTimeOffset importadaEm)
+        public FaturaDeTeste(
+            IdUsuario idUsuario,
+            LayoutArquivoImportacao layout,
+            PeriodoArquivo periodo,
+            DateOnly vencimento,
+            DateTimeOffset importadaEm)
         {
             _idUsuario = idUsuario;
             _layout = layout;
             _periodo = periodo;
+            _vencimento = vencimento;
             _importadaEm = importadaEm;
         }
 
         public IReadOnlyList<Transacao> Importar(Cartao cartao, params Lancamento[] compras)
         {
             Resolver(compras);
-            ImportacaoArquivo importacao = ImportacaoArquivoFactory.Registrar(cartao, _layout, _periodo, compras.Length, _importadaEm);
+            ImportacaoArquivo importacao = ImportacaoArquivoFactory.Registrar(cartao, _layout, _periodo, _vencimento, compras.Length, _importadaEm);
 
             return LoteTransacoesFactory.Criar(_idUsuario, _beneficiarios, _categorias, cartao, importacao, compras).Value;
         }

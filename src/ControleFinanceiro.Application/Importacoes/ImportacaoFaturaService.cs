@@ -143,6 +143,7 @@ public sealed class ImportacaoFaturaService
             cartao,
             layout,
             fatura.PeriodoCartao(cartao.Sufixo),
+            fatura.Vencimento,
             lancamentos.Count,
             importadaEm);
 

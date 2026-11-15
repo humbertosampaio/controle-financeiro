@@ -58,5 +58,8 @@ internal sealed class ImportacaoArquivoConfiguration : IEntityTypeConfiguration<
 
         entity.Property(i => i.ImportadaEm)
             .HasColumnName("importada_em");
+
+        // Provisório: a coluna chega com a migration do vencimento da fatura.
+        entity.Ignore(i => i.DataVencimentoFatura);
     }
 }

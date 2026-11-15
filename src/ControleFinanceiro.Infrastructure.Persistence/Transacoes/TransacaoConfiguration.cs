@@ -60,6 +60,9 @@ internal sealed class TransacaoConfiguration : IEntityTypeConfiguration<Transaca
                 .HasColumnName("id_cartao");
         });
 
+        // Provisório: a coluna chega com a migration do vencimento da fatura.
+        entity.Ignore(t => t.MesVencimentoFatura);
+
         entity.Property(t => t.Data)
             .HasColumnName("data");
 

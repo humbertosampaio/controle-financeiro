@@ -50,14 +50,16 @@ internal sealed class PagamentoFaturaDeTeste
     /// </summary>
     public async Task<DespesaAdiada> GravarAdiadaCobradaAsync(IFixture fixture, Cartao cartao)
     {
+        Lancamento compra = fixture.Create<Lancamento>().SemCategoria().ComoSaida().NaOrigem(TipoOrigem.Cartao);
+
         // O Postgres só grava o instante em UTC, como o TimeProvider da aplicação o dá.
         ImportacaoArquivo importacao = ImportacaoArquivoFactory.Registrar(
             cartao,
             fixture.Create<LayoutArquivoImportacao>(),
             fixture.Create<PeriodoArquivo>(),
+            cartao.VencimentoDaCompra(compra.Data),
             lidas: 1,
             fixture.Create<DateTimeOffset>().ToUniversalTime());
-        Lancamento compra = fixture.Create<Lancamento>().SemCategoria().ComoSaida().NaOrigem(TipoOrigem.Cartao);
         Transacao transacao = (await _banco.GravarFaturaAsync(cartao, importacao, [compra])).Single();
 
         TextoObrigatorio descricao = fixture.Create<TextoObrigatorio>();
