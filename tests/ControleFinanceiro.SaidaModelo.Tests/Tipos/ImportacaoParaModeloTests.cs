@@ -1,9 +1,13 @@
+using AutoFixture.Xunit2;
+using ControleFinanceiro.Application.Despesas;
 using ControleFinanceiro.Application.IA.Saida;
 using ControleFinanceiro.Application.Importacoes;
 using ControleFinanceiro.Domain.Cartoes;
 using ControleFinanceiro.Domain.Contas;
 using ControleFinanceiro.Domain.Importacoes;
 using ControleFinanceiro.Domain.Shared.ValueObjects;
+using ControleFinanceiro.Domain.Transacoes;
+using ControleFinanceiro.Tests.Shared;
 using ControleFinanceiro.Tests.Shared.AutoFixture.Attributes;
 using ControleFinanceiro.Tests.Shared.Respostas;
 using CSharpFunctionalExtensions;
@@ -147,6 +151,32 @@ public sealed class ImportacaoParaModeloTests
         JsonObject json = ImportacaoParaModelo.DaFatura(LayoutArquivoImportacao.C6CartaoCsv, fatura, comAviso).Serializar();
 
         json["avisos"]!.AsArray().Select(aviso => aviso!.GetValue<string>()).Should().Equal("Aviso com o CPF [CPF].");
+    }
+
+    [Theory, UsuarioUnicoAutoData]
+    public void ComCandidatos_Deve_LevarOsCandidatosSemMudarOResumo(
+        ExtratoImportadoDto importado,
+        [Frozen] VencimentoFatura vencimento,
+        Cartao cartao,
+        CenarioPagamentoFatura cenario,
+        Lancamento compra,
+        Lancamento linhaSaida)
+    {
+        ImportacaoParaModelo importacao = ImportacaoParaModelo.DoExtrato(LayoutArquivoImportacao.C6ContaCsv, importado);
+        CandidatoPagamentoFaturaDto candidatoDto = cenario.CandidatoPagamentoFaturaUnico(cartao, vencimento, compra, linhaSaida);
+
+        JsonObject json = importacao.ComCandidatos([candidatoDto.ParaModelo()]).Serializar();
+
+        new ImportacaoLida(json).CandidatosPagamentoFatura.Should().ContainSingle().Which.Transacao.Id.Should().Be(candidatoDto.Saida.Id.Value);
+        json.Texto("resumo").Should().Be(importacao.Resumo);
+    }
+
+    [Theory, DomainAutoData]
+    public void ComCandidatos_Quando_SemCandidatos_Deve_OmitirOCampo(ExtratoImportadoDto importado)
+    {
+        JsonObject json = ImportacaoParaModelo.DoExtrato(LayoutArquivoImportacao.C6ContaCsv, importado).ComCandidatos(candidatos: []).Serializar();
+
+        json.Should().NotContainKey("candidatos_pagamento_fatura");
     }
 
     [Fact]

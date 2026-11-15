@@ -60,6 +60,13 @@ public sealed record ImportacaoParaModelo : ISaidaModelo
     [JsonPropertyName("avisos")]
     public IReadOnlyList<string>? Avisos { get; }
 
+    /// <summary>
+    /// Só na confirmação, e omitida quando não há: as saídas da conta que provavelmente pagaram uma fatura, reveladas pela
+    /// importação gravada. Para ligar, o modelo segue com o <c>prever_pagamento_fatura</c>.
+    /// </summary>
+    [JsonPropertyName("candidatos_pagamento_fatura")]
+    public IReadOnlyList<CandidatoPagamentoFaturaParaModelo>? CandidatosPagamentoFatura { get; }
+
     /// <summary>Na falha que o usuário resolve pela API: o que falta cadastrar.</summary>
     [JsonPropertyName("pendencias")]
     public PendenciasImportacaoParaModelo? Pendencias { get; }
@@ -132,6 +139,13 @@ public sealed record ImportacaoParaModelo : ISaidaModelo
             + ".");
     }
 
+    /// <summary>A <paramref name="importacao"/> como está, com os candidatos; a lista vazia fica de fora do payload.</summary>
+    private ImportacaoParaModelo(ImportacaoParaModelo importacao, IReadOnlyList<CandidatoPagamentoFaturaParaModelo> candidatos)
+        : this(importacao)
+    {
+        CandidatosPagamentoFatura = candidatos.Count == 0 ? null : candidatos;
+    }
+
     private ImportacaoParaModelo(ErroParaModelo erro, PendenciasImportacaoParaModelo? pendencias)
     {
         Erro = erro;
@@ -174,6 +188,12 @@ public sealed record ImportacaoParaModelo : ISaidaModelo
     public static ImportacaoParaModelo Falha(ErroParaModelo erro) => new(erro, pendencias: null);
 
     public static ImportacaoParaModelo Falha(ErroParaModelo erro, PendenciasImportacaoParaModelo pendencias) => new(erro, pendencias);
+
+    /// <summary>
+    /// A mesma importação, já gravada, com os candidatos a pagamento de fatura. O resumo não muda: ele é o que o usuário
+    /// aprovou.
+    /// </summary>
+    public ImportacaoParaModelo ComCandidatos(IReadOnlyList<CandidatoPagamentoFaturaParaModelo> candidatos) => new(this, candidatos);
 
     /// <summary>Se o resumo que o usuário aprovou é o desta importação, pelo <see cref="ResumoAprovado.Confere"/>.</summary>
     public bool ConfereResumo(string resumo) => ResumoAprovado.Confere(Resumo, resumo);

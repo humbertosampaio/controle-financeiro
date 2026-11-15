@@ -1,6 +1,9 @@
+using AutoFixture;
 using ControleFinanceiro.Application.IA.Saida;
+using ControleFinanceiro.Domain.Cartoes;
 using ControleFinanceiro.Domain.Importacoes;
 using ControleFinanceiro.Mcp.Tests.Infraestrutura;
+using ControleFinanceiro.Tests.Shared.AutoFixture.Attributes;
 using ControleFinanceiro.Tests.Shared.Respostas;
 using ModelContextProtocol.Client;
 using ModelContextProtocol.Protocol;
@@ -16,14 +19,20 @@ namespace ControleFinanceiro.Mcp.Tests.Ferramentas;
 public sealed class ConfirmarImportacaoToolTests : IAsyncLifetime
 {
     private const string NomeFerramenta = "confirmar_importacao";
+    private const decimal ValorBoleto = 230.45m;
+
+    private static readonly DateOnly DiaBoleto = new(2026, 3, 3);
+    private static readonly VencimentoFatura VencimentoPagoPeloBoleto = (VencimentoFatura)new DateOnly(2026, 3, 10);
 
     private readonly ServidorMcpFixture _servidor;
     private readonly ImportacaoDeTeste _importacao;
+    private readonly PagamentoFaturaDeTeste _fatura;
 
     public ConfirmarImportacaoToolTests(ServidorMcpFixture servidor)
     {
         _servidor = servidor;
         _importacao = new ImportacaoDeTeste(servidor);
+        _fatura = new PagamentoFaturaDeTeste(servidor);
     }
 
     public Task InitializeAsync() => _servidor.ResetarBancoAsync();
@@ -229,6 +238,46 @@ public sealed class ConfirmarImportacaoToolTests : IAsyncLifetime
         importacao.Novas.Should().Be(0);
         importacao.JaExistentes.Should().Be(importacao.Lidas);
         importacao.ContaNova.Should().BeFalse();
+    }
+
+    [Theory, DomainAutoData]
+    public async Task Confirmar_Quando_FaturaComOTotalDeUmaSaidaDoExtrato_Deve_ApontarASaida(Fixture fixture)
+    {
+        Cartao cartao = await GravarFaturaPagaPeloBoletoAsync(fixture);
+        await _importacao.ResolverAsync(LayoutArquivoImportacao.C6ContaCsv, ImportacaoDeTeste.ExtratoC6);
+        string resumo = await PreverAsync(ImportacaoDeTeste.ExtratoC6, "c6-conta-csv");
+
+        CallToolResult resultado = await _servidor.ClienteMcp.ConfirmarImportacaoAsync(resumo, ImportacaoDeTeste.ExtratoC6, "c6-conta-csv");
+
+        CandidatoPagamentoFaturaLido candidato = new ImportacaoLida(resultado.Json).CandidatosPagamentoFatura.Should().ContainSingle().Subject;
+        candidato.Transacao.Data.Should().Be(DiaBoleto);
+        candidato.IdCartao.Should().Be(cartao.Id.Value);
+        candidato.Vencimento.Should().Be(VencimentoPagoPeloBoleto);
+        candidato.Total.Should().Be(ValorBoleto);
+    }
+
+    // As consultas não enxergam o que a prévia só aplicou em memória: o candidato aparece na confirmação.
+    [Theory, DomainAutoData]
+    public async Task Prever_Quando_FaturaComOTotalDeUmaSaidaDoExtrato_Deve_NaoTrazerCandidatos(Fixture fixture)
+    {
+        await GravarFaturaPagaPeloBoletoAsync(fixture);
+        await _importacao.ResolverAsync(LayoutArquivoImportacao.C6ContaCsv, ImportacaoDeTeste.ExtratoC6);
+
+        CallToolResult previa = await _servidor.ClienteMcp.PreverImportacaoAsync(ImportacaoDeTeste.ExtratoC6, "c6-conta-csv");
+
+        previa.Json.Should().NotContainKey("candidatos_pagamento_fatura");
+    }
+
+    /// <summary>
+    /// A fatura de um cartão, com o vencimento de 10/03/2026 e o total de 230,45: o valor do pagamento de boleto do extrato
+    /// fictício do C6, em 03/03/2026, dentro da janela.
+    /// </summary>
+    private async Task<Cartao> GravarFaturaPagaPeloBoletoAsync(Fixture fixture)
+    {
+        fixture.Inject(_servidor.Usuario.Id);
+        Cartao cartao = fixture.Create<Cartao>();
+        await _fatura.GravarFaturaImportadaAsync(fixture, cartao, VencimentoPagoPeloBoleto, -ValorBoleto);
+        return cartao;
     }
 
     private async Task<string> PreverAsync(string caminho, string layout, string? sufixoConta = null, string? vencimento = null)
