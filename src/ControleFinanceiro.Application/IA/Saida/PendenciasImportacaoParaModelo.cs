@@ -7,7 +7,7 @@ namespace ControleFinanceiro.Application.IA.Saida;
 
 /// <summary>
 /// O que o usuário precisa resolver pela API antes de importar o arquivo. Os beneficiários e as categorias vão só como
-/// quantidade, porque os textos são do arquivo; os finais de cartão vão inteiros, como em <c>listar_cartoes</c>.
+/// quantidade, porque os textos são do arquivo; os finais de cartão vão inteiros, como em <see cref="Tools.ListarCartoes"/>.
 /// </summary>
 public sealed record PendenciasImportacaoParaModelo : ISaidaModelo
 {
