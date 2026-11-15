@@ -92,8 +92,7 @@ public static class DespesaRecorrenteFactory
         GarantirDoUsuario(idUsuario, beneficiario, nameof(beneficiario));
         GarantirDoUsuario(idUsuario, categoria, nameof(categoria));
 
-        if (recorrentesDoUsuario.Any(r => r.IdUsuario != idUsuario))
-            throw new ArgumentException("A lista traz uma despesa recorrente de outro usuário.", nameof(recorrentesDoUsuario));
+        recorrentesDoUsuario.ConferirDono(idUsuario, nameof(recorrentesDoUsuario));
 
         if (recorrentesDoUsuario.FirstOrDefault(r => r.PossuiBeneficiarioEDescricao(beneficiario.Id, descricao)) is DespesaRecorrente repetida)
             return new ErroDespesaRecorrenteJaCadastrada(repetida.Id);

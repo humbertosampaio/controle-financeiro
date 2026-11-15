@@ -78,14 +78,9 @@ public static class ImportacaoArquivoFactory
         IReadOnlyCollection<Cartao> cartoesUsuario,
         IReadOnlyCollection<ImportacaoArquivo> importacoesFaturaMes)
     {
-        if (cartoesFatura.Any(c => c.IdUsuario != idUsuario))
-            throw new ArgumentException("A lista traz um cartão de outro usuário.", nameof(cartoesFatura));
-
-        if (cartoesUsuario.Any(c => c.IdUsuario != idUsuario))
-            throw new ArgumentException("A lista traz um cartão de outro usuário.", nameof(cartoesUsuario));
-
-        if (importacoesFaturaMes.Any(i => i.IdUsuario != idUsuario))
-            throw new ArgumentException("A lista traz uma importação de outro usuário.", nameof(importacoesFaturaMes));
+        cartoesFatura.ConferirDono(idUsuario, nameof(cartoesFatura));
+        cartoesUsuario.ConferirDono(idUsuario, nameof(cartoesUsuario));
+        importacoesFaturaMes.ConferirDono(idUsuario, nameof(importacoesFaturaMes));
 
         FaturaCartao fatura = FaturaCartao.Importada(banco, cartoesFatura, cartoesUsuario, vencimento);
 

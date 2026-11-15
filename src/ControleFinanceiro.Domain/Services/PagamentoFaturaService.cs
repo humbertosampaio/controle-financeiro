@@ -3,6 +3,7 @@ using ControleFinanceiro.Domain.Despesas;
 using ControleFinanceiro.Domain.Shared;
 using ControleFinanceiro.Domain.Shared.ValueObjects;
 using ControleFinanceiro.Domain.Transacoes;
+using ControleFinanceiro.Domain.Usuarios;
 
 namespace ControleFinanceiro.Domain.Services;
 
@@ -72,7 +73,7 @@ public static class PagamentoFaturaService
     /// <exception cref="ArgumentException">Quando uma despesa da lista é de outro usuário: é bug de quem chama.</exception>
     public static UnitResult<Erro> Desfazer(Transacao saida, IReadOnlyCollection<Despesa> despesasPagasPelaSaida)
     {
-        ConferirDespesas(saida, despesasPagasPelaSaida, nameof(despesasPagasPelaSaida));
+        despesasPagasPelaSaida.ConferirDono(saida.IdUsuario, nameof(despesasPagasPelaSaida));
 
         IReadOnlyList<IDespesaDoCartao> doCartao = despesasPagasPelaSaida.OfType<IDespesaDoCartao>().ToList();
         if (doCartao.Count == 0)
@@ -98,16 +99,8 @@ public static class PagamentoFaturaService
         if (cartao.IdUsuario != saida.IdUsuario)
             throw new ArgumentException("O cartão é de outro usuário.", nameof(cartao));
 
-        if (cartoesDoUsuario.Any(c => c.IdUsuario != saida.IdUsuario))
-            throw new ArgumentException("A lista traz um cartão de outro usuário.", nameof(cartoesDoUsuario));
-
-        ConferirDespesas(saida, despesasDoMes, nameof(despesasDoMes));
-        ConferirDespesas(saida, despesasPagasPelaSaida, nameof(despesasPagasPelaSaida));
-    }
-
-    private static void ConferirDespesas(Transacao saida, IReadOnlyCollection<Despesa> despesas, string nomeParametro)
-    {
-        if (despesas.Any(d => d.IdUsuario != saida.IdUsuario))
-            throw new ArgumentException("A lista traz uma despesa de outro usuário.", nomeParametro);
+        cartoesDoUsuario.ConferirDono(saida.IdUsuario, nameof(cartoesDoUsuario));
+        despesasDoMes.ConferirDono(saida.IdUsuario, nameof(despesasDoMes));
+        despesasPagasPelaSaida.ConferirDono(saida.IdUsuario, nameof(despesasPagasPelaSaida));
     }
 }
