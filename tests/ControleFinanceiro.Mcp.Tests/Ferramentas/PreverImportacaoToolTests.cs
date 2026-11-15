@@ -178,7 +178,7 @@ public sealed class PreverImportacaoToolTests : IAsyncLifetime
         CallToolResult resultado = await _servidor.ClienteMcp.PreverImportacaoAsync(caminho, "c6-cartao-csv", vencimento: ImportacaoDeTeste.VencimentoFaturaC6);
 
         new ImportacaoLida(resultado.Json).Avisos.Should().ContainSingle()
-            .Which.Should().Be(Fatura.AvisoSemPagamentoAnterior);
+            .Which.Should().Be("A fatura não traz o pagamento da fatura anterior: se não é a primeira fatura do cartão, confira se o layout do banco mudou.");
     }
 
     [Fact]

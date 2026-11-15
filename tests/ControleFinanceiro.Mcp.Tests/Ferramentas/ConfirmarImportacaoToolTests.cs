@@ -149,8 +149,24 @@ public sealed class ConfirmarImportacaoToolTests : IAsyncLifetime
             vencimento: ImportacaoDeTeste.VencimentoFaturaC6);
 
         ImportacaoLida importacao = new(resultado.Json);
-        importacao.Avisos.Should().Equal(Fatura.AvisoSemPagamentoAnterior);
+        importacao.Avisos.Should().Equal("A fatura não traz o pagamento da fatura anterior: se não é a primeira fatura do cartão, confira se o layout do banco mudou.");
         (await _importacao.LerGravadoAsync()).Transacoes.Should().Be(importacao.Novas).And.BePositive();
+    }
+
+    [Fact]
+    public async Task Confirmar_Quando_OutroVencimento_Deve_DevolverResumoDivergenteSemGravar()
+    {
+        await _importacao.ResolverAsync(LayoutArquivoImportacao.C6CartaoCsv, ImportacaoDeTeste.FaturaC6);
+        string resumo = await PreverAsync(ImportacaoDeTeste.FaturaC6, "c6-cartao-csv", vencimento: ImportacaoDeTeste.VencimentoFaturaC6);
+
+        CallToolResult resultado = await _servidor.ClienteMcp.ConfirmarImportacaoAsync(
+            resumo,
+            ImportacaoDeTeste.FaturaC6,
+            "c6-cartao-csv",
+            vencimento: "2026-04-12");
+
+        ErroLido.DoEnvelope(resultado.Json).Mensagem.Should().Be(ErrosParaModelo.Importacao.ResumoDivergente.Mensagem);
+        (await _importacao.LerGravadoAsync()).Should().Be(Gravado.Nada);
     }
 
     [Fact]

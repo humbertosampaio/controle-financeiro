@@ -38,6 +38,7 @@ public sealed class ImportarFaturaMercadoPagoEndpointTests : IAsyncLifetime
 
         ImportarFaturaResponse corpo = await ImportarComSucessoAsync(idUsuario, FaturaCartaoMercadoPago.Completo());
 
+        corpo.DataVencimento.Should().Be(FaturaCartaoMercadoPago.Vencimento);
         ImportarFaturaResponse.CartaoImportado linha = corpo.Cartoes.Should().ContainSingle().Subject;
         ((SufixoCartao)linha.Sufixo).Should().Be(FaturaCartaoMercadoPago.Sufixo);
         linha.Lidas.Should().Be(FaturaCartaoMercadoPago.QuantidadeLancamentos);

@@ -17,10 +17,6 @@ namespace ControleFinanceiro.Domain.Importacoes;
 /// </remarks>
 public sealed class Fatura : ValueObject
 {
-    /// <summary>A falha do <see cref="ConferirPagamentoAnterior"/>: um texto fixo, sem dado do arquivo.</summary>
-    public const string AvisoSemPagamentoAnterior =
-        "A fatura não traz o pagamento da fatura anterior: se não é a primeira fatura do cartão, confira se o layout do banco mudou.";
-
     /// <summary>
     /// Quantos meses, no máximo, a parcela de uma compra que a fatura traz vence depois do mês da compra, contada a partir
     /// da primeira: nenhum ciclo cadastrável põe a primeira fatura de uma compra mais longe que isso.
@@ -78,13 +74,14 @@ public sealed class Fatura : ValueObject
     /// <summary>
     /// Toda fatura traz o pagamento da anterior, num dos cartões. Falha quando nenhum lançamento é o pagamento
     /// (<see cref="Lancamento.EhPagamentoFatura"/>): na primeira fatura do cartão e na fatura anterior zerada isso é
-    /// esperado, e nas demais costuma ser o layout do banco que mudou. Não impede a importação.
+    /// esperado, e nas demais costuma ser o layout do banco que mudou. Não impede a importação. A falha é um texto fixo,
+    /// sem dado do arquivo.
     /// </summary>
     public Result ConferirPagamentoAnterior()
     {
         return Result.SuccessIf(
             _lancamentos.Any(l => l.Lancamento.EhPagamentoFatura),
-            AvisoSemPagamentoAnterior);
+            "A fatura não traz o pagamento da fatura anterior: se não é a primeira fatura do cartão, confira se o layout do banco mudou.");
     }
 
     /// <summary>

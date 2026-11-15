@@ -4,6 +4,7 @@ namespace ControleFinanceiro.WebApi.Endpoints.Importacoes.PreVisualizarFatura;
 /// O que o usuário precisa preencher ou resolver antes de importar a fatura. Nada dos valores nem dos lançamentos volta
 /// na resposta.
 /// </summary>
+/// <param name="DataVencimento">A data em que a fatura vence: a do arquivo ou a informada.</param>
 /// <param name="FinaisCartao">Os finais de cartão do arquivo, na ordem em que aparecem pela primeira vez.</param>
 /// <param name="Beneficiarios">
 /// Os textos de beneficiário das compras que ainda não são alias de nenhum beneficiário do usuário, um por forma
@@ -15,6 +16,7 @@ namespace ControleFinanceiro.WebApi.Endpoints.Importacoes.PreVisualizarFatura;
 /// dele. Vazia no layout que não traz categoria.
 /// </param>
 public sealed record class PreVisualizarFaturaResponse(
+    DateOnly DataVencimento,
     IReadOnlyList<PreVisualizarFaturaResponse.FinalCartao> FinaisCartao,
     IReadOnlyList<string> Beneficiarios,
     IReadOnlyList<string> CategoriasBanco)

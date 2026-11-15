@@ -46,6 +46,8 @@ public sealed class ImportarFaturaEndpointTests : IAsyncLifetime
 
         resposta.StatusCode.Should().Be(HttpStatusCode.OK);
         ImportarFaturaResponse corpo = (await resposta.Content.ReadFromJsonAsync<ImportarFaturaResponse>())!;
+        corpo.DataVencimento.Should().Be(FaturaCartaoC6.Vencimento);
+        corpo.AvisoVencimentoForaCiclo.Should().BeNull();
         corpo.Cartoes.Select(c => (SufixoCartao)c.Sufixo).Should().Equal(FaturaCartaoC6.SufixoFisico, FaturaCartaoC6.SufixoVirtual);
         corpo.Cartoes.Should().AllSatisfy(c =>
         {
@@ -123,7 +125,7 @@ public sealed class ImportarFaturaEndpointTests : IAsyncLifetime
 
         ImportarFaturaResponse corpo = await ImportarComSucessoAsync(idUsuario, FaturaCartaoC6.SemPagamento());
 
-        corpo.AvisoPagamentoFaturaAnterior.Should().Be(Fatura.AvisoSemPagamentoAnterior);
+        corpo.AvisoPagamentoFaturaAnterior.Should().Be("A fatura não traz o pagamento da fatura anterior: se não é a primeira fatura do cartão, confira se o layout do banco mudou.");
         (await _api.ObterTodosAsync(db => db.Transacoes)).Should().HaveCount(FaturaCartaoC6.QuantidadeLancamentos)
             .And.NotContain(t => t.EhPagamentoFatura);
     }
@@ -172,6 +174,21 @@ public sealed class ImportarFaturaEndpointTests : IAsyncLifetime
         List<Cartao> cartoes = await _api.ObterTodosAsync(db => db.Cartoes);
         cartoes.Should().HaveCount(2);
         cartoes.Single(c => c.Id == IdCartao.From(idCartao)).DiaVencimento.Should().Be((DiaVencimentoCartao)15);
+    }
+
+    [Theory, ApiAutoData]
+    public async Task Post_Quando_CartaoComOutroDiaDeVencimento_Deve_GravarComOAvisoDoCiclo(
+        CadastrarUsuarioRequest cadastro,
+        AdicionarCartaoRequest cartao)
+    {
+        Guid idUsuario = await _api.CadastrarUsuarioAsync(cadastro);
+        await _api.AdicionarCartaoAsync(idUsuario, cartao with { Banco = Banco.C6, Sufixo = FaturaCartaoC6.SufixoFisico, DiaVencimento = 15 });
+        await ResolverPendenciasAsync(idUsuario, FaturaCartaoC6.Completo());
+
+        ImportarFaturaResponse corpo = await ImportarComSucessoAsync(idUsuario, FaturaCartaoC6.Completo());
+
+        corpo.AvisoVencimentoForaCiclo.Should().Be("O vencimento da fatura não fecha com o dia de vencimento cadastrado no cartão: confira a data do vencimento e o ciclo do cartão.");
+        (await _api.ObterTodosAsync(db => db.Transacoes)).Should().HaveCount(FaturaCartaoC6.QuantidadeLancamentos);
     }
 
     [Theory, ApiAutoData]

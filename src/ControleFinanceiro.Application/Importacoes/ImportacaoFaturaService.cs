@@ -191,8 +191,14 @@ public sealed class ImportacaoFaturaService
         IReadOnlyList<DespesaAdiada> despesasAdiadas = criarAdiadas(novasDaFatura);
         await _despesaRepository.AdicionarAsync(despesasAdiadas, ct);
 
+        // Os cartões da mesma fatura têm o mesmo ciclo, e o aviso sai uma vez só.
+        Result vencimentoCicloCartoes = lotes
+            .Select(lote => lote.Cartao.ConferirVencimento(fatura.Vencimento))
+            .FirstOrDefault(conferencia => conferencia.IsFailure, Result.Success());
+
         return new FaturaImportada(
             fatura.Banco,
+            fatura.Vencimento,
             acrescentados
                 .Select(acrescentado => new FaturaImportada.CartaoImportado(
                     acrescentado.Lote.Importacao.Id,
@@ -204,6 +210,7 @@ public sealed class ImportacaoFaturaService
                     acrescentado.Lote.DespesasParceladas.Count,
                     despesasAdiadas.Count(d => d.IdCartao == acrescentado.Lote.Cartao.Id)))
                 .ToArray(),
-            fatura.ConferirPagamentoAnterior());
+            fatura.ConferirPagamentoAnterior(),
+            vencimentoCicloCartoes);
     }
 }

@@ -84,6 +84,7 @@ public sealed class ImportarFaturaEndpoint : Endpoint<ImportarFaturaRequest, Imp
     private static ImportarFaturaResponse Responder(FaturaImportada importada)
     {
         return new ImportarFaturaResponse(
+            importada.Vencimento,
             importada.Cartoes
                 .Select(cartao => new ImportarFaturaResponse.CartaoImportado(
                     cartao.IdImportacao,
@@ -95,7 +96,8 @@ public sealed class ImportarFaturaEndpoint : Endpoint<ImportarFaturaRequest, Imp
                     cartao.DespesasParceladasCriadas,
                     cartao.DespesasAdiadasCriadas))
                 .ToArray(),
-            importada.PagamentoFaturaAnterior.IsFailure ? importada.PagamentoFaturaAnterior.Error : null);
+            importada.PagamentoFaturaAnterior.IsFailure ? importada.PagamentoFaturaAnterior.Error : null,
+            importada.VencimentoCicloCartoes.IsFailure ? importada.VencimentoCicloCartoes.Error : null);
     }
 
     private async Task EnviarFalhaAsync(LayoutArquivoImportacao layout, Falha falha, CancellationToken ct)

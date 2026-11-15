@@ -51,6 +51,7 @@ public sealed class PreVisualizarFaturaEndpointTests : IAsyncLifetime
 
         PreVisualizarFaturaResponse corpo = await PreVisualizarComSucessoAsync(idUsuario, LayoutArquivoImportacao.C6CartaoCsv, FaturaCartaoC6.Completo());
 
+        corpo.DataVencimento.Should().Be(FaturaCartaoC6.Vencimento);
         corpo.FinaisCartao.Should().Equal(
             new PreVisualizarFaturaResponse.FinalCartao(FaturaCartaoC6.SufixoFisico, Cadastrado: false, DiaVencimento: null, DiaFechamento: null),
             new PreVisualizarFaturaResponse.FinalCartao(FaturaCartaoC6.SufixoVirtual, Cadastrado: false, DiaVencimento: null, DiaFechamento: null));

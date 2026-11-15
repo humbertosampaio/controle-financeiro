@@ -209,7 +209,7 @@ public sealed class FaturaTests
     {
         Result result = fatura.ConferirPagamentoAnterior();
 
-        result.Should().FailWith(Fatura.AvisoSemPagamentoAnterior);
+        result.Should().FailWith("A fatura não traz o pagamento da fatura anterior: se não é a primeira fatura do cartão, confira se o layout do banco mudou.");
     }
 
     [Theory, DomainAutoData]

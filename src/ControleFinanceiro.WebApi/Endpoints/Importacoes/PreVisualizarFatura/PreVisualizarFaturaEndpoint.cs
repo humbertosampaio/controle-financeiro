@@ -90,6 +90,7 @@ public sealed class PreVisualizarFaturaEndpoint : Endpoint<PreVisualizarFaturaRe
         PendenciasFatura pendencias = await _pendencias.ListarDaFaturaAsync(idUsuario, fatura, ct);
 
         return new PreVisualizarFaturaResponse(
+            fatura.Vencimento,
             pendencias.Finais.Select(LerFinal).ToArray(),
             pendencias.Beneficiarios.Select(a => a.TextoOriginal).ToArray(),
             pendencias.CategoriasBanco.Select(a => a.TextoOriginal).ToArray());

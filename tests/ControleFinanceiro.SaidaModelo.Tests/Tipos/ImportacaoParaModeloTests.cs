@@ -63,12 +63,12 @@ public sealed class ImportacaoParaModeloTests
     [Theory, DomainAutoData]
     public void Serializar_Quando_Fatura_Deve_TerSomenteOsCamposPermitidos(Fatura fatura, FaturaImportada importada)
     {
-        FaturaImportada comPagamento = importada with { PagamentoFaturaAnterior = Result.Success() };
+        FaturaImportada semAvisos = importada with { PagamentoFaturaAnterior = Result.Success(), VencimentoCicloCartoes = Result.Success() };
 
-        JsonObject json = ImportacaoParaModelo.DaFatura(LayoutArquivoImportacao.C6CartaoCsv, fatura, comPagamento).Serializar();
+        JsonObject json = ImportacaoParaModelo.DaFatura(LayoutArquivoImportacao.C6CartaoCsv, fatura, semAvisos).Serializar();
 
         json.Select(campo => campo.Key).Should().BeEquivalentTo(
-            "layout", "banco", "periodo", "cartoes", "lidas", "novas", "ja_existentes", "resumo");
+            "layout", "banco", "periodo", "vencimento", "cartoes", "lidas", "novas", "ja_existentes", "resumo");
         json["cartoes"]!.AsArray().Should().OnlyContain(cartao => cartao!.AsObject().Select(campo => campo.Key).SequenceEqual(
             new[] { "final", "lidas", "novas", "ja_existentes", "despesas_parceladas", "despesas_adiadas" }));
     }
@@ -94,13 +94,39 @@ public sealed class ImportacaoParaModeloTests
     }
 
     [Theory, DomainAutoData]
-    public void Serializar_Quando_FaturaSemPagamentoAnterior_Deve_LevarOAvisoFixo(Fatura fatura, FaturaImportada importada, string erro)
+    public void Serializar_Quando_Fatura_Deve_LevarOVencimento(Fatura fatura, FaturaImportada importada)
     {
-        FaturaImportada semPagamento = importada with { PagamentoFaturaAnterior = Result.Failure(erro) };
+        JsonObject json = ImportacaoParaModelo.DaFatura(LayoutArquivoImportacao.C6CartaoCsv, fatura, importada).Serializar();
 
-        JsonObject json = ImportacaoParaModelo.DaFatura(LayoutArquivoImportacao.C6CartaoCsv, fatura, semPagamento).Serializar();
+        DateOnly.Parse(json.Texto("vencimento"), CultureInfo.InvariantCulture).Should().Be(importada.Vencimento);
+    }
 
-        json["avisos"]!.AsArray().Select(aviso => aviso!.GetValue<string>()).Should().Equal(Fatura.AvisoSemPagamentoAnterior);
+    [Theory, DomainAutoData]
+    public void Serializar_Quando_AvisosDaFatura_Deve_LevarOTextoDeCadaUmNaOrdem(Fatura fatura, FaturaImportada importada)
+    {
+        FaturaImportada comAvisos = importada with
+        {
+            PagamentoFaturaAnterior = Result.Failure("Aviso fixo do pagamento."),
+            VencimentoCicloCartoes = Result.Failure("Aviso fixo do ciclo."),
+        };
+
+        JsonObject json = ImportacaoParaModelo.DaFatura(LayoutArquivoImportacao.C6CartaoCsv, fatura, comAvisos).Serializar();
+
+        json["avisos"]!.AsArray().Select(aviso => aviso!.GetValue<string>()).Should().Equal("Aviso fixo do pagamento.", "Aviso fixo do ciclo.");
+    }
+
+    [Theory, DomainAutoData]
+    public void Serializar_Quando_AvisoComDocumento_Deve_MascararODocumento(Fatura fatura, FaturaImportada importada, Cpf cpf)
+    {
+        FaturaImportada comAviso = importada with
+        {
+            PagamentoFaturaAnterior = Result.Failure($"Aviso com o CPF {cpf}."),
+            VencimentoCicloCartoes = Result.Success(),
+        };
+
+        JsonObject json = ImportacaoParaModelo.DaFatura(LayoutArquivoImportacao.C6CartaoCsv, fatura, comAviso).Serializar();
+
+        json["avisos"]!.AsArray().Select(aviso => aviso!.GetValue<string>()).Should().Equal("Aviso com o CPF [CPF].");
     }
 
     [Fact]
@@ -178,7 +204,7 @@ public sealed class ImportacaoParaModeloTests
 
         FaturaImportada.CartaoImportado cartao = importada.Cartoes[0];
         resumo.Should()
-            .StartWith($"Importa a fatura c6-cartao-csv do {importada.Banco.Name}, de ")
+            .StartWith($"Importa a fatura c6-cartao-csv do {importada.Banco.Name} com vencimento em {importada.Vencimento:dd/MM/yyyy}, de ")
             .And.Contain($"cartão final {cartao.Sufixo}, {cartao.Lidas} lidas, {cartao.Novas} novas e {cartao.JaExistentes} já existentes, ")
             .And.NotContain(cartao.IdImportacao.Value.ToString())
             .And.NotContain(cartao.IdCartao.Value.ToString());
