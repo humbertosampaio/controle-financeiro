@@ -53,13 +53,17 @@ internal sealed class PagamentoFaturaDeTeste
         Lancamento compra = fixture.Create<Lancamento>().SemCategoria().ComoSaida().NaOrigem(TipoOrigem.Cartao);
 
         // O Postgres só grava o instante em UTC, como o TimeProvider da aplicação o dá.
-        ImportacaoArquivo importacao = ImportacaoArquivoFactory.Registrar(
-            cartao,
-            fixture.Create<LayoutArquivoImportacao>(),
-            fixture.Create<PeriodoArquivo>(),
-            cartao.VencimentoNoMes(compra.Data),
-            lidas: 1,
-            fixture.Create<DateTimeOffset>().ToUniversalTime());
+        ImportacaoArquivo importacao = ImportacaoArquivoFactory
+            .Registrar(
+                cartao,
+                cartoesUsuario: [cartao],
+                importacoesFaturaMes: [],
+                fixture.Create<LayoutArquivoImportacao>(),
+                fixture.Create<PeriodoArquivo>(),
+                cartao.VencimentoNoMes(compra.Data),
+                lidas: 1,
+                fixture.Create<DateTimeOffset>().ToUniversalTime())
+            .Value;
         Transacao transacao = (await _banco.GravarFaturaAsync(cartao, importacao, [compra])).Single();
 
         TextoObrigatorio descricao = fixture.Create<TextoObrigatorio>();

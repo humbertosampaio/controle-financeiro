@@ -46,6 +46,29 @@ public sealed class FaturaCartaoTests
     }
 
     [Theory, DomainAutoData]
+    public void Importada_Deve_JuntarOsCartoesDoArquivoEOsDaMesmaFatura(
+        Cartao cartao,
+        SufixoCartao outroSufixo,
+        VencimentoFatura vencimento)
+    {
+        Cartao outroFinal = cartao.OutroFinal(outroSufixo);
+        Cartao cartaoOutroBanco = cartao.EmOutroBanco();
+
+        FaturaCartao result = FaturaCartao.Importada([cartao], [outroFinal, cartaoOutroBanco], vencimento);
+
+        result.Cartoes.Should().BeEquivalentTo([cartao.Id, outroFinal.Id]);
+        result.Vencimento.Should().Be(vencimento);
+    }
+
+    [Theory, DomainAutoData]
+    public void Importada_Quando_SemCartoesArquivo_Deve_FicarSemCartoes(Cartao cartao, VencimentoFatura vencimento)
+    {
+        FaturaCartao result = FaturaCartao.Importada(cartoesArquivo: [], [cartao], vencimento);
+
+        result.Cartoes.Should().BeEmpty();
+    }
+
+    [Theory, DomainAutoData]
     public void Contem_Quando_CartaoDeOutraFatura_Deve_SerFalso(Cartao cartao, MesReferencia mesVencimento)
     {
         Cartao deOutroBanco = cartao.EmOutroBanco();

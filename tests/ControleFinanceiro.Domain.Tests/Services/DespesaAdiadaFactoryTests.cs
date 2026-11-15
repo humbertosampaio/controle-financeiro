@@ -424,7 +424,9 @@ public sealed class DespesaAdiadaFactoryTests
         public IReadOnlyList<Transacao> Importar(Cartao cartao, VencimentoFatura vencimento, params Lancamento[] compras)
         {
             Resolver(compras);
-            ImportacaoArquivo importacao = ImportacaoArquivoFactory.Registrar(cartao, _layout, _periodo, vencimento, compras.Length, _importadaEm);
+            ImportacaoArquivo importacao = ImportacaoArquivoFactory
+                .Registrar(cartao, cartoesUsuario: [cartao], importacoesFaturaMes: [], _layout, _periodo, vencimento, compras.Length, _importadaEm)
+                .Value;
 
             return LoteTransacoesFactory.Criar(_idUsuario, _beneficiarios, _categorias, cartao, importacao, compras).Value;
         }

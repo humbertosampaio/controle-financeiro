@@ -85,7 +85,16 @@ public sealed class ImportacaoFaturaService
         return await fatura
             .ConferirVencimento()
             .Bind(() => CartaoFactory.ObterDosFinais(idUsuario, cartoesDoUsuario, fatura.Banco, fatura.Sufixos))
-            .Bind(cartoes => MontarLotes(idUsuario, beneficiariosDoUsuario, categoriasDoUsuario, parceladasDoUsuario, layout, fatura, cartoes))
+            .Bind(cartoes => MontarLotes(
+                idUsuario,
+                cartoesDoUsuario,
+                importacoesFaturaMes: [],
+                beneficiariosDoUsuario,
+                categoriasDoUsuario,
+                parceladasDoUsuario,
+                layout,
+                fatura,
+                cartoes))
             .Map(lotes => AcrescentarAsync(fatura, lotes, novas => DespesaAdiadaFactory.CriarDaFatura(
                 idUsuario,
                 beneficiariosDoUsuario,
@@ -99,6 +108,8 @@ public sealed class ImportacaoFaturaService
     /// <summary>Para no primeiro lote que falhar.</summary>
     private Result<IReadOnlyList<LoteCartao>, Erro> MontarLotes(
         IdUsuario idUsuario,
+        IReadOnlyList<Cartao> cartoesUsuario,
+        IReadOnlyList<ImportacaoArquivo> importacoesFaturaMes,
         IReadOnlyList<Beneficiario> beneficiariosDoUsuario,
         IReadOnlyList<CategoriaDespesa> categoriasDoUsuario,
         IReadOnlyList<DespesaParcelada> parceladasDoUsuario,
@@ -113,6 +124,8 @@ public sealed class ImportacaoFaturaService
         {
             Result<LoteCartao, Erro> lote = MontarLote(
                 idUsuario,
+                cartoesUsuario,
+                importacoesFaturaMes,
                 beneficiariosDoUsuario,
                 categoriasDoUsuario,
                 parceladasDoUsuario,
@@ -131,6 +144,8 @@ public sealed class ImportacaoFaturaService
 
     private static Result<LoteCartao, Erro> MontarLote(
         IdUsuario idUsuario,
+        IReadOnlyList<Cartao> cartoesUsuario,
+        IReadOnlyList<ImportacaoArquivo> importacoesFaturaMes,
         IReadOnlyList<Beneficiario> beneficiariosDoUsuario,
         IReadOnlyList<CategoriaDespesa> categoriasDoUsuario,
         IReadOnlyList<DespesaParcelada> parceladasDoUsuario,
@@ -140,28 +155,31 @@ public sealed class ImportacaoFaturaService
         DateTimeOffset importadaEm)
     {
         IReadOnlyList<Lancamento> lancamentos = fatura.LancamentosCartao(cartao.Sufixo);
-        ImportacaoArquivo importacao = ImportacaoArquivoFactory.Registrar(
-            cartao,
-            layout,
-            fatura.PeriodoCartao(cartao.Sufixo),
-            fatura.Vencimento,
-            lancamentos.Count,
-            importadaEm);
 
-        return LoteTransacoesFactory
-            .Criar(idUsuario, beneficiariosDoUsuario, categoriasDoUsuario, cartao, importacao, lancamentos)
-            .Map(transacoes =>
-            {
-                IReadOnlyList<DespesaParcelada> despesasParceladas = DespesaParceladaFactory.CriarDaFatura(
-                    idUsuario,
-                    beneficiariosDoUsuario,
-                    categoriasDoUsuario,
-                    cartao,
-                    fatura,
-                    parceladasDoUsuario);
+        return ImportacaoArquivoFactory
+            .Registrar(
+                cartao,
+                cartoesUsuario,
+                importacoesFaturaMes,
+                layout,
+                fatura.PeriodoCartao(cartao.Sufixo),
+                fatura.Vencimento,
+                lancamentos.Count,
+                importadaEm)
+            .Bind(importacao => LoteTransacoesFactory
+                .Criar(idUsuario, beneficiariosDoUsuario, categoriasDoUsuario, cartao, importacao, lancamentos)
+                .Map(transacoes =>
+                {
+                    IReadOnlyList<DespesaParcelada> despesasParceladas = DespesaParceladaFactory.CriarDaFatura(
+                        idUsuario,
+                        beneficiariosDoUsuario,
+                        categoriasDoUsuario,
+                        cartao,
+                        fatura,
+                        parceladasDoUsuario);
 
-                return (cartao, importacao, transacoes, despesasParceladas);
-            });
+                    return (cartao, importacao, transacoes, despesasParceladas);
+                }));
     }
 
     /// <param name="criarAdiadas">

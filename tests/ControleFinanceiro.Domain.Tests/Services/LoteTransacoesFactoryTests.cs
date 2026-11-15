@@ -11,6 +11,7 @@ using ControleFinanceiro.Domain.Transacoes;
 using ControleFinanceiro.Domain.Usuarios;
 using ControleFinanceiro.Tests.Shared;
 using ControleFinanceiro.Tests.Shared.AutoFixture.Attributes;
+using ControleFinanceiro.Tests.Shared.AutoFixture.SpecimenBuilders;
 using CSharpFunctionalExtensions;
 
 namespace ControleFinanceiro.Domain.Tests.Services;
@@ -704,9 +705,7 @@ public sealed class LoteTransacoesFactoryTests
             : base(fixture =>
             {
                 fixture.Inject(TipoOrigem.Cartao);
-                fixture.Register(
-                    (Cartao cartao, LayoutArquivoImportacao layout, PeriodoArquivo periodo, DateTimeOffset importadaEm) =>
-                        ImportacaoArquivoFactory.Registrar(cartao, layout, periodo, fixture.Create<VencimentoFatura>(), fixture.Create<byte>(), importadaEm));
+                fixture.Customizations.Insert(0, new ImportacaoFaturaGenerator());
             })
         {
         }

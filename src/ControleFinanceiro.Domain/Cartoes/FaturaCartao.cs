@@ -20,15 +20,26 @@ public sealed class FaturaCartao : ValueObject
     }
 
     /// <summary>A fatura do cartão no mês, com os cartões do usuário que saem nela e o próprio cartão.</summary>
-    public static FaturaCartao DoCartao(Cartao cartao, IEnumerable<Cartao> cartoesDoUsuario, MesReferencia mesVencimento)
+    public static FaturaCartao DoCartao(Cartao cartao, IEnumerable<Cartao> cartoesDoUsuario, MesReferencia mesVencimento) =>
+        Importada([cartao], cartoesDoUsuario, cartao.VencimentoNoMes(mesVencimento));
+
+    /// <summary>
+    /// A fatura de um arquivo importado: os <paramref name="cartoesArquivo"/>, os cartões do usuário que saem na mesma
+    /// fatura que algum deles e o vencimento exato do arquivo, e não o projetado pelo ciclo.
+    /// </summary>
+    public static FaturaCartao Importada(
+        IEnumerable<Cartao> cartoesArquivo,
+        IEnumerable<Cartao> cartoesUsuario,
+        VencimentoFatura vencimento)
     {
-        HashSet<IdCartao> cartoes = cartoesDoUsuario
-            .Where(c => c.EhDaMesmaFaturaQue(cartao))
+        Cartao[] arquivo = cartoesArquivo.ToArray();
+        HashSet<IdCartao> cartoes = cartoesUsuario
+            .Where(c => arquivo.Any(c.EhDaMesmaFaturaQue))
+            .Concat(arquivo)
             .Select(c => c.Id)
-            .Append(cartao.Id)
             .ToHashSet();
 
-        return new FaturaCartao(cartoes, cartao.VencimentoNoMes(mesVencimento));
+        return new FaturaCartao(cartoes, vencimento);
     }
 
     /// <summary>A fatura do cartão de id informado no mês, como no <see cref="DoCartao(Cartao, IEnumerable{Cartao}, MesReferencia)"/>.</summary>

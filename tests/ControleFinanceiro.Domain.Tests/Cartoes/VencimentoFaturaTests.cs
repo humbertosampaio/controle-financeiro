@@ -44,6 +44,33 @@ public sealed class VencimentoFaturaTests
         VencimentoFatura.Criar(mes.NoDia(dia)).Should().Be(projetado);
     }
 
+    [Theory, DomainAutoData]
+    public void EhOutraDataNoMesmoMes_Quando_MesmaData_Deve_SerFalso(DateOnly data)
+    {
+        VencimentoFatura sut = VencimentoFatura.Criar(data);
+
+        sut.EhOutraDataNoMesmoMes(VencimentoFatura.Criar(data)).Should().BeFalse();
+    }
+
+    [Theory, DomainAutoData]
+    public void EhOutraDataNoMesmoMes_Quando_OutraDataNoMesmoMes_Deve_SerVerdadeiro(
+        MesReferencia mes,
+        DiaVencimentoCartao dia,
+        DiaVencimentoCartao outroDia)
+    {
+        VencimentoFatura sut = VencimentoFatura.Projetado(mes, dia);
+
+        sut.EhOutraDataNoMesmoMes(VencimentoFatura.Projetado(mes, outroDia)).Should().BeTrue();
+    }
+
+    [Theory, DomainAutoData]
+    public void EhOutraDataNoMesmoMes_Quando_OutroMes_Deve_SerFalso(MesReferencia mes, MesReferencia outroMes, DiaVencimentoCartao dia)
+    {
+        VencimentoFatura sut = VencimentoFatura.Projetado(mes, dia);
+
+        sut.EhOutraDataNoMesmoMes(VencimentoFatura.Projetado(outroMes, dia)).Should().BeFalse();
+    }
+
     [Fact]
     public void Ordem_Deve_SerADaData()
     {
