@@ -89,7 +89,7 @@ namespace ControleFinanceiro.Infrastructure.Persistence.Migrations
 
                             t.HasCheckConstraint("CK_cartoes_dia_fechamento", "dia_fechamento BETWEEN 1 AND 28");
 
-                            t.HasCheckConstraint("CK_cartoes_dia_vencimento", "dia_vencimento BETWEEN 1 AND 28");
+                            t.HasCheckConstraint("CK_cartoes_dia_vencimento", "dia_vencimento BETWEEN 1 AND 24");
 
                             t.HasCheckConstraint("CK_cartoes_sufixo", "sufixo ~ '^[0-9]{4}$'");
                         });
@@ -403,6 +403,10 @@ namespace ControleFinanceiro.Infrastructure.Persistence.Migrations
                         .HasColumnType("uuid")
                         .HasColumnName("id");
 
+                    b.Property<DateOnly?>("DataVencimentoFatura")
+                        .HasColumnType("date")
+                        .HasColumnName("data_vencimento_fatura");
+
                     b.Property<Guid>("IdUsuario")
                         .HasColumnType("uuid")
                         .HasColumnName("id_usuario");
@@ -457,6 +461,8 @@ namespace ControleFinanceiro.Infrastructure.Persistence.Migrations
                             t.HasCheckConstraint("CK_importacoes_origem", "num_nonnulls(id_conta, id_cartao) = 1");
 
                             t.HasCheckConstraint("CK_importacoes_periodo", "periodo_inicio <= periodo_fim");
+
+                            t.HasCheckConstraint("CK_importacoes_vencimento_fatura", "(id_cartao IS NULL) = (data_vencimento_fatura IS NULL)");
                         });
                 });
 
@@ -506,6 +512,10 @@ namespace ControleFinanceiro.Infrastructure.Persistence.Migrations
                         .HasColumnType("uuid")
                         .HasColumnName("id_usuario");
 
+                    b.Property<DateOnly?>("MesVencimentoFatura")
+                        .HasColumnType("date")
+                        .HasColumnName("mes_vencimento_fatura");
+
                     b.Property<decimal>("Valor")
                         .HasPrecision(14, 2)
                         .HasColumnType("numeric(14,2)")
@@ -547,6 +557,8 @@ namespace ControleFinanceiro.Infrastructure.Persistence.Migrations
                     b.ToTable("transacoes", null, t =>
                         {
                             t.HasCheckConstraint("CK_transacoes_chave_deduplicacao", "chave_deduplicacao ~ '^[0-9a-f]{64}$'");
+
+                            t.HasCheckConstraint("CK_transacoes_mes_vencimento_fatura", "(id_cartao IS NULL) = (mes_vencimento_fatura IS NULL)");
 
                             t.HasCheckConstraint("CK_transacoes_origem", "num_nonnulls(id_conta, id_cartao) = 1");
 

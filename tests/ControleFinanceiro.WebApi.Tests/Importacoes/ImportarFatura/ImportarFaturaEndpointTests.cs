@@ -73,6 +73,7 @@ public sealed class ImportarFaturaEndpointTests : IAsyncLifetime
         importacaoFisico.Layout.Should().BeSameAs(LayoutArquivoImportacao.C6CartaoCsv);
         importacaoFisico.Periodo.Should().Be((PeriodoArquivo)(FaturaCartaoC6.PrimeiraCompraFisico, FaturaCartaoC6.UltimaCompraFisico));
         importacaoFisico.Lidas.Should().Be(FaturaCartaoC6.LancamentosPorCartao);
+        importacoes.Should().OnlyContain(i => i.DataVencimentoFatura == FaturaCartaoC6.Vencimento);
 
         List<Transacao> transacoes = await _api.ObterTodosAsync(db => db.Transacoes);
         transacoes.Should().HaveCount(FaturaCartaoC6.QuantidadeLancamentos);
@@ -81,6 +82,7 @@ public sealed class ImportarFaturaEndpointTests : IAsyncLifetime
             t.IdUsuario.Should().Be(IdUsuario.From(idUsuario));
             t.IdImportacao.Should().Be(importacaoFisico.Id);
         });
+        transacoes.Should().OnlyContain(t => t.MesVencimentoFatura == FaturaCartaoC6.MesVencimento);
         transacoes.Sum(t => t.Valor).Should().Be(213.75m);
     }
 

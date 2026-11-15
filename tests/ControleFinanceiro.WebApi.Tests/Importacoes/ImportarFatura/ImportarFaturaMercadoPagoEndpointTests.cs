@@ -54,12 +54,14 @@ public sealed class ImportarFaturaMercadoPagoEndpointTests : IAsyncLifetime
         importacao.Layout.Should().BeSameAs(LayoutArquivoImportacao.MercadoPagoCartaoCsv);
         importacao.Origem.Should().Be(OrigemTransacao.DoCartao(cartao.Id));
         importacao.Periodo.Should().Be((PeriodoArquivo)(FaturaCartaoMercadoPago.PrimeiraData, FaturaCartaoMercadoPago.UltimaData));
+        importacao.DataVencimentoFatura.Should().Be(FaturaCartaoMercadoPago.Vencimento);
 
         List<Transacao> transacoes = await _api.ObterTodosAsync(db => db.Transacoes);
         transacoes.Should().HaveCount(FaturaCartaoMercadoPago.QuantidadeLancamentos).And.AllSatisfy(t =>
         {
             t.Origem.Should().Be(OrigemTransacao.DoCartao(cartao.Id));
             t.IdImportacao.Should().Be(importacao.Id);
+            t.MesVencimentoFatura.Should().Be((MesReferencia)FaturaCartaoMercadoPago.Vencimento);
         });
         transacoes.Sum(t => t.Valor).Should().Be(FaturaCartaoMercadoPago.SomaLancamentos);
     }
@@ -137,6 +139,23 @@ public sealed class ImportarFaturaMercadoPagoEndpointTests : IAsyncLifetime
             .Where(t => t.EhParcelada)
             .Select(t => t.Parcela)
             .Should().BeEquivalentTo([(Parcela)(5, 10), (Parcela)(6, 10)]);
+    }
+
+    // Decisão 10 da #185: a reimportação não muda o que já foi gravado, e só a transação nova pega o mês da fatura nova.
+    [Theory, ApiAutoData]
+    public async Task Post_Quando_FaturaSeguinteComOutroVencimento_Deve_ManterOMesDasTransacoesJaGravadas(CadastrarUsuarioRequest cadastro)
+    {
+        Guid idUsuario = await _api.CadastrarUsuarioAsync(cadastro);
+        await ResolverPendenciasAsync(idUsuario, FaturaCartaoMercadoPago.Completo());
+        _ = await ImportarComSucessoAsync(idUsuario, FaturaCartaoMercadoPago.Completo());
+
+        _ = await ImportarComSucessoAsync(idUsuario, FaturaCartaoMercadoPago.NaFaturaSeguinte());
+
+        List<Transacao> transacoes = await _api.ObterTodosAsync(db => db.Transacoes);
+        Parcela parcelaNova = (Parcela)(6, 10);
+        MesReferencia mesPrimeiraFatura = (MesReferencia)FaturaCartaoMercadoPago.Vencimento;
+        transacoes.Single(t => t.Parcela == parcelaNova).MesVencimentoFatura.Should().Be(mesPrimeiraFatura.Posterior());
+        transacoes.Where(t => t.Parcela != parcelaNova).Should().OnlyContain(t => t.MesVencimentoFatura == mesPrimeiraFatura);
     }
 
     [Theory, ApiAutoData]

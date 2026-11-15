@@ -33,6 +33,18 @@ internal static class FaturaCartaoMercadoPago
     /// <summary>A fatura seguinte da compra parcelada: a mesma compra, com o mesmo número, agora na parcela 6/10.</summary>
     public static byte[] ComParcelaSeguinte() => Trocar(ParcelaCompraAntiga, "\"100000000001\";\"1234\";\"6\";\"10\"");
 
+    /// <summary>
+    /// A fatura seguinte inteira: a parcela 6/10 da compra parcelada e o vencimento em 10/05/2026, com as mesmas compras à
+    /// vista de março, que já estavam na fatura anterior.
+    /// </summary>
+    public static byte[] NaFaturaSeguinte()
+    {
+        string conteudo = File.ReadAllText(_caminho, Encoding.UTF8)
+            .Replace(ParcelaCompraAntiga, "\"100000000001\";\"1234\";\"6\";\"10\"", StringComparison.Ordinal)
+            .Replace("\"04/2026\";\"10/04/2026\";", "\"05/2026\";\"10/05/2026\";", StringComparison.Ordinal);
+        return Encoding.UTF8.GetBytes(conteudo);
+    }
+
     /// <summary>O arquivo com as duas compras iguais trazendo também o mesmo número da transação.</summary>
     public static byte[] ComLinhasIguais() => Trocar("\"100000000006\"", "\"100000000005\"");
 
