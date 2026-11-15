@@ -16,7 +16,9 @@ namespace ControleFinanceiro.Application.Importacoes;
 
 /// <summary>
 /// O que a importação de uma fatura faz depois de ler o arquivo, em qualquer rota: confere o vencimento com as compras
-/// (<see cref="Fatura.ConferirVencimento"/>), que todo final já tem cartão e que todo texto de beneficiário e toda categoria do banco já são alias e acrescenta, de cada cartão, a
+/// (<see cref="Fatura.ConferirVencimento"/>), que todo final já tem cartão, que a fatura não foi importada com outro
+/// vencimento no mesmo mês (<see cref="ImportacaoArquivoFactory.ConferirVencimentoFatura"/>) e que todo texto de
+/// beneficiário e toda categoria do banco já são alias e acrescenta, de cada cartão, a
 /// importação, só as transações novas e as despesas parceladas que faltam, e, das compras à vista novas sem despesa
 /// prevista, as despesas adiadas já cobradas. O <see cref="AplicarAsync"/> deixa tudo no escopo sem gravar, para a
 /// prévia que descarta o escopo; o <see cref="ImportarAsync"/> grava num commit só. Nada é gravado quando o resultado é
@@ -67,7 +69,8 @@ public sealed class ImportacaoFaturaService
 
     /// <summary>
     /// Confere o vencimento, obtém os cartões e monta o lote de cada um; só acrescenta ao escopo se o vencimento fechar
-    /// com as compras, nenhum final ficar sem cartão e nenhum lote falhar. Não grava.
+    /// com as compras, nenhum final ficar sem cartão, a fatura não tiver sido importada com outro vencimento no mesmo mês
+    /// e nenhum lote falhar. Não grava.
     /// </summary>
     /// <param name="idUsuario">Um usuário que existe.</param>
     public async Task<Result<FaturaImportada, Erro>> AplicarAsync(
@@ -81,11 +84,21 @@ public sealed class ImportacaoFaturaService
         IReadOnlyList<CategoriaDespesa> categoriasDoUsuario = await _categoriaDespesaRepository.ListarAsync(ct);
         IReadOnlyList<DespesaParcelada> parceladasDoUsuario = await _despesaRepository.ListarParceladasAsync(ct);
         IReadOnlyList<DespesaAdiada> adiadasDoUsuario = await _despesaRepository.ListarAdiadasAsync(ct);
+        IReadOnlyList<ImportacaoArquivo> importacoesFaturaMes = await _importacaoRepository.ListarImportacoesFaturaEmAsync(fatura.Vencimento.Mes, ct);
 
         return await fatura
             .ConferirVencimento()
             .Bind(() => CartaoFactory.ObterDosFinais(idUsuario, cartoesDoUsuario, fatura.Banco, fatura.Sufixos))
-            .Bind(cartoes => MontarLotes(idUsuario, beneficiariosDoUsuario, categoriasDoUsuario, parceladasDoUsuario, layout, fatura, cartoes))
+            .Bind(cartoes => MontarLotes(
+                idUsuario,
+                cartoesDoUsuario,
+                importacoesFaturaMes,
+                beneficiariosDoUsuario,
+                categoriasDoUsuario,
+                parceladasDoUsuario,
+                layout,
+                fatura,
+                cartoes))
             .Map(lotes => AcrescentarAsync(fatura, lotes, novas => DespesaAdiadaFactory.CriarDaFatura(
                 idUsuario,
                 beneficiariosDoUsuario,
@@ -96,9 +109,34 @@ public sealed class ImportacaoFaturaService
                 novas), ct));
     }
 
+    /// <summary>
+    /// Confere, sem aplicar a importação, que a fatura não foi importada com outro vencimento no mesmo mês, para a prévia
+    /// que não registra importação. Os cartões da fatura são os dos finais já cadastrados: final sem cartão não tem
+    /// importação, e a falta dele aparece nas pendências.
+    /// </summary>
+    /// <param name="idUsuario">Um usuário que existe.</param>
+    public async Task<UnitResult<Erro>> ConferirVencimentoImportadoAsync(IdUsuario idUsuario, Fatura fatura, CancellationToken ct)
+    {
+        IReadOnlyList<Cartao> cartoesUsuario = await _cartaoRepository.ListarAsync(ct);
+        IReadOnlyList<ImportacaoArquivo> importacoesFaturaMes = await _importacaoRepository.ListarImportacoesFaturaEmAsync(fatura.Vencimento.Mes, ct);
+        Cartao[] cartoesFatura = fatura.Sufixos
+            .Select(sufixo => CartaoFactory.ObterDoFinal(idUsuario, cartoesUsuario, fatura.Banco, sufixo))
+            .Choose()
+            .ToArray();
+
+        return ImportacaoArquivoFactory.ConferirVencimentoFatura(
+            idUsuario,
+            fatura.Vencimento,
+            cartoesFatura,
+            cartoesUsuario,
+            importacoesFaturaMes);
+    }
+
     /// <summary>Para no primeiro lote que falhar.</summary>
     private Result<IReadOnlyList<LoteCartao>, Erro> MontarLotes(
         IdUsuario idUsuario,
+        IReadOnlyList<Cartao> cartoesUsuario,
+        IReadOnlyList<ImportacaoArquivo> importacoesFaturaMes,
         IReadOnlyList<Beneficiario> beneficiariosDoUsuario,
         IReadOnlyList<CategoriaDespesa> categoriasDoUsuario,
         IReadOnlyList<DespesaParcelada> parceladasDoUsuario,
@@ -113,6 +151,8 @@ public sealed class ImportacaoFaturaService
         {
             Result<LoteCartao, Erro> lote = MontarLote(
                 idUsuario,
+                cartoesUsuario,
+                importacoesFaturaMes,
                 beneficiariosDoUsuario,
                 categoriasDoUsuario,
                 parceladasDoUsuario,
@@ -131,6 +171,8 @@ public sealed class ImportacaoFaturaService
 
     private static Result<LoteCartao, Erro> MontarLote(
         IdUsuario idUsuario,
+        IReadOnlyList<Cartao> cartoesUsuario,
+        IReadOnlyList<ImportacaoArquivo> importacoesFaturaMes,
         IReadOnlyList<Beneficiario> beneficiariosDoUsuario,
         IReadOnlyList<CategoriaDespesa> categoriasDoUsuario,
         IReadOnlyList<DespesaParcelada> parceladasDoUsuario,
@@ -140,28 +182,31 @@ public sealed class ImportacaoFaturaService
         DateTimeOffset importadaEm)
     {
         IReadOnlyList<Lancamento> lancamentos = fatura.LancamentosCartao(cartao.Sufixo);
-        ImportacaoArquivo importacao = ImportacaoArquivoFactory.Registrar(
-            cartao,
-            layout,
-            fatura.PeriodoCartao(cartao.Sufixo),
-            fatura.Vencimento,
-            lancamentos.Count,
-            importadaEm);
 
-        return LoteTransacoesFactory
-            .Criar(idUsuario, beneficiariosDoUsuario, categoriasDoUsuario, cartao, importacao, lancamentos)
-            .Map(transacoes =>
-            {
-                IReadOnlyList<DespesaParcelada> despesasParceladas = DespesaParceladaFactory.CriarDaFatura(
-                    idUsuario,
-                    beneficiariosDoUsuario,
-                    categoriasDoUsuario,
-                    cartao,
-                    fatura,
-                    parceladasDoUsuario);
+        return ImportacaoArquivoFactory
+            .Registrar(
+                cartao,
+                cartoesUsuario,
+                importacoesFaturaMes,
+                layout,
+                fatura.PeriodoCartao(cartao.Sufixo),
+                fatura.Vencimento,
+                lancamentos.Count,
+                importadaEm)
+            .Bind(importacao => LoteTransacoesFactory
+                .Criar(idUsuario, beneficiariosDoUsuario, categoriasDoUsuario, cartao, importacao, lancamentos)
+                .Map(transacoes =>
+                {
+                    IReadOnlyList<DespesaParcelada> despesasParceladas = DespesaParceladaFactory.CriarDaFatura(
+                        idUsuario,
+                        beneficiariosDoUsuario,
+                        categoriasDoUsuario,
+                        cartao,
+                        fatura,
+                        parceladasDoUsuario);
 
-                return (cartao, importacao, transacoes, despesasParceladas);
-            });
+                    return (cartao, importacao, transacoes, despesasParceladas);
+                }));
     }
 
     /// <param name="criarAdiadas">

@@ -1,5 +1,6 @@
 using ControleFinanceiro.Domain.Contas;
 using ControleFinanceiro.Domain.Importacoes;
+using ControleFinanceiro.Domain.Shared.ValueObjects;
 using ControleFinanceiro.Domain.Transacoes;
 using CSharpFunctionalExtensions;
 using Microsoft.EntityFrameworkCore;
@@ -24,6 +25,17 @@ internal sealed class ImportacaoRepository : IImportacaoRepository
             .OrderByDescending(i => i.Periodo.Fim)
             .ThenByDescending(i => i.ImportadaEm)
             .FirstOrDefaultAsync(cancellationToken);
+    }
+
+    public async Task<IReadOnlyList<ImportacaoArquivo>> ListarImportacoesFaturaEmAsync(
+        MesReferencia mesVencimento,
+        CancellationToken cancellationToken)
+    {
+        return await _dbSet
+            .Where(i => i.VencimentoFatura != null
+                && i.VencimentoFatura >= mesVencimento.Inicio
+                && i.VencimentoFatura <= mesVencimento.Fim)
+            .ToListAsync(cancellationToken);
     }
 
     // Um filtro por coluna, e não a comparação das duas, para a consulta usar o índice da conta.

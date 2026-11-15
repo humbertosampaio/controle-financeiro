@@ -35,6 +35,18 @@ public sealed class ImportacaoArquivo : AggregateRoot<IdImportacao>, IPertenceAo
     /// <summary>O mês em que vence a fatura do arquivo, o do <see cref="VencimentoFatura"/>; nulo no extrato de uma conta.</summary>
     public MesReferencia? MesVencimentoFatura => VencimentoFatura?.Mes;
 
+    /// <summary>
+    /// Se esta importação é de um cartão da <paramref name="fatura"/>, com vencimento no mesmo mês do dela, mas em outra
+    /// data, pelo <see cref="Cartoes.VencimentoFatura.EhOutraDataNoMesmoMes"/>. O extrato de uma conta nunca é.
+    /// </summary>
+    public bool TemOutroVencimentoNoMesmoMes(FaturaCartao fatura)
+    {
+        return Origem.IdCartao is IdCartao idCartao
+            && fatura.Contem(idCartao)
+            && VencimentoFatura is not null
+            && VencimentoFatura.EhOutraDataNoMesmoMes(fatura.Vencimento);
+    }
+
     private ImportacaoArquivo()
     {
     }

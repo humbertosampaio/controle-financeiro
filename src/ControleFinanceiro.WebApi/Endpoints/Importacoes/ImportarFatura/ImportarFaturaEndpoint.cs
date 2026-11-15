@@ -109,13 +109,14 @@ public sealed class ImportarFaturaEndpoint : Endpoint<ImportarFaturaRequest, Imp
                 await Send.ErrorsAsync(StatusCodes.Status422UnprocessableEntity, ct);
                 break;
 
-            case Falha.Dominio(ErroVencimentoIncompativelComFatura erro) when LayoutArquivoImportacao.FaturasVencimentoInformado.Contains(layout):
-                AddError(r => r.DataVencimento, erro.Descricao);
+            case Falha.Dominio(ErroVencimentoIncompativelComFatura or ErroFaturaJaImportadaComOutroVencimento) vencimento
+                when LayoutArquivoImportacao.FaturasVencimentoInformado.Contains(layout):
+                AddError(r => r.DataVencimento, vencimento.Erro.Descricao);
                 await Send.ErrorsAsync(StatusCodes.Status422UnprocessableEntity, ct);
                 break;
 
-            case Falha.Dominio(ErroVencimentoIncompativelComFatura erro):
-                AddError(r => r.Arquivo, erro.Descricao);
+            case Falha.Dominio(ErroVencimentoIncompativelComFatura or ErroFaturaJaImportadaComOutroVencimento) vencimento:
+                AddError(r => r.Arquivo, vencimento.Erro.Descricao);
                 await Send.ErrorsAsync(StatusCodes.Status422UnprocessableEntity, ct);
                 break;
 

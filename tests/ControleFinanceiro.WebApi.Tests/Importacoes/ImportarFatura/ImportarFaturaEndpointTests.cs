@@ -535,27 +535,64 @@ public sealed class ImportarFaturaEndpointTests : IAsyncLifetime
         (await _api.ObterParceladasAsync()).Select(d => d.IdUsuario).Should().BeEquivalentTo([IdUsuario.From(idUsuario), IdUsuario.From(idOutro)]);
     }
 
-    // Decisão 10 da #185: o mesmo arquivo reimportado com outro vencimento, como o C6 com a data digitada errada e depois
-    // corrigida, não muda nada do que foi gravado e só registra a importação nova, com a outra data.
+    // Uma fatura tem um vencimento só (#191): o mesmo arquivo reimportado com outra data no mesmo mês, como o C6 com a data
+    // digitada errada, é recusado, e o que foi gravado na primeira importação fica como estava.
     [Theory, ApiAutoData]
-    public async Task Post_Quando_MesmoArquivoComOutroVencimento_Deve_ManterOQueJaFoiGravado(CadastrarUsuarioRequest cadastro)
+    public async Task Post_Quando_MesmoArquivoComOutroVencimentoNoMesmoMes_Deve_RetornarErroNoVencimentoSemGravar(CadastrarUsuarioRequest cadastro)
     {
         Guid idUsuario = await _api.CadastrarUsuarioAsync(cadastro);
         await ResolverPendenciasAsync(idUsuario, FaturaCartaoC6.Completo());
         await ImportarComSucessoAsync(idUsuario, FaturaCartaoC6.Completo());
-        VencimentoFatura outroVencimento = (VencimentoFatura)new DateOnly(2026, 03, 24);
 
         using HttpResponseMessage resposta = await _api.ImportarFaturaAsync(
             idUsuario,
             LayoutArquivoImportacao.C6CartaoCsv,
             FaturaCartaoC6.Completo(),
-            outroVencimento);
+            FaturaCartaoC6.Vencimento.AddDays(3));
 
-        resposta.StatusCode.Should().Be(HttpStatusCode.OK, await resposta.Content.ReadAsStringAsync());
-        ImportarFaturaResponse corpo = (await resposta.Content.ReadFromJsonAsync<ImportarFaturaResponse>())!;
-        corpo.Cartoes.Should().OnlyContain(c => c.Novas == 0 && c.DespesasParceladasCriadas == 0 && c.DespesasAdiadasCriadas == 0);
-        (await _api.ObterTodosAsync(db => db.Transacoes)).Should().OnlyContain(t => t.MesVencimentoFatura == FaturaCartaoC6.MesVencimento);
-        (await _api.ObterTodosAsync(db => db.Importacoes)).Count(i => i.VencimentoFatura == outroVencimento).Should().Be(2);
+        resposta.StatusCode.Should().Be(HttpStatusCode.UnprocessableEntity);
+        (await resposta.CamposComErroAsync()).Should().Equal("dataVencimento");
+        (await _api.ObterTodosAsync(db => db.Importacoes)).Should()
+            .HaveCount(2)
+            .And.OnlyContain(i => i.VencimentoFatura == (VencimentoFatura)FaturaCartaoC6.Vencimento);
+        (await _api.ObterTodosAsync(db => db.Transacoes)).Should()
+            .HaveCount(FaturaCartaoC6.QuantidadeLancamentos)
+            .And.OnlyContain(t => t.MesVencimentoFatura == FaturaCartaoC6.MesVencimento);
+    }
+
+    // O arquivo parcial, só com o final físico, seguido do outro final da mesma fatura com outra data no mesmo mês: sem
+    // linha em comum entre os dois, o segundo também é recusado.
+    [Theory, ApiAutoData]
+    public async Task Post_Quando_OutroFinalMesmaFaturaComOutroVencimentoNoMesmoMes_Deve_RetornarErroNoVencimentoSemGravar(
+        CadastrarUsuarioRequest cadastro)
+    {
+        Guid idUsuario = await _api.CadastrarUsuarioAsync(cadastro);
+        await ResolverPendenciasAsync(idUsuario, FaturaCartaoC6.Completo());
+        await ImportarComSucessoAsync(idUsuario, FaturaCartaoC6.ApenasLinhasFinal(FaturaCartaoC6.SufixoFisico));
+
+        using HttpResponseMessage resposta = await _api.ImportarFaturaAsync(
+            idUsuario,
+            LayoutArquivoImportacao.C6CartaoCsv,
+            FaturaCartaoC6.ApenasLinhasFinal(FaturaCartaoC6.SufixoVirtual),
+            FaturaCartaoC6.Vencimento.AddDays(3));
+
+        resposta.StatusCode.Should().Be(HttpStatusCode.UnprocessableEntity);
+        (await resposta.CamposComErroAsync()).Should().Equal("dataVencimento");
+        (await _api.ObterTodosAsync(db => db.Importacoes)).Should().ContainSingle();
+        (await _api.ObterTodosAsync(db => db.Transacoes)).Should().HaveCount(FaturaCartaoC6.LancamentosPorCartao);
+    }
+
+    [Theory, ApiAutoData]
+    public async Task Post_Quando_OutroFinalMesmaFaturaComOMesmoVencimento_Deve_Importar(CadastrarUsuarioRequest cadastro)
+    {
+        Guid idUsuario = await _api.CadastrarUsuarioAsync(cadastro);
+        await ResolverPendenciasAsync(idUsuario, FaturaCartaoC6.Completo());
+        await ImportarComSucessoAsync(idUsuario, FaturaCartaoC6.ApenasLinhasFinal(FaturaCartaoC6.SufixoFisico));
+
+        ImportarFaturaResponse corpo = await ImportarComSucessoAsync(idUsuario, FaturaCartaoC6.ApenasLinhasFinal(FaturaCartaoC6.SufixoVirtual));
+
+        corpo.Cartoes.Should().ContainSingle().Which.Novas.Should().Be(FaturaCartaoC6.LancamentosPorCartao);
+        (await _api.ObterTodosAsync(db => db.Transacoes)).Should().HaveCount(FaturaCartaoC6.QuantidadeLancamentos);
     }
 
     // O banco empurrou o vencimento do dia 10, o do cartão, para o dia 13: a adiada e a parcela do arquivo vencem nele, e as

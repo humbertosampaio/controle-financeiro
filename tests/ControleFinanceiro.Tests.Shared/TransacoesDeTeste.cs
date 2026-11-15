@@ -49,7 +49,9 @@ public sealed class TransacoesDeTeste
     {
         Lancamento lancamento = linha.NaOrigem(TipoOrigem.Cartao);
         IReadOnlyList<Beneficiario> beneficiarios = BeneficiariosResolvidos.Dos(_idUsuario, [lancamento]);
-        ImportacaoArquivo importacao = ImportacaoArquivoFactory.Registrar(cartao, _layout, _periodo, _vencimentoFatura, lidas: 1, _importadaEm);
+        ImportacaoArquivo importacao = ImportacaoArquivoFactory
+            .Registrar(cartao, cartoesUsuario: [cartao], importacoesFaturaMes: [], _layout, _periodo, _vencimentoFatura, lidas: 1, _importadaEm)
+            .Value;
         return LoteTransacoesFactory.Criar(_idUsuario, beneficiarios, categoriasDoUsuario: [], cartao, importacao, [lancamento]).Value.Single();
     }
 }

@@ -15,6 +15,12 @@ public sealed class VencimentoFatura : SimpleValueObject<DateOnly>
     /// <summary>O mês em que a fatura vence, o da data.</summary>
     public MesReferencia Mes => Value;
 
+    /// <summary>
+    /// Se o <paramref name="outro"/> vence no mesmo mês, mas em outra data: as duas não podem ser da mesma fatura, que tem
+    /// um vencimento só.
+    /// </summary>
+    public bool EhOutraDataNoMesmoMes(VencimentoFatura outro) => Mes == outro.Mes && this != outro;
+
     /// <summary>O vencimento exato da fatura que veio em arquivo.</summary>
     public static VencimentoFatura Criar(DateOnly data) => new(data);
 

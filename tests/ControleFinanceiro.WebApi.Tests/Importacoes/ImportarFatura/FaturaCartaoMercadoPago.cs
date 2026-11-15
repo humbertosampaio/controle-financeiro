@@ -51,6 +51,9 @@ internal static class FaturaCartaoMercadoPago
     /// <summary>O arquivo com outro vencimento em toda linha, antes das compras de março.</summary>
     public static byte[] ComVencimentoAntesDasCompras() => Trocar("\"04/2026\";\"10/04/2026\";", "\"03/2026\";\"01/03/2026\";");
 
+    /// <summary>O arquivo com o vencimento em outra data do mesmo mês em toda linha, depois das compras.</summary>
+    public static byte[] ComVencimentoEmOutraDataNoMesmoMes() => Trocar("\"04/2026\";\"10/04/2026\";", "\"04/2026\";\"13/04/2026\";");
+
     /// <summary>O arquivo com a coluna <c>status</c> renomeada, fora do prompt.</summary>
     public static byte[] ComColunaRenomeada() => Trocar("\"status\"", "\"situacao\"");
 

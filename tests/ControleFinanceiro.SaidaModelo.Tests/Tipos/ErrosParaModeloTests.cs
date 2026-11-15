@@ -47,6 +47,7 @@ public sealed class ErrosParaModeloTests
         ErrosParaModelo.Importacao.VencimentoObrigatorio,
         ErrosParaModelo.Importacao.VencimentoNoArquivo,
         ErrosParaModelo.Importacao.VencimentoIncompativel,
+        ErrosParaModelo.Importacao.FaturaJaImportadaComOutroVencimento,
         ErrosParaModelo.Importacao.ContaDeOutroTipo,
         ErrosParaModelo.Importacao.CartoesNaoResolvidos,
         ErrosParaModelo.Importacao.BeneficiariosNaoResolvidos,
@@ -67,6 +68,7 @@ public sealed class ErrosParaModeloTests
         { ErroBeneficiariosNaoResolvidos.Instancia, ErrosParaModelo.Importacao.BeneficiariosNaoResolvidos },
         { ErroCategoriasBancoNaoResolvidas.Instancia, ErrosParaModelo.Importacao.CategoriasNaoResolvidas },
         { ErroVencimentoIncompativelComFatura.Instancia, ErrosParaModelo.Importacao.VencimentoIncompativel },
+        { ErroFaturaJaImportadaComOutroVencimento.Instancia, ErrosParaModelo.Importacao.FaturaJaImportadaComOutroVencimento },
     };
 
     public static readonly TheoryData<FalhaOrigemArquivoImportacao, ErroParaModelo> FalhasDaOrigem = new()

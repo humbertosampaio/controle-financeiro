@@ -153,6 +153,27 @@ public sealed class PreverImportacaoToolTests : IAsyncLifetime
     }
 
     [Fact]
+    public async Task Prever_Quando_FaturaJaImportadaComOutroVencimentoNoMesmoMes_Deve_DevolverFaturaJaImportadaSemGravar()
+    {
+        await _importacao.ResolverAsync(LayoutArquivoImportacao.C6CartaoCsv, ImportacaoDeTeste.FaturaC6);
+        CallToolResult previa = await _servidor.ClienteMcp.PreverImportacaoAsync(
+            ImportacaoDeTeste.FaturaC6,
+            "c6-cartao-csv",
+            vencimento: ImportacaoDeTeste.VencimentoFaturaC6);
+        await _servidor.ClienteMcp.ConfirmarImportacaoAsync(
+            new ImportacaoLida(previa.Json).Resumo,
+            ImportacaoDeTeste.FaturaC6,
+            "c6-cartao-csv",
+            vencimento: ImportacaoDeTeste.VencimentoFaturaC6);
+        Gravado gravadoAposPrimeira = await _importacao.LerGravadoAsync();
+
+        CallToolResult resultado = await _servidor.ClienteMcp.PreverImportacaoAsync(ImportacaoDeTeste.FaturaC6, "c6-cartao-csv", vencimento: "2026-04-13");
+
+        ErroLido.DoEnvelope(resultado.Json).Mensagem.Should().Be(ErrosParaModelo.Importacao.FaturaJaImportadaComOutroVencimento.Mensagem);
+        (await _importacao.LerGravadoAsync()).Should().Be(gravadoAposPrimeira);
+    }
+
+    [Fact]
     public async Task Prever_Quando_FaturaMercadoPagoComVencimento_Deve_DevolverVencimentoNoArquivoSemGravar()
     {
         await _importacao.ResolverAsync(LayoutArquivoImportacao.MercadoPagoCartaoCsv, ImportacaoDeTeste.FaturaMercadoPago);

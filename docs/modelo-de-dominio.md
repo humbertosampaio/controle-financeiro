@@ -43,6 +43,7 @@ classDiagram
             Criar(DateOnly)
             Projetado(MesReferencia, DiaVencimentoCartao)
             Mes
+            EhOutraDataNoMesmoMes(VencimentoFatura)
             DateOnly (implícito)
         }
         class FaturaCartao {
@@ -50,6 +51,7 @@ classDiagram
             Cartoes
             Vencimento
             DoCartao(Cartao, cartoesDoUsuario, MesReferencia)
+            Importada(cartoesArquivo, cartoesUsuario, VencimentoFatura)
             DoCartao(IdCartao, cartoesDoUsuario, MesReferencia)
             Contem(IdCartao)
         }
@@ -200,6 +202,7 @@ classDiagram
             VencimentoFatura
             MesVencimentoFatura
             PeriodoNaoImportado()
+            TemOutroVencimentoNoMesmoMes(FaturaCartao)
         }
     }
 
@@ -258,6 +261,7 @@ classDiagram
     OrigemTransacao ..> Cartao : IdCartao
     ImportacaoArquivo *-- OrigemTransacao
     ImportacaoArquivo *-- "0..1" VencimentoFatura
+    ImportacaoArquivo ..> FaturaCartao : TemOutroVencimentoNoMesmoMes
     ImportacaoArquivo ..> Usuario : IdUsuario
 ```
 
@@ -273,10 +277,10 @@ classDiagram
 - **Cobrança e pagamento**: só a despesa muda, e a `Transacao` é apenas lida; a cobrança e o pagamento da simples só nascem e só se desfazem pelo `VinculoTransacaoService`, e o pagamento da despesa do cartão nasce pelo `PagamentoFaturaService`. A `DespesaSimples` é paga pela própria saída da conta: o `Pagamento` guarda a transação (`IdTransacao`), a data e o valor efetivos. Na despesa do cartão há dois fatos: a **cobrança**, a compra lançada na fatura, que liga a transação do cartão à `DespesaAdiada` ou à `ParcelaDespesa` e fixa o valor real (`Cobranca`), e o **pagamento**, a saída da conta que pagou a fatura. Cobrar não paga: o `Pagamento` continua como está, pendente, ou pago, na parcela que nasceu paga. Sem status novo: "cobrada e não paga" é derivado, e o valor vigente é o cobrado. Uma transação cobra no máximo uma despesa ou parcela, e cada uma é cobrada por uma compra só (`ErroDespesaJaCobrada`); uma saída paga no máximo uma simples, enquanto um pagamento de fatura paga várias despesas do cartão, e só elas: a saída que paga uma não paga a outra. Valor diferente do projetado é aceito, sem tolerância e sem mudar as parcelas seguintes. O `Pago` sem transação tem o efetivo igual ao projetado, e a simples que nasceu paga sem transação aceita a saída. Desfazer é pela origem da transação: o `DesfazerPagamento` volta a simples para pendente, com os efetivos nulos, e o `DesfazerCobranca` tira a cobrança; a despesa do cartão paga por transação falha com `ErroDespesaJaPaga`, e a parcela que nasceu paga perde a cobrança e continua paga. A transação ligada não pode ser apagada: as FKs impedem, conferidas só no commit para a cascata do usuário funcionar. O `ConciliacaoParcelasService` cobra as parcelas de uma vez, sempre pela regra da parcelada do `VinculoTransacaoService`, e a idempotência vem do estado: só entram transação livre e parcela sem cobrança. Limitação aceita: conciliar de novo refaz uma cobrança desfeita, porque a recusa não é registrada (#123). Quem desfaz para trocar gêmeas liga manualmente em seguida. O domínio fala em cobrança e pagamento; "vínculo" fica na fronteira (rotas, `prever_vinculo`, `confirmar_vinculo`, `ErroTransacaoJaVinculada`).
 - **Pagamento da fatura**: o `PagamentoFaturaService` paga a fatura com uma saída da conta, de qualquer conta do usuário, informada com um cartão e o mês de vencimento; a entrada no cartão nunca paga. A fatura (`FaturaCartao`) junta os cartões que saem nela (`Cartao.EhDaMesmaFaturaQue`: mesmo banco, dia de vencimento e dia de fechamento), como os finais do C6, e o mês de vencimento. Só a despesa do cartão (`IDespesaDoCartao`: a adiada e a parcelada) é paga assim: o `PagarFatura`, que só o serviço alcança, paga o pagamento que vence no mês da fatura quando a despesa é de um cartão dela e o pagamento tem cobrança e está pendente (`Pagamento.PagarPelaFatura`), com a data da saída e o valor cobrado como efetivo, e deixa o resto como está, inclusive a parcela que nasceu paga. Cada despesa muda sozinha. Repetir com a mesma saída e a mesma fatura paga as cobranças que chegaram depois; a saída que já pagou outro mês ou outra fatura (`FoiPagaSoPelaFatura` falso) falha com `ErroTransacaoPagaOutraFatura`, e, sem nada a pagar, com `ErroFaturaSemCobrancaPendente`, que costuma ser o mês ou o cartão errado. Limitações aceitas: pagamento parcial e rotativo ficam fora, e valor e data da saída não bloqueiam, porque o acerto da ligação é de quem liga. O `Desfazer` desfaz o pagamento pela saída: as despesas do cartão e as parcelas que ela pagou voltam a pendente pelo `DesfazerPagamento` (`Pagamento.Reabrir(IdTransacao)`), com a cobrança preservada, e cada uma muda sozinha. A despesa do cartão que a saída não pagou falha com `ErroTransacaoNaoPagouADespesa`, que vem da própria despesa; o serviço só cria esse erro quando a saída não pagou nenhuma despesa do cartão. A simples paga pela mesma saída fica como está, porque se desfaz pelo `VinculoTransacaoService`.
 - **ChaveCompraParcelada**: reconhece a mesma compra parcelada entre faturas, por cartão, data, descrição normalizada e total de parcelas. Recebe a descrição já como `TextoNormalizado`. A `DespesaParcelada` não a guarda: o `EhDaCompra` a monta para comparar.
-- **Transacao**: valor com sinal do ponto de vista do usuário (negativo é saída). Só nasce pela `LoteTransacoesFactory`, que confere que a conta ou o cartão é do usuário, que a importação é da mesma origem, que os lançamentos são do mesmo tipo de origem, que todo texto de beneficiário do lote já é alias de um beneficiário do usuário e que toda categoria do banco já é alias de uma categoria dele, e garante a `ChaveDeduplicacao` do lote. A identidade é o `IdTransacao`; a chave só reconhece o lançamento numa reimportação. Guarda a importação que a criou: a reimportação não a recria, então ela fica ligada à primeira importação que a trouxe. O `TextoBeneficiario`, calculado e sem coluna, é o texto do arquivo que diz quem recebeu o dinheiro de uma saída, pela mesma regra do `Lancamento`. O beneficiário é o que tem esse texto como alias, resolvido na leitura: a transação não guarda o id dele. O `EhPagamentoFatura` é copiado do lançamento; a transação importada antes da marca fica falsa, e a reimportação não a atualiza. O `MesVencimentoFatura` é o mês da fatura que trouxe a transação do cartão, copiado da importação que a criou, e é nulo na da conta. A reimportação com outro vencimento não o muda: só as transações novas pegam o mês novo.
+- **Transacao**: valor com sinal do ponto de vista do usuário (negativo é saída). Só nasce pela `LoteTransacoesFactory`, que confere que a conta ou o cartão é do usuário, que a importação é da mesma origem, que os lançamentos são do mesmo tipo de origem, que todo texto de beneficiário do lote já é alias de um beneficiário do usuário e que toda categoria do banco já é alias de uma categoria dele, e garante a `ChaveDeduplicacao` do lote. A identidade é o `IdTransacao`; a chave só reconhece o lançamento numa reimportação. Guarda a importação que a criou: a reimportação não a recria, então ela fica ligada à primeira importação que a trouxe. O `TextoBeneficiario`, calculado e sem coluna, é o texto do arquivo que diz quem recebeu o dinheiro de uma saída, pela mesma regra do `Lancamento`. O beneficiário é o que tem esse texto como alias, resolvido na leitura: a transação não guarda o id dele. O `EhPagamentoFatura` é copiado do lançamento; a transação importada antes da marca fica falsa, e a reimportação não a atualiza. O `MesVencimentoFatura` é o mês da fatura que trouxe a transação do cartão, copiado da importação que a criou, e é nulo na da conta. A importação de uma fatura com vencimento em outro mês, que é outra fatura, não o muda: só as transações novas pegam o mês novo. Com outra data no mesmo mês, a importação é recusada (`ImportacaoArquivo`).
 - **OrigemTransacao**: conta ou cartão, nunca os dois; o `Tipo` (`TipoOrigem`) diz qual.
 - **Parcela**: a parcela que o banco informou (`3/10`), com total a partir de 2 e número de 1 ao total. A compra à vista, e a `1/1`, não têm parcela; a `Transacao` diz se é parcelada pelo `EhParcelada`. Só a fatura traz parcela, então a transação com parcela é sempre de um cartão, e o `CK_transacoes_parcela` repete isso no banco. Não é a `ParcelaDespesa`.
-- **ImportacaoArquivo**: só nasce pela `ImportacaoArquivoFactory`, que tira o usuário e a origem da própria conta ou do próprio cartão, antes do lote de transações. A da fatura (`RegistrarFatura`) guarda o vencimento (`VencimentoFatura`, com o `MesVencimentoFatura` derivado), e a do extrato (`RegistrarExtrato`) fica sem ela. Quantas eram novas não fica nela: são as transações ligadas a ela. `PeriodoNaoImportado` aponta o buraco entre a importação anterior da mesma origem e esta.
+- **ImportacaoArquivo**: só nasce pela `ImportacaoArquivoFactory`, que tira o usuário e a origem da própria conta ou do próprio cartão, antes do lote de transações. A da fatura (`RegistrarFatura`) guarda o vencimento (`VencimentoFatura`, com o `MesVencimentoFatura` derivado), e a do extrato (`RegistrarExtrato`) fica sem ela. Uma fatura tem um vencimento só: o `Registrar` do cartão falha com `ErroFaturaJaImportadaComOutroVencimento`, sem registrar nada, quando um cartão da mesma fatura (`Cartao.EhDaMesmaFaturaQue`, pelo ciclo atual dos cartões) já tem uma importação com vencimento no mesmo mês e em outra data (`TemOutroVencimentoNoMesmoMes`, que recebe a `FaturaCartao.Importada` do arquivo e no extrato é sempre falso). A conferência (`ConferirVencimentoFatura`) é pública, para a prévia da API, que não registra importação, e compara com qualquer importação desses cartões no mês, e não só com as das linhas repetidas: um arquivo parcial seguido de outro sem linha em comum também é recusado. Não há índice único, porque a regra depende do ciclo dos cartões, que não é coluna da importação. Corrigir um vencimento importado errado depende de desfazer a importação (#54). Quantas eram novas não fica nela: são as transações ligadas a ela. `PeriodoNaoImportado` aponta o buraco entre a importação anterior da mesma origem e esta.
 
 ### Erros
 
@@ -290,6 +294,7 @@ Cada falha prevista que é uma situação de negócio com nome próprio é um ti
 | `ErroBeneficiariosNaoResolvidos` | `Beneficiarios` | O arquivo a importar tem uma saída cujo texto de beneficiário ainda não é alias de nenhum beneficiário do usuário. Não traz os textos: a tela refaz a prévia. |
 | `ErroCategoriasBancoNaoResolvidas` | `Categorias` | O arquivo a importar tem um lançamento cuja categoria do banco ainda não é alias de nenhuma categoria do usuário. Não traz os textos: a tela refaz a prévia. |
 | `ErroContaDeOutroTipo` | `Contas` | O usuário já tem a conta, mas de outro tipo. |
+| `ErroFaturaJaImportadaComOutroVencimento` | `Importacoes` | Um cartão da mesma fatura já tem importação com vencimento no mesmo mês e em outra data, pela `ImportacaoArquivoFactory.ConferirVencimentoFatura`: cada fatura tem um vencimento só. |
 | `ErroVencimentoIncompativelComFatura` | `Importacoes` | O vencimento da fatura não fecha com as datas das compras dela, pela regra do `Fatura.ConferirVencimento`: costuma ser a data digitada errada ou o arquivo de outra fatura. |
 | `ErroOrigemNaoPertenceAoUsuario` | `Transacoes` | A conta ou o cartão do lote é de outro usuário. |
 | `ErroIdentificadorRepetido` | `Transacoes` | Dois lançamentos do lote têm o mesmo id do banco. |
@@ -407,7 +412,8 @@ classDiagram
     class ImportacaoArquivoFactory {
         <<service>>
         Registrar(ContaBancaria, layout, periodo, lidas, importadaEm)
-        Registrar(Cartao, layout, periodo, VencimentoFatura, lidas, importadaEm)
+        Registrar(Cartao, cartoesUsuario, importacoesFaturaMes, layout, periodo, VencimentoFatura, lidas, importadaEm)
+        ConferirVencimentoFatura(IdUsuario, VencimentoFatura, cartoesFatura, cartoesUsuario, importacoesFaturaMes)
     }
     class LoteTransacoesFactory {
         <<service>>
@@ -478,7 +484,7 @@ Puros, sem infraestrutura: recebem os agregados e as listas de que precisam, e q
 | `ConciliacaoParcelasService` | Cobra cada saída parcelada livre, no cartão, na parcela de mesmo número da mesma compra (`Conciliar`), pelo `VinculoTransacaoService`. Entre gêmeas, casa primeiro o valor igual ao projetado e depois a ordem de valor (`EmparelhamentoParcelas`), com desempate pelo id. A transação sem parcela livre conta em `SemParcela` e é tentada de novo na próxima chamada; entrada, valor zero e transação sem parcela, como toda a da conta, são ignorados. Só vincula: não cria despesa nem altera transação. |
 | `AlteracaoCategoriaDespesaService` | Troca a categoria de uma despesa, conferindo que a despesa e a categoria são do mesmo usuário. |
 | `DespesaRecorrenteFactory` | Cria a despesa recorrente no crédito (`CriarNoCredito`) ou sem cartão (`CriarSemCartao`), conferindo que não repete beneficiário e descrição de uma recorrente do usuário. |
-| `ImportacaoArquivoFactory` | Registra a importação de um arquivo com o usuário e a origem da própria conta ou do próprio cartão; a do cartão, com o vencimento da fatura. |
+| `ImportacaoArquivoFactory` | Registra a importação de um arquivo com o usuário e a origem da própria conta ou do próprio cartão; a do cartão, com o vencimento da fatura, recusada quando a mesma fatura já foi importada com outro vencimento no mesmo mês. |
 | `GeracaoDespesasDoMesService` | Gera as despesas de um mês a partir das recorrentes, ligadas a elas: `DespesaSimples` pendente, com o pagamento projetado no dia da ocorrência, ou `DespesaAdiada` com pagamento no vencimento do cartão no mês pedido e a ocorrência no mês da compra que cai nessa fatura (`Cartao.DataOcorrenciaQueVenceEm`). Recebe as despesas do usuário no mês e gera só para as recorrentes que ainda não têm uma, então gerar o mesmo mês de novo não duplica; o índice único `(id_despesa_recorrente, mes_referencia)` é a rede. |
 | `LoteTransacoesFactory` | Confere que a origem é do usuário, que a importação é da mesma origem, que os lançamentos são do mesmo tipo de origem, que nenhum id de banco se repete no lote, que todo texto de beneficiário já é alias de um beneficiário do usuário e que toda categoria do banco já é alias de uma categoria dele; calcula as chaves e cria as transações ligadas à importação. |
 | `ConferenciaSomaPeriodo` | Confere, antes de gravar, que as transações do período (as já gravadas e as novas) somam o mesmo que os lançamentos do extrato. A divergência é aviso. |
@@ -492,7 +498,7 @@ Puros, sem infraestrutura: recebem os agregados e as listas de que precisam, e q
 | `ICartaoRepository` | `Cartao` (lista os do usuário, obtém um do usuário) |
 | `IContaRepository` | `ContaBancaria` (lista as do usuário) |
 | `ITransacaoRepository` | `Transacao` (obtém uma pelo id, lista as com parcela, lista as de um mês em ordem de data, adiciona só as de chave nova e devolve essas mesmas instâncias) |
-| `IImportacaoRepository` | `ImportacaoArquivo` |
+| `IImportacaoRepository` | `ImportacaoArquivo` (obtém a mais recente de uma origem, lista as de fatura com vencimento num mês) |
 | `IDespesaRecorrenteRepository` | `DespesaRecorrente` (lista as do usuário atual) |
 | `IDespesaRepository` | `Despesa` (lista as do usuário atual num mês de referência, inclusive a parcelada com parcela nele, lista as parceladas dele, obtém uma pelo id ou pela compra que a cobrou, lista as que uma transação pagou, adiciona as novas; a extensão `ObterQueUsaAsync` escolhe entre as duas buscas pela origem da transação) |
 
