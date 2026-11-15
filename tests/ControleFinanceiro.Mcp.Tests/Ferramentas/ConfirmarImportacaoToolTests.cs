@@ -170,6 +170,24 @@ public sealed class ConfirmarImportacaoToolTests : IAsyncLifetime
     }
 
     [Fact]
+    public async Task Confirmar_Quando_FaturaJaImportadaComOutroVencimentoNoMesmoMes_Deve_DevolverFaturaJaImportadaSemGravar()
+    {
+        await _importacao.ResolverAsync(LayoutArquivoImportacao.C6CartaoCsv, ImportacaoDeTeste.FaturaC6);
+        string resumo = await PreverAsync(ImportacaoDeTeste.FaturaC6, "c6-cartao-csv", vencimento: ImportacaoDeTeste.VencimentoFaturaC6);
+        await _servidor.ClienteMcp.ConfirmarImportacaoAsync(resumo, ImportacaoDeTeste.FaturaC6, "c6-cartao-csv", vencimento: ImportacaoDeTeste.VencimentoFaturaC6);
+        Gravado gravadoAposPrimeira = await _importacao.LerGravadoAsync();
+
+        CallToolResult resultado = await _servidor.ClienteMcp.ConfirmarImportacaoAsync(
+            resumo,
+            ImportacaoDeTeste.FaturaC6,
+            "c6-cartao-csv",
+            vencimento: "2026-04-13");
+
+        ErroLido.DoEnvelope(resultado.Json).Mensagem.Should().Be(ErrosParaModelo.Importacao.FaturaJaImportadaComOutroVencimento.Mensagem);
+        (await _importacao.LerGravadoAsync()).Should().Be(gravadoAposPrimeira);
+    }
+
+    [Fact]
     public async Task Confirmar_Quando_ResumoAlterado_Deve_DevolverResumoDivergenteSemGravar()
     {
         await _importacao.ResolverAsync(LayoutArquivoImportacao.C6ContaCsv, ImportacaoDeTeste.ExtratoC6);
