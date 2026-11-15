@@ -44,16 +44,31 @@ classDiagram
             Projetado(MesReferencia, DiaVencimentoCartao)
             Mes
             EhOutraDataNoMesmoMes(VencimentoFatura)
+            DiasAntesVencimento
+            DiasDepoisVencimento
+            AceitaPagamentoEm(DateOnly)
+            MesesVencimentoFaturasPagaveisEm(Periodo)
+            MesesPagamentoFaturasVencendoEm(MesReferencia)
+            MesesVencimentoFaturasConcorrentes(MesReferencia)
             DateOnly (implícito)
         }
         class FaturaCartao {
             <<ValueObject>>
             Cartoes
+            Banco
             Vencimento
-            DoCartao(Cartao, cartoesDoUsuario, MesReferencia)
-            Importada(cartoesArquivo, cartoesUsuario, VencimentoFatura)
-            DoCartao(IdCartao, cartoesDoUsuario, MesReferencia)
+            DoCartao(IdCartao, cartoesUsuario, MesReferencia)
+            Importada(Banco, cartoesArquivo, cartoesUsuario, VencimentoFatura)
+            TodasVencendoEm(cartoesUsuario, MesReferencia)
             Contem(IdCartao)
+        }
+        class FaturaCartaoAberta {
+            <<ValueObject>>
+            Fatura
+            Vencimento
+            Total
+            Abrir(FaturaCartao, VencimentoFatura, transacoes)
+            AceitaPagamento(ReaisPositivo, DateOnly)
         }
     }
 
@@ -90,6 +105,7 @@ classDiagram
             <<interface>>
             IdCartao
             FoiPagaSoPelaFatura(FaturaCartao, IdTransacao)
+            EstaPagaPelaFatura(FaturaCartao)
             PagarFatura(FaturaCartao, IdTransacao, dataPagamento)
             DesfazerPagamento(IdTransacao)
         }
@@ -129,6 +145,7 @@ classDiagram
             Reabrir()
             Reabrir(IdTransacao)
             ValorVigenteCom(Cobranca)
+            FoiPagoPorTransacao
         }
         class Cobranca {
             <<ValueObject>>
@@ -141,6 +158,12 @@ classDiagram
         class ParcelaDaCompra {
             <<ValueObject>>
             DaTransacao(Transacao)
+        }
+        class CandidatoPagamentoFatura {
+            <<ValueObject>>
+            IdSaida
+            FaturaCartaoAberta
+            IdCartao
         }
     }
 
@@ -187,6 +210,8 @@ classDiagram
             EhCompraAVistaNoCartao
             EhPagamentoFatura
             MesVencimentoFatura
+            EhSaidaConta
+            CompoeTotalFatura(FaturaCartao)
         }
         class OrigemTransacao {
             <<ValueObject>>
@@ -203,6 +228,7 @@ classDiagram
             MesVencimentoFatura
             PeriodoNaoImportado()
             TemOutroVencimentoNoMesmoMes(FaturaCartao)
+            VencimentoImportado(FaturaCartao)
         }
     }
 
@@ -224,6 +250,11 @@ classDiagram
     IDespesaDoCartao ..> FaturaCartao : PagarFatura
     FaturaCartao ..> Cartao : IdCartao (os da mesma fatura)
     FaturaCartao *-- VencimentoFatura
+    CandidatoPagamentoFatura *-- FaturaCartaoAberta
+    FaturaCartaoAberta *-- FaturaCartao
+    FaturaCartaoAberta *-- VencimentoFatura : o vencimento real
+    FaturaCartaoAberta ..> Transacao : CompoeTotalFatura
+    CandidatoPagamentoFatura ..> Transacao : IdSaida
     DespesaParcelada "1" *-- "*" ParcelaDespesa
     DespesaInteira *-- Pagamento
     ParcelaDespesa *-- Pagamento
@@ -261,7 +292,8 @@ classDiagram
     OrigemTransacao ..> Cartao : IdCartao
     ImportacaoArquivo *-- OrigemTransacao
     ImportacaoArquivo *-- "0..1" VencimentoFatura
-    ImportacaoArquivo ..> FaturaCartao : TemOutroVencimentoNoMesmoMes
+    ImportacaoArquivo ..> FaturaCartao : TemOutroVencimentoNoMesmoMes, VencimentoImportado
+    Transacao ..> FaturaCartao : CompoeTotalFatura
     ImportacaoArquivo ..> Usuario : IdUsuario
 ```
 
@@ -276,6 +308,7 @@ classDiagram
 - **Despesas**: datas sem hora nem fuso (`DateOnly`). Beneficiário obrigatório e categoria opcional (a fatura do Mercado Pago não traz categoria). A gerada por uma recorrente guarda o `IdDespesaRecorrente`. `DespesaSimples` não aceita crédito: o `Criar` a registra paga no dia em que ocorre, e o `Prever` a gera pendente, com o pagamento projetado para esse dia; `DespesaAdiada` é sempre crédito, guarda o `IdCartao` e tem o pagamento pendente no mês de vencimento da fatura em que a ocorrência cai, no dia de vencimento do cartão; `DespesaParcelada` é sempre crédito, só nasce pela `DespesaParceladaFactory`, guarda o `IdCartao` e tem uma `ParcelaDespesa` por mês consecutivo, de 1 ao total, todas com o mesmo valor: as anteriores à parcela informada nascem pagas, com o vencimento projetado como data efetiva, e as demais, pendentes. A `ParcelaDespesa` só é criada pela raiz. A categoria de qualquer despesa pode ser trocada depois, mas não removida. O mês de referência mora no `Pagamento`, e a `DespesaInteira` e a `ParcelaDespesa` o leem dele (`MesReferencia`). O `PagamentoDoMes` dá o pagamento que cai num mês: o da `DespesaInteira` quando o mês é o dela, o da parcela daquele mês na `DespesaParcelada`, ou nada. Duas buscas fazem o caminho inverso a partir da transação: o `PagamentoCobradoPor` dá o pagamento da despesa do cartão ou da parcela que a compra cobrou, ou nada (a simples não é cobrada), e o `PagamentosRealizadosPor`, os pagamentos que a transação pagou; na parcelada, o `ParcelaCobradaPor` e o `ParcelasPagasPor` dão as próprias parcelas. O `ValorVigenteDoMes` dá o valor que vale para o pagamento do mês: o efetivo quando pago, o cobrado quando a fatura o cobrou, senão o projetado.
 - **Cobrança e pagamento**: só a despesa muda, e a `Transacao` é apenas lida; a cobrança e o pagamento da simples só nascem e só se desfazem pelo `VinculoTransacaoService`, e o pagamento da despesa do cartão nasce pelo `PagamentoFaturaService`. A `DespesaSimples` é paga pela própria saída da conta: o `Pagamento` guarda a transação (`IdTransacao`), a data e o valor efetivos. Na despesa do cartão há dois fatos: a **cobrança**, a compra lançada na fatura, que liga a transação do cartão à `DespesaAdiada` ou à `ParcelaDespesa` e fixa o valor real (`Cobranca`), e o **pagamento**, a saída da conta que pagou a fatura. Cobrar não paga: o `Pagamento` continua como está, pendente, ou pago, na parcela que nasceu paga. Sem status novo: "cobrada e não paga" é derivado, e o valor vigente é o cobrado. Uma transação cobra no máximo uma despesa ou parcela, e cada uma é cobrada por uma compra só (`ErroDespesaJaCobrada`); uma saída paga no máximo uma simples, enquanto um pagamento de fatura paga várias despesas do cartão, e só elas: a saída que paga uma não paga a outra. Valor diferente do projetado é aceito, sem tolerância e sem mudar as parcelas seguintes. O `Pago` sem transação tem o efetivo igual ao projetado, e a simples que nasceu paga sem transação aceita a saída. Desfazer é pela origem da transação: o `DesfazerPagamento` volta a simples para pendente, com os efetivos nulos, e o `DesfazerCobranca` tira a cobrança; a despesa do cartão paga por transação falha com `ErroDespesaJaPaga`, e a parcela que nasceu paga perde a cobrança e continua paga. A transação ligada não pode ser apagada: as FKs impedem, conferidas só no commit para a cascata do usuário funcionar. O `ConciliacaoParcelasService` cobra as parcelas de uma vez, sempre pela regra da parcelada do `VinculoTransacaoService`, e a idempotência vem do estado: só entram transação livre e parcela sem cobrança. Limitação aceita: conciliar de novo refaz uma cobrança desfeita, porque a recusa não é registrada (#123). Quem desfaz para trocar gêmeas liga manualmente em seguida. O domínio fala em cobrança e pagamento; "vínculo" fica na fronteira (rotas, `prever_vinculo`, `confirmar_vinculo`, `ErroTransacaoJaVinculada`).
 - **Pagamento da fatura**: o `PagamentoFaturaService` paga a fatura com uma saída da conta, de qualquer conta do usuário, informada com um cartão e o mês de vencimento; a entrada no cartão nunca paga. A fatura (`FaturaCartao`) junta os cartões que saem nela (`Cartao.EhDaMesmaFaturaQue`: mesmo banco, dia de vencimento e dia de fechamento), como os finais do C6, e o mês de vencimento. Só a despesa do cartão (`IDespesaDoCartao`: a adiada e a parcelada) é paga assim: o `PagarFatura`, que só o serviço alcança, paga o pagamento que vence no mês da fatura quando a despesa é de um cartão dela e o pagamento tem cobrança e está pendente (`Pagamento.PagarPelaFatura`), com a data da saída e o valor cobrado como efetivo, e deixa o resto como está, inclusive a parcela que nasceu paga. Cada despesa muda sozinha. Repetir com a mesma saída e a mesma fatura paga as cobranças que chegaram depois; a saída que já pagou outro mês ou outra fatura (`FoiPagaSoPelaFatura` falso) falha com `ErroTransacaoPagaOutraFatura`, e, sem nada a pagar, com `ErroFaturaSemCobrancaPendente`, que costuma ser o mês ou o cartão errado. Limitações aceitas: pagamento parcial e rotativo ficam fora, e valor e data da saída não bloqueiam, porque o acerto da ligação é de quem liga. O `Desfazer` desfaz o pagamento pela saída: as despesas do cartão e as parcelas que ela pagou voltam a pendente pelo `DesfazerPagamento` (`Pagamento.Reabrir(IdTransacao)`), com a cobrança preservada, e cada uma muda sozinha. A despesa do cartão que a saída não pagou falha com `ErroTransacaoNaoPagouADespesa`, que vem da própria despesa; o serviço só cria esse erro quando a saída não pagou nenhuma despesa do cartão. A simples paga pela mesma saída fica como está, porque se desfaz pelo `VinculoTransacaoService`.
+- **Candidatos a pagamento de fatura**: o `CandidatosPagamentoFaturaService` aponta, sem gravar nada, a saída da conta que provavelmente pagou uma fatura (`CandidatoPagamentoFatura`), e a ligação continua explícita, pelo `PagamentoFaturaService`. A fatura do mês `M` é cada grupo do `FaturaCartao.TodasVencendoEm`, e a `FaturaCartaoAberta.Abrir` dá o total dela, `−Σ Valor` das transações com `Transacao.CompoeTotalFatura`: de um cartão dela, trazidas pela fatura que vence em `M` (`MesVencimentoFatura`), sem o pagamento da anterior; entram as compras, as parcelas, os estornos e as tarifas, e só há candidato com total positivo. O vencimento é o real, o que a importação da fatura gravou (`ImportacaoArquivo.VencimentoImportado`): a fatura sem importação no mês fica de fora, e a regra de um vencimento por fatura deixa usar o de qualquer importação dela. A fatura já paga por uma saída (`IDespesaDoCartao.EstaPagaPelaFatura`, pelo `Pagamento.FoiPagoPorTransacao`) fica de fora, assim como a saída que já pagou alguma despesa. A saída candidata é da conta (`EhSaidaConta`), com o valor exatamente igual ao total e a data na janela do `VencimentoFatura.AceitaPagamentoEm` (`FaturaCartaoAberta.AceitaPagamento`): de 7 dias antes a 7 dias depois do vencimento, em dias corridos, com as pontas. Só vale o par único nos dois sentidos, uma saída só para a fatura e uma fatura só para a saída; o empate e a ausência ficam para a ligação manual. O empate conta também as faturas dos meses vizinhos, cujas janelas cruzam as dos meses pedidos (`MesesConferidos`), e por isso o candidato é o mesmo pela importação do extrato, pela da fatura e pela consulta do mês. O candidato guarda a saída pelo id (`IdSaida`), e o `IdCartao` é o menor id da fatura, para a escolha não depender da ordem. Limitações aceitas: o pagamento em mais de uma saída, o parcial e o com centavos de diferença (IOF, tarifa) não viram candidato.
 - **ChaveCompraParcelada**: reconhece a mesma compra parcelada entre faturas, por cartão, data, descrição normalizada e total de parcelas. Recebe a descrição já como `TextoNormalizado`. A `DespesaParcelada` não a guarda: o `EhDaCompra` a monta para comparar.
 - **Transacao**: valor com sinal do ponto de vista do usuário (negativo é saída). Só nasce pela `LoteTransacoesFactory`, que confere que a conta ou o cartão é do usuário, que a importação é da mesma origem, que os lançamentos são do mesmo tipo de origem, que todo texto de beneficiário do lote já é alias de um beneficiário do usuário e que toda categoria do banco já é alias de uma categoria dele, e garante a `ChaveDeduplicacao` do lote. A identidade é o `IdTransacao`; a chave só reconhece o lançamento numa reimportação. Guarda a importação que a criou: a reimportação não a recria, então ela fica ligada à primeira importação que a trouxe. O `TextoBeneficiario`, calculado e sem coluna, é o texto do arquivo que diz quem recebeu o dinheiro de uma saída, pela mesma regra do `Lancamento`. O beneficiário é o que tem esse texto como alias, resolvido na leitura: a transação não guarda o id dele. O `EhPagamentoFatura` é copiado do lançamento; a transação importada antes da marca fica falsa, e a reimportação não a atualiza. O `MesVencimentoFatura` é o mês da fatura que trouxe a transação do cartão, copiado da importação que a criou, e é nulo na da conta. A importação de uma fatura com vencimento em outro mês, que é outra fatura, não o muda: só as transações novas pegam o mês novo. Com outra data no mesmo mês, a importação é recusada (`ImportacaoArquivo`).
 - **OrigemTransacao**: conta ou cartão, nunca os dois; o `Tipo` (`TipoOrigem`) diz qual.
@@ -413,7 +446,7 @@ classDiagram
         <<service>>
         Registrar(ContaBancaria, layout, periodo, lidas, importadaEm)
         Registrar(Cartao, cartoesUsuario, importacoesFaturaMes, layout, periodo, VencimentoFatura, lidas, importadaEm)
-        ConferirVencimentoFatura(IdUsuario, VencimentoFatura, cartoesFatura, cartoesUsuario, importacoesFaturaMes)
+        ConferirVencimentoFatura(IdUsuario, Banco, VencimentoFatura, cartoesFatura, cartoesUsuario, importacoesFaturaMes)
     }
     class LoteTransacoesFactory {
         <<service>>
@@ -481,6 +514,7 @@ Puros, sem infraestrutura: recebem os agregados e as listas de que precisam, e q
 | `DespesaAdiadaFactory` | Cria, das compras à vista novas de uma fatura, as despesas adiadas já cobradas e pendentes que nenhuma adiada prevista cobre (`CriarDaFatura`), no vencimento da fatura; cada previsão (`DespesaAdiada.EhPrevisaoDe`) cobre uma compra só, também de outro final da mesma fatura. Recusa a transação que não é de fatura ou que é de outra fatura. Só cria, nunca altera: a prevista continua sem cobrança. |
 | `VinculoTransacaoService` | Liga uma saída a uma despesa (`Vincular`), conferindo se a transação já é usada (a despesa que a usa vem pela cobrança, quando ela é do cartão, ou pelo pagamento, quando é da conta), se é saída, a origem e, na parcelada, a compra pela `ChaveCompraParcelada`. A simples é paga pela saída da conta, na data da transação; a adiada é cobrada pela compra de qualquer cartão da fatura em que vence (`FaturaCartao`, com os cartões do usuário), e a parcela, pela compra do cartão dela, sem pagar. Beneficiário, janela de data, proximidade de valor e mês da parcela não bloqueiam. Desfaz pela origem da transação (`Desvincular`): o cartão tira a cobrança, e a conta, o pagamento. Chamado pelos endpoints de vínculo e de desvínculo e pelas ferramentas MCP `prever_vinculo`, que aplica o vínculo em memória e não grava, e `confirmar_vinculo`, que o refaz e grava depois que o usuário aprova o resumo no cliente. |
 | `PagamentoFaturaService` | Paga a fatura com uma saída da conta (`Pagar`): recebe a saída, um cartão, o mês de vencimento, os cartões do usuário, as despesas do mês e as que a saída já pagou, e paga as cobradas e pendentes dos cartões da mesma fatura naquele mês, com a data da saída e o valor cobrado. Recusa a entrada, a saída do cartão, a saída que já paga uma simples (`ErroTransacaoJaVinculada`) ou outra fatura, e a fatura sem nada a pagar. Devolve o `PagamentoFatura`, com as despesas pagas na chamada, o mês de vencimento e o total pago (`Total`, a soma do valor cobrado). Desfaz o pagamento (`Desfazer`): recebe a saída e as despesas que ela pagou, e devolve a pendente as do cartão, com a cobrança preservada. Chamado pelos endpoints de pagar e de desfazer o pagamento da fatura e pelas ferramentas MCP `prever_pagamento_fatura`, que aplica o pagamento em memória e não grava, e `confirmar_pagamento_fatura`, que o refaz e grava depois que o usuário aprova o resumo no cliente. |
+| `CandidatosPagamentoFaturaService` | Aponta os candidatos a pagamento de fatura dos meses pedidos (`Apontar`): recebe os meses, os cartões e, dos meses que ele confere (`MesesConferidos`, os pedidos e os vizinhos cujas faturas competem pelas mesmas saídas), as importações de fatura, as transações das faturas e as saídas que podem pagá-las, as despesas dos meses e as que essas saídas já pagaram, e devolve os `CandidatoPagamentoFatura` únicos, pela regra dos invariantes. Não altera nada. Chamado, pela `CandidatosPagamentoFaturaAppService`, depois do commit das importações da API e do `confirmar_importacao`, e pela ferramenta MCP `listar_candidatos_pagamento_fatura`. |
 | `ConciliacaoParcelasService` | Cobra cada saída parcelada livre, no cartão, na parcela de mesmo número da mesma compra (`Conciliar`), pelo `VinculoTransacaoService`. Entre gêmeas, casa primeiro o valor igual ao projetado e depois a ordem de valor (`EmparelhamentoParcelas`), com desempate pelo id. A transação sem parcela livre conta em `SemParcela` e é tentada de novo na próxima chamada; entrada, valor zero e transação sem parcela, como toda a da conta, são ignorados. Só vincula: não cria despesa nem altera transação. |
 | `AlteracaoCategoriaDespesaService` | Troca a categoria de uma despesa, conferindo que a despesa e a categoria são do mesmo usuário. |
 | `DespesaRecorrenteFactory` | Cria a despesa recorrente no crédito (`CriarNoCredito`) ou sem cartão (`CriarSemCartao`), conferindo que não repete beneficiário e descrição de uma recorrente do usuário. |
@@ -497,21 +531,21 @@ Puros, sem infraestrutura: recebem os agregados e as listas de que precisam, e q
 | `IBeneficiarioRepository` | `Beneficiario` (lista os do usuário atual, obtém um dele) |
 | `ICartaoRepository` | `Cartao` (lista os do usuário, obtém um do usuário) |
 | `IContaRepository` | `ContaBancaria` (lista as do usuário) |
-| `ITransacaoRepository` | `Transacao` (obtém uma pelo id, lista as com parcela, lista as de um mês em ordem de data, adiciona só as de chave nova e devolve essas mesmas instâncias) |
+| `ITransacaoRepository` | `Transacao` (obtém uma pelo id, lista as com parcela, lista as de um mês em ordem de data, lista as trazidas pela fatura que vence num mês, adiciona só as de chave nova e devolve essas mesmas instâncias) |
 | `IImportacaoRepository` | `ImportacaoArquivo` (obtém a mais recente de uma origem, lista as de fatura com vencimento num mês) |
 | `IDespesaRecorrenteRepository` | `DespesaRecorrente` (lista as do usuário atual) |
-| `IDespesaRepository` | `Despesa` (lista as do usuário atual num mês de referência, inclusive a parcelada com parcela nele, lista as parceladas dele, obtém uma pelo id ou pela compra que a cobrou, lista as que uma transação pagou, adiciona as novas; a extensão `ObterQueUsaAsync` escolhe entre as duas buscas pela origem da transação) |
+| `IDespesaRepository` | `Despesa` (lista as do usuário atual num mês de referência, inclusive a parcelada com parcela nele, lista as parceladas dele, obtém uma pelo id ou pela compra que a cobrou, lista as que uma transação pagou e as que alguma de um conjunto de transações pagou, adiciona as novas; a extensão `ObterQueUsaAsync` escolhe entre as duas buscas pela origem da transação) |
 
 ## Value objects
 
 Cada value object mora na pasta do agregado dono, mesmo quando outro agregado o usa:
 
-- `Cartoes`: `SufixoCartao`, `DiaVencimentoCartao`, `DiaFechamentoCartao`, `VencimentoFatura` (a data de vencimento de uma fatura: a exata do arquivo, pelo `Criar`, ou a projetada pelo dia do cartão, pelo `Projetado`; um `SimpleValueObject<DateOnly>`, ordenado pela data, que a `Fatura`, a `ImportacaoArquivo`, o `Cartao.ConferirVencimento` e as factories da adiada e da parcelada recebem no lugar da data solta) e `FaturaCartao` (os cartões que saem na mesma fatura e o vencimento dela; a igualdade não depende da ordem dos cartões).
+- `Cartoes`: `SufixoCartao`, `DiaVencimentoCartao`, `DiaFechamentoCartao`, `VencimentoFatura` (a data de vencimento de uma fatura: a exata do arquivo, pelo `Criar`, ou a projetada pelo dia do cartão, pelo `Projetado`; um `SimpleValueObject<DateOnly>`, ordenado pela data, que a `Fatura`, a `ImportacaoArquivo`, o `Cartao.ConferirVencimento` e as factories da adiada e da parcelada recebem no lugar da data solta; a janela de pagamento, `AceitaPagamentoEm`, vai de `DiasAntesVencimento` a `DiasDepoisVencimento` em torno da data, o `MesesVencimentoFaturasPagaveisEm` parte das saídas de um período e dá os meses de vencimento das faturas que elas podem ter pago, e o `MesesPagamentoFaturasVencendoEm` faz o caminho contrário, da fatura que vence num mês aos meses em que podem estar as saídas que a pagaram, e o `MesesVencimentoFaturasConcorrentes` junta os dois: os meses das faturas que disputam as saídas da fatura de um mês) e `FaturaCartao` (os cartões que constam na mesma fatura, o banco, que o layout define na fatura importada, e o vencimento dela; a igualdade não depende da ordem dos cartões) e `FaturaCartaoAberta` (a fatura que uma importação trouxe, com o vencimento real e o total positivo que ela cobra, à espera da saída que a paga).
 - `Contas`: `SufixoConta` e o SmartEnum `TipoConta`.
-- `Despesas`: `DiaOcorrenciaRecorrente`, `Pagamento` (valores projetado e efetivo, `StatusPagamento`, data projetada, sempre presente, e efetiva, o mês de referência, que é o da data projetada e não muda ao pagar nem ao reabrir, e a transação que o pagou; o `CK_despesas_pagamento_mes` e o `CK_parcelas_despesa_pagamento_mes` repetem o mês no banco), `Cobranca` (a compra do cartão que cobrou a despesa adiada ou a parcela e o valor que ela fixou; os CHECKs fazem as duas colunas andarem juntas, só na adiada e na parcela, e exigem a cobrança na despesa do cartão paga por transação), `ChaveCompraParcelada`, `ParcelaDaCompra` (a chave e o número, que agrupam a conciliação) e os SmartEnums `FormaPagamento` e `StatusPagamento`.
+- `Despesas`: `DiaOcorrenciaRecorrente`, `Pagamento` (valores projetado e efetivo, `StatusPagamento`, data projetada, sempre presente, e efetiva, o mês de referência, que é o da data projetada e não muda ao pagar nem ao reabrir, e a transação que o pagou; o `CK_despesas_pagamento_mes` e o `CK_parcelas_despesa_pagamento_mes` repetem o mês no banco), `Cobranca` (a compra do cartão que cobrou a despesa adiada ou a parcela e o valor que ela fixou; os CHECKs fazem as duas colunas andarem juntas, só na adiada e na parcela, e exigem a cobrança na despesa do cartão paga por transação), `ChaveCompraParcelada`, `ParcelaDaCompra` (a chave e o número, que agrupam a conciliação), `CandidatoPagamentoFatura` (a saída, pelo id, e a `FaturaCartaoAberta` que ela paga, que só o `CandidatosPagamentoFaturaService` monta) e os SmartEnums `FormaPagamento` e `StatusPagamento`.
 - `Importacoes`: `Extrato`, `LancamentoContabilizado`, `Fatura`, `LancamentoFatura`, `SaldoDiario` e o SmartEnum `LayoutArquivoImportacao`, com as listas `Extratos` (o arquivo traz a conta), `ExtratosContaInformada` (o usuário informa o sufixo, numa rota própria do layout), `Faturas` e `FaturasVencimentoInformado` (o usuário informa o vencimento, que o arquivo não traz).
 - `Transacoes`: `OrigemTransacao`, `Lancamento`, `Parcela`, `IdentidadeLancamento`, `ChaveDeduplicacao`.
 
-Em `Shared/ValueObjects` ficam só os conceitos sem dono: `Reais` (com sinal, e o zero sempre sem sinal) e `ReaisPositivo` para dinheiro; `TextoObrigatorio`; `Periodo`, um intervalo de dias com o início e o fim inclusos, como os dias que um arquivo importado cobre, que se amplia alguns dias para cada lado (`Ampliado`); `MesReferencia`, o calendário do balanço, nos anos de 1 a 9999 que o `DateOnly` representa, que avança e recua vários meses de uma vez (`Posterior(meses)` e `Anterior(meses)`), dá os dias dele (`Periodo`) e se compara com `<`, `<=`, `>` e `>=`; `BalancoMensal`, o balanço de um mês, com a renda líquida, os totais pago e pendente (`ReaisPositivo`) e o `SaldoPrevisto`, a renda menos os dois, que só o `BalancoMensalService` monta; `DiaValidoEmTodoMes`, a base dos dias de 1 a 28 que o `MesReferencia` aceita (o `DiaVencimentoCartao` só vai até o 24); o SmartEnum `Banco` (código COMPE); `TextoNormalizado`, a forma de um texto usada para comparar (aparado, espaços juntos, sem acentos, em maiúsculas), que o `Alias` e o nome da `CategoriaDespesa` usam; `Alias`, um texto do arquivo com o original, para exibir, e o normalizado, que decide a igualdade; `Alfanumerico`, só as letras e os dígitos ASCII de um texto; `DocumentoMascarado`, um texto do banco com os CPFs e CNPJs de verificadores válidos trocados por `[CPF]` e `[CNPJ]`, e que diz se sobrou conteúdo além dos rótulos; e o `Documento` abstrato, com o `Cpf` e o `Cnpj`.
+Em `Shared/ValueObjects` ficam só os conceitos sem dono: `Reais` (com sinal, e o zero sempre sem sinal) e `ReaisPositivo` para dinheiro; `TextoObrigatorio`; `Periodo`, um intervalo de dias com o início e o fim inclusos, como os dias que um arquivo importado cobre, que se amplia alguns dias para cada lado (`Ampliado`); `MesReferencia`, o calendário do balanço, nos anos de 1 a 9999 que o `DateOnly` representa, que avança e recua vários meses de uma vez (`Posterior(meses)` e `Anterior(meses)`), dá os dias dele (`Periodo`), lista os meses que um período toca (`Entre`) e se compara com `<`, `<=`, `>` e `>=`; `BalancoMensal`, o balanço de um mês, com a renda líquida, os totais pago e pendente (`ReaisPositivo`) e o `SaldoPrevisto`, a renda menos os dois, que só o `BalancoMensalService` monta; `DiaValidoEmTodoMes`, a base dos dias de 1 a 28 que o `MesReferencia` aceita (o `DiaVencimentoCartao` só vai até o 24); o SmartEnum `Banco` (código COMPE); `TextoNormalizado`, a forma de um texto usada para comparar (aparado, espaços juntos, sem acentos, em maiúsculas), que o `Alias` e o nome da `CategoriaDespesa` usam; `Alias`, um texto do arquivo com o original, para exibir, e o normalizado, que decide a igualdade; `Alfanumerico`, só as letras e os dígitos ASCII de um texto; `DocumentoMascarado`, um texto do banco com os CPFs e CNPJs de verificadores válidos trocados por `[CPF]` e `[CNPJ]`, e que diz se sobrou conteúdo além dos rótulos; e o `Documento` abstrato, com o `Cpf` e o `Cnpj`.
 
 - **Documento**: guardado sem a máscara e em maiúsculas, com os dígitos verificadores conferidos (módulo 11). O `Documento.Criar` escolhe pelo tamanho: 11 caracteres é `Cpf`, e 14 é `Cnpj`. O `Cnpj` segue a regra alfanumérica vigente desde julho de 2026, e o CNPJ só numérico é um caso particular dela. As mensagens de falha não repetem o número. O `Cpf` e o `Cnpj` servem ao `DocumentoMascarado`, que só troca os documentos de verificadores válidos. Os leitores mantêm os documentos na descrição e na contraparte, que são gravadas e exibidas assim; a máscara é aplicada ao que sair rumo ao modelo.
