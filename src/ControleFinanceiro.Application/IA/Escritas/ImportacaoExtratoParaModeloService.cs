@@ -15,12 +15,21 @@ namespace ControleFinanceiro.Application.IA.Escritas;
 /// A importação de um extrato de conta que o modelo pede, já como tipo de saída, em duas etapas, como no
 /// <see cref="PagamentoFaturaParaModeloService"/>. A regra é a da API, pelo <see cref="ImportacaoExtratoAppService"/>,
 /// aplicada em memória nas duas: a prévia nunca grava, e a confirmação, chamada depois que o usuário aprova o resumo no
-/// cliente, lê o arquivo de novo e grava pelo <see cref="ConfirmacaoImportacaoParaModeloService"/>. Um par de métodos
-/// por tipo de entrada: o do layout que traz a conta no arquivo e o do layout em que o usuário informa o sufixo. O
+/// cliente, lê o arquivo de novo e grava pelo <see cref="ConfirmacaoImportacaoParaModeloService"/>. O layout decide de
+/// onde vem a conta: do arquivo, ou do sufixo que o usuário informa nos <see cref="ParametrosImportacaoExtratoDto"/>. O
 /// serviço recebe o arquivo já aberto e não sabe de onde ele veio.
 /// </summary>
 public sealed class ImportacaoExtratoParaModeloService
 {
+    /// <summary>
+    /// Como cada layout de extrato obtém o sufixo da conta, pelos grupos do <see cref="LayoutArquivoImportacao"/>: o
+    /// informado, nos layouts sem a conta no arquivo, e nenhum, nos que a trazem.
+    /// </summary>
+    private static readonly Dictionary<LayoutArquivoImportacao, Func<ParametrosImportacaoExtratoDto, Result<Maybe<SufixoConta>, ImportacaoParaModelo>>> _sufixoPorLayout =
+        LayoutArquivoImportacao.Extratos
+            .Concat(LayoutArquivoImportacao.ExtratosContaInformada)
+            .ToDictionary(layout => layout, LeituraSufixo);
+
     private readonly IUsuarioAtual _usuarioAtual;
     private readonly IUsuarioRepository _usuarios;
     private readonly LeituraExtratoAppService _leituraExtratoAppService;
@@ -47,70 +56,31 @@ public sealed class ImportacaoExtratoParaModeloService
         _confirmacaoImportacaoParaModeloService = confirmacaoImportacaoParaModeloService;
     }
 
-    /// <summary>A prévia do layout que traz a conta no arquivo.</summary>
     /// <param name="arquivo">O arquivo já aberto; quem chama o fecha.</param>
-    /// <exception cref="ArgumentException">Quando o layout não está em <see cref="LayoutArquivoImportacao.Extratos"/>.</exception>
-    public async Task<ImportacaoParaModelo> PreverAsync(Stream arquivo, LayoutArquivoImportacao layout, CancellationToken cancellationToken)
-    {
-        ExigirLayoutEm(LayoutArquivoImportacao.Extratos, layout);
-        Result<ImportacaoAplicada<ExtratoImportadoDto>, ImportacaoParaModelo> aplicada = await AplicarAsync(arquivo, layout, Maybe<SufixoConta>.None, cancellationToken);
-        return aplicada.Match(importacao => importacao.Saida, falha => falha);
-    }
-
-    /// <summary>A prévia do layout sem a conta no arquivo.</summary>
-    /// <param name="arquivo">O arquivo já aberto; quem chama o fecha.</param>
-    /// <param name="sufixoConta">Os 4 últimos caracteres do número da conta, que o usuário informa.</param>
-    /// <exception cref="ArgumentException">Quando o layout não está em <see cref="LayoutArquivoImportacao.ExtratosContaInformada"/>.</exception>
-    public async Task<ImportacaoParaModelo> PreverContaInformadaAsync(
+    /// <param name="layout">Um layout de extrato, fixo na ferramenta que chama.</param>
+    public async Task<ImportacaoParaModelo> PreverAsync(
         Stream arquivo,
         LayoutArquivoImportacao layout,
-        string sufixoConta,
+        ParametrosImportacaoExtratoDto parametros,
         CancellationToken cancellationToken)
     {
-        ExigirLayoutEm(LayoutArquivoImportacao.ExtratosContaInformada, layout);
-        Result<ImportacaoAplicada<ExtratoImportadoDto>, ImportacaoParaModelo> aplicada = await AplicarContaInformadaAsync(arquivo, layout, sufixoConta, cancellationToken);
+        Result<ImportacaoAplicada<ExtratoImportadoDto>, ImportacaoParaModelo> aplicada = await AplicarAsync(arquivo, layout, parametros, cancellationToken);
         return aplicada.Match(importacao => importacao.Saida, falha => falha);
     }
 
-    /// <summary>A confirmação do layout que traz a conta no arquivo.</summary>
     /// <param name="arquivo">O arquivo já aberto, lido de novo; quem chama o fecha.</param>
+    /// <param name="layout">Um layout de extrato, fixo na ferramenta que chama.</param>
+    /// <param name="parametros">Os mesmos da prévia.</param>
     /// <param name="resumo">O resumo da prévia que o usuário aprovou, nos argumentos da chamada.</param>
-    /// <exception cref="ArgumentException">Quando o layout não está em <see cref="LayoutArquivoImportacao.Extratos"/>.</exception>
     public async Task<ImportacaoParaModelo> ConfirmarAsync(
         Stream arquivo,
         LayoutArquivoImportacao layout,
+        ParametrosImportacaoExtratoDto parametros,
         string resumo,
         CancellationToken cancellationToken)
     {
-        ExigirLayoutEm(LayoutArquivoImportacao.Extratos, layout);
-        Result<ImportacaoAplicada<ExtratoImportadoDto>, ImportacaoParaModelo> aplicada = await AplicarAsync(arquivo, layout, Maybe<SufixoConta>.None, cancellationToken);
-        return await ConfirmarAplicadaAsync(aplicada, layout, resumo, cancellationToken);
-    }
-
-    /// <summary>A confirmação do layout sem a conta no arquivo.</summary>
-    /// <param name="arquivo">O arquivo já aberto, lido de novo; quem chama o fecha.</param>
-    /// <param name="sufixoConta">O sufixo da conta, o mesmo da prévia.</param>
-    /// <param name="resumo">O resumo da prévia que o usuário aprovou, nos argumentos da chamada.</param>
-    /// <exception cref="ArgumentException">Quando o layout não está em <see cref="LayoutArquivoImportacao.ExtratosContaInformada"/>.</exception>
-    public async Task<ImportacaoParaModelo> ConfirmarContaInformadaAsync(
-        Stream arquivo,
-        LayoutArquivoImportacao layout,
-        string sufixoConta,
-        string resumo,
-        CancellationToken cancellationToken)
-    {
-        ExigirLayoutEm(LayoutArquivoImportacao.ExtratosContaInformada, layout);
-        Result<ImportacaoAplicada<ExtratoImportadoDto>, ImportacaoParaModelo> aplicada = await AplicarContaInformadaAsync(arquivo, layout, sufixoConta, cancellationToken);
-        return await ConfirmarAplicadaAsync(aplicada, layout, resumo, cancellationToken);
-    }
-
-    private Task<ImportacaoParaModelo> ConfirmarAplicadaAsync(
-        Result<ImportacaoAplicada<ExtratoImportadoDto>, ImportacaoParaModelo> aplicada,
-        LayoutArquivoImportacao layout,
-        string resumo,
-        CancellationToken cancellationToken)
-    {
-        return _confirmacaoImportacaoParaModeloService.ConfirmarAsync(
+        Result<ImportacaoAplicada<ExtratoImportadoDto>, ImportacaoParaModelo> aplicada = await AplicarAsync(arquivo, layout, parametros, cancellationToken);
+        return await _confirmacaoImportacaoParaModeloService.ConfirmarAsync(
             aplicada,
             layout,
             resumo,
@@ -118,32 +88,22 @@ public sealed class ImportacaoExtratoParaModeloService
             cancellationToken);
     }
 
-    private async Task<Result<ImportacaoAplicada<ExtratoImportadoDto>, ImportacaoParaModelo>> AplicarContaInformadaAsync(
-        Stream arquivo,
-        LayoutArquivoImportacao layout,
-        string sufixoConta,
-        CancellationToken cancellationToken)
-    {
-        Result<SufixoConta> sufixo = SufixoConta.Criar(sufixoConta);
-        if (sufixo.IsFailure)
-            return ImportacaoParaModelo.Falha(ErrosParaModelo.Importacao.SufixoContaInvalido);
-
-        return await AplicarAsync(arquivo, layout, sufixo.Value, cancellationToken);
-    }
-
-    /// <param name="sufixo">Só no layout sem a conta no arquivo, já lido.</param>
     /// <remarks>A falha é a própria saída, que leva as pendências quando o usuário as resolve pela API.</remarks>
     private async Task<Result<ImportacaoAplicada<ExtratoImportadoDto>, ImportacaoParaModelo>> AplicarAsync(
         Stream arquivo,
         LayoutArquivoImportacao layout,
-        Maybe<SufixoConta> sufixo,
+        ParametrosImportacaoExtratoDto parametros,
         CancellationToken cancellationToken)
     {
+        Result<Maybe<SufixoConta>, ImportacaoParaModelo> sufixo = _sufixoPorLayout[layout](parametros);
+        if (sufixo.IsFailure)
+            return sufixo.Error;
+
         Maybe<Usuario> usuario = await _usuarios.ObterPorIdAsync(_usuarioAtual.Id, cancellationToken);
         if (usuario.HasNoValue)
             return ImportacaoParaModelo.Falha(ErrosParaModelo.Consulta.UsuarioNaoEncontrado);
 
-        Result<Extrato, FalhaLeituraArquivo> lido = await _leituraExtratoAppService.LerAsync(layout, arquivo, sufixo, cancellationToken);
+        Result<Extrato, FalhaLeituraArquivo> lido = await _leituraExtratoAppService.LerAsync(layout, arquivo, sufixo.Value, cancellationToken);
         if (lido.IsFailure)
             return ImportacaoParaModelo.Falha(ErrosParaModelo.Importacao.ArquivoInvalido(lido.Error));
 
@@ -160,10 +120,24 @@ public sealed class ImportacaoExtratoParaModeloService
         return ImportacaoParaModelo.Falha(erro, PendenciasImportacaoParaModelo.DoExtrato(beneficiarios));
     }
 
-    /// <summary>A guarda dos métodos por tipo de entrada: o layout de outro grupo é erro de programação.</summary>
-    private static void ExigirLayoutEm(IReadOnlyCollection<LayoutArquivoImportacao> grupo, LayoutArquivoImportacao layout)
+    private static Func<ParametrosImportacaoExtratoDto, Result<Maybe<SufixoConta>, ImportacaoParaModelo>> LeituraSufixo(LayoutArquivoImportacao layout)
     {
-        if (!grupo.Contains(layout))
-            throw new ArgumentException($"O layout {layout.Value} não é deste método da importação do extrato.", nameof(layout));
+        if (LayoutArquivoImportacao.ExtratosContaInformada.Contains(layout))
+            return LerSufixoInformado;
+
+        return SemSufixoInformado;
+    }
+
+    /// <summary>Nenhum sufixo, no layout que traz a conta no arquivo.</summary>
+    private static Result<Maybe<SufixoConta>, ImportacaoParaModelo> SemSufixoInformado(ParametrosImportacaoExtratoDto _) => Maybe<SufixoConta>.None;
+
+    /// <summary>O sufixo que o usuário informou, no layout sem a conta no arquivo.</summary>
+    private static Result<Maybe<SufixoConta>, ImportacaoParaModelo> LerSufixoInformado(ParametrosImportacaoExtratoDto parametros)
+    {
+        Result<SufixoConta> sufixo = SufixoConta.Criar(parametros.SufixoConta);
+        if (sufixo.IsFailure)
+            return ImportacaoParaModelo.Falha(ErrosParaModelo.Importacao.SufixoContaInvalido);
+
+        return Maybe.From(sufixo.Value);
     }
 }

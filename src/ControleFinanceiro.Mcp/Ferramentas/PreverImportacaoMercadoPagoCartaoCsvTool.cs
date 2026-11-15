@@ -23,7 +23,7 @@ internal sealed class PreverImportacaoMercadoPagoCartaoCsvTool
         return ArquivoDaOrigem.ImportarAsync(
             origem,
             caminho,
-            arquivo => importacaoFatura.PreverAsync(arquivo, LayoutArquivoImportacao.MercadoPagoCartaoCsv, cancellationToken),
+            arquivo => importacaoFatura.PreverAsync(arquivo, LayoutArquivoImportacao.MercadoPagoCartaoCsv, new ParametrosImportacaoFaturaDto(Vencimento: null), cancellationToken),
             cancellationToken);
     }
 }

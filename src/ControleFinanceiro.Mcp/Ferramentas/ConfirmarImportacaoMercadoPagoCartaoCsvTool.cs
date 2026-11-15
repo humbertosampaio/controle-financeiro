@@ -30,7 +30,7 @@ internal sealed class ConfirmarImportacaoMercadoPagoCartaoCsvTool
         return ArquivoDaOrigem.ImportarAsync(
             origem,
             caminho,
-            arquivo => importacaoFatura.ConfirmarAsync(arquivo, LayoutArquivoImportacao.MercadoPagoCartaoCsv, resumo, cancellationToken),
+            arquivo => importacaoFatura.ConfirmarAsync(arquivo, LayoutArquivoImportacao.MercadoPagoCartaoCsv, new ParametrosImportacaoFaturaDto(Vencimento: null), resumo, cancellationToken),
             cancellationToken);
     }
 }

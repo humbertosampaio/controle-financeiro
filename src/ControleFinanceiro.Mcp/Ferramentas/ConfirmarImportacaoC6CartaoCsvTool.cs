@@ -31,7 +31,7 @@ internal sealed class ConfirmarImportacaoC6CartaoCsvTool
         return ArquivoDaOrigem.ImportarAsync(
             origem,
             caminho,
-            arquivo => importacaoFatura.ConfirmarVencimentoInformadoAsync(arquivo, LayoutArquivoImportacao.C6CartaoCsv, vencimento, resumo, cancellationToken),
+            arquivo => importacaoFatura.ConfirmarAsync(arquivo, LayoutArquivoImportacao.C6CartaoCsv, new ParametrosImportacaoFaturaDto(vencimento), resumo, cancellationToken),
             cancellationToken);
     }
 }

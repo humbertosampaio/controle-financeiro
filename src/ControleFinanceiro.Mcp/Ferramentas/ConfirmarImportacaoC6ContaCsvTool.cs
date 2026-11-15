@@ -30,7 +30,7 @@ internal sealed class ConfirmarImportacaoC6ContaCsvTool
         return ArquivoDaOrigem.ImportarAsync(
             origem,
             caminho,
-            arquivo => importacaoExtrato.ConfirmarAsync(arquivo, LayoutArquivoImportacao.C6ContaCsv, resumo, cancellationToken),
+            arquivo => importacaoExtrato.ConfirmarAsync(arquivo, LayoutArquivoImportacao.C6ContaCsv, new ParametrosImportacaoExtratoDto(SufixoConta: null), resumo, cancellationToken),
             cancellationToken);
     }
 }

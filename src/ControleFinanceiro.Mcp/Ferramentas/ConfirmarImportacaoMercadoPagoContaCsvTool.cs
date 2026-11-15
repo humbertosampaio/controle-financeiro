@@ -31,7 +31,7 @@ internal sealed class ConfirmarImportacaoMercadoPagoContaCsvTool
         return ArquivoDaOrigem.ImportarAsync(
             origem,
             caminho,
-            arquivo => importacaoExtrato.ConfirmarContaInformadaAsync(arquivo, LayoutArquivoImportacao.MercadoPagoContaCsv, sufixoConta, resumo, cancellationToken),
+            arquivo => importacaoExtrato.ConfirmarAsync(arquivo, LayoutArquivoImportacao.MercadoPagoContaCsv, new ParametrosImportacaoExtratoDto(sufixoConta), resumo, cancellationToken),
             cancellationToken);
     }
 }
