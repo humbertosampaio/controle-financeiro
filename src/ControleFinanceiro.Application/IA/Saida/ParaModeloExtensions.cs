@@ -1,3 +1,4 @@
+using ControleFinanceiro.Application.Despesas;
 using ControleFinanceiro.Domain.Beneficiarios;
 using ControleFinanceiro.Domain.Cartoes;
 using ControleFinanceiro.Domain.Despesas;
@@ -34,6 +35,11 @@ public static class ParaModeloExtensions
     extension(Cartao cartao)
     {
         public CartaoParaModelo ParaModelo() => CartaoParaModelo.De(cartao);
+    }
+
+    extension(CandidatoPagamentoFaturaDto candidatoDto)
+    {
+        public CandidatoPagamentoFaturaParaModelo ParaModelo() => CandidatoPagamentoFaturaParaModelo.De(candidatoDto);
     }
 
     extension(BalancoMensal balanco)

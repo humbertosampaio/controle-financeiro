@@ -44,6 +44,9 @@ internal static class ClienteMcpExtensions
     {
         public ValueTask<CallToolResult> ListarCartoesAsync() => clienteMcp.CallToolAsync("listar_cartoes", new Dictionary<string, object?>());
 
+        public ValueTask<CallToolResult> ListarCandidatosPagamentoFaturaAsync(MesReferencia mesVencimento) =>
+            clienteMcp.ChamarDoMesAsync("listar_candidatos_pagamento_fatura", mesVencimento.Ano, mesVencimento.Mes);
+
         public ValueTask<CallToolResult> PreverPagamentoFaturaAsync(Guid idTransacao, Guid idCartao, MesReferencia mesVencimento)
         {
             return clienteMcp.CallToolAsync("prever_pagamento_fatura", ArgumentosDoPagamento(idTransacao, idCartao, mesVencimento));
