@@ -1,3 +1,4 @@
+using ControleFinanceiro.Application.IA;
 using ControleFinanceiro.Application.IA.Escritas;
 using ControleFinanceiro.Application.IA.Saida;
 using ControleFinanceiro.Application.Importacoes;
@@ -15,7 +16,7 @@ namespace ControleFinanceiro.Mcp.Ferramentas;
 [McpServerToolType]
 internal sealed class ConfirmarImportacaoTool
 {
-    [McpServerTool(Name = "confirmar_importacao", ReadOnly = false, Destructive = false, Idempotent = true, OpenWorld = false)]
+    [McpServerTool(Name = Tools.ConfirmarImportacao, ReadOnly = false, Destructive = false, Idempotent = true, OpenWorld = false)]
     [McpMeta("anthropic/requiresUserInteraction", true)]
     [Description("Grava a importação de um arquivo de extrato ou de fatura, depois de prever_importacao. O usuário aprova a chamada no cliente, lendo o resumo; sem a aprovação, nada é gravado. Use os mesmos argumentos da prévia e o resumo dela sem alteração: o arquivo é lido de novo, e se a importação recalculada não tiver esse resumo, por exemplo porque o arquivo mudou ou já foi importado, nada é gravado. Devolve o mesmo que a prévia, ou o erro.")]
     public static Task<ImportacaoParaModelo> Confirmar(

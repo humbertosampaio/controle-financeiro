@@ -1,3 +1,4 @@
+using ControleFinanceiro.Application.IA;
 using ControleFinanceiro.Application.IA.Escritas;
 using ControleFinanceiro.Application.IA.Saida;
 using ModelContextProtocol.Server;
@@ -13,7 +14,7 @@ namespace ControleFinanceiro.Mcp.Ferramentas;
 [McpServerToolType]
 internal sealed class ConfirmarPagamentoFaturaTool
 {
-    [McpServerTool(Name = "confirmar_pagamento_fatura", ReadOnly = false, Destructive = false, Idempotent = true, OpenWorld = false)]
+    [McpServerTool(Name = Tools.ConfirmarPagamentoFatura, ReadOnly = false, Destructive = false, Idempotent = true, OpenWorld = false)]
     [McpMeta("anthropic/requiresUserInteraction", true)]
     [Description("Grava o pagamento da fatura do cartão por uma saída da conta, depois de prever_pagamento_fatura. O usuário aprova a chamada no cliente, lendo o resumo; sem a aprovação, nada é gravado. Use os mesmos argumentos da prévia e o resumo dela sem alteração: se o pagamento recalculado não tiver esse resumo, por exemplo porque uma cobrança chegou depois da prévia, nada é gravado. Devolve a saída, as despesas pagas, o total e o resumo, ou o erro.")]
     public static Task<PagamentoFaturaParaModelo> Confirmar(
