@@ -1,3 +1,4 @@
+using ControleFinanceiro.Domain.Shared.ValueObjects;
 using ControleFinanceiro.Domain.Transacoes;
 
 namespace ControleFinanceiro.Domain.Importacoes;
@@ -11,4 +12,7 @@ public interface IImportacaoRepository
     /// A importação da origem cujo período termina mais tarde, para apontar o período que nenhum arquivo importou.
     /// </summary>
     Task<Maybe<ImportacaoArquivo>> ObterMaisRecenteAsync(OrigemTransacao origem, CancellationToken cancellationToken);
+
+    /// <summary>As importações de fatura com vencimento no <paramref name="mesVencimento"/>, de qualquer cartão.</summary>
+    Task<IReadOnlyList<ImportacaoArquivo>> ListarImportacoesFaturaEmAsync(MesReferencia mesVencimento, CancellationToken cancellationToken);
 }
