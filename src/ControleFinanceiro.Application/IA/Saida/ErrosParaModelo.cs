@@ -122,6 +122,10 @@ public static class ErrosParaModelo
         public static ErroParaModelo ResumoDivergente(LayoutArquivoImportacao layout) =>
             Fixo($"O resumo não corresponde à importação desse arquivo, e nada foi gravado: o arquivo mudou ou já foi importado. Chame {_previaPorLayout[layout]} de novo, mostre o novo resumo ao usuário e confirme com ele sem alteração.");
 
+        /// <summary>Os erros da importação que o usuário resolve cadastrando o que falta pela API, e que levam as pendências.</summary>
+        public static bool PedePendencias(Erro erro) =>
+            erro is ErroCartoesNaoResolvidos or ErroBeneficiariosNaoResolvidos or ErroCategoriasBancoNaoResolvidas;
+
         /// <summary>A mensagem fixa de quando a origem não abriu o arquivo, sem repetir o caminho.</summary>
         public static ErroParaModelo De(FalhaOrigemArquivoImportacao falha) => _porFalhaOrigem[falha];
 
