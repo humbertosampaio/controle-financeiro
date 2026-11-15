@@ -337,9 +337,8 @@ public sealed class ConciliacaoParcelasServiceTests
                 beneficiarios,
                 categoriasDoUsuario: [],
                 _cartao,
-                vencimento,
-                parceladasDoUsuario: [],
-                lancamentos);
+                _cartao.FaturaCom(vencimento, lancamentos),
+                parceladasDoUsuario: []);
         }
 
         public (DespesaParcelada Menor, DespesaParcelada Maior) GemeasDeValoresDiferentes()

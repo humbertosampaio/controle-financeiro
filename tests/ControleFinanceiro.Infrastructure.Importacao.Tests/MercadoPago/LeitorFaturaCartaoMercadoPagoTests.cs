@@ -47,7 +47,7 @@ public sealed class LeitorFaturaCartaoMercadoPagoTests
     {
         Fatura fatura = await LerFixtureAsync();
 
-        fatura.Vencimento.Value.Should().Be(new DateOnly(2026, 4, 10));
+        fatura.Vencimento.Should().Be((VencimentoFatura)new DateOnly(2026, 4, 10));
     }
 
     [Fact]

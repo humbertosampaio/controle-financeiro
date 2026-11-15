@@ -403,10 +403,6 @@ namespace ControleFinanceiro.Infrastructure.Persistence.Migrations
                         .HasColumnType("uuid")
                         .HasColumnName("id");
 
-                    b.Property<DateOnly?>("DataVencimentoFatura")
-                        .HasColumnType("date")
-                        .HasColumnName("data_vencimento_fatura");
-
                     b.Property<Guid>("IdUsuario")
                         .HasColumnType("uuid")
                         .HasColumnName("id_usuario");
@@ -423,6 +419,10 @@ namespace ControleFinanceiro.Infrastructure.Persistence.Migrations
                     b.Property<int>("Lidas")
                         .HasColumnType("integer")
                         .HasColumnName("lidas");
+
+                    b.Property<DateOnly?>("VencimentoFatura")
+                        .HasColumnType("date")
+                        .HasColumnName("data_vencimento_fatura");
 
                     b.ComplexProperty(typeof(Dictionary<string, object>), "Origem", "ControleFinanceiro.Domain.Importacoes.ImportacaoArquivo.Origem#OrigemTransacao", b1 =>
                         {

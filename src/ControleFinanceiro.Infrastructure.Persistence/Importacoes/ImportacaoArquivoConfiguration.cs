@@ -61,7 +61,7 @@ internal sealed class ImportacaoArquivoConfiguration : IEntityTypeConfiguration<
         entity.Property(i => i.ImportadaEm)
             .HasColumnName("importada_em");
 
-        entity.Property(i => i.DataVencimentoFatura)
+        entity.Property(i => i.VencimentoFatura)
             .HasColumnName("data_vencimento_fatura")
             .HasConversion(vencimento => vencimento!.Value, data => (VencimentoFatura)data);
     }

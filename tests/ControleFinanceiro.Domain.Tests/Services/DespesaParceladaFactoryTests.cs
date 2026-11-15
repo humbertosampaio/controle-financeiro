@@ -36,9 +36,8 @@ public sealed class DespesaParceladaFactoryTests
             beneficiarios,
             categorias,
             cartao,
-            _vencimento,
-            parceladasDoUsuario: [],
-            [compra]);
+            cartao.FaturaCom(_vencimento, compra),
+            parceladasDoUsuario: []);
 
         DespesaParcelada despesa = result.Should().ContainSingle().Subject;
         MesReferencia mesPrimeiraParcela = (MesReferencia)(03, 2026);
@@ -51,7 +50,7 @@ public sealed class DespesaParceladaFactoryTests
         despesa.Parcelas.Should().HaveCount(10);
         despesa.Parcelas[0].MesReferencia.Should().Be(mesPrimeiraParcela);
         despesa.Parcelas[0].Pagamento.DataProjetada.Should().Be(mesPrimeiraParcela.NoDia(cartao.DiaVencimento));
-        despesa.Parcelas[2].Pagamento.DataProjetada.Should().Be(_vencimento.Value);
+        despesa.Parcelas[2].Pagamento.DataProjetada.Should().Be(_vencimento);
         despesa.Parcelas.Should().OnlyContain(p => p.Pagamento.ValorProjetado == (ReaisPositivo)99.90m);
         despesa.Parcelas.Count(p => p.Pagamento.EstaPago).Should().Be(2);
     }
@@ -233,9 +232,8 @@ public sealed class DespesaParceladaFactoryTests
             BeneficiariosResolvidos.Dos(outroUsuario, [compra]),
             CategoriasResolvidas.Dos(idUsuario, [compra]),
             cartao,
-            _vencimento,
-            parceladasDoUsuario: [],
-            [compra]);
+            cartao.FaturaCom(_vencimento, compra),
+            parceladasDoUsuario: []);
 
         act.Should().ThrowExactly<ArgumentException>().WithParameterName("beneficiariosDoUsuario");
     }
@@ -249,9 +247,8 @@ public sealed class DespesaParceladaFactoryTests
             BeneficiariosResolvidos.Dos(idUsuario, [compra]),
             CategoriasResolvidas.Dos(outroUsuario, [compra]),
             cartao,
-            _vencimento,
-            parceladasDoUsuario: [],
-            [compra]);
+            cartao.FaturaCom(_vencimento, compra),
+            parceladasDoUsuario: []);
 
         act.Should().ThrowExactly<ArgumentException>().WithParameterName("categoriasDoUsuario");
     }
@@ -277,9 +274,8 @@ public sealed class DespesaParceladaFactoryTests
             beneficiariosDoUsuario: [],
             CategoriasResolvidas.Dos(idUsuario, [compra]),
             cartao,
-            _vencimento,
-            parceladasDoUsuario: [],
-            [compra]);
+            cartao.FaturaCom(_vencimento, compra),
+            parceladasDoUsuario: []);
 
         act.Should().ThrowExactly<ArgumentException>().WithParameterName("beneficiariosDoUsuario");
     }
@@ -292,9 +288,8 @@ public sealed class DespesaParceladaFactoryTests
             BeneficiariosResolvidos.Dos(idUsuario, [compra]),
             categoriasDoUsuario: [],
             cartao,
-            _vencimento,
-            parceladasDoUsuario: [],
-            [compra]);
+            cartao.FaturaCom(_vencimento, compra),
+            parceladasDoUsuario: []);
 
         act.Should().ThrowExactly<ArgumentException>().WithParameterName("categoriasDoUsuario");
     }
@@ -310,9 +305,40 @@ public sealed class DespesaParceladaFactoryTests
             BeneficiariosResolvidos.Dos(idUsuario, lancamentos),
             CategoriasResolvidas.Dos(idUsuario, lancamentos),
             cartao,
-            _vencimento,
-            parceladas,
-            lancamentos);
+            cartao.FaturaCom(_vencimento, lancamentos),
+            parceladas);
+    }
+
+    [Theory, CompraAutoData]
+    public void CriarDaFatura_Quando_FaturaDeOutroBanco_Deve_LancarExcecao([Frozen] IdUsuario idUsuario, Cartao cartao, Lancamento compra)
+    {
+        Action act = () => DespesaParceladaFactory.CriarDaFatura(
+            idUsuario,
+            BeneficiariosResolvidos.Dos(idUsuario, [compra]),
+            CategoriasResolvidas.Dos(idUsuario, [compra]),
+            cartao,
+            cartao.EmOutroBanco().FaturaCom(_vencimento, compra),
+            parceladasDoUsuario: []);
+
+        act.Should().ThrowExactly<ArgumentException>().WithParameterName("fatura");
+    }
+
+    [Theory, CompraAutoData]
+    public void CriarDaFatura_Quando_FaturaSemOFinalDoCartao_Deve_LancarExcecao(
+        [Frozen] IdUsuario idUsuario,
+        Cartao cartao,
+        SufixoCartao outroSufixo,
+        Lancamento compra)
+    {
+        Action act = () => DespesaParceladaFactory.CriarDaFatura(
+            idUsuario,
+            BeneficiariosResolvidos.Dos(idUsuario, [compra]),
+            CategoriasResolvidas.Dos(idUsuario, [compra]),
+            cartao,
+            cartao.OutroFinal(outroSufixo).FaturaCom(_vencimento, compra),
+            parceladasDoUsuario: []);
+
+        act.Should().ThrowExactly<ArgumentException>().WithParameterName("fatura");
     }
 
     [Theory, CompraAutoData]
@@ -325,11 +351,10 @@ public sealed class DespesaParceladaFactoryTests
             beneficiariosDoUsuario: [],
             categoriasDoUsuario: [],
             cartao,
-            _vencimento,
-            parceladasDoUsuario: [],
-            [doExtrato]);
+            cartao.FaturaCom(_vencimento, doExtrato),
+            parceladasDoUsuario: []);
 
-        act.Should().ThrowExactly<ArgumentException>().WithParameterName("lancamentos");
+        act.Should().ThrowExactly<ArgumentException>().WithParameterName("fatura");
     }
 
     /// <param name="numero">Nulo na compra à vista.</param>

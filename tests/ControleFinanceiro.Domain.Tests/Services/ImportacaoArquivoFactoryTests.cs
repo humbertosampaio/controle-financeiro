@@ -26,7 +26,7 @@ public sealed class ImportacaoArquivoFactoryTests
         result.Periodo.Should().Be(periodo);
         result.Lidas.Should().Be(lidas);
         result.ImportadaEm.Should().Be(importadaEm);
-        result.DataVencimentoFatura.Should().BeNull();
+        result.VencimentoFatura.Should().BeNull();
         result.MesVencimentoFatura.Should().BeNull();
     }
 
@@ -43,7 +43,7 @@ public sealed class ImportacaoArquivoFactoryTests
 
         result.IdUsuario.Should().Be(cartao.IdUsuario);
         result.Origem.Should().Be(OrigemTransacao.DoCartao(cartao.Id));
-        result.DataVencimentoFatura.Should().Be(vencimento);
+        result.VencimentoFatura.Should().Be(vencimento);
         result.MesVencimentoFatura.Should().Be(vencimento.Mes);
     }
 

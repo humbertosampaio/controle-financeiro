@@ -88,7 +88,7 @@ public sealed class Cartao : AggregateRoot<IdCartao>, IPertenceAoUsuario
         DateOnly cadastrado = VencimentoNoMes(vencimento.Mes);
 
         return Result.SuccessIf(
-            vencimento.Value >= cadastrado && vencimento.Value <= cadastrado.AddDays(ToleranciaDiasVencimento),
+            vencimento >= cadastrado && vencimento <= cadastrado.AddDays(ToleranciaDiasVencimento),
             "O vencimento da fatura não fecha com o dia de vencimento cadastrado no cartão: confira a data do vencimento e o ciclo do cartão.");
     }
 

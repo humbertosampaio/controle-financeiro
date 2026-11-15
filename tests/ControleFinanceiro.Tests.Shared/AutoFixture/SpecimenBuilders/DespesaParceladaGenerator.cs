@@ -40,7 +40,7 @@ public sealed class DespesaParceladaGenerator : ISpecimenBuilder
             .Value;
 
         return DespesaParceladaFactory
-            .CriarDaFatura(cartao.IdUsuario, beneficiarios, categoriasDoUsuario: [], cartao, vencimento, parceladasDoUsuario: [], [compra])
+            .CriarDaFatura(cartao.IdUsuario, beneficiarios, categoriasDoUsuario: [], cartao, cartao.FaturaCom(vencimento, compra), parceladasDoUsuario: [])
             .Single();
     }
 }

@@ -2,6 +2,7 @@ using ControleFinanceiro.Domain.Beneficiarios;
 using ControleFinanceiro.Domain.Cartoes;
 using ControleFinanceiro.Domain.Categorias;
 using ControleFinanceiro.Domain.Despesas;
+using ControleFinanceiro.Domain.Importacoes;
 using ControleFinanceiro.Domain.Transacoes;
 using ControleFinanceiro.Domain.Usuarios;
 
@@ -16,25 +17,33 @@ public static class DespesaParceladaFactory
 {
     /// <param name="beneficiariosDoUsuario">Todos os beneficiários do usuário, entre eles o de cada compra.</param>
     /// <param name="categoriasDoUsuario">Todas as categorias do usuário, entre elas a de cada categoria do banco.</param>
-    /// <param name="vencimento">O vencimento da fatura do arquivo: a parcela informada vence nele.</param>
+    /// <param name="fatura">
+    /// A fatura do arquivo, de onde saem os lançamentos do cartão, na ordem dele, e o vencimento em que a parcela informada
+    /// vence: os dois vêm da mesma fatura.
+    /// </param>
     /// <param name="parceladasDoUsuario">Todas as despesas parceladas do usuário, e só as dele.</param>
-    /// <param name="lancamentos">Os lançamentos da fatura, na ordem do arquivo.</param>
     /// <returns>As despesas que faltam, na ordem em que as compras aparecem no arquivo.</returns>
     /// <exception cref="ArgumentException">
-    /// Quando o cartão ou um item das listas é de outro usuário, quando um lançamento não é de fatura, ou quando o beneficiário
-    /// ou a categoria de uma compra não está na lista: a <see cref="LoteTransacoesFactory"/> já conferiu os aliases.
+    /// Quando o cartão ou um item das listas é de outro usuário, quando a fatura é de outro banco ou não traz o final do
+    /// cartão, quando um lançamento não é de fatura, ou quando o beneficiário ou a categoria de uma compra não está na lista:
+    /// a <see cref="LoteTransacoesFactory"/> já conferiu os aliases.
     /// </exception>
     public static IReadOnlyList<DespesaParcelada> CriarDaFatura(
         IdUsuario idUsuario,
         IReadOnlyCollection<Beneficiario> beneficiariosDoUsuario,
         IReadOnlyCollection<CategoriaDespesa> categoriasDoUsuario,
         Cartao cartao,
-        VencimentoFatura vencimento,
-        IReadOnlyCollection<DespesaParcelada> parceladasDoUsuario,
-        IReadOnlyList<Lancamento> lancamentos)
+        Fatura fatura,
+        IReadOnlyCollection<DespesaParcelada> parceladasDoUsuario)
     {
         if (cartao.IdUsuario != idUsuario)
             throw new ArgumentException("O cartão é de outro usuário.", nameof(cartao));
+
+        if (fatura.Banco != cartao.Banco)
+            throw new ArgumentException("A fatura é de outro banco.", nameof(fatura));
+
+        if (!fatura.Sufixos.Contains(cartao.Sufixo))
+            throw new ArgumentException("A fatura não traz o final do cartão.", nameof(fatura));
 
         if (beneficiariosDoUsuario.Any(b => b.IdUsuario != idUsuario))
             throw new ArgumentException("A lista traz um beneficiário de outro usuário.", nameof(beneficiariosDoUsuario));
@@ -45,14 +54,15 @@ public static class DespesaParceladaFactory
         if (parceladasDoUsuario.Any(d => d.IdUsuario != idUsuario))
             throw new ArgumentException("A lista traz uma despesa de outro usuário.", nameof(parceladasDoUsuario));
 
+        IReadOnlyList<Lancamento> lancamentos = fatura.LancamentosCartao(cartao.Sufixo);
         if (lancamentos.Any(l => l.TipoOrigem != TipoOrigem.Cartao))
-            throw new ArgumentException("A lista traz um lançamento que não é de fatura.", nameof(lancamentos));
+            throw new ArgumentException("A fatura traz um lançamento que não é de fatura.", nameof(fatura));
 
         return lancamentos
             .Where(l => l.EhCompraParcelada)
             .GroupBy(l => ChaveCompraParcelada.DoLancamento(cartao.Id, l))
             .SelectMany(compra => LinhasSemDespesa(compra, compra.Key, parceladasDoUsuario))
-            .Select(lancamento => Criar(idUsuario, beneficiariosDoUsuario, categoriasDoUsuario, cartao, vencimento, lancamento))
+            .Select(lancamento => Criar(idUsuario, beneficiariosDoUsuario, categoriasDoUsuario, cartao, fatura.Vencimento, lancamento))
             .ToArray();
     }
 

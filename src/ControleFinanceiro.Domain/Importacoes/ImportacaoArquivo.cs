@@ -30,10 +30,10 @@ public sealed class ImportacaoArquivo : AggregateRoot<IdImportacao>, IPertenceAo
     public DateTimeOffset ImportadaEm { get; private set; }
 
     /// <summary>O vencimento da fatura do arquivo; nulo no extrato de uma conta.</summary>
-    public VencimentoFatura? DataVencimentoFatura { get; private set; }
+    public VencimentoFatura? VencimentoFatura { get; private set; }
 
-    /// <summary>O mês em que vence a fatura do arquivo, o da <see cref="DataVencimentoFatura"/>; nulo no extrato de uma conta.</summary>
-    public MesReferencia? MesVencimentoFatura => DataVencimentoFatura?.Mes;
+    /// <summary>O mês em que vence a fatura do arquivo, o do <see cref="VencimentoFatura"/>; nulo no extrato de uma conta.</summary>
+    public MesReferencia? MesVencimentoFatura => VencimentoFatura?.Mes;
 
     private ImportacaoArquivo()
     {
@@ -47,7 +47,7 @@ public sealed class ImportacaoArquivo : AggregateRoot<IdImportacao>, IPertenceAo
         PeriodoArquivo periodo,
         int lidas,
         DateTimeOffset importadaEm,
-        VencimentoFatura? dataVencimentoFatura)
+        VencimentoFatura? vencimentoFatura)
             : base(id)
     {
         IdUsuario = idUsuario;
@@ -56,7 +56,7 @@ public sealed class ImportacaoArquivo : AggregateRoot<IdImportacao>, IPertenceAo
         Periodo = periodo;
         Lidas = lidas;
         ImportadaEm = importadaEm;
-        DataVencimentoFatura = dataVencimentoFatura;
+        VencimentoFatura = vencimentoFatura;
     }
 
     /// <summary>A importação do extrato de uma conta, que não tem vencimento.</summary>
@@ -74,7 +74,7 @@ public sealed class ImportacaoArquivo : AggregateRoot<IdImportacao>, IPertenceAo
         DateTimeOffset importadaEm)
     {
         ArgumentOutOfRangeException.ThrowIfNegative(lidas);
-        return new(IdImportacao.FromNewVersion7Guid(), idUsuario, origem, layout, periodo, lidas, importadaEm, dataVencimentoFatura: null);
+        return new(IdImportacao.FromNewVersion7Guid(), idUsuario, origem, layout, periodo, lidas, importadaEm, vencimentoFatura: null);
     }
 
     /// <summary>A importação da fatura de um cartão, com a data em que ela vence.</summary>

@@ -76,7 +76,7 @@ public sealed class ImportarFaturaEndpointTests : IAsyncLifetime
         importacaoFisico.Periodo.Should().Be((PeriodoArquivo)(FaturaCartaoC6.PrimeiraCompraFisico, FaturaCartaoC6.UltimaCompraFisico));
         importacaoFisico.Lidas.Should().Be(FaturaCartaoC6.LancamentosPorCartao);
         VencimentoFatura vencimento = (VencimentoFatura)FaturaCartaoC6.Vencimento;
-        importacoes.Should().OnlyContain(i => i.DataVencimentoFatura == vencimento);
+        importacoes.Should().OnlyContain(i => i.VencimentoFatura == vencimento);
 
         List<Transacao> transacoes = await _api.ObterTodosAsync(db => db.Transacoes);
         transacoes.Should().HaveCount(FaturaCartaoC6.QuantidadeLancamentos);
@@ -549,13 +549,13 @@ public sealed class ImportarFaturaEndpointTests : IAsyncLifetime
             idUsuario,
             LayoutArquivoImportacao.C6CartaoCsv,
             FaturaCartaoC6.Completo(),
-            outroVencimento.Value);
+            outroVencimento);
 
         resposta.StatusCode.Should().Be(HttpStatusCode.OK, await resposta.Content.ReadAsStringAsync());
         ImportarFaturaResponse corpo = (await resposta.Content.ReadFromJsonAsync<ImportarFaturaResponse>())!;
         corpo.Cartoes.Should().OnlyContain(c => c.Novas == 0 && c.DespesasParceladasCriadas == 0 && c.DespesasAdiadasCriadas == 0);
         (await _api.ObterTodosAsync(db => db.Transacoes)).Should().OnlyContain(t => t.MesVencimentoFatura == FaturaCartaoC6.MesVencimento);
-        (await _api.ObterTodosAsync(db => db.Importacoes)).Count(i => i.DataVencimentoFatura == outroVencimento).Should().Be(2);
+        (await _api.ObterTodosAsync(db => db.Importacoes)).Count(i => i.VencimentoFatura == outroVencimento).Should().Be(2);
     }
 
     // O banco empurrou o vencimento do dia 10, o do cartão, para o dia 13: a adiada e a parcela do arquivo vencem nele, e as

@@ -106,7 +106,7 @@ public sealed class Fatura : ValueObject
     /// compra original, que é antiga, e fica de fora.
     /// </summary>
     /// <param name="compra">Uma saída da fatura.</param>
-    private bool CompraAVistaAntesVencimento(Lancamento compra) => !compra.EhAVista || compra.Data < Vencimento.Value;
+    private bool CompraAVistaAntesVencimento(Lancamento compra) => !compra.EhAVista || compra.Data < Vencimento;
 
     /// <summary>
     /// O mês do vencimento está entre o primeiro mês em que a compra pode vencer e

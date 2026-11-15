@@ -48,7 +48,7 @@ public sealed class DespesaAdiadaFactoryTests
         despesa.Cobranca.Should().Be(new Cobranca(novas.Single().Id, (ReaisPositivo)99.90m));
         despesa.Pagamento.EstaPago.Should().BeFalse();
         despesa.Pagamento.ValorProjetado.Should().Be((ReaisPositivo)99.90m);
-        despesa.Pagamento.DataProjetada.Should().Be(_vencimento.Value);
+        despesa.Pagamento.DataProjetada.Should().Be(_vencimento);
     }
 
     // A regressão da #185: o banco empurrou o fechamento do dia 3 para o dia 6, e a compra do dia 4 veio na fatura que vence
@@ -67,7 +67,7 @@ public sealed class DespesaAdiadaFactoryTests
 
         DespesaAdiada despesa = result.Should().ContainSingle().Subject;
         despesa.MesReferencia.Should().Be((MesReferencia)(03, 2026));
-        despesa.Pagamento.DataProjetada.Should().Be(vencimentoEmpurrado.Value);
+        despesa.Pagamento.DataProjetada.Should().Be(vencimentoEmpurrado);
     }
 
     [Theory, CompraAutoData]
@@ -75,7 +75,7 @@ public sealed class DespesaAdiadaFactoryTests
     {
         IReadOnlyList<Transacao> novas = fatura.Importar(cartao, compra);
 
-        Action act = () => fatura.CriarAdiadas([cartao], adiadasDoUsuario: [], (VencimentoFatura)_vencimento.Value.AddMonths(1), novas);
+        Action act = () => fatura.CriarAdiadas([cartao], adiadasDoUsuario: [], (VencimentoFatura)new DateOnly(2026, 05, 25), novas);
 
         act.Should().ThrowExactly<ArgumentException>().WithParameterName("transacoesNovas");
     }

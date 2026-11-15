@@ -157,9 +157,8 @@ public sealed class ImportacaoFaturaService
                     beneficiariosDoUsuario,
                     categoriasDoUsuario,
                     cartao,
-                    fatura.Vencimento,
-                    parceladasDoUsuario,
-                    lancamentos);
+                    fatura,
+                    parceladasDoUsuario);
 
                 return (cartao, importacao, transacoes, despesasParceladas);
             });

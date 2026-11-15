@@ -236,9 +236,8 @@ public sealed class DespesaParceladaTests
                 BeneficiariosResolvidos.Dos(idUsuario, [compra]),
                 categoriasDoUsuario: [],
                 cartao,
-                (VencimentoFatura)VencimentoInformado(numero),
-                parceladasDoUsuario: [],
-                [compra])
+                cartao.FaturaCom((VencimentoFatura)VencimentoInformado(numero), compra),
+                parceladasDoUsuario: [])
             .Single();
     }
 }
