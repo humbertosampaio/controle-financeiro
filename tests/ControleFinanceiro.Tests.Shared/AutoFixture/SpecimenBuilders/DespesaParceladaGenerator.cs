@@ -2,6 +2,7 @@ using AutoFixture.Kernel;
 using ControleFinanceiro.Domain.Beneficiarios;
 using ControleFinanceiro.Domain.Cartoes;
 using ControleFinanceiro.Domain.Despesas;
+using ControleFinanceiro.Domain.Importacoes;
 using ControleFinanceiro.Domain.Services;
 using ControleFinanceiro.Domain.Shared.ValueObjects;
 using ControleFinanceiro.Domain.Transacoes;
@@ -10,7 +11,8 @@ namespace ControleFinanceiro.Tests.Shared.AutoFixture.SpecimenBuilders;
 
 /// <summary>
 /// Monta a <see cref="DespesaParcelada"/> pela <see cref="DespesaParceladaFactory"/>, a única entrada, a partir de uma
-/// compra sem categoria do banco. O usuário é o do cartão: com <c>[Frozen] IdUsuario</c> no teste, a despesa sai desse
+/// compra sem categoria do banco, numa fatura que vence no mês seguinte ao primeiro em que a parcela pode vencer, no dia
+/// do cartão. O usuário é o do cartão: com <c>[Frozen] IdUsuario</c> no teste, a despesa sai desse
 /// usuário, e com <c>[Frozen] Cartao</c>, desse cartão.
 /// </summary>
 public sealed class DespesaParceladaGenerator : ISpecimenBuilder
@@ -32,12 +34,21 @@ public sealed class DespesaParceladaGenerator : ISpecimenBuilder
             categoriaBanco: null,
             context.Create<IdentidadeLancamento>());
 
+        DateOnly vencimento = cartao.VencimentoNoMes(compra.PrimeiroMesVencimentoPossivel.Posterior());
+        ImportacaoArquivo importacao = ImportacaoArquivoFactory.Registrar(
+            cartao,
+            context.Create<LayoutArquivoImportacao>(),
+            context.Create<PeriodoArquivo>(),
+            vencimento,
+            lidas: 1,
+            context.Create<DateTimeOffset>());
+
         IReadOnlyList<Beneficiario> beneficiarios = BeneficiarioFactory
             .Resolver(cartao.IdUsuario, beneficiariosDoUsuario: [], [new BeneficiarioNovo(descricao, (Alias)(string)descricao)])
             .Value;
 
         return DespesaParceladaFactory
-            .CriarDaFatura(cartao.IdUsuario, beneficiarios, categoriasDoUsuario: [], cartao, parceladasDoUsuario: [], [compra])
+            .CriarDaFatura(cartao.IdUsuario, beneficiarios, categoriasDoUsuario: [], cartao, importacao, parceladasDoUsuario: [], [compra])
             .Single();
     }
 }

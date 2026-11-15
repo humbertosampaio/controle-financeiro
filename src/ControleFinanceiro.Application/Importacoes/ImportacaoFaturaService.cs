@@ -92,6 +92,7 @@ public sealed class ImportacaoFaturaService
                 categoriasDoUsuario,
                 cartoesDoUsuario,
                 adiadasDoUsuario,
+                fatura.Vencimento,
                 novas), ct));
     }
 
@@ -156,6 +157,7 @@ public sealed class ImportacaoFaturaService
                     beneficiariosDoUsuario,
                     categoriasDoUsuario,
                     cartao,
+                    importacao,
                     parceladasDoUsuario,
                     lancamentos);
 

@@ -515,6 +515,29 @@ public sealed class ImportarFaturaEndpointTests : IAsyncLifetime
         (await _api.ObterParceladasAsync()).Select(d => d.IdUsuario).Should().BeEquivalentTo([IdUsuario.From(idUsuario), IdUsuario.From(idOutro)]);
     }
 
+    // O banco empurrou o vencimento do dia 10, o do cartão, para o dia 13: a adiada e a parcela do arquivo vencem nele, e as
+    // parcelas que não estão no arquivo, no dia do cartão.
+    [Theory, ApiAutoData]
+    public async Task Post_Quando_VencimentoEmpurrado_Deve_CriarAsDespesasDoArquivoNaDataExata(CadastrarUsuarioRequest cadastro)
+    {
+        Guid idUsuario = await _api.CadastrarUsuarioAsync(cadastro);
+        await ResolverPendenciasAsync(idUsuario, FaturaCartaoC6.Completo());
+        DateOnly vencimentoEmpurrado = FaturaCartaoC6.Vencimento.AddDays(3);
+
+        using HttpResponseMessage resposta = await _api.ImportarFaturaAsync(
+            idUsuario,
+            LayoutArquivoImportacao.C6CartaoCsv,
+            FaturaCartaoC6.Completo(),
+            vencimentoEmpurrado);
+
+        resposta.StatusCode.Should().Be(HttpStatusCode.OK, await resposta.Content.ReadAsStringAsync());
+        DespesaAdiada adiada = await _api.ObterAdiadaDaCompraAsync(idUsuario, VinculoExtensions.CompraAVista);
+        adiada.Pagamento.DataProjetada.Should().Be(vencimentoEmpurrado);
+        ParcelaDespesa[] parcelas = (await _api.ObterParceladasAsync()).Single().Parcelas.OrderBy(p => p.NumeroParcela).ToArray();
+        parcelas[8].Pagamento.DataProjetada.Should().Be(vencimentoEmpurrado);
+        parcelas[9].Pagamento.DataProjetada.Should().Be(new DateOnly(2026, 05, 10));
+    }
+
     [Theory, ApiAutoData]
     public async Task Post_Deve_CriarAAdiadaCobradaEPendenteDaCompraAVista(CadastrarUsuarioRequest cadastro)
     {
@@ -538,7 +561,7 @@ public sealed class ImportarFaturaEndpointTests : IAsyncLifetime
         despesa.IdCategoria.Should().Be(categoria.Id);
         despesa.IdDespesaRecorrente.Should().BeNull();
         despesa.DataOcorrencia.Should().Be(new DateOnly(2026, 03, 05));
-        despesa.MesReferencia.Should().Be(FaturaCartaoC6.VencimentoComprasDeMarco);
+        despesa.MesReferencia.Should().Be(FaturaCartaoC6.MesVencimento);
         despesa.Cobranca.Should().Be(new Cobranca(compra.Id, (ReaisPositivo)123.45m));
         despesa.Pagamento.Status.Should().Be(StatusPagamento.Pendente);
         despesa.Pagamento.ValorProjetado.Should().Be((ReaisPositivo)123.45m);

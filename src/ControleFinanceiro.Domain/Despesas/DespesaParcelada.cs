@@ -46,14 +46,16 @@ public sealed class DespesaParcelada : Despesa, IDespesaDoCartao
 
     /// <summary>
     /// A compra com todas as parcelas, em meses consecutivos e com o mesmo valor. As anteriores à informada nascem
-    /// pagas, e ela e as seguintes, pendentes.
+    /// pagas, e ela e as seguintes, pendentes. A parcela informada vence na data exata da fatura que a trouxe; as outras,
+    /// no mês delas, recuado ou avançado a partir do dela, no dia de vencimento do cartão.
     /// </summary>
     /// <remarks>
-    /// Interno porque só a <see cref="Services.DespesaParceladaFactory"/>, que recebe as listas do usuário, recusa a
-    /// compra repetida, confere a posse dos itens e calcula o mês da primeira parcela pelos dias do cartão.
+    /// Interno porque só a <see cref="Services.DespesaParceladaFactory"/>, que recebe as listas do usuário e a importação
+    /// da fatura, recusa a compra repetida e confere a posse dos itens.
     /// </remarks>
     /// <param name="valor">O valor da parcela informada, o único que o arquivo traz.</param>
-    /// <param name="vencimentoPrimeiraParcela">O vencimento da fatura em que a primeira parcela cai.</param>
+    /// <param name="vencimentoParcelaInformada">O vencimento exato da fatura que trouxe a parcela informada.</param>
+    /// <param name="diaVencimento">O dia de vencimento do cartão, para as parcelas que não estão no arquivo.</param>
     /// <param name="parcela">A parcela como o banco a informou.</param>
     internal static DespesaParcelada Criar(
         IdUsuario idUsuario,
@@ -63,7 +65,8 @@ public sealed class DespesaParcelada : Despesa, IDespesaDoCartao
         DateOnly dataOcorrencia,
         ReaisPositivo valor,
         IdCartao idCartao,
-        VencimentoFatura vencimentoPrimeiraParcela,
+        VencimentoFatura vencimentoParcelaInformada,
+        DiaVencimentoCartao diaVencimento,
         Parcela parcela)
     {
         DespesaParcelada despesa = new(
@@ -75,14 +78,16 @@ public sealed class DespesaParcelada : Despesa, IDespesaDoCartao
             dataOcorrencia,
             idCartao);
 
-        VencimentoFatura vencimento = vencimentoPrimeiraParcela;
+        MesReferencia mesPrimeiraParcela = vencimentoParcelaInformada.Value.AddMonths(-parcela.QuantidadeParcelasAnteriores);
         for (int numero = 1; numero <= parcela.Total; numero++)
         {
+            VencimentoFatura vencimento = numero == parcela.Numero
+                ? vencimentoParcelaInformada
+                : VencimentoFatura.Projetado(mesPrimeiraParcela.Posterior(numero - 1), diaVencimento);
+
             despesa._parcelas.Add(numero < parcela.Numero
                 ? ParcelaDespesa.CriarPaga(numero, vencimento, valor)
                 : ParcelaDespesa.CriarPendente(numero, vencimento, valor));
-
-            vencimento = vencimento.Seguinte();
         }
 
         return despesa;

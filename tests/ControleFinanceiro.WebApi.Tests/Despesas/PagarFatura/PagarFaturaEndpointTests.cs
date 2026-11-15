@@ -42,6 +42,7 @@ public sealed class PagarFaturaEndpointTests : IAsyncLifetime
         Guid idUsuario = await ImportarExtratoEFaturaAsync(cadastro);
         DespesaAdiada fisico = await _api.ObterAdiadaDaCompraAsync(idUsuario, CompraAVista);
         DespesaAdiada internacional = await _api.ObterAdiadaDaCompraAsync(idUsuario, VinculoExtensions.CompraInternacional);
+        DespesaAdiada deFevereiro = await _api.ObterAdiadaDaCompraAsync(idUsuario, VinculoExtensions.CompraFevereiroVirtual);
         IReadOnlyList<IdTransacao> idsCorridas = (await _api.ObterTodosAsync(db => db.Transacoes))
             .Where(t => t.Descricao == VinculoExtensions.CompraRepetidaDoVirtual)
             .Select(t => t.Id)
@@ -59,6 +60,7 @@ public sealed class PagarFaturaEndpointTests : IAsyncLifetime
         corpo!.Pagas.Should().BeEquivalentTo([
             new PagarFaturaResponse.DespesaPaga(fisico.Id.Value, ValorEfetivo: 123.45m, saida.Data, Parcela: null),
             new PagarFaturaResponse.DespesaPaga(internacional.Id.Value, ValorEfetivo: 55.00m, saida.Data, Parcela: null),
+            new PagarFaturaResponse.DespesaPaga(deFevereiro.Id.Value, ValorEfetivo: 18.90m, saida.Data, Parcela: null),
             new PagarFaturaResponse.DespesaPaga(corridasDoVirtual[0].Id.Value, ValorEfetivo: 12.00m, saida.Data, Parcela: null),
             new PagarFaturaResponse.DespesaPaga(corridasDoVirtual[1].Id.Value, ValorEfetivo: 12.00m, saida.Data, Parcela: null),
         ]);
@@ -103,7 +105,7 @@ public sealed class PagarFaturaEndpointTests : IAsyncLifetime
         PagarFaturaRequest requisicao)
     {
         Guid idUsuario = await ImportarExtratoEFaturaAsync(cadastro);
-        MesReferencia semCompras = FaturaCartaoC6.VencimentoComprasDeMarco.Posterior();
+        MesReferencia semCompras = FaturaCartaoC6.MesVencimento.Posterior();
         (DespesaAdiada fisico, _) = await _api.GerarAdiadaEmCadaFinalAsync(
             idUsuario,
             beneficiarios,

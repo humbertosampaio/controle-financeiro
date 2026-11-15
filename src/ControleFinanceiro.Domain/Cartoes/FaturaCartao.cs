@@ -20,10 +20,7 @@ public sealed class FaturaCartao : ValueObject
     }
 
     /// <summary>A fatura do cartão no mês, com os cartões do usuário que saem nela e o próprio cartão.</summary>
-    public static FaturaCartao DoCartao(Cartao cartao, IEnumerable<Cartao> cartoesDoUsuario, MesReferencia mesVencimento) =>
-        DoCartao(cartao, cartoesDoUsuario, cartao.VencimentoNoMes(mesVencimento));
-
-    private static FaturaCartao DoCartao(Cartao cartao, IEnumerable<Cartao> cartoesDoUsuario, VencimentoFatura vencimento)
+    public static FaturaCartao DoCartao(Cartao cartao, IEnumerable<Cartao> cartoesDoUsuario, MesReferencia mesVencimento)
     {
         HashSet<IdCartao> cartoes = cartoesDoUsuario
             .Where(c => c.EhDaMesmaFaturaQue(cartao))
@@ -31,21 +28,13 @@ public sealed class FaturaCartao : ValueObject
             .Append(cartao.Id)
             .ToHashSet();
 
-        return new FaturaCartao(cartoes, vencimento);
+        return new FaturaCartao(cartoes, cartao.VencimentoNoMes(mesVencimento));
     }
 
     /// <summary>A fatura do cartão de id informado no mês, como no <see cref="DoCartao(Cartao, IEnumerable{Cartao}, MesReferencia)"/>.</summary>
     /// <exception cref="ArgumentException">Quando o cartão não está na lista: é bug de quem chama.</exception>
     public static FaturaCartao DoCartao(IdCartao idCartao, IReadOnlyCollection<Cartao> cartoesDoUsuario, MesReferencia mesVencimento) =>
         DoCartao(CartaoComId(idCartao, cartoesDoUsuario), cartoesDoUsuario, mesVencimento);
-
-    /// <summary>A fatura em que cai a compra feita no cartão na data, pelo <see cref="Cartao.VencimentoDaCompra"/>.</summary>
-    /// <exception cref="ArgumentException">Quando o cartão não está na lista: é bug de quem chama.</exception>
-    public static FaturaCartao DaCompra(IdCartao idCartao, DateOnly dataCompra, IReadOnlyCollection<Cartao> cartoesDoUsuario)
-    {
-        Cartao cartao = CartaoComId(idCartao, cartoesDoUsuario);
-        return DoCartao(cartao, cartoesDoUsuario, cartao.VencimentoDaCompra(dataCompra));
-    }
 
     public bool Contem(IdCartao idCartao) => _cartoes.Contains(idCartao);
 

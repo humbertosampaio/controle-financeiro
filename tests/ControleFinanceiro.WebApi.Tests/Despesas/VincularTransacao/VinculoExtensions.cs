@@ -32,6 +32,12 @@ internal static class VinculoExtensions
     /// <summary>A descrição de outra compra à vista do final físico da fatura fictícia do C6, no mesmo mês de vencimento.</summary>
     public const string CompraInternacional = "SERVICO INTERNACIONAL FICTICIO";
 
+    /// <summary>
+    /// A descrição da compra à vista do final virtual de fevereiro, que vem na mesma fatura das compras de março, embora o
+    /// fechamento cadastrado no cartão a pusesse na fatura anterior.
+    /// </summary>
+    public const string CompraFevereiroVirtual = "PADARIA EXEMPLO";
+
     /// <summary>A descrição da compra à vista do final virtual que aparece duas vezes na fatura fictícia do C6.</summary>
     public const string CompraRepetidaDoVirtual = "APLICATIVO DE TRANSPORTE FICTICIO";
 
@@ -125,7 +131,7 @@ internal static class VinculoExtensions
                 IdBeneficiario = beneficiario.Id.Value,
                 IdCategoria = idCategoria,
             });
-            MesReferencia vencimento = FaturaCartaoC6.VencimentoComprasDeMarco;
+            MesReferencia vencimento = FaturaCartaoC6.MesVencimento;
             await api.GerarDoMesAsync(idUsuario, geracao with { Ano = vencimento.Ano, Mes = vencimento.Mes });
             await api.ImportarFaturaComSucessoAsync(idUsuario, layout, arquivo);
 

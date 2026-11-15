@@ -57,7 +57,7 @@ internal sealed class PagamentoFaturaDeTeste
             cartao,
             fixture.Create<LayoutArquivoImportacao>(),
             fixture.Create<PeriodoArquivo>(),
-            cartao.VencimentoDaCompra(compra.Data),
+            cartao.VencimentoNoMes(compra.Data),
             lidas: 1,
             fixture.Create<DateTimeOffset>().ToUniversalTime());
         Transacao transacao = (await _banco.GravarFaturaAsync(cartao, importacao, [compra])).Single();
@@ -74,7 +74,7 @@ internal sealed class PagamentoFaturaDeTeste
             transacao.Data,
             fixture.Create<ReaisPositivo>(),
             cartao.Id,
-            cartao.VencimentoDaCompra(transacao.Data),
+            cartao.VencimentoNoMes(transacao.Data),
             idDespesaRecorrente: null);
         VinculoTransacaoService.Vincular(transacao, adiada, despesaQueUsaATransacao: Maybe<Despesa>.None, cartoesDoUsuario: [cartao]).Should().Succeed();
 

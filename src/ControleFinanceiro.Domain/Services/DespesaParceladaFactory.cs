@@ -2,6 +2,7 @@ using ControleFinanceiro.Domain.Beneficiarios;
 using ControleFinanceiro.Domain.Cartoes;
 using ControleFinanceiro.Domain.Categorias;
 using ControleFinanceiro.Domain.Despesas;
+using ControleFinanceiro.Domain.Importacoes;
 using ControleFinanceiro.Domain.Transacoes;
 using ControleFinanceiro.Domain.Usuarios;
 
@@ -16,23 +17,29 @@ public static class DespesaParceladaFactory
 {
     /// <param name="beneficiariosDoUsuario">Todos os beneficiários do usuário, entre eles o de cada compra.</param>
     /// <param name="categoriasDoUsuario">Todas as categorias do usuário, entre elas a de cada categoria do banco.</param>
+    /// <param name="importacao">A importação da fatura, do mesmo cartão: a parcela informada vence na data dela.</param>
     /// <param name="parceladasDoUsuario">Todas as despesas parceladas do usuário, e só as dele.</param>
     /// <param name="lancamentos">Os lançamentos da fatura, na ordem do arquivo.</param>
     /// <returns>As despesas que faltam, na ordem em que as compras aparecem no arquivo.</returns>
     /// <exception cref="ArgumentException">
-    /// Quando o cartão ou um item das listas é de outro usuário, quando um lançamento não é de fatura, ou quando o beneficiário
-    /// ou a categoria de uma compra não está na lista: a <see cref="LoteTransacoesFactory"/> já conferiu os aliases.
+    /// Quando o cartão ou um item das listas é de outro usuário, quando a importação é de outra origem, quando um lançamento
+    /// não é de fatura, ou quando o beneficiário ou a categoria de uma compra não está na lista: a
+    /// <see cref="LoteTransacoesFactory"/> já conferiu os aliases.
     /// </exception>
     public static IReadOnlyList<DespesaParcelada> CriarDaFatura(
         IdUsuario idUsuario,
         IReadOnlyCollection<Beneficiario> beneficiariosDoUsuario,
         IReadOnlyCollection<CategoriaDespesa> categoriasDoUsuario,
         Cartao cartao,
+        ImportacaoArquivo importacao,
         IReadOnlyCollection<DespesaParcelada> parceladasDoUsuario,
         IReadOnlyList<Lancamento> lancamentos)
     {
         if (cartao.IdUsuario != idUsuario)
             throw new ArgumentException("O cartão é de outro usuário.", nameof(cartao));
+
+        if (importacao.Origem != OrigemTransacao.DoCartao(cartao.Id))
+            throw new ArgumentException("A importação é de outra origem.", nameof(importacao));
 
         if (beneficiariosDoUsuario.Any(b => b.IdUsuario != idUsuario))
             throw new ArgumentException("A lista traz um beneficiário de outro usuário.", nameof(beneficiariosDoUsuario));
@@ -50,7 +57,7 @@ public static class DespesaParceladaFactory
             .Where(l => l.EhCompraParcelada)
             .GroupBy(l => ChaveCompraParcelada.DoLancamento(cartao.Id, l))
             .SelectMany(compra => LinhasSemDespesa(compra, compra.Key, parceladasDoUsuario))
-            .Select(lancamento => Criar(idUsuario, beneficiariosDoUsuario, categoriasDoUsuario, cartao, lancamento))
+            .Select(lancamento => Criar(idUsuario, beneficiariosDoUsuario, categoriasDoUsuario, cartao, importacao, lancamento))
             .ToArray();
     }
 
@@ -78,8 +85,10 @@ public static class DespesaParceladaFactory
         IReadOnlyCollection<Beneficiario> beneficiariosDoUsuario,
         IReadOnlyCollection<CategoriaDespesa> categoriasDoUsuario,
         Cartao cartao,
+        ImportacaoArquivo importacao,
         Lancamento lancamento)
     {
+        // O Value é seguro: a importação é do cartão, e a do cartão sempre tem o vencimento.
         return DespesaParcelada.Criar(
             idUsuario,
             AliasesResolvidos.IdBeneficiarioDo(beneficiariosDoUsuario, lancamento.AliasTextoBeneficiario!),
@@ -88,7 +97,8 @@ public static class DespesaParceladaFactory
             lancamento.Data,
             lancamento.ValorAbsoluto,
             cartao.Id,
-            cartao.VencimentoDaCompra(lancamento.Data),
+            VencimentoFatura.Criar(importacao.DataVencimentoFatura!.Value),
+            cartao.DiaVencimento,
             lancamento.Parcela!);
     }
 }

@@ -31,11 +31,8 @@ internal static class FaturaCartaoC6
     /// </summary>
     public static readonly DateOnly Vencimento = new(2026, 4, 10);
 
-    /// <summary>
-    /// O vencimento das compras à vista de março, com o vencimento no dia 10 e o fechamento no dia 3 que os testes dão aos
-    /// cartões. A compra à vista de fevereiro vence em 03/2026.
-    /// </summary>
-    public static readonly MesReferencia VencimentoComprasDeMarco = (MesReferencia)(04, 2026);
+    /// <summary>O mês do <see cref="Vencimento"/>: o de todas as compras da fatura, inclusive a de fevereiro.</summary>
+    public static readonly MesReferencia MesVencimento = (MesReferencia)(04, 2026);
 
     /// <summary>O arquivo como está em disco.</summary>
     public static byte[] Completo() => File.ReadAllBytes(_caminho);

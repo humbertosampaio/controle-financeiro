@@ -1,6 +1,7 @@
 using AutoFixture.Xunit2;
 using ControleFinanceiro.Domain.Cartoes;
 using ControleFinanceiro.Domain.Despesas;
+using ControleFinanceiro.Domain.Importacoes;
 using ControleFinanceiro.Domain.Services;
 using ControleFinanceiro.Domain.Shared.ValueObjects;
 using ControleFinanceiro.Domain.Transacoes;
@@ -15,6 +16,12 @@ namespace ControleFinanceiro.Domain.Tests.Despesas;
 public sealed class DespesaParceladaTests
 {
     private static readonly DateOnly _dataOcorrencia = new(2026, 01, 15);
+
+    /// <summary>
+    /// O vencimento exato da fatura da primeira parcela, num dia que o cartão não pode ter (a faixa vai até o 24), para o
+    /// teste distinguir a data exata do arquivo do dia de vencimento do cartão.
+    /// </summary>
+    private static readonly DateOnly _vencimentoPrimeiraFatura = new(2026, 02, 25);
 
     [Theory, DomainAutoData]
     public void Criar_Deve_PreencherADespesaNoCredito([Frozen] IdUsuario idUsuario, Cartao cartao)
@@ -36,17 +43,27 @@ public sealed class DespesaParceladaTests
         result.Parcelas.Select(p => p.NumeroParcela).Should().Equal(Enumerable.Range(1, 10));
     }
 
+    [Theory, DomainAutoData]
+    public void Criar_Deve_VencerAParcelaInformadaNaDataExataDaFatura([Frozen] IdUsuario idUsuario, Cartao cartao)
+    {
+        DespesaParcelada result = Parcelar(idUsuario, cartao, numero: 3, total: 10);
+
+        result.Parcelas.Single(p => p.NumeroParcela == 3).Pagamento.DataProjetada.Should().Be(VencimentoInformado(numero: 3));
+    }
+
     // Doze parcelas viram o ano qualquer que seja o mês da primeira.
     [Theory, DomainAutoData]
-    public void Criar_Quando_ParcelasViramOAno_Deve_ManterOsMesesConsecutivosNoVencimentoDoCartao([Frozen] IdUsuario idUsuario, Cartao cartao)
+    public void Criar_Quando_ParcelasViramOAno_Deve_VencerAsOutrasEmMesesConsecutivosNoDiaDoCartao([Frozen] IdUsuario idUsuario, Cartao cartao)
     {
-        DespesaParcelada result = Parcelar(idUsuario, cartao, numero: 1, total: 12);
+        DespesaParcelada result = Parcelar(idUsuario, cartao, numero: 3, total: 12);
 
-        MesReferencia mes = cartao.MesVencimento(_dataOcorrencia);
+        MesReferencia mes = _vencimentoPrimeiraFatura;
         foreach (ParcelaDespesa parcela in result.Parcelas)
         {
             parcela.MesReferencia.Should().Be(mes);
-            parcela.Pagamento.DataProjetada.Should().Be(mes.NoDia(cartao.DiaVencimento));
+            if (parcela.NumeroParcela != 3)
+                parcela.Pagamento.DataProjetada.Should().Be(mes.NoDia(cartao.DiaVencimento));
+
             mes = mes.Posterior();
         }
     }
@@ -199,6 +216,9 @@ public sealed class DespesaParceladaTests
         despesa.EhDaCompra(chave).Should().BeFalse();
     }
 
+    /// <summary>O vencimento exato da fatura que traz a parcela de número <paramref name="numero"/>.</summary>
+    private static DateOnly VencimentoInformado(int numero) => _vencimentoPrimeiraFatura.AddMonths(numero - 1);
+
     private static DespesaParcelada Parcelar(IdUsuario idUsuario, Cartao cartao, int numero, int total)
     {
         Lancamento compra = Lancamento.DoCartao(
@@ -210,6 +230,13 @@ public sealed class DespesaParceladaTests
             (Parcela)(numero, total),
             categoriaBanco: null,
             IdentidadeLancamento.Unica("1").Value);
+        ImportacaoArquivo importacao = ImportacaoArquivoFactory.Registrar(
+            cartao,
+            LayoutArquivoImportacao.C6CartaoCsv,
+            (PeriodoArquivo)(_dataOcorrencia, _dataOcorrencia),
+            VencimentoInformado(numero),
+            lidas: 1,
+            DateTimeOffset.UnixEpoch);
 
         return DespesaParceladaFactory
             .CriarDaFatura(
@@ -217,6 +244,7 @@ public sealed class DespesaParceladaTests
                 BeneficiariosResolvidos.Dos(idUsuario, [compra]),
                 categoriasDoUsuario: [],
                 cartao,
+                importacao,
                 parceladasDoUsuario: [],
                 [compra])
             .Single();

@@ -2,6 +2,7 @@ using AutoFixture.Xunit2;
 using ControleFinanceiro.Domain.Beneficiarios;
 using ControleFinanceiro.Domain.Cartoes;
 using ControleFinanceiro.Domain.Despesas;
+using ControleFinanceiro.Domain.Importacoes;
 using ControleFinanceiro.Domain.Services;
 using ControleFinanceiro.Domain.Shared.ValueObjects;
 using ControleFinanceiro.Domain.Transacoes;
@@ -330,7 +331,23 @@ public sealed class ConciliacaoParcelasServiceTests
         public IReadOnlyList<DespesaParcelada> Despesas(params Lancamento[] lancamentos)
         {
             IReadOnlyList<Beneficiario> beneficiarios = BeneficiariosResolvidos.Dos(_cartao.IdUsuario, lancamentos);
-            return DespesaParceladaFactory.CriarDaFatura(_cartao.IdUsuario, beneficiarios, categoriasDoUsuario: [], _cartao, parceladasDoUsuario: [], lancamentos);
+            DateOnly vencimento = _cartao.VencimentoNoMes(lancamentos[0].PrimeiroMesVencimentoPossivel.Posterior());
+            ImportacaoArquivo importacao = ImportacaoArquivoFactory.Registrar(
+                _cartao,
+                LayoutArquivoImportacao.C6CartaoCsv,
+                (PeriodoArquivo)(_data, _data),
+                vencimento,
+                lancamentos.Length,
+                DateTimeOffset.UnixEpoch);
+
+            return DespesaParceladaFactory.CriarDaFatura(
+                _cartao.IdUsuario,
+                beneficiarios,
+                categoriasDoUsuario: [],
+                _cartao,
+                importacao,
+                parceladasDoUsuario: [],
+                lancamentos);
         }
 
         public (DespesaParcelada Menor, DespesaParcelada Maior) GemeasDeValoresDiferentes()
