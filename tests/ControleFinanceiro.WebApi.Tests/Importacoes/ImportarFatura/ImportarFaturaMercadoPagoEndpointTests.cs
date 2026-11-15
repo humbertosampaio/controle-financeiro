@@ -74,7 +74,7 @@ public sealed class ImportarFaturaMercadoPagoEndpointTests : IAsyncLifetime
 
         List<Transacao> transacoes = await _api.ObterTodosAsync(db => db.Transacoes);
         Transacao parcelada = transacoes.Should().ContainSingle(t => t.EhParcelada).Subject;
-        parcelada.Parcela.Should().Be((Parcela)(3, 10));
+        parcelada.Parcela.Should().Be((Parcela)(5, 10));
         parcelada.Data.Should().Be(FaturaCartaoMercadoPago.PrimeiraData);
     }
 
@@ -136,7 +136,7 @@ public sealed class ImportarFaturaMercadoPagoEndpointTests : IAsyncLifetime
         transacoes
             .Where(t => t.EhParcelada)
             .Select(t => t.Parcela)
-            .Should().BeEquivalentTo([(Parcela)(3, 10), (Parcela)(4, 10)]);
+            .Should().BeEquivalentTo([(Parcela)(5, 10), (Parcela)(6, 10)]);
     }
 
     [Theory, ApiAutoData]
@@ -165,6 +165,23 @@ public sealed class ImportarFaturaMercadoPagoEndpointTests : IAsyncLifetime
         resposta.StatusCode.Should().Be(HttpStatusCode.UnprocessableEntity);
         (await resposta.CamposComErroAsync()).Should().Equal("arquivo");
         (await _api.ObterTodosAsync(db => db.Cartoes)).Should().BeEmpty();
+        await _api.DeveEstarSemImportacaoAsync();
+    }
+
+    [Theory, ApiAutoData]
+    public async Task Post_Quando_VencimentoNoLayoutQueOTraz_Deve_RetornarErroNoVencimentoSemGravar(CadastrarUsuarioRequest cadastro)
+    {
+        Guid idUsuario = await _api.CadastrarUsuarioAsync(cadastro);
+        await ResolverPendenciasAsync(idUsuario, FaturaCartaoMercadoPago.Completo());
+
+        using HttpResponseMessage resposta = await _api.ImportarFaturaAsync(
+            idUsuario,
+            LayoutArquivoImportacao.MercadoPagoCartaoCsv,
+            FaturaCartaoMercadoPago.Completo(),
+            FaturaCartaoMercadoPago.Vencimento);
+
+        resposta.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+        (await resposta.CamposComErroAsync()).Should().Equal("dataVencimento");
         await _api.DeveEstarSemImportacaoAsync();
     }
 

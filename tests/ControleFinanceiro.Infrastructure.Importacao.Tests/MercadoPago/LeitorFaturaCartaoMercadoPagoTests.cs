@@ -43,6 +43,14 @@ public sealed class LeitorFaturaCartaoMercadoPagoTests
     }
 
     [Fact]
+    public async Task LerAsync_Deve_LerOVencimentoDaFatura()
+    {
+        Fatura fatura = await LerFixtureAsync();
+
+        fatura.Vencimento.Should().Be(new DateOnly(2026, 4, 10));
+    }
+
+    [Fact]
     public async Task LerAsync_Deve_LerOsLancamentosNaOrdemDoArquivo()
     {
         Fatura fatura = await LerFixtureAsync();
@@ -97,7 +105,7 @@ public sealed class LeitorFaturaCartaoMercadoPagoTests
     {
         Fatura fatura = await LerFixtureAsync();
 
-        fatura.Lancamentos[0].Lancamento.Parcela.Should().Be((Parcela)(3, 10));
+        fatura.Lancamentos[0].Lancamento.Parcela.Should().Be((Parcela)(5, 10));
         fatura.Lancamentos.Skip(1).Should().AllSatisfy(l => l.Lancamento.Parcela.Should().BeNull());
     }
 
@@ -117,7 +125,7 @@ public sealed class LeitorFaturaCartaoMercadoPagoTests
         Fatura fatura = await LerFixtureAsync();
 
         fatura.Lancamentos[0].Lancamento.Identidade.Should().Be(
-            IdentidadeLancamento.Composta("100000000001").Value.ComParcela((Parcela)(3, 10)).ComValor(-100.00m));
+            IdentidadeLancamento.Composta("100000000001").Value.ComParcela((Parcela)(5, 10)).ComValor(-100.00m));
         fatura.Lancamentos[6].Lancamento.Identidade.Should().Be(
             IdentidadeLancamento.Composta("100000000007_1").Value.ComParcela(parcela: null).ComValor(1429.36m));
     }
@@ -285,6 +293,26 @@ public sealed class LeitorFaturaCartaoMercadoPagoTests
     }
 
     [Fact]
+    public async Task LerAsync_Quando_LinhaSemVencimento_Deve_RetornarFalhaSoComONumeroDaLinha()
+    {
+        Stream arquivo = ComCampos(LinhaCompraVista, ("vencimento", ""));
+
+        Result<Fatura, FalhaLeituraArquivo> result = await _leitor.LerAsync(arquivo, CancellationToken.None);
+
+        result.Should().FailWith(new FalhaLeituraArquivo(Linha: 3, TipoFalhaLeituraArquivo.LancamentoInvalido, "A linha 3 do arquivo não tem o vencimento da fatura."));
+    }
+
+    [Fact]
+    public async Task LerAsync_Quando_MaisDeUmVencimento_Deve_RetornarFalhaSemONumeroDaLinha()
+    {
+        Stream arquivo = ComCampos(LinhaCompraVista, ("vencimento", "11/04/2026"));
+
+        Result<Fatura, FalhaLeituraArquivo> result = await _leitor.LerAsync(arquivo, CancellationToken.None);
+
+        result.Should().FailWith(new FalhaLeituraArquivo(Linha: null, TipoFalhaLeituraArquivo.ConteudoInvalido, "O arquivo traz mais de um vencimento da fatura."));
+    }
+
+    [Fact]
     public async Task LerAsync_Quando_PagamentoSemNenhumaData_Deve_RetornarFalhaSoComONumeroDaLinha()
     {
         Stream arquivo = ComCampos(LinhaPagamento, ("data_lancamento", ""));
@@ -317,6 +345,7 @@ public sealed class LeitorFaturaCartaoMercadoPagoTests
     [InlineData("valor_cobrado_fatura", "1000000000000000,00")]
     [InlineData("data_compra", "31/02/2026")]
     [InlineData("data_compra", "2026-03-05")]
+    [InlineData("vencimento", "2026-04-10")]
     public async Task LerAsync_Quando_CampoForaDoFormato_Deve_RetornarFalhaSoComONumeroDaLinha(string coluna, string valor)
     {
         Stream arquivo = ComCampos(LinhaCompraVista, (coluna, valor));

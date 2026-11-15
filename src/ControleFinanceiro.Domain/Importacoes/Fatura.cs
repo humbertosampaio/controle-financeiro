@@ -5,13 +5,14 @@ using ControleFinanceiro.Domain.Transacoes;
 namespace ControleFinanceiro.Domain.Importacoes;
 
 /// <summary>
-/// A fatura fechada de um cartão: o banco e os lançamentos na ordem do arquivo, cada um com o final do cartão que
-/// fez a compra. Um arquivo traz vários finais (o cartão físico e o virtual), e cada final é um cartão. Do cartão,
-/// só o final: o número completo e o titular não entram nela.
+/// A fatura fechada de um cartão: o banco, a data de vencimento e os lançamentos na ordem do arquivo, cada um com o
+/// final do cartão que fez a compra. Um arquivo traz vários finais (o cartão físico e o virtual), e cada final é um
+/// cartão. Do cartão, só o final: o número completo e o titular não entram nela.
 /// </summary>
 /// <remarks>
-/// A fatura não declara período nem saldo. O período de cada cartão, e o da fatura inteira, vai da menor à maior data
-/// de compra, e a parcela de uma compra antiga traz a data da compra original, então ele pode cobrir vários meses.
+/// O vencimento vem do arquivo, quando o layout o traz, ou do usuário, quando não traz. A fatura não declara período
+/// nem saldo. O período de cada cartão, e o da fatura inteira, vai da menor à maior data de compra, e a parcela de uma
+/// compra antiga traz a data da compra original, então ele pode cobrir vários meses.
 /// </remarks>
 public sealed class Fatura : ValueObject
 {
@@ -23,14 +24,19 @@ public sealed class Fatura : ValueObject
     private readonly List<SufixoCartao> _sufixos;
 
     public Banco Banco { get; }
+
+    /// <summary>A data em que a fatura vence, a mesma para todos os finais.</summary>
+    public DateOnly Vencimento { get; }
+
     public IReadOnlyList<LancamentoFatura> Lancamentos => _lancamentos;
 
     /// <summary>Os finais distintos, na ordem em que aparecem pela primeira vez no arquivo.</summary>
     public IReadOnlyList<SufixoCartao> Sufixos => _sufixos;
 
-    private Fatura(Banco banco, List<LancamentoFatura> lancamentos)
+    private Fatura(Banco banco, DateOnly vencimento, List<LancamentoFatura> lancamentos)
     {
         Banco = banco;
+        Vencimento = vencimento;
         _lancamentos = lancamentos;
         _sufixos = lancamentos
             .Select(l => l.SufixoCartao)
@@ -39,13 +45,13 @@ public sealed class Fatura : ValueObject
     }
 
     /// <summary>Falha quando a fatura não traz nenhum lançamento.</summary>
-    public static Result<Fatura> Criar(Banco banco, IEnumerable<LancamentoFatura> lancamentos)
+    public static Result<Fatura> Criar(Banco banco, DateOnly vencimento, IEnumerable<LancamentoFatura> lancamentos)
     {
         List<LancamentoFatura> lancamentosFatura = lancamentos.ToList();
 
         return Result.SuccessIf(
             lancamentosFatura.Count > 0,
-            value: new Fatura(banco, lancamentosFatura),
+            value: new Fatura(banco, vencimento, lancamentosFatura),
             "A fatura não traz lançamentos.");
     }
 
@@ -94,6 +100,7 @@ public sealed class Fatura : ValueObject
     protected override IEnumerable<object?> GetEqualityComponents()
     {
         yield return Banco;
+        yield return Vencimento;
 
         foreach (LancamentoFatura lancamento in _lancamentos)
             yield return lancamento;

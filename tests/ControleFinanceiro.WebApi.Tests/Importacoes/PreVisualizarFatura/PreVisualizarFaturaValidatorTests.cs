@@ -1,4 +1,5 @@
 using ControleFinanceiro.Domain.Importacoes;
+using ControleFinanceiro.WebApi.Endpoints.Importacoes.ImportarFatura;
 using ControleFinanceiro.WebApi.Endpoints.Importacoes.PreVisualizarFatura;
 using ControleFinanceiro.WebApi.Tests.AutoFixture;
 using ControleFinanceiro.WebApi.Tests.Infraestrutura;
@@ -34,9 +35,28 @@ public sealed class PreVisualizarFaturaValidatorTests
     public void Validate_Quando_LayoutDaFaturaDoMercadoPago_Deve_Passar(PreVisualizarFaturaRequest requisicao)
     {
         TestValidationResult<PreVisualizarFaturaRequest> resultado = _sut.TestValidate(
-            requisicao with { Layout = LayoutArquivoImportacao.MercadoPagoCartaoCsv.Value });
+            requisicao with { Layout = LayoutArquivoImportacao.MercadoPagoCartaoCsv.Value, DataVencimento = null });
 
         resultado.ShouldNotHaveAnyValidationErrors();
+    }
+
+    [Theory, ApiAutoData]
+    public void Validate_Quando_LayoutSemVencimentoNoArquivoESemVencimento_Deve_RetornarErroNoVencimento(PreVisualizarFaturaRequest requisicao)
+    {
+        TestValidationResult<PreVisualizarFaturaRequest> resultado = _sut.TestValidate(requisicao with { DataVencimento = null });
+
+        resultado.ShouldHaveValidationErrorFor(r => r.DataVencimento)
+            .WithErrorMessage(ImportarFaturaValidator.MensagemVencimentoObrigatorio);
+    }
+
+    [Theory, ApiAutoData]
+    public void Validate_Quando_LayoutComVencimentoNoArquivoEComVencimento_Deve_RetornarErroNoVencimento(PreVisualizarFaturaRequest requisicao)
+    {
+        TestValidationResult<PreVisualizarFaturaRequest> resultado = _sut.TestValidate(
+            requisicao with { Layout = LayoutArquivoImportacao.MercadoPagoCartaoCsv.Value });
+
+        resultado.ShouldHaveValidationErrorFor(r => r.DataVencimento)
+            .WithErrorMessage(ImportarFaturaValidator.MensagemVencimentoNoArquivo);
     }
 
     [Theory]

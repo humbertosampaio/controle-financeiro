@@ -150,7 +150,7 @@ public sealed class DesvincularTransacaoEndpointTests : IAsyncLifetime
         resposta.StatusCode.Should().Be(HttpStatusCode.NotFound);
         (await _api.ObterParceladasAsync())
             .Single()
-            .Parcelas.Single(p => p.NumeroParcela == 3)
+            .Parcelas.Single(p => p.NumeroParcela == 9)
             .Cobranca!.IdTransacao.Should().Be(transacaoDoOutro.Id);
     }
 

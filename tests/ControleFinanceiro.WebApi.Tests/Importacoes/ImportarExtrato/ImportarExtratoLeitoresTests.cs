@@ -6,7 +6,8 @@ namespace ControleFinanceiro.WebApi.Tests.Importacoes.ImportarExtrato;
 
 /// <summary>
 /// Cada endpoint escolhe o leitor pelo layout da rota: o validator aceita os layouts do seu tipo (extrato ou fatura), e o
-/// extrato de conta informada vai ao leitor que recebe o sufixo. Um layout sem leitor no container da API daria 500.
+/// extrato de conta informada vai ao leitor que recebe o sufixo, e a fatura de vencimento informado, ao que recebe o
+/// vencimento. Um layout sem leitor no container da API daria 500.
 /// </summary>
 [Collection(ApiCollection.Nome)]
 public sealed class ImportarExtratoLeitoresTests
@@ -39,6 +40,14 @@ public sealed class ImportarExtratoLeitoresTests
     {
         IReadOnlyList<ILeitorFatura> leitores = _api.ObterServicos<ILeitorFatura>();
 
-        leitores.Select(l => l.Layout).Should().BeEquivalentTo(LayoutArquivoImportacao.Faturas);
+        leitores.Select(l => l.Layout).Should().BeEquivalentTo(LayoutArquivoImportacao.Faturas.Except(LayoutArquivoImportacao.FaturasVencimentoInformado));
+    }
+
+    [Fact]
+    public void Api_Deve_RegistrarUmLeitorDeVencimentoInformadoParaCadaLayoutDeVencimentoInformado()
+    {
+        IReadOnlyList<ILeitorFaturaVencimentoInformado> leitores = _api.ObterServicos<ILeitorFaturaVencimentoInformado>();
+
+        leitores.Select(l => l.Layout).Should().BeEquivalentTo(LayoutArquivoImportacao.FaturasVencimentoInformado);
     }
 }

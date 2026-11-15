@@ -7,9 +7,10 @@ using CsvHelper;
 using System.Globalization;
 using System.Text;
 using System.Text.RegularExpressions;
-using LancamentoLido = (ControleFinanceiro.Domain.Transacoes.Lancamento Lancamento, ControleFinanceiro.Domain.Cartoes.SufixoCartao? Sufixo);
+using LancamentoLido = (ControleFinanceiro.Domain.Transacoes.Lancamento Lancamento, ControleFinanceiro.Domain.Cartoes.SufixoCartao? Sufixo, System.DateOnly Vencimento);
 using TipoEValor = (ControleFinanceiro.Infrastructure.Importacao.MercadoPago.LeitorFaturaCartaoMercadoPago.TipoLancamento Tipo, ControleFinanceiro.Domain.Shared.ValueObjects.Reais Valor);
 using TipoValorSufixoEParcela = (ControleFinanceiro.Infrastructure.Importacao.MercadoPago.LeitorFaturaCartaoMercadoPago.TipoLancamento Tipo, ControleFinanceiro.Domain.Shared.ValueObjects.Reais Valor, ControleFinanceiro.Domain.Cartoes.SufixoCartao? Sufixo, ControleFinanceiro.Domain.Transacoes.Parcela? Parcela);
+using VencimentoELancamentos = (System.DateOnly Vencimento, System.Collections.Generic.IReadOnlyList<ControleFinanceiro.Domain.Importacoes.LancamentoFatura> Lancamentos);
 
 namespace ControleFinanceiro.Infrastructure.Importacao.MercadoPago;
 
@@ -36,14 +37,16 @@ namespace ControleFinanceiro.Infrastructure.Importacao.MercadoPago;
 /// crédito, sem final e sem parcela, e é lido pelo <see cref="Lancamento.PagamentoFaturaCartao"/>, com a marca de
 /// pagamento da fatura;</item>
 /// <item>o pagamento vai para o menor final do arquivo, para que a escolha não dependa da ordem das linhas;</item>
+/// <item>o vencimento vem em toda linha, no formato <c>dd/MM/yyyy</c>, e é o mesmo em todas: a linha sem ele e o arquivo
+/// com mais de um são recusados. O mês de referência é o mês do vencimento, e por isso não é lido;</item>
 /// <item>nenhum tipo conhecido é estorno: o primeiro que aparecer entra na lista como crédito, sem a marca.</item>
 /// </list>
 /// </para>
 /// <para>
 /// O CPF e o CNPJ da descrição e do vendedor ficam: quem os tira é a saída para o modelo. Os produtos e o número do
-/// pedido não são mapeados, nem o mês de referência, o vencimento, o fechamento, o valor original da compra e o
-/// status. As mensagens de falha citam só o número da linha, e a <see cref="CsvFormatException"/>, que pode trazer dados do
-/// registro, é capturada.
+/// pedido não são mapeados, nem o mês de referência, o fechamento, o valor original da compra e o status. As mensagens
+/// de falha citam só o número da linha, e a <see cref="CsvFormatException"/>, que pode trazer dados do registro, é
+/// capturada.
 /// </para>
 /// </remarks>
 public sealed partial class LeitorFaturaCartaoMercadoPago : ILeitorFatura
@@ -78,7 +81,7 @@ public sealed partial class LeitorFaturaCartaoMercadoPago : ILeitorFatura
 
     public LayoutArquivoImportacao Layout => LayoutArquivoImportacao.MercadoPagoCartaoCsv;
 
-    /// <summary>Confere as colunas, lê cada lançamento, põe o pagamento num cartão e monta a fatura.</summary>
+    /// <summary>Confere as colunas, lê cada lançamento, confere o vencimento, põe o pagamento num cartão e monta a fatura.</summary>
     public async Task<Result<Fatura, FalhaLeituraArquivo>> LerAsync(Stream arquivo, CancellationToken cancellationToken)
     {
         using StreamReader leitor = new(arquivo, Encoding.UTF8, detectEncodingFromByteOrderMarks: true, leaveOpen: true);
@@ -86,8 +89,10 @@ public sealed partial class LeitorFaturaCartaoMercadoPago : ILeitorFatura
 
         return await LerColunasAsync(csv)
             .Bind(() => LerLinhasAsync(csv, cancellationToken))
-            .Bind(lidos => PorNoMenorFinal(lidos).MapError(ConteudoInvalido))
-            .Bind(lancamentos => Fatura.Criar(Banco.MercadoPago, lancamentos).MapError(ConteudoInvalido));
+            .Bind(lidos => LerVencimentoELancamentos(lidos).MapError(ConteudoInvalido))
+            .Bind(vencimentoELancamentos => Fatura
+                .Criar(Banco.MercadoPago, vencimentoELancamentos.Vencimento, vencimentoELancamentos.Lancamentos)
+                .MapError(ConteudoInvalido));
     }
 
     /// <summary>
@@ -171,6 +176,7 @@ public sealed partial class LeitorFaturaCartaoMercadoPago : ILeitorFatura
             .FailureIf(descricao.Length == 0, "não tem descrição.")
             .Ensure(() => linha.Moeda == MoedaReais, "não traz os valores em reais (BRL).")
             .Ensure(() => (linha.DataCompra ?? linha.DataLancamento).HasValue, "não tem a data da compra nem a do lançamento.")
+            .Ensure(() => linha.Vencimento.HasValue, "não tem o vencimento da fatura.")
             .Bind(() => LerTipoEValor(linha))
             .Bind(tipoEValor => LerSufixoEParcela(linha, tipoEValor))
             .Bind(valorSufixoEParcela => Lancar(linha, descricao, valorSufixoEParcela));
@@ -235,7 +241,7 @@ public sealed partial class LeitorFaturaCartaoMercadoPago : ILeitorFatura
             .MapError(_ => "não tem a parcela da compra parcelada.");
     }
 
-    /// <param name="linha">Com a data da compra ou a do lançamento.</param>
+    /// <param name="linha">Com a data da compra ou a do lançamento e com o vencimento.</param>
     /// <param name="descricao">Aparada e não vazia.</param>
     private static Result<LancamentoLido> Lancar(LinhaFaturaMercadoPago linha, string descricao, TipoValorSufixoEParcela tipoValorSufixoEParcela)
     {
@@ -244,7 +250,7 @@ public sealed partial class LeitorFaturaCartaoMercadoPago : ILeitorFatura
             .MapError(_ => "não tem o número da transação.")
             .Map(identidade => identidade.ComParcela(tipoValorSufixoEParcela.Parcela).ComValor(tipoValorSufixoEParcela.Valor))
             .Map(identidade => Montar(linha, descricao, tipoValorSufixoEParcela, identidade))
-            .Map(lancamento => (lancamento, tipoValorSufixoEParcela.Sufixo));
+            .Map(lancamento => (lancamento, tipoValorSufixoEParcela.Sufixo, linha.Vencimento.GetValueOrDefault()));
     }
 
     /// <summary>
@@ -278,6 +284,28 @@ public sealed partial class LeitorFaturaCartaoMercadoPago : ILeitorFatura
                 tipoValorSufixoEParcela.Parcela,
                 categoriaBanco: null,
                 identidade);
+    }
+
+    private static Result<VencimentoELancamentos> LerVencimentoELancamentos(IReadOnlyList<LancamentoLido> lidos)
+    {
+        return VencimentoUnico(lidos).Bind(vencimento => PorNoMenorFinal(lidos).Map(lancamentos => (vencimento, lancamentos)));
+    }
+
+    /// <summary>
+    /// O vencimento que todas as linhas trazem. Falha quando há mais de um. Sem lançamentos, devolve a data padrão, e a
+    /// <see cref="Fatura"/> recusa a fatura vazia.
+    /// </summary>
+    private static Result<DateOnly> VencimentoUnico(IReadOnlyList<LancamentoLido> lidos)
+    {
+        DateOnly[] vencimentos = lidos
+            .Select(l => l.Vencimento)
+            .Distinct()
+            .ToArray();
+
+        return Result.SuccessIf(
+            vencimentos.Length <= 1,
+            value: vencimentos.FirstOrDefault(),
+            "O arquivo traz mais de um vencimento da fatura.");
     }
 
     /// <summary>
@@ -314,6 +342,9 @@ public sealed partial class LeitorFaturaCartaoMercadoPago : ILeitorFatura
     internal sealed partial class LinhaFaturaMercadoPago
     {
         private const string FormatoData = "dd/MM/yyyy";
+
+        [CsvColumn("vencimento"), CsvFormat(FormatoData)]
+        public DateOnly? Vencimento { get; init; }
 
         [CsvColumn("data_compra"), CsvFormat(FormatoData)]
         public DateOnly? DataCompra { get; init; }

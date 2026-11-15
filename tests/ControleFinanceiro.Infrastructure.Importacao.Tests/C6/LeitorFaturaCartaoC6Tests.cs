@@ -19,6 +19,9 @@ public sealed class LeitorFaturaCartaoC6Tests
     private const int LinhaEstorno = 7;
     private const string TitularFicticio = "FULANA DE TAL FICTICIA";
 
+    /// <summary>O vencimento que o usuário informa, coerente com as compras da fatura fictícia.</summary>
+    private static readonly DateOnly _vencimento = new(2026, 4, 10);
+
     /// <summary>O arquivo como o banco exporta: UTF-8 sem BOM e CRLF.</summary>
     private static readonly ArquivoFixture _fixture = new("C6", "fatura-cartao.csv", fimLinha: "\r\n", comBom: false);
     private static readonly string _caminhoExtrato = Path.Combine(AppContext.BaseDirectory, "Fixtures", "C6", "extrato-conta.csv");
@@ -32,6 +35,14 @@ public sealed class LeitorFaturaCartaoC6Tests
 
         fatura.Banco.Should().Be(Banco.C6);
         fatura.Sufixos.Should().Equal((SufixoCartao)"1111", (SufixoCartao)"2222");
+    }
+
+    [Fact]
+    public async Task LerAsync_Deve_PorNaFaturaOVencimentoInformado()
+    {
+        Fatura fatura = await LerFixtureAsync();
+
+        fatura.Vencimento.Should().Be(_vencimento);
     }
 
     [Fact]
@@ -77,7 +88,7 @@ public sealed class LeitorFaturaCartaoC6Tests
         Fatura fatura = await LerFixtureAsync();
 
         Lancamento parcelada = fatura.Lancamentos[2].Lancamento;
-        parcelada.Parcela.Should().Be((Parcela)(3, 10));
+        parcelada.Parcela.Should().Be((Parcela)(9, 10));
         parcelada.Data.Should().Be(new DateOnly(2025, 7, 15));
     }
 
@@ -94,7 +105,7 @@ public sealed class LeitorFaturaCartaoC6Tests
     {
         Stream arquivo = _fixture.ComLinha(numero: 2, $"05/03/2026;{TitularFicticio};1111;Supermercado;MERCADO FICTICIO;1/1;0;0;123.45");
 
-        Fatura fatura = (await _leitor.LerAsync(arquivo, CancellationToken.None)).Value;
+        Fatura fatura = (await _leitor.LerAsync(arquivo, _vencimento, CancellationToken.None)).Value;
 
         fatura.Lancamentos[0].Lancamento.Parcela.Should().BeNull();
         fatura.Lancamentos[0].Lancamento.Identidade.Campos[^1].Should().BeEmpty();
@@ -116,7 +127,7 @@ public sealed class LeitorFaturaCartaoC6Tests
     {
         Stream arquivo = _fixture.ComLinha(numero: 2, $"05/03/2026;{TitularFicticio};1111;{categoria};MERCADO FICTICIO;Única;0;0;123.45");
 
-        Fatura fatura = (await _leitor.LerAsync(arquivo, CancellationToken.None)).Value;
+        Fatura fatura = (await _leitor.LerAsync(arquivo, _vencimento, CancellationToken.None)).Value;
 
         fatura.Lancamentos[0].Lancamento.CategoriaBanco.Should().BeNull();
     }
@@ -150,7 +161,7 @@ public sealed class LeitorFaturaCartaoC6Tests
     {
         Stream arquivo = _fixture.ComLinha(LinhaEstorno, $"08/03/2026;{TitularFicticio};2222;-;ANUIDADE FICTICIA;Única;0;0;-35.00");
 
-        Fatura fatura = (await _leitor.LerAsync(arquivo, CancellationToken.None)).Value;
+        Fatura fatura = (await _leitor.LerAsync(arquivo, _vencimento, CancellationToken.None)).Value;
 
         fatura.Lancamentos[LinhaEstorno - 2].Lancamento.EhPagamentoFatura.Should().BeFalse();
     }
@@ -160,7 +171,7 @@ public sealed class LeitorFaturaCartaoC6Tests
     {
         Stream arquivo = _fixture.ComLinha(LinhaPagamento, $"02/03/2026;{TitularFicticio};1111;-;INCLUSÃO  DE PAGAMENTO;Única;0;0;-500.00");
 
-        Fatura fatura = (await _leitor.LerAsync(arquivo, CancellationToken.None)).Value;
+        Fatura fatura = (await _leitor.LerAsync(arquivo, _vencimento, CancellationToken.None)).Value;
 
         fatura.Lancamentos[LinhaPagamento - 2].Lancamento.EhPagamentoFatura.Should().BeTrue();
     }
@@ -170,7 +181,7 @@ public sealed class LeitorFaturaCartaoC6Tests
     {
         Stream arquivo = _fixture.ComLinha(LinhaPagamento, $"02/03/2026;{TitularFicticio};1111;-;Inclusao de Pagamento;Única;0;0;500.00");
 
-        Fatura fatura = (await _leitor.LerAsync(arquivo, CancellationToken.None)).Value;
+        Fatura fatura = (await _leitor.LerAsync(arquivo, _vencimento, CancellationToken.None)).Value;
 
         fatura.Lancamentos[LinhaPagamento - 2].Lancamento.EhPagamentoFatura.Should().BeFalse();
     }
@@ -203,7 +214,7 @@ public sealed class LeitorFaturaCartaoC6Tests
         Fatura fatura = await LerFixtureAsync();
 
         fatura.Lancamentos[0].Lancamento.Identidade.Campos.Should().Equal("2026-03-05", "-123.45", "MERCADO FICTICIO", "");
-        fatura.Lancamentos[2].Lancamento.Identidade.Campos.Should().Equal("2025-07-15", "-99.90", "LOJA DE EXEMPLO", "3/10");
+        fatura.Lancamentos[2].Lancamento.Identidade.Campos.Should().Equal("2025-07-15", "-99.90", "LOJA DE EXEMPLO", "9/10");
     }
 
     [Fact]
@@ -241,7 +252,7 @@ public sealed class LeitorFaturaCartaoC6Tests
     {
         Stream arquivo = _fixture.ComLinha(numero: 4, linha);
 
-        Result<Fatura, FalhaLeituraArquivo> result = await _leitor.LerAsync(arquivo, CancellationToken.None);
+        Result<Fatura, FalhaLeituraArquivo> result = await _leitor.LerAsync(arquivo, _vencimento, CancellationToken.None);
 
         result.Should().FailWith(new FalhaLeituraArquivo(Linha: 4, TipoFalhaLeituraArquivo.LancamentoInvalido, $"A linha 4 do arquivo {erro}"));
     }
@@ -256,7 +267,7 @@ public sealed class LeitorFaturaCartaoC6Tests
     {
         Stream arquivo = _fixture.ComLinha(numero: 3, linha);
 
-        Result<Fatura, FalhaLeituraArquivo> result = await _leitor.LerAsync(arquivo, CancellationToken.None);
+        Result<Fatura, FalhaLeituraArquivo> result = await _leitor.LerAsync(arquivo, _vencimento, CancellationToken.None);
 
         result.Should().FailWith(new FalhaLeituraArquivo(Linha: 3, TipoFalhaLeituraArquivo.ForaDoLayout, "A linha 3 do arquivo não está no layout da fatura do cartão do C6."));
     }
@@ -268,7 +279,7 @@ public sealed class LeitorFaturaCartaoC6Tests
     {
         Stream arquivo = _fixture.ComLinha(LinhaColunas, colunas);
 
-        Result<Fatura, FalhaLeituraArquivo> result = await _leitor.LerAsync(arquivo, CancellationToken.None);
+        Result<Fatura, FalhaLeituraArquivo> result = await _leitor.LerAsync(arquivo, _vencimento, CancellationToken.None);
 
         result.Should().FailWith(new FalhaLeituraArquivo(Linha: 1, TipoFalhaLeituraArquivo.SemColunas, "A linha 1 do arquivo não traz as colunas da fatura do cartão do C6."));
     }
@@ -278,7 +289,7 @@ public sealed class LeitorFaturaCartaoC6Tests
     {
         Stream arquivo = _fixture.ComLinhas(_fixture.Linhas().Select(l => l.Replace(';', ',')));
 
-        Result<Fatura, FalhaLeituraArquivo> result = await _leitor.LerAsync(arquivo, CancellationToken.None);
+        Result<Fatura, FalhaLeituraArquivo> result = await _leitor.LerAsync(arquivo, _vencimento, CancellationToken.None);
 
         result.Should().FailWith(new FalhaLeituraArquivo(Linha: 1, TipoFalhaLeituraArquivo.SemColunas, "A linha 1 do arquivo não traz as colunas da fatura do cartão do C6."));
     }
@@ -290,7 +301,7 @@ public sealed class LeitorFaturaCartaoC6Tests
         linhas[2] = $"05/03/2026;{TitularFicticio};111;Supermercado;MERCADO FICTICIO;Única;0;0;123.45";
         linhas.Insert(index: 2, item: string.Empty);
 
-        Result<Fatura, FalhaLeituraArquivo> result = await _leitor.LerAsync(_fixture.ComLinhas(linhas), CancellationToken.None);
+        Result<Fatura, FalhaLeituraArquivo> result = await _leitor.LerAsync(_fixture.ComLinhas(linhas), _vencimento, CancellationToken.None);
 
         result.Should().FailWith(new FalhaLeituraArquivo(Linha: 4, TipoFalhaLeituraArquivo.LancamentoInvalido, "A linha 4 do arquivo não tem o final do cartão com 4 dígitos."));
     }
@@ -300,7 +311,7 @@ public sealed class LeitorFaturaCartaoC6Tests
     {
         Stream arquivo = _fixture.ComLinhas(_fixture.Linhas().Prepend("sep=;"));
 
-        Result<Fatura, FalhaLeituraArquivo> result = await _leitor.LerAsync(arquivo, CancellationToken.None);
+        Result<Fatura, FalhaLeituraArquivo> result = await _leitor.LerAsync(arquivo, _vencimento, CancellationToken.None);
 
         result.Should().FailWith(new FalhaLeituraArquivo(Linha: 1, TipoFalhaLeituraArquivo.SemColunas, "A linha 1 do arquivo não traz as colunas da fatura do cartão do C6."));
     }
@@ -310,7 +321,7 @@ public sealed class LeitorFaturaCartaoC6Tests
     {
         Stream arquivo = _fixture.ComLinha(numero: 3, $"05/03/2026;{TitularFicticio};111;Supermercado;\"MERCADO\nFICTICIO\";Única;0;0;123.45");
 
-        Result<Fatura, FalhaLeituraArquivo> result = await _leitor.LerAsync(arquivo, CancellationToken.None);
+        Result<Fatura, FalhaLeituraArquivo> result = await _leitor.LerAsync(arquivo, _vencimento, CancellationToken.None);
 
         result.Should().FailWith(new FalhaLeituraArquivo(Linha: 3, TipoFalhaLeituraArquivo.LancamentoInvalido, "A linha 3 do arquivo não tem o final do cartão com 4 dígitos."));
     }
@@ -320,7 +331,7 @@ public sealed class LeitorFaturaCartaoC6Tests
     {
         Stream arquivo = _fixture.ComLinha(numero: 3, $"05/03/2026;{TitularFicticio};1111;Supermercado;\"MERCADO\nFICTICIO\";Única;0;0;1,234.56");
 
-        Result<Fatura, FalhaLeituraArquivo> result = await _leitor.LerAsync(arquivo, CancellationToken.None);
+        Result<Fatura, FalhaLeituraArquivo> result = await _leitor.LerAsync(arquivo, _vencimento, CancellationToken.None);
 
         result.Should().FailWith(new FalhaLeituraArquivo(Linha: 3, TipoFalhaLeituraArquivo.ForaDoLayout, "A linha 3 do arquivo não está no layout da fatura do cartão do C6."));
     }
@@ -330,7 +341,7 @@ public sealed class LeitorFaturaCartaoC6Tests
     {
         Stream arquivo = _fixture.ComLinha(LinhaColunas, "Data;Descrição;Valor");
 
-        Result<Fatura, FalhaLeituraArquivo> result = await _leitor.LerAsync(arquivo, CancellationToken.None);
+        Result<Fatura, FalhaLeituraArquivo> result = await _leitor.LerAsync(arquivo, _vencimento, CancellationToken.None);
 
         result.Should().FailWith(new FalhaLeituraArquivo(Linha: 1, TipoFalhaLeituraArquivo.SemColunas, "A linha 1 do arquivo não traz as colunas da fatura do cartão do C6."));
     }
@@ -340,7 +351,7 @@ public sealed class LeitorFaturaCartaoC6Tests
     {
         await using FileStream arquivo = File.OpenRead(_caminhoExtrato);
 
-        Result<Fatura, FalhaLeituraArquivo> result = await _leitor.LerAsync(arquivo, CancellationToken.None);
+        Result<Fatura, FalhaLeituraArquivo> result = await _leitor.LerAsync(arquivo, _vencimento, CancellationToken.None);
 
         result.Should().FailWith(new FalhaLeituraArquivo(Linha: 1, TipoFalhaLeituraArquivo.SemColunas, "A linha 1 do arquivo não traz as colunas da fatura do cartão do C6."));
     }
@@ -348,7 +359,7 @@ public sealed class LeitorFaturaCartaoC6Tests
     [Fact]
     public async Task LerAsync_Quando_ArquivoVazio_Deve_RetornarFalha()
     {
-        Result<Fatura, FalhaLeituraArquivo> result = await _leitor.LerAsync(_fixture.ComLinhas(linhas: []), CancellationToken.None);
+        Result<Fatura, FalhaLeituraArquivo> result = await _leitor.LerAsync(_fixture.ComLinhas(linhas: []), _vencimento, CancellationToken.None);
 
         result.Should().FailWith(new FalhaLeituraArquivo(Linha: null, TipoFalhaLeituraArquivo.SemColunas, "O arquivo termina antes das colunas da fatura do cartão do C6."));
     }
@@ -358,7 +369,7 @@ public sealed class LeitorFaturaCartaoC6Tests
     {
         Stream arquivo = _fixture.ComLinhas(_fixture.Linhas().Take(LinhaColunas));
 
-        Result<Fatura, FalhaLeituraArquivo> result = await _leitor.LerAsync(arquivo, CancellationToken.None);
+        Result<Fatura, FalhaLeituraArquivo> result = await _leitor.LerAsync(arquivo, _vencimento, CancellationToken.None);
 
         result.Should().FailWith(new FalhaLeituraArquivo(Linha: null, TipoFalhaLeituraArquivo.ConteudoInvalido, "A fatura não traz lançamentos."));
     }
@@ -366,7 +377,7 @@ public sealed class LeitorFaturaCartaoC6Tests
     private async Task<Fatura> LerFixtureAsync()
     {
         await using FileStream arquivo = File.OpenRead(_fixture.Caminho);
-        Result<Fatura, FalhaLeituraArquivo> result = await _leitor.LerAsync(arquivo, CancellationToken.None);
+        Result<Fatura, FalhaLeituraArquivo> result = await _leitor.LerAsync(arquivo, _vencimento, CancellationToken.None);
         return result.Should().Succeed().Which;
     }
 }

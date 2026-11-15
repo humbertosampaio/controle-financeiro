@@ -54,7 +54,7 @@ public sealed class ImportarFaturaEndpoint : Endpoint<ImportarFaturaRequest, Imp
         IdUsuario idUsuario = _usuarioAtual.Id;
         LayoutArquivoImportacao layout = LayoutArquivoImportacao.FromValue(req.Layout);
 
-        await LerAsync(layout, req.Arquivo!, ct)
+        await LerAsync(layout, req, ct)
             .Bind(fatura => _importacaoFatura
                 .ImportarAsync(idUsuario, layout, fatura, ct)
                 .MapError(Falha.DeDominio))
@@ -64,13 +64,21 @@ public sealed class ImportarFaturaEndpoint : Endpoint<ImportarFaturaRequest, Imp
                 falha => EnviarFalhaAsync(falha, ct));
     }
 
-    private async Task<Result<Fatura, Falha>> LerAsync(LayoutArquivoImportacao layout, IFormFile arquivo, CancellationToken ct)
+    private async Task<Result<Fatura, Falha>> LerAsync(LayoutArquivoImportacao layout, ImportarFaturaRequest req, CancellationToken ct)
     {
-        await using Stream conteudo = arquivo.OpenReadStream();
+        await using Stream conteudo = req.Arquivo!.OpenReadStream();
 
         return await _leituraFatura
-            .LerAsync(layout, conteudo, ct)
+            .LerAsync(layout, conteudo, VencimentoDoLayout(layout, req), ct)
             .MapError(Falha.ArquivoInvalido);
+    }
+
+    /// <summary>O validator já garantiu o vencimento no layout de vencimento informado; nos outros, ele não vale.</summary>
+    private static Maybe<DateOnly> VencimentoDoLayout(LayoutArquivoImportacao layout, ImportarFaturaRequest req)
+    {
+        return LayoutArquivoImportacao.FaturasVencimentoInformado.Contains(layout)
+            ? req.DataVencimento!.Value
+            : Maybe<DateOnly>.None;
     }
 
     private static ImportarFaturaResponse Responder(FaturaImportada importada)

@@ -51,20 +51,28 @@ public sealed class PreVisualizarFaturaEndpoint : Endpoint<PreVisualizarFaturaRe
         IdUsuario idUsuario = _usuarioAtual.Id;
         LayoutArquivoImportacao layout = LayoutArquivoImportacao.FromValue(req.Layout);
 
-        await LerAsync(layout, req.Arquivo!, ct)
+        await LerAsync(layout, req, ct)
             .Map(fatura => PreVisualizarAsync(idUsuario, fatura, ct))
             .Match(
                 resposta => Send.OkAsync(resposta, ct),
                 falha => EnviarFalhaAsync(falha, ct));
     }
 
-    private async Task<Result<Fatura, Falha>> LerAsync(LayoutArquivoImportacao layout, IFormFile arquivo, CancellationToken ct)
+    private async Task<Result<Fatura, Falha>> LerAsync(LayoutArquivoImportacao layout, PreVisualizarFaturaRequest req, CancellationToken ct)
     {
-        await using Stream conteudo = arquivo.OpenReadStream();
+        await using Stream conteudo = req.Arquivo!.OpenReadStream();
 
         return await _leituraFatura
-            .LerAsync(layout, conteudo, ct)
+            .LerAsync(layout, conteudo, VencimentoDoLayout(layout, req), ct)
             .MapError(Falha.ArquivoInvalido);
+    }
+
+    /// <summary>O validator já garantiu o vencimento no layout de vencimento informado; nos outros, ele não vale.</summary>
+    private static Maybe<DateOnly> VencimentoDoLayout(LayoutArquivoImportacao layout, PreVisualizarFaturaRequest req)
+    {
+        return LayoutArquivoImportacao.FaturasVencimentoInformado.Contains(layout)
+            ? req.DataVencimento!.Value
+            : Maybe<DateOnly>.None;
     }
 
     private async Task<PreVisualizarFaturaResponse> PreVisualizarAsync(IdUsuario idUsuario, Fatura fatura, CancellationToken ct)

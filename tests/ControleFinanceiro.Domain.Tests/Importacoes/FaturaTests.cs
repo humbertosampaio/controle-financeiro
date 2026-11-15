@@ -11,32 +11,39 @@ namespace ControleFinanceiro.Domain.Tests.Importacoes;
 public sealed class FaturaTests
 {
     [Theory, DomainAutoData]
-    public void Criar_Quando_SemLancamentos_Deve_RetornarFalha(Banco banco)
+    public void Criar_Quando_SemLancamentos_Deve_RetornarFalha(Banco banco, DateOnly vencimento)
     {
-        Result<Fatura> result = Fatura.Criar(banco, lancamentos: []);
+        Result<Fatura> result = Fatura.Criar(banco, vencimento, lancamentos: []);
 
         result.Should().FailWith("A fatura não traz lançamentos.");
     }
 
     [Theory, DomainAutoData]
-    public void Criar_Deve_GuardarOBancoEOsLancamentosNaOrdemDoArquivo(Banco banco, LancamentoFatura primeiro, LancamentoFatura segundo)
+    public void Criar_Deve_GuardarOBancoOVencimentoEOsLancamentosNaOrdemDoArquivo(
+        Banco banco,
+        DateOnly vencimento,
+        LancamentoFatura primeiro,
+        LancamentoFatura segundo)
     {
-        Result<Fatura> result = Fatura.Criar(banco, [primeiro, segundo]);
+        Result<Fatura> result = Fatura.Criar(banco, vencimento, [primeiro, segundo]);
 
         Fatura fatura = result.Should().Succeed().Subject;
         fatura.Banco.Should().Be(banco);
+        fatura.Vencimento.Should().Be(vencimento);
         fatura.Lancamentos.Should().Equal(primeiro, segundo);
     }
 
     [Theory, DomainAutoData]
     public void Sufixos_Deve_TrazerOsFinaisDistintosNaOrdemDaPrimeiraAparicao(
         Banco banco,
+        DateOnly vencimento,
         Lancamento lancamento,
         SufixoCartao fisico,
         SufixoCartao virtualCartao)
     {
         Fatura sut = Fatura.Criar(
                 banco,
+                vencimento,
                 [
                     LancamentoFatura.Criar(lancamento, virtualCartao),
                     LancamentoFatura.Criar(lancamento, fisico),
@@ -50,6 +57,7 @@ public sealed class FaturaTests
     [Theory, DomainAutoData]
     public void LancamentosCartao_Deve_TrazerSoOsDoFinalNaOrdemDoArquivo(
         Banco banco,
+        DateOnly vencimento,
         Lancamento primeiro,
         Lancamento doOutroCartao,
         Lancamento segundo,
@@ -58,6 +66,7 @@ public sealed class FaturaTests
     {
         Fatura sut = Fatura.Criar(
                 banco,
+                vencimento,
                 [
                     LancamentoFatura.Criar(primeiro, sufixo),
                     LancamentoFatura.Criar(doOutroCartao, outroSufixo),
@@ -71,6 +80,7 @@ public sealed class FaturaTests
     [Theory, DomainAutoData]
     public void PeriodoCartao_Quando_DatasForaDeOrdem_Deve_IrDaMenorAMaiorDataDeCompraDoCartao(
         Banco banco,
+        DateOnly vencimento,
         Lancamento lancamento,
         DateOnly dia,
         SufixoCartao sufixo,
@@ -78,6 +88,7 @@ public sealed class FaturaTests
     {
         Fatura sut = Fatura.Criar(
                 banco,
+                vencimento,
                 [
                     LancamentoFatura.Criar(NaData(lancamento, dia), sufixo),
                     LancamentoFatura.Criar(NaData(lancamento, dia.AddDays(-270)), sufixo),
@@ -93,6 +104,7 @@ public sealed class FaturaTests
     [Theory, DomainAutoData]
     public void Periodo_Quando_VariosCartoes_Deve_IrDaMenorAMaiorDataDeCompraDeTodos(
         Banco banco,
+        DateOnly vencimento,
         Lancamento lancamento,
         DateOnly dia,
         SufixoCartao sufixo,
@@ -100,6 +112,7 @@ public sealed class FaturaTests
     {
         Fatura sut = Fatura.Criar(
                 banco,
+                vencimento,
                 [
                     LancamentoFatura.Criar(NaData(lancamento, dia), sufixo),
                     LancamentoFatura.Criar(NaData(lancamento, dia.AddDays(-400)), outroSufixo),
@@ -130,7 +143,7 @@ public sealed class FaturaTests
     [Theory, DomainAutoData]
     public void Equals_Quando_MesmosCampos_Deve_SerIgual(Fatura fatura)
     {
-        Fatura outra = Fatura.Criar(fatura.Banco, fatura.Lancamentos).Value;
+        Fatura outra = Fatura.Criar(fatura.Banco, fatura.Vencimento, fatura.Lancamentos).Value;
 
         outra.Should().Be(fatura);
     }
@@ -140,7 +153,15 @@ public sealed class FaturaTests
     {
         Banco outroBanco = Banco.List.First(banco => banco != fatura.Banco);
 
-        Fatura outra = Fatura.Criar(outroBanco, fatura.Lancamentos).Value;
+        Fatura outra = Fatura.Criar(outroBanco, fatura.Vencimento, fatura.Lancamentos).Value;
+
+        outra.Should().NotBe(fatura);
+    }
+
+    [Theory, DomainAutoData]
+    public void Equals_Quando_OutroVencimento_Deve_SerDiferente(Fatura fatura)
+    {
+        Fatura outra = Fatura.Criar(fatura.Banco, fatura.Vencimento.AddDays(1), fatura.Lancamentos).Value;
 
         outra.Should().NotBe(fatura);
     }
@@ -148,17 +169,21 @@ public sealed class FaturaTests
     [Theory, DomainAutoData]
     public void Equals_Quando_LancamentoAMais_Deve_SerDiferente(Fatura fatura, LancamentoFatura aMais)
     {
-        Fatura outra = Fatura.Criar(fatura.Banco, fatura.Lancamentos.Append(aMais)).Value;
+        Fatura outra = Fatura.Criar(fatura.Banco, fatura.Vencimento, fatura.Lancamentos.Append(aMais)).Value;
 
         outra.Should().NotBe(fatura);
     }
 
     [Theory, DomainAutoData]
-    public void Equals_Quando_LancamentosEmOutraOrdem_Deve_SerDiferente(Banco banco, LancamentoFatura primeiro, LancamentoFatura segundo)
+    public void Equals_Quando_LancamentosEmOutraOrdem_Deve_SerDiferente(
+        Banco banco,
+        DateOnly vencimento,
+        LancamentoFatura primeiro,
+        LancamentoFatura segundo)
     {
-        Fatura fatura = Fatura.Criar(banco, [primeiro, segundo]).Value;
+        Fatura fatura = Fatura.Criar(banco, vencimento, [primeiro, segundo]).Value;
 
-        Fatura outra = Fatura.Criar(banco, [segundo, primeiro]).Value;
+        Fatura outra = Fatura.Criar(banco, vencimento, [segundo, primeiro]).Value;
 
         outra.Should().NotBe(fatura);
     }
@@ -166,11 +191,12 @@ public sealed class FaturaTests
     [Theory, DomainAutoData]
     public void ConferirPagamentoAnterior_Quando_HaLancamentoDePagamentoFatura_Deve_TerSucesso(
         Banco banco,
+        DateOnly vencimento,
         LancamentoFatura compra,
         Lancamento lancamento)
     {
         LancamentoFatura pagamento = LancamentoFatura.Criar(lancamento.ComoPagamentoFatura(), compra.SufixoCartao);
-        Fatura fatura = Fatura.Criar(banco, [compra, pagamento]).Value;
+        Fatura fatura = Fatura.Criar(banco, vencimento, [compra, pagamento]).Value;
 
         Result result = fatura.ConferirPagamentoAnterior();
 

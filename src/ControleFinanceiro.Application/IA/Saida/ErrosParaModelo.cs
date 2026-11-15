@@ -73,6 +73,10 @@ public static class ErrosParaModelo
 
         public static readonly ErroParaModelo SufixoContaInvalido = Fixo($"O layout {LayoutArquivoImportacao.MercadoPagoContaCsv.Value} pede o sufixo da conta: os 4 últimos caracteres do número da conta, que o usuário informa.");
 
+        public static readonly ErroParaModelo VencimentoObrigatorio = Fixo($"O layout {LayoutArquivoImportacao.C6CartaoCsv.Value} pede o vencimento da fatura: a data em AAAA-MM-DD, que o usuário informa.");
+
+        public static readonly ErroParaModelo VencimentoNoArquivo = Fixo($"O layout {LayoutArquivoImportacao.MercadoPagoCartaoCsv.Value} traz o vencimento no arquivo: chame a ferramenta de novo sem o vencimento.");
+
         public static readonly ErroParaModelo ContaDeOutroTipo = Fixo("O usuário já tem uma conta nesse banco com esse final, mas de outro tipo: peça a ele para resolver pela API antes de importar.");
 
         public static readonly ErroParaModelo CartoesNaoResolvidos = Fixo("A fatura tem finais de cartão sem cartão cadastrado, em pendencias.finais_sem_cartao, e nada foi importado: peça ao usuário para cadastrar os cartões pela API e importe de novo.");

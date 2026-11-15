@@ -9,11 +9,11 @@ public sealed class VencimentoFaturaTests
     [Fact]
     public void OperadorImplicito_Deve_SerODiaDeVencimentoNoMes()
     {
-        VencimentoFatura vencimento = new((MesReferencia)(02, 2026), (DiaVencimentoCartao)28);
+        VencimentoFatura vencimento = new((MesReferencia)(02, 2026), (DiaVencimentoCartao)24);
 
         DateOnly result = vencimento;
 
-        result.Should().Be(new DateOnly(2026, 02, 28));
+        result.Should().Be(new DateOnly(2026, 02, 24));
     }
 
     [Theory, DomainAutoData]
@@ -28,7 +28,7 @@ public sealed class VencimentoFaturaTests
     [Fact]
     public void Ordem_Deve_SerADaData()
     {
-        VencimentoFatura diaMaiorNoMesAnterior = new((MesReferencia)(03, 2026), (DiaVencimentoCartao)28);
+        VencimentoFatura diaMaiorNoMesAnterior = new((MesReferencia)(03, 2026), (DiaVencimentoCartao)24);
         VencimentoFatura diaMenorNoMesSeguinte = new((MesReferencia)(04, 2026), (DiaVencimentoCartao)1);
         VencimentoFatura diaMaiorNoMesSeguinte = new((MesReferencia)(04, 2026), (DiaVencimentoCartao)10);
 

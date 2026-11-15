@@ -86,10 +86,10 @@ public sealed class ListarDespesasDoMesEndpointTests : IAsyncLifetime
             opcoes => opcoes.Excluding(d => d.Id).WithStrictOrdering());
     }
 
-    // O cartão da fatura vence no dia 10 e fecha no dia 3: a 3/10 de 15/07/2025 tem a primeira parcela em 08/2025.
+    // O cartão da fatura vence no dia 10 e fecha no dia 3: a 9/10 de 15/07/2025 tem a primeira parcela em 08/2025.
     [Theory]
     [InlineApiAutoData(08, 2025, 1, 1)]
-    [InlineApiAutoData(10, 2025, 3, 0)]
+    [InlineApiAutoData(05, 2026, 10, 0)]
     public async Task Get_Quando_MesDeUmaParcela_Deve_TrazerOsDadosDaParcelaDoMes(
         int mes,
         int ano,
@@ -154,15 +154,16 @@ public sealed class ListarDespesasDoMesEndpointTests : IAsyncLifetime
     {
         Guid idUsuario = await ImportarFaturaComParceladaAsync(cadastro);
         DespesaParcelada parcelada = (await _api.ObterParceladasAsync()).Single();
-        MesReferencia mesDaTerceira = parcelada.Parcelas.Single(p => p.NumeroParcela == 3).MesReferencia;
+        MesReferencia mesDaNona = parcelada.Parcelas.Single(p => p.NumeroParcela == 9).MesReferencia;
         Transacao transacao = await _api.ObterTransacaoAsync(idUsuario, VinculoExtensions.CompraParcelada);
         await _api.VincularComSucessoAsync(idUsuario, parcelada.Id.Value, transacao.Id.Value);
 
-        using HttpResponseMessage noMes = await ListarAsync(idUsuario, mesDaTerceira.Ano, mesDaTerceira.Mes);
-        using HttpResponseMessage noMesSeguinte = await ListarAsync(idUsuario, mesDaTerceira.Posterior().Ano, mesDaTerceira.Posterior().Mes);
+        using HttpResponseMessage noMes = await ListarAsync(idUsuario, mesDaNona.Ano, mesDaNona.Mes);
+        using HttpResponseMessage noMesSeguinte = await ListarAsync(idUsuario, mesDaNona.Posterior().Ano, mesDaNona.Posterior().Mes);
 
         ListarDespesasDoMesResponse? corpo = await noMes.Content.ReadFromJsonAsync<ListarDespesasDoMesResponse>();
-        ListarDespesasDoMesResponse.Despesa lida = corpo!.Despesas.Should().ContainSingle().Subject;
+        // A nona parcela vence com as compras à vista da fatura, que também viram despesas do mês.
+        ListarDespesasDoMesResponse.Despesa lida = corpo!.Despesas.Should().ContainSingle(d => d.Id == parcelada.Id.Value).Subject;
         lida.StatusPagamento.Should().Be(StatusPagamento.Pendente.Value);
         lida.IdTransacaoCobranca.Should().Be(transacao.Id.Value);
         lida.ValorCobrado.Should().Be(99.90m);

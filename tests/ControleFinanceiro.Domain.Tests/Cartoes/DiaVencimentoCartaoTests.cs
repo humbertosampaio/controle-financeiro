@@ -7,12 +7,12 @@ namespace ControleFinanceiro.Domain.Tests.Cartoes;
 
 public sealed class DiaVencimentoCartaoTests
 {
-    public static readonly TheoryData<int> DiasValidos = new(1, 14, 28);
-    public static readonly TheoryData<int> DiasInvalidos = new(0, -1, 29, 31);
+    public static readonly TheoryData<int> DiasValidos = new(1, 14, 24);
+    public static readonly TheoryData<int> DiasInvalidos = new(0, -1, 25, 28, 31);
 
     [Theory]
     [MemberData(nameof(DiasValidos))]
-    public void Criar_Quando_DiaEntre1e28_Deve_RetornarSucesso(int dia)
+    public void Criar_Quando_DiaEntre1e24_Deve_RetornarSucesso(int dia)
     {
         Result<DiaVencimentoCartao> result = DiaVencimentoCartao.Criar(dia);
 
@@ -22,11 +22,11 @@ public sealed class DiaVencimentoCartaoTests
 
     [Theory]
     [MemberData(nameof(DiasInvalidos))]
-    public void Criar_Quando_DiaMenorQue1OuMaiorQue28_Deve_RetornarFalha(int dia)
+    public void Criar_Quando_DiaMenorQue1OuMaiorQue24_Deve_RetornarFalha(int dia)
     {
         Result<DiaVencimentoCartao> result = DiaVencimentoCartao.Criar(dia);
 
-        result.Should().FailWith($"O dia de vencimento do cartão deve estar entre 1 e 28. Valor fornecido: {dia}");
+        result.Should().FailWith($"O dia de vencimento do cartão deve estar entre 1 e 24. Valor fornecido: {dia}");
     }
 
     [Theory]
@@ -59,7 +59,7 @@ public sealed class DiaVencimentoCartaoTests
     public void Equals_Quando_DiasDiferentes_Deve_RetornarFalse()
     {
         DiaVencimentoCartao diaVencimento1 = (DiaVencimentoCartao)1;
-        DiaVencimentoCartao diaVencimento2 = (DiaVencimentoCartao)28;
+        DiaVencimentoCartao diaVencimento2 = (DiaVencimentoCartao)24;
 
         diaVencimento1.Should().NotBe(diaVencimento2);
         (diaVencimento1 == diaVencimento2).Should().BeFalse();

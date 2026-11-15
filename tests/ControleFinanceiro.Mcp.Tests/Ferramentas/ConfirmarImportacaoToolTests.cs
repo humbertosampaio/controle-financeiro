@@ -40,18 +40,20 @@ public sealed class ConfirmarImportacaoToolTests : IAsyncLifetime
             .GetProperty("properties")
             .EnumerateObject()
             .Select(p => p.Name)
-            .Should().Equal("resumo", "caminho", "layout", "sufixoConta");
+            .Should().Equal("resumo", "caminho", "layout", "sufixoConta", "vencimento");
     }
 
-    // Sem o tipo, o cliente manda o sufixo como número, e o SDK não o converte para texto.
-    [Fact]
-    public async Task Esquema_Deve_TerOSufixoComoTextoOpcional()
+    // Sem o tipo, o cliente manda o sufixo e o vencimento como número, e o SDK não os converte para texto.
+    [Theory]
+    [InlineData("sufixoConta")]
+    [InlineData("vencimento")]
+    public async Task Esquema_Deve_TerOParametroComoTextoOpcional(string parametro)
     {
         McpClientTool ferramenta = await _servidor.ClienteMcp.ObterFerramentaAsync(NomeFerramenta);
 
         JsonElement esquema = ferramenta.ProtocolTool.InputSchema;
-        esquema.GetProperty("properties").GetProperty("sufixoConta").GetProperty("type").GetString().Should().Be("string");
-        esquema.GetProperty("required").EnumerateArray().Select(obrigatorio => obrigatorio.GetString()).Should().NotContain("sufixoConta");
+        esquema.GetProperty("properties").GetProperty(parametro).GetProperty("type").GetString().Should().Be("string");
+        esquema.GetProperty("required").EnumerateArray().Select(obrigatorio => obrigatorio.GetString()).Should().NotContain(parametro);
     }
 
     [Fact]
@@ -114,9 +116,10 @@ public sealed class ConfirmarImportacaoToolTests : IAsyncLifetime
     public async Task Confirmar_Quando_Fatura_Deve_GravarAsTransacoesEAsDespesasParceladasEAdiadas(string layout, string caminho)
     {
         await _importacao.ResolverAsync(LayoutArquivoImportacao.FromValue(layout), caminho);
-        string resumo = await PreverAsync(caminho, layout);
+        string? vencimento = ImportacaoDeTeste.VencimentoDoLayout(layout);
+        string resumo = await PreverAsync(caminho, layout, vencimento: vencimento);
 
-        CallToolResult resultado = await _servidor.ClienteMcp.ConfirmarImportacaoAsync(resumo, caminho, layout);
+        CallToolResult resultado = await _servidor.ClienteMcp.ConfirmarImportacaoAsync(resumo, caminho, layout, vencimento: vencimento);
 
         ImportacaoLida importacao = new(resultado.Json);
         importacao.DespesasParceladas.Should().BePositive();
@@ -137,9 +140,13 @@ public sealed class ConfirmarImportacaoToolTests : IAsyncLifetime
             numero: 6,
             "02/03/2026;FULANA DE TAL FICTICIA;1111;-;CREDITO FICTICIO;Única;0;0;-500.00");
         await _importacao.ResolverAsync(LayoutArquivoImportacao.C6CartaoCsv, caminho);
-        string resumo = await PreverAsync(caminho, "c6-cartao-csv");
+        string resumo = await PreverAsync(caminho, "c6-cartao-csv", vencimento: ImportacaoDeTeste.VencimentoFaturaC6);
 
-        CallToolResult resultado = await _servidor.ClienteMcp.ConfirmarImportacaoAsync(resumo, caminho, "c6-cartao-csv");
+        CallToolResult resultado = await _servidor.ClienteMcp.ConfirmarImportacaoAsync(
+            resumo,
+            caminho,
+            "c6-cartao-csv",
+            vencimento: ImportacaoDeTeste.VencimentoFaturaC6);
 
         ImportacaoLida importacao = new(resultado.Json);
         importacao.Avisos.Should().Equal(Fatura.AvisoSemPagamentoAnterior);
@@ -190,9 +197,9 @@ public sealed class ConfirmarImportacaoToolTests : IAsyncLifetime
         importacao.ContaNova.Should().BeFalse();
     }
 
-    private async Task<string> PreverAsync(string caminho, string layout, string? sufixoConta = null)
+    private async Task<string> PreverAsync(string caminho, string layout, string? sufixoConta = null, string? vencimento = null)
     {
-        CallToolResult previa = await _servidor.ClienteMcp.PreverImportacaoAsync(caminho, layout, sufixoConta);
+        CallToolResult previa = await _servidor.ClienteMcp.PreverImportacaoAsync(caminho, layout, sufixoConta, vencimento);
         return new ImportacaoLida(previa.Json).Resumo;
     }
 }

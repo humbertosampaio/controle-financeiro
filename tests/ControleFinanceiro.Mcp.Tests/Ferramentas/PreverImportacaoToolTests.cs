@@ -40,15 +40,17 @@ public sealed class PreverImportacaoToolTests : IAsyncLifetime
 
     public Task DisposeAsync() => Task.CompletedTask;
 
-    // Sem o tipo, o cliente manda o sufixo como número, e o SDK não o converte para texto.
-    [Fact]
-    public async Task Esquema_Deve_TerOSufixoComoTextoOpcional()
+    // Sem o tipo, o cliente manda o sufixo e o vencimento como número, e o SDK não os converte para texto.
+    [Theory]
+    [InlineData("sufixoConta")]
+    [InlineData("vencimento")]
+    public async Task Esquema_Deve_TerOParametroComoTextoOpcional(string parametro)
     {
         McpClientTool ferramenta = await _servidor.ClienteMcp.ObterFerramentaAsync("prever_importacao");
 
         JsonElement esquema = ferramenta.ProtocolTool.InputSchema;
-        esquema.GetProperty("properties").GetProperty("sufixoConta").GetProperty("type").GetString().Should().Be("string");
-        esquema.GetProperty("required").EnumerateArray().Select(obrigatorio => obrigatorio.GetString()).Should().NotContain("sufixoConta");
+        esquema.GetProperty("properties").GetProperty(parametro).GetProperty("type").GetString().Should().Be("string");
+        esquema.GetProperty("required").EnumerateArray().Select(obrigatorio => obrigatorio.GetString()).Should().NotContain(parametro);
     }
 
     [Theory, MemberData(nameof(Arquivos))]
@@ -56,7 +58,7 @@ public sealed class PreverImportacaoToolTests : IAsyncLifetime
     {
         await _importacao.ResolverAsync(LayoutArquivoImportacao.FromValue(layout), caminho);
 
-        CallToolResult resultado = await _servidor.ClienteMcp.PreverImportacaoAsync(caminho, layout, Sufixo(layout));
+        CallToolResult resultado = await _servidor.ClienteMcp.PreverImportacaoAsync(caminho, layout, Sufixo(layout), ImportacaoDeTeste.VencimentoDoLayout(layout));
 
         IReadOnlyList<Lancamento> lancamentos = await ImportacaoDeTeste.LerLancamentosAsync(LayoutArquivoImportacao.FromValue(layout), caminho);
         ImportacaoLida importacao = new(resultado.Json);
@@ -70,7 +72,7 @@ public sealed class PreverImportacaoToolTests : IAsyncLifetime
     {
         await _importacao.ResolverAsync(LayoutArquivoImportacao.FromValue(layout), caminho);
 
-        CallToolResult resultado = await _servidor.ClienteMcp.PreverImportacaoAsync(caminho, layout, Sufixo(layout));
+        CallToolResult resultado = await _servidor.ClienteMcp.PreverImportacaoAsync(caminho, layout, Sufixo(layout), ImportacaoDeTeste.VencimentoDoLayout(layout));
 
         IReadOnlyList<Lancamento> lancamentos = await ImportacaoDeTeste.LerLancamentosAsync(LayoutArquivoImportacao.FromValue(layout), caminho);
         resultado.Json.Should().NotContainKey("erro");
@@ -118,11 +120,38 @@ public sealed class PreverImportacaoToolTests : IAsyncLifetime
     {
         await _importacao.ResolverAliasesAsync(LayoutArquivoImportacao.C6CartaoCsv, ImportacaoDeTeste.FaturaC6);
 
-        CallToolResult resultado = await _servidor.ClienteMcp.PreverImportacaoAsync(ImportacaoDeTeste.FaturaC6, "c6-cartao-csv");
+        CallToolResult resultado = await _servidor.ClienteMcp.PreverImportacaoAsync(ImportacaoDeTeste.FaturaC6, "c6-cartao-csv", vencimento: ImportacaoDeTeste.VencimentoFaturaC6);
 
         Fatura fatura = await ImportacaoDeTeste.LerFaturaAsync(LayoutArquivoImportacao.C6CartaoCsv, ImportacaoDeTeste.FaturaC6);
         ErroLido.DoEnvelope(resultado.Json).Mensagem.Should().Be(ErrosParaModelo.Importacao.CartoesNaoResolvidos.Mensagem);
         PendenciasImportacaoLidas.DoEnvelope(resultado.Json).FinaisSemCartao.Should().Equal(fatura.Sufixos.Select(sufixo => (string)sufixo));
+        (await _importacao.LerGravadoAsync()).Should().Be(Gravado.Nada);
+    }
+
+    [Theory]
+    [InlineData("")]
+    [InlineData("10/04/2026")]
+    public async Task Prever_Quando_FaturaC6SemVencimentoValido_Deve_DevolverVencimentoObrigatorioSemGravar(string vencimento)
+    {
+        await _importacao.ResolverAsync(LayoutArquivoImportacao.C6CartaoCsv, ImportacaoDeTeste.FaturaC6);
+
+        CallToolResult resultado = await _servidor.ClienteMcp.PreverImportacaoAsync(ImportacaoDeTeste.FaturaC6, "c6-cartao-csv", vencimento: vencimento);
+
+        ErroLido.DoEnvelope(resultado.Json).Mensagem.Should().Be(ErrosParaModelo.Importacao.VencimentoObrigatorio.Mensagem);
+        (await _importacao.LerGravadoAsync()).Should().Be(Gravado.Nada);
+    }
+
+    [Fact]
+    public async Task Prever_Quando_FaturaMercadoPagoComVencimento_Deve_DevolverVencimentoNoArquivoSemGravar()
+    {
+        await _importacao.ResolverAsync(LayoutArquivoImportacao.MercadoPagoCartaoCsv, ImportacaoDeTeste.FaturaMercadoPago);
+
+        CallToolResult resultado = await _servidor.ClienteMcp.PreverImportacaoAsync(
+            ImportacaoDeTeste.FaturaMercadoPago,
+            "mercado-pago-cartao-csv",
+            vencimento: ImportacaoDeTeste.VencimentoFaturaC6);
+
+        ErroLido.DoEnvelope(resultado.Json).Mensagem.Should().Be(ErrosParaModelo.Importacao.VencimentoNoArquivo.Mensagem);
         (await _importacao.LerGravadoAsync()).Should().Be(Gravado.Nada);
     }
 
@@ -135,7 +164,7 @@ public sealed class PreverImportacaoToolTests : IAsyncLifetime
             "02/03/2026;FULANA DE TAL FICTICIA;1111;-;CREDITO FICTICIO;Única;0;0;-500.00");
         await _importacao.ResolverAsync(LayoutArquivoImportacao.C6CartaoCsv, caminho);
 
-        CallToolResult resultado = await _servidor.ClienteMcp.PreverImportacaoAsync(caminho, "c6-cartao-csv");
+        CallToolResult resultado = await _servidor.ClienteMcp.PreverImportacaoAsync(caminho, "c6-cartao-csv", vencimento: ImportacaoDeTeste.VencimentoFaturaC6);
 
         new ImportacaoLida(resultado.Json).Avisos.Should().ContainSingle()
             .Which.Should().Be(Fatura.AvisoSemPagamentoAnterior);
@@ -146,7 +175,7 @@ public sealed class PreverImportacaoToolTests : IAsyncLifetime
     {
         await _importacao.ResolverAsync(LayoutArquivoImportacao.C6CartaoCsv, ImportacaoDeTeste.FaturaC6);
 
-        CallToolResult resultado = await _servidor.ClienteMcp.PreverImportacaoAsync(ImportacaoDeTeste.FaturaC6, "c6-cartao-csv");
+        CallToolResult resultado = await _servidor.ClienteMcp.PreverImportacaoAsync(ImportacaoDeTeste.FaturaC6, "c6-cartao-csv", vencimento: ImportacaoDeTeste.VencimentoFaturaC6);
 
         new ImportacaoLida(resultado.Json).Avisos.Should().BeEmpty();
     }

@@ -94,7 +94,7 @@ public sealed class ImportarFaturaEndpointTests : IAsyncLifetime
 
         List<Transacao> transacoes = await _api.ObterTodosAsync(db => db.Transacoes);
         Transacao parcelada = transacoes.Should().ContainSingle(t => t.EhParcelada).Subject;
-        parcelada.Parcela.Should().Be((Parcela)(3, 10));
+        parcelada.Parcela.Should().Be((Parcela)(9, 10));
         parcelada.Data.Should().Be(FaturaCartaoC6.PrimeiraCompraFisico);
         parcelada.CategoriaBanco.Should().Be("Eletrônicos");
         transacoes.Should().ContainSingle(t => t.CategoriaBanco == null);
@@ -228,7 +228,7 @@ public sealed class ImportarFaturaEndpointTests : IAsyncLifetime
         corpo.Cartoes[1].Novas.Should().Be(0);
         List<Transacao> transacoes = await _api.ObterTodosAsync(db => db.Transacoes);
         transacoes.Should().HaveCount(FaturaCartaoC6.QuantidadeLancamentos + 1);
-        transacoes.Where(t => t.EhParcelada).Select(t => t.Parcela).Should().BeEquivalentTo([(Parcela)(3, 10), (Parcela)(4, 10)]);
+        transacoes.Where(t => t.EhParcelada).Select(t => t.Parcela).Should().BeEquivalentTo([(Parcela)(9, 10), (Parcela)(10, 10)]);
     }
 
     [Theory, ApiAutoData]
@@ -444,8 +444,8 @@ public sealed class ImportarFaturaEndpointTests : IAsyncLifetime
         parcelas[0].Pagamento.DataProjetada.Should().Be(new DateOnly(2025, 08, 10));
         parcelas[9].MesReferencia.Should().Be((MesReferencia)(05, 2026));
         parcelas.Should().OnlyContain(p => p.Pagamento.ValorProjetado == (ReaisPositivo)99.90m);
-        parcelas.Take(2).Should().OnlyContain(p => p.Pagamento.EstaPago);
-        parcelas.Skip(2).Should().OnlyContain(p => !p.Pagamento.EstaPago);
+        parcelas.Take(8).Should().OnlyContain(p => p.Pagamento.EstaPago);
+        parcelas.Skip(8).Should().OnlyContain(p => !p.Pagamento.EstaPago);
     }
 
     [Theory, ApiAutoData]
@@ -472,7 +472,7 @@ public sealed class ImportarFaturaEndpointTests : IAsyncLifetime
 
         corpo.Cartoes.Should().OnlyContain(c => c.DespesasParceladasCriadas == 0);
         DespesaParcelada despesa = (await _api.ObterParceladasAsync()).Should().ContainSingle().Subject;
-        despesa.Parcelas.Single(p => p.NumeroParcela == 3).Pagamento.EstaPago.Should().BeFalse();
+        despesa.Parcelas.Single(p => p.NumeroParcela == 9).Pagamento.EstaPago.Should().BeFalse();
     }
 
     [Theory, ApiAutoData]
@@ -485,7 +485,7 @@ public sealed class ImportarFaturaEndpointTests : IAsyncLifetime
         await ImportarComSucessoAsync(idUsuario, FaturaCartaoC6.Completo());
 
         DespesaParcelada despesa = (await _api.ObterParceladasAsync()).Should().ContainSingle().Subject;
-        despesa.Parcelas.Where(p => p.Pagamento.EstaPago).Select(p => p.NumeroParcela).Should().BeEquivalentTo([1, 2, 3]);
+        despesa.Parcelas.Where(p => p.Pagamento.EstaPago).Select(p => p.NumeroParcela).Should().BeEquivalentTo(Enumerable.Range(1, 9));
     }
 
     [Theory, ApiAutoData]
@@ -633,6 +633,23 @@ public sealed class ImportarFaturaEndpointTests : IAsyncLifetime
 
         resposta.StatusCode.Should().Be(HttpStatusCode.BadRequest);
         (await resposta.CamposComErroAsync()).Should().Equal("generalErrors");
+        await _api.DeveEstarSemImportacaoAsync();
+    }
+
+    [Theory, ApiAutoData]
+    public async Task Post_Quando_SemVencimentoNoLayoutQueOPede_Deve_RetornarErroNoVencimentoSemGravar(CadastrarUsuarioRequest cadastro)
+    {
+        Guid idUsuario = await _api.CadastrarUsuarioAsync(cadastro);
+        await ResolverPendenciasAsync(idUsuario, FaturaCartaoC6.Completo());
+
+        using HttpResponseMessage resposta = await _api.ImportarFaturaAsync(
+            idUsuario,
+            LayoutArquivoImportacao.C6CartaoCsv,
+            FaturaCartaoC6.Completo(),
+            dataVencimento: null);
+
+        resposta.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+        (await resposta.CamposComErroAsync()).Should().Equal("dataVencimento");
         await _api.DeveEstarSemImportacaoAsync();
     }
 

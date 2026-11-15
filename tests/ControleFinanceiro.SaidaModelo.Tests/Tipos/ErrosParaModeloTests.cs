@@ -44,6 +44,8 @@ public sealed class ErrosParaModeloTests
         ErrosParaModelo.Importacao.ArquivoGrandeDemais,
         ErrosParaModelo.Importacao.LayoutInvalido,
         ErrosParaModelo.Importacao.SufixoContaInvalido,
+        ErrosParaModelo.Importacao.VencimentoObrigatorio,
+        ErrosParaModelo.Importacao.VencimentoNoArquivo,
         ErrosParaModelo.Importacao.ContaDeOutroTipo,
         ErrosParaModelo.Importacao.CartoesNaoResolvidos,
         ErrosParaModelo.Importacao.BeneficiariosNaoResolvidos,
