@@ -114,6 +114,48 @@ public sealed class ImportacaoArquivoTests
         sut.TemOutroVencimentoNoMesmoMes(fatura).Should().BeFalse();
     }
 
+    // A fatura do cartão é montada com o vencimento projetado, e a importação devolve o real, numa data do mesmo mês.
+    [Theory, ImportacaoFaturaAutoData]
+    public void VencimentoImportado_Quando_ImportacaoDaFatura_Deve_DevolverOVencimentoReal(
+        [Frozen] MesReferencia mes,
+        [Frozen] Cartao cartao,
+        ImportacaoArquivo sut,
+        DiaVencimentoCartao outroDia)
+    {
+        FaturaCartao fatura = FaturaCartao.Importada(cartao.Banco, [cartao], cartoesUsuario: [], VencimentoFatura.Projetado(mes, outroDia));
+
+        sut.VencimentoImportado(fatura).Should().HaveValue(sut.VencimentoFatura!);
+    }
+
+    [Theory, DomainAutoData]
+    public void VencimentoImportado_Quando_Extrato_Deve_SerVazio(ImportacaoArquivo sut, Cartao cartao, VencimentoFatura vencimento)
+    {
+        FaturaCartao fatura = FaturaCartao.Importada(cartao.Banco, [cartao], cartoesUsuario: [], vencimento);
+
+        sut.VencimentoImportado(fatura).Should().HaveNoValue();
+    }
+
+    [Theory, ImportacaoFaturaAutoData]
+    public void VencimentoImportado_Quando_CartaoForaDaFatura_Deve_SerVazio([Frozen] Cartao cartao, ImportacaoArquivo sut)
+    {
+        Cartao cartaoOutroBanco = cartao.EmOutroBanco();
+        FaturaCartao fatura = FaturaCartao.Importada(cartaoOutroBanco.Banco, [cartaoOutroBanco], cartoesUsuario: [], sut.VencimentoFatura!);
+
+        sut.VencimentoImportado(fatura).Should().HaveNoValue();
+    }
+
+    [Theory, ImportacaoFaturaAutoData]
+    public void VencimentoImportado_Quando_FaturaDeOutroMes_Deve_SerVazio(
+        [Frozen] Cartao cartao,
+        ImportacaoArquivo sut,
+        MesReferencia outroMes,
+        DiaVencimentoCartao dia)
+    {
+        FaturaCartao fatura = FaturaCartao.Importada(cartao.Banco, [cartao], cartoesUsuario: [], VencimentoFatura.Projetado(outroMes, dia));
+
+        sut.VencimentoImportado(fatura).Should().HaveNoValue();
+    }
+
     private static ImportacaoArquivo Com(Fixture fixture, ContaBancaria conta, Periodo periodo)
     {
         fixture.Inject(conta);

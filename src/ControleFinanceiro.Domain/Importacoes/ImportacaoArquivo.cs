@@ -47,6 +47,19 @@ public sealed class ImportacaoArquivo : AggregateRoot<IdImportacao>, IPertenceAo
             && VencimentoFatura.EhOutraDataNoMesmoMes(fatura.Vencimento);
     }
 
+    /// <summary>
+    /// O vencimento real da <paramref name="fatura"/>, quando esta importação a trouxe: é de um cartão dela, com vencimento
+    /// no mês dela. É o que o arquivo trouxe ou o usuário informou, e não o projetado pelo dia do cartão. Vazio no extrato de
+    /// uma conta e na importação de outra fatura.
+    /// </summary>
+    public Maybe<VencimentoFatura> VencimentoImportado(FaturaCartao fatura)
+    {
+        if (Origem.IdCartao is IdCartao idCartao && fatura.Contem(idCartao) && VencimentoFatura?.Mes == fatura.Vencimento.Mes)
+            return VencimentoFatura;
+
+        return Maybe<VencimentoFatura>.None;
+    }
+
     private ImportacaoArquivo()
     {
     }

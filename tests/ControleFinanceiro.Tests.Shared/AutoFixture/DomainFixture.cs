@@ -41,6 +41,7 @@ public class DomainFixture : Fixture
             .Customize(new ExtratoCustomization())
             .Customize(new FaturaCustomization())
             .Customize(new ImportacaoArquivoCustomization())
+            .Customize(new FaturaCartaoAbertaCustomization())
             .Customize(new DiaOcorrenciaRecorrenteCustomization())
             .Customize(new TextoObrigatorioCustomization())
             .Customize(new AliasCustomization());
