@@ -142,7 +142,8 @@ public sealed class ImportarFaturaMercadoPagoEndpointTests : IAsyncLifetime
             .Should().BeEquivalentTo([(Parcela)(5, 10), (Parcela)(6, 10)]);
     }
 
-    // Decisão 10 da #185: a reimportação não muda o que já foi gravado, e só a transação nova pega o mês da fatura nova.
+    // Decisão 10 da #185: a fatura seguinte, com o vencimento em outro mês, não muda o que já foi gravado, e só a transação
+    // nova pega o mês da fatura nova.
     [Theory, ApiAutoData]
     public async Task Post_Quando_FaturaSeguinteComOutroVencimento_Deve_ManterOMesDasTransacoesJaGravadas(CadastrarUsuarioRequest cadastro)
     {
@@ -157,6 +158,27 @@ public sealed class ImportarFaturaMercadoPagoEndpointTests : IAsyncLifetime
         MesReferencia mesPrimeiraFatura = (MesReferencia)FaturaCartaoMercadoPago.Vencimento;
         transacoes.Single(t => t.Parcela == parcelaNova).MesVencimentoFatura.Should().Be(mesPrimeiraFatura.Posterior());
         transacoes.Where(t => t.Parcela != parcelaNova).Should().OnlyContain(t => t.MesVencimentoFatura == mesPrimeiraFatura);
+    }
+
+    [Theory, ApiAutoData]
+    public async Task Post_Quando_FaturaJaImportadaComOutroVencimentoNoMesmoMes_Deve_RetornarErroNoArquivoSemGravar(
+        CadastrarUsuarioRequest cadastro)
+    {
+        Guid idUsuario = await _api.CadastrarUsuarioAsync(cadastro);
+        await ResolverPendenciasAsync(idUsuario, FaturaCartaoMercadoPago.Completo());
+        _ = await ImportarComSucessoAsync(idUsuario, FaturaCartaoMercadoPago.Completo());
+
+        using HttpResponseMessage resposta = await _api.ImportarFaturaAsync(
+            idUsuario,
+            LayoutArquivoImportacao.MercadoPagoCartaoCsv,
+            FaturaCartaoMercadoPago.ComVencimentoEmOutraDataNoMesmoMes());
+
+        resposta.StatusCode.Should().Be(HttpStatusCode.UnprocessableEntity);
+        (await resposta.CamposComErroAsync()).Should().Equal("arquivo");
+        (await _api.ObterTodosAsync(db => db.Importacoes)).Should()
+            .ContainSingle()
+            .Which.VencimentoFatura.Should().Be((VencimentoFatura)FaturaCartaoMercadoPago.Vencimento);
+        (await _api.ObterTodosAsync(db => db.Transacoes)).Should().HaveCount(FaturaCartaoMercadoPago.QuantidadeLancamentos);
     }
 
     [Theory, ApiAutoData]

@@ -217,6 +217,39 @@ public sealed class PreVisualizarFaturaEndpointTests : IAsyncLifetime
     }
 
     [Theory, ApiAutoData]
+    public async Task Post_Quando_FaturaDoC6JaImportadaComOutroVencimentoNoMesmoMes_Deve_RetornarErroNoVencimento(
+        CadastrarUsuarioRequest cadastro)
+    {
+        Guid idUsuario = await _api.CadastrarUsuarioAsync(cadastro);
+        await _api.ImportarFaturaC6Async(idUsuario);
+
+        using HttpResponseMessage resposta = await PreVisualizarAsync(
+            idUsuario,
+            LayoutArquivoImportacao.C6CartaoCsv,
+            FaturaCartaoC6.Completo(),
+            FaturaCartaoC6.Vencimento.AddDays(3));
+
+        resposta.StatusCode.Should().Be(HttpStatusCode.UnprocessableEntity);
+        (await resposta.CamposComErroAsync()).Should().Equal("dataVencimento");
+    }
+
+    [Theory, ApiAutoData]
+    public async Task Post_Quando_FaturaDoMercadoPagoJaImportadaComOutroVencimentoNoMesmoMes_Deve_RetornarErroNoArquivo(
+        CadastrarUsuarioRequest cadastro)
+    {
+        Guid idUsuario = await _api.CadastrarUsuarioAsync(cadastro);
+        LayoutArquivoImportacao layout = LayoutArquivoImportacao.MercadoPagoCartaoCsv;
+        await _api.ResolverCartoesDaFaturaAsync(idUsuario, layout, FaturaCartaoMercadoPago.Completo());
+        await _api.ResolverBeneficiariosDaFaturaAsync(idUsuario, layout, FaturaCartaoMercadoPago.Completo());
+        _ = await _api.ImportarFaturaComSucessoAsync(idUsuario, layout, FaturaCartaoMercadoPago.Completo());
+
+        using HttpResponseMessage resposta = await PreVisualizarAsync(idUsuario, layout, FaturaCartaoMercadoPago.ComVencimentoEmOutraDataNoMesmoMes());
+
+        resposta.StatusCode.Should().Be(HttpStatusCode.UnprocessableEntity);
+        (await resposta.CamposComErroAsync()).Should().Equal("arquivo");
+    }
+
+    [Theory, ApiAutoData]
     public async Task Post_Quando_SemVencimentoNoLayoutQueOPede_Deve_RetornarErroNoVencimento(CadastrarUsuarioRequest cadastro)
     {
         Guid idUsuario = await _api.CadastrarUsuarioAsync(cadastro);

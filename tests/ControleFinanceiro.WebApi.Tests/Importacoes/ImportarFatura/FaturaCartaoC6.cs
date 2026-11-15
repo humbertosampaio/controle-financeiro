@@ -14,6 +14,7 @@ internal static class FaturaCartaoC6
 {
     private const string ParcelaCompraAntiga = "LOJA DE EXEMPLO;9/10";
     private const string RotuloPagamento = "Inclusao de Pagamento";
+    private const int ColunaFinal = 2;
 
     private static readonly string _caminho = Path.Combine(AppContext.BaseDirectory, "Importacoes", "ImportarFatura", "Fixtures", "fatura-cartao.csv");
 
@@ -49,6 +50,21 @@ internal static class FaturaCartaoC6
     {
         string conteudo = File.ReadAllText(_caminho, Encoding.UTF8).Replace(RotuloPagamento, "CREDITO FICTICIO", StringComparison.Ordinal);
         return Encoding.UTF8.GetBytes(conteudo);
+    }
+
+    /// <summary>
+    /// A fatura só com as linhas de um final, como um arquivo parcial: o cabeçalho e os <see cref="LancamentosPorCartao"/>
+    /// lançamentos do <paramref name="sufixo"/>, que o arquivo traz ora sem aspas, ora com.
+    /// </summary>
+    public static byte[] ApenasLinhasFinal(SufixoCartao sufixo)
+    {
+        const string QuebraLinha = "\r\n";
+        string[] linhas = File.ReadAllText(_caminho, Encoding.UTF8).Split(QuebraLinha, StringSplitOptions.RemoveEmptyEntries);
+        IEnumerable<string> linhasFinal = linhas
+            .Skip(1)
+            .Where(linha => linha.Split(';')[ColunaFinal].Trim('"') == sufixo.Value);
+
+        return Encoding.UTF8.GetBytes(string.Join(QuebraLinha, linhasFinal.Prepend(linhas[0])) + QuebraLinha);
     }
 
     /// <summary>A fatura com duas compras idênticas parceladas: a linha da parcela 9/10 aparece duas vezes.</summary>

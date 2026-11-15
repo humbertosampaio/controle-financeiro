@@ -12,8 +12,9 @@ namespace ControleFinanceiro.WebApi.Endpoints.Importacoes.PreVisualizarFatura;
 
 /// <summary>
 /// Lê a fatura no layout da rota e devolve o que o usuário precisa preencher ou resolver antes de importá-la: os finais
-/// de cartão, marcando os já cadastrados, os beneficiários novos e as categorias do banco sem alias. Nada é gravado, e
-/// o arquivo não fica no servidor.
+/// de cartão, marcando os já cadastrados, os beneficiários novos e as categorias do banco sem alias. Recusa a fatura cujo
+/// vencimento não fecha com as compras ou que já foi importada com outro vencimento no mesmo mês. Nada é gravado, e o
+/// arquivo não fica no servidor.
 /// </summary>
 public sealed class PreVisualizarFaturaEndpoint : Endpoint<PreVisualizarFaturaRequest, PreVisualizarFaturaResponse>
 {
@@ -26,15 +27,18 @@ public sealed class PreVisualizarFaturaEndpoint : Endpoint<PreVisualizarFaturaRe
     private readonly IUsuarioAtual _usuarioAtual;
     private readonly LeituraFaturaService _leituraFatura;
     private readonly PendenciasImportacaoService _pendencias;
+    private readonly ImportacaoFaturaService _importacaoFatura;
 
     public PreVisualizarFaturaEndpoint(
         IUsuarioAtual usuarioAtual,
         LeituraFaturaService leituraFatura,
-        PendenciasImportacaoService pendencias)
+        PendenciasImportacaoService pendencias,
+        ImportacaoFaturaService importacaoFatura)
     {
         _usuarioAtual = usuarioAtual;
         _leituraFatura = leituraFatura;
         _pendencias = pendencias;
+        _importacaoFatura = importacaoFatura;
     }
 
     public override void Configure()
@@ -55,6 +59,7 @@ public sealed class PreVisualizarFaturaEndpoint : Endpoint<PreVisualizarFaturaRe
 
         await LerAsync(layout, req, ct)
             .Bind(ConferirVencimento)
+            .Bind(fatura => ConferirVencimentoImportadoAsync(idUsuario, fatura, ct))
             .Map(fatura => PreVisualizarAsync(idUsuario, fatura, ct))
             .Match(
                 resposta => Send.OkAsync(resposta, ct),
@@ -86,6 +91,14 @@ public sealed class PreVisualizarFaturaEndpoint : Endpoint<PreVisualizarFaturaRe
             .MapError(Falha.DeDominio);
     }
 
+    private async Task<Result<Fatura, Falha>> ConferirVencimentoImportadoAsync(IdUsuario idUsuario, Fatura fatura, CancellationToken ct)
+    {
+        return await _importacaoFatura
+            .ConferirVencimentoImportadoAsync(idUsuario, fatura, ct)
+            .Map(() => fatura)
+            .MapError(Falha.DeDominio);
+    }
+
     private async Task<PreVisualizarFaturaResponse> PreVisualizarAsync(IdUsuario idUsuario, Fatura fatura, CancellationToken ct)
     {
         PendenciasFatura pendencias = await _pendencias.ListarDaFaturaAsync(idUsuario, fatura, ct);
@@ -113,13 +126,14 @@ public sealed class PreVisualizarFaturaEndpoint : Endpoint<PreVisualizarFaturaRe
                 await Send.ErrorsAsync(StatusCodes.Status422UnprocessableEntity, ct);
                 break;
 
-            case Falha.Dominio(ErroVencimentoIncompativelComFatura erro) when LayoutArquivoImportacao.FaturasVencimentoInformado.Contains(layout):
-                AddError(r => r.DataVencimento, erro.Descricao);
+            case Falha.Dominio(ErroVencimentoIncompativelComFatura or ErroFaturaJaImportadaComOutroVencimento) vencimento
+                when LayoutArquivoImportacao.FaturasVencimentoInformado.Contains(layout):
+                AddError(r => r.DataVencimento, vencimento.Erro.Descricao);
                 await Send.ErrorsAsync(StatusCodes.Status422UnprocessableEntity, ct);
                 break;
 
-            case Falha.Dominio(ErroVencimentoIncompativelComFatura erro):
-                AddError(r => r.Arquivo, erro.Descricao);
+            case Falha.Dominio(ErroVencimentoIncompativelComFatura or ErroFaturaJaImportadaComOutroVencimento) vencimento:
+                AddError(r => r.Arquivo, vencimento.Erro.Descricao);
                 await Send.ErrorsAsync(StatusCodes.Status422UnprocessableEntity, ct);
                 break;
 
@@ -129,8 +143,8 @@ public sealed class PreVisualizarFaturaEndpoint : Endpoint<PreVisualizarFaturaRe
     }
 
     /// <summary>
-    /// O que interrompe a prévia, num tipo só para a cadeia: o arquivo que o leitor recusou (mensagem em texto) e o erro
-    /// tipado do domínio, o vencimento que não fecha com as compras.
+    /// O que interrompe a prévia, num tipo só para a cadeia: o arquivo que o leitor recusou (mensagem em texto) e os erros
+    /// tipados do domínio, o vencimento que não fecha com as compras e a fatura já importada com outro vencimento.
     /// </summary>
     private abstract record Falha
     {
