@@ -1,4 +1,5 @@
 using AutoFixture;
+using ControleFinanceiro.Application.IA;
 using ControleFinanceiro.Mcp.Tests.Infraestrutura;
 using ControleFinanceiro.Tests.Shared.AutoFixture.Attributes;
 using ControleFinanceiro.Tests.Shared.Respostas;
@@ -12,8 +13,6 @@ namespace ControleFinanceiro.Mcp.Tests.Ferramentas;
 [Collection(ServidorMcpCollection.Nome)]
 public sealed class ListarCandidatosPagamentoFaturaToolTests : IAsyncLifetime
 {
-    private const string NomeFerramenta = "listar_candidatos_pagamento_fatura";
-
     private readonly ServidorMcpFixture _servidor;
     private readonly PagamentoFaturaDeTeste _fatura;
 
@@ -30,7 +29,7 @@ public sealed class ListarCandidatosPagamentoFaturaToolTests : IAsyncLifetime
     [Fact]
     public async Task Anotacoes_Deve_SerDeLeituraIdempotenteEFechada()
     {
-        McpClientTool ferramenta = await _servidor.ClienteMcp.ObterFerramentaAsync(NomeFerramenta);
+        McpClientTool ferramenta = await _servidor.ClienteMcp.ObterFerramentaAsync(Tools.ListarCandidatosPagamentoFatura);
 
         ToolAnnotations anotacoes = ferramenta.ProtocolTool.Annotations!;
         anotacoes.ReadOnlyHint.Should().BeTrue();
@@ -41,7 +40,7 @@ public sealed class ListarCandidatosPagamentoFaturaToolTests : IAsyncLifetime
     [Fact]
     public async Task Esquema_Deve_PedirOAnoEOMes()
     {
-        McpClientTool ferramenta = await _servidor.ClienteMcp.ObterFerramentaAsync(NomeFerramenta);
+        McpClientTool ferramenta = await _servidor.ClienteMcp.ObterFerramentaAsync(Tools.ListarCandidatosPagamentoFatura);
 
         ferramenta.ProtocolTool.InputSchema.GetProperty("properties").EnumerateObject().Select(p => p.Name).Should().BeEquivalentTo("ano", "mes");
     }
@@ -79,7 +78,7 @@ public sealed class ListarCandidatosPagamentoFaturaToolTests : IAsyncLifetime
     [Fact]
     public async Task Listar_Quando_MesInvalido_Deve_DevolverApenasOErroSemRepetirOMes()
     {
-        CallToolResult resultado = await _servidor.ClienteMcp.ChamarDoMesAsync(NomeFerramenta, ano: 2026, mes: 13);
+        CallToolResult resultado = await _servidor.ClienteMcp.ChamarDoMesAsync(Tools.ListarCandidatosPagamentoFatura, ano: 2026, mes: 13);
 
         resultado.IsError.Should().NotBe(true);
         resultado.Json.Select(campo => campo.Key).Should().Equal("erro");

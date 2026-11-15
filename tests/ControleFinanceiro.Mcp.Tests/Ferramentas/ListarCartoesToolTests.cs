@@ -1,4 +1,5 @@
 using AutoFixture;
+using ControleFinanceiro.Application.IA;
 using ControleFinanceiro.Domain.Cartoes;
 using ControleFinanceiro.Domain.Usuarios;
 using ControleFinanceiro.Mcp.Tests.Infraestrutura;
@@ -29,7 +30,7 @@ public sealed class ListarCartoesToolTests : IAsyncLifetime
     [Fact]
     public async Task Esquema_Deve_NaoTerParametros()
     {
-        McpClientTool ferramenta = await _servidor.ClienteMcp.ObterFerramentaAsync("listar_cartoes");
+        McpClientTool ferramenta = await _servidor.ClienteMcp.ObterFerramentaAsync(Tools.ListarCartoes);
 
         ferramenta.ProtocolTool.InputSchema.GetProperty("properties").EnumerateObject().Should().BeEmpty();
     }

@@ -1,8 +1,9 @@
+using ControleFinanceiro.Application.IA;
 using ControleFinanceiro.Application.IA.Saida;
 using ControleFinanceiro.Application.Importacoes;
 using ControleFinanceiro.Domain.Importacoes;
-using ControleFinanceiro.Domain.Shared.ValueObjects;
 using ControleFinanceiro.Domain.Services;
+using ControleFinanceiro.Domain.Shared.ValueObjects;
 using ControleFinanceiro.Domain.Transacoes;
 using ControleFinanceiro.Mcp.Tests.Infraestrutura;
 using ControleFinanceiro.Tests.Shared.Respostas;
@@ -46,7 +47,7 @@ public sealed class PreverImportacaoToolTests : IAsyncLifetime
     [InlineData("vencimento")]
     public async Task Esquema_Deve_TerOParametroComoTextoOpcional(string parametro)
     {
-        McpClientTool ferramenta = await _servidor.ClienteMcp.ObterFerramentaAsync("prever_importacao");
+        McpClientTool ferramenta = await _servidor.ClienteMcp.ObterFerramentaAsync(Tools.PreverImportacao);
 
         JsonElement esquema = ferramenta.ProtocolTool.InputSchema;
         esquema.GetProperty("properties").GetProperty(parametro).GetProperty("type").GetString().Should().Be("string");

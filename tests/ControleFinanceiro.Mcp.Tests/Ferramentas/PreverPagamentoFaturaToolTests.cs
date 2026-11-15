@@ -1,4 +1,5 @@
 using AutoFixture;
+using ControleFinanceiro.Application.IA;
 using ControleFinanceiro.Application.IA.Saida;
 using ControleFinanceiro.Domain.Cartoes;
 using ControleFinanceiro.Domain.Despesas;
@@ -15,8 +16,6 @@ namespace ControleFinanceiro.Mcp.Tests.Ferramentas;
 [Collection(ServidorMcpCollection.Nome)]
 public sealed class PreverPagamentoFaturaToolTests : IAsyncLifetime
 {
-    private const string NomeFerramenta = "prever_pagamento_fatura";
-
     private readonly ServidorMcpFixture _servidor;
     private readonly PagamentoFaturaDeTeste _fatura;
 
@@ -34,7 +33,7 @@ public sealed class PreverPagamentoFaturaToolTests : IAsyncLifetime
     [Fact]
     public async Task Esquema_Deve_TerOsIdsEOMesDeVencimento()
     {
-        McpClientTool ferramenta = await _servidor.ClienteMcp.ObterFerramentaAsync(NomeFerramenta);
+        McpClientTool ferramenta = await _servidor.ClienteMcp.ObterFerramentaAsync(Tools.PreverPagamentoFatura);
 
         ferramenta.ProtocolTool.InputSchema
             .GetProperty("properties")
@@ -46,7 +45,7 @@ public sealed class PreverPagamentoFaturaToolTests : IAsyncLifetime
     [Fact]
     public async Task Meta_Deve_NaoPedirAInteracaoDoUsuario()
     {
-        McpClientTool ferramenta = await _servidor.ClienteMcp.ObterFerramentaAsync(NomeFerramenta);
+        McpClientTool ferramenta = await _servidor.ClienteMcp.ObterFerramentaAsync(Tools.PreverPagamentoFatura);
 
         (ferramenta.ProtocolTool.Meta?.ContainsKey(ServidorMcpFixture.MetaInteracaoDoUsuario) ?? false).Should().BeFalse();
     }
@@ -93,7 +92,7 @@ public sealed class PreverPagamentoFaturaToolTests : IAsyncLifetime
         (Cartao cartao, DespesaAdiada adiada, Transacao saida) = await _fatura.GravarAsync(fixture);
 
         CallToolResult resultado = await _servidor.ClienteMcp.CallToolAsync(
-            NomeFerramenta,
+            Tools.PreverPagamentoFatura,
             new Dictionary<string, object?>
             {
                 ["idTransacao"] = saida.Id.Value,

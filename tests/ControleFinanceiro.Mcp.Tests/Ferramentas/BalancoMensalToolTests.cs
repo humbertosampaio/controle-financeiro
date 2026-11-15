@@ -1,22 +1,21 @@
-using System.Text.Json;
-using System.Text.Json.Nodes;
 using AutoFixture;
+using ControleFinanceiro.Application.IA;
 using ControleFinanceiro.Domain.Despesas;
 using ControleFinanceiro.Domain.Shared.ValueObjects;
 using ControleFinanceiro.Domain.Usuarios;
 using ControleFinanceiro.Mcp.Tests.Infraestrutura;
-using ControleFinanceiro.Tests.Shared.Respostas;
 using ControleFinanceiro.Tests.Shared.AutoFixture.Attributes;
+using ControleFinanceiro.Tests.Shared.Respostas;
 using ModelContextProtocol.Client;
 using ModelContextProtocol.Protocol;
+using System.Text.Json;
+using System.Text.Json.Nodes;
 
 namespace ControleFinanceiro.Mcp.Tests.Ferramentas;
 
 [Collection(ServidorMcpCollection.Nome)]
 public sealed class BalancoMensalToolTests : IAsyncLifetime
 {
-    private const string NomeFerramenta = "balanco_mensal";
-
     private readonly ServidorMcpFixture _servidor;
     private readonly BancoDeTeste _banco;
 
@@ -35,7 +34,7 @@ public sealed class BalancoMensalToolTests : IAsyncLifetime
     {
         IList<McpClientTool> ferramentas = await _servidor.ClienteMcp.ListToolsAsync();
 
-        JsonElement esquema = ferramentas.Single(f => f.Name == NomeFerramenta).ProtocolTool.InputSchema;
+        JsonElement esquema = ferramentas.Single(f => f.Name == Tools.BalancoMensal).ProtocolTool.InputSchema;
 
         esquema
             .GetProperty("properties")
@@ -51,7 +50,7 @@ public sealed class BalancoMensalToolTests : IAsyncLifetime
         DespesaRecorrente recorrente = await _banco.GravarRecorrenteAsync(fixture);
         await _banco.GravarDespesaDoMesAsync(recorrente, mes);
 
-        JsonObject json = (await _servidor.ClienteMcp.ChamarDoMesAsync(NomeFerramenta, mes.Ano, mes.Mes)).Json;
+        JsonObject json = (await _servidor.ClienteMcp.ChamarDoMesAsync(Tools.BalancoMensal, mes.Ano, mes.Mes)).Json;
 
         json.Select(campo => campo.Key).Should().BeEquivalentTo("mes", "rendaLiquida", "pago", "pendente", "saldo");
         BalancoLido balanco = new(json);
@@ -65,7 +64,7 @@ public sealed class BalancoMensalToolTests : IAsyncLifetime
     [Fact]
     public async Task Obter_Deve_NaoTrazerONomeNemOsDescontos()
     {
-        CallToolResult resultado = await _servidor.ClienteMcp.ChamarDoMesAsync(NomeFerramenta, ano: 2026, mes: 3);
+        CallToolResult resultado = await _servidor.ClienteMcp.ChamarDoMesAsync(Tools.BalancoMensal, ano: 2026, mes: 3);
 
         resultado.Texto.Should().NotContain(_servidor.Usuario.Nome);
         foreach (DescontoSalarial desconto in _servidor.Usuario.DescontosSalariais)
@@ -80,7 +79,7 @@ public sealed class BalancoMensalToolTests : IAsyncLifetime
         DespesaRecorrente recorrente = await _banco.GravarRecorrenteAsync(fixture);
         await _banco.GravarDespesaDoMesAsync(recorrente, mes);
 
-        BalancoLido balanco = new((await _servidor.ClienteMcp.ChamarDoMesAsync(NomeFerramenta, mes.Ano, mes.Mes)).Json);
+        BalancoLido balanco = new((await _servidor.ClienteMcp.ChamarDoMesAsync(Tools.BalancoMensal, mes.Ano, mes.Mes)).Json);
 
         balanco.Pendente.Should().Be(0m);
     }
@@ -88,7 +87,7 @@ public sealed class BalancoMensalToolTests : IAsyncLifetime
     [Fact]
     public async Task Obter_Quando_MesInvalido_Deve_DevolverSoOErroSemRepetirOMes()
     {
-        CallToolResult resultado = await _servidor.ClienteMcp.ChamarDoMesAsync(NomeFerramenta, ano: 2026, mes: 13);
+        CallToolResult resultado = await _servidor.ClienteMcp.ChamarDoMesAsync(Tools.BalancoMensal, ano: 2026, mes: 13);
 
         resultado.Json.Select(campo => campo.Key).Should().Equal("erro");
         resultado.Texto.Should().NotContain("13");
@@ -99,7 +98,7 @@ public sealed class BalancoMensalToolTests : IAsyncLifetime
     {
         await using McpClient clienteMcp = await ServidorMcpFixture.IniciarClienteMcpAsync(_servidor.ConexaoDoContainer, usuarioInexistente);
 
-        CallToolResult resultado = await clienteMcp.ChamarDoMesAsync(NomeFerramenta, ano: 2026, mes: 3);
+        CallToolResult resultado = await clienteMcp.ChamarDoMesAsync(Tools.BalancoMensal, ano: 2026, mes: 3);
 
         resultado.Json.Select(campo => campo.Key).Should().Equal("erro");
         resultado.Texto.Should().NotContain(usuarioInexistente.Value.ToString());

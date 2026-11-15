@@ -1,4 +1,5 @@
 using AutoFixture;
+using ControleFinanceiro.Application.IA;
 using ControleFinanceiro.Application.IA.Saida;
 using ControleFinanceiro.Domain.Despesas;
 using ControleFinanceiro.Domain.Shared.ValueObjects;
@@ -21,8 +22,6 @@ namespace ControleFinanceiro.Mcp.Tests.Ferramentas;
 [Collection(ServidorMcpCollection.Nome)]
 public sealed class ConfirmarVinculoToolTests : IAsyncLifetime
 {
-    private const string NomeFerramenta = "confirmar_vinculo";
-
     private readonly ServidorMcpFixture _servidor;
     private readonly BancoDeTeste _banco;
     private readonly VinculoDeTeste _vinculo;
@@ -42,7 +41,7 @@ public sealed class ConfirmarVinculoToolTests : IAsyncLifetime
     [Fact]
     public async Task Esquema_Deve_TerOResumoEOsDoisIds()
     {
-        McpClientTool ferramenta = await _servidor.ClienteMcp.ObterFerramentaAsync(NomeFerramenta);
+        McpClientTool ferramenta = await _servidor.ClienteMcp.ObterFerramentaAsync(Tools.ConfirmarVinculo);
 
         ferramenta.ProtocolTool.InputSchema
             .GetProperty("properties")
@@ -54,7 +53,7 @@ public sealed class ConfirmarVinculoToolTests : IAsyncLifetime
     [Fact]
     public async Task Meta_Deve_PedirAInteracaoDoUsuario()
     {
-        McpClientTool ferramenta = await _servidor.ClienteMcp.ObterFerramentaAsync(NomeFerramenta);
+        McpClientTool ferramenta = await _servidor.ClienteMcp.ObterFerramentaAsync(Tools.ConfirmarVinculo);
 
         ferramenta.ProtocolTool.Meta![ServidorMcpFixture.MetaInteracaoDoUsuario]!.GetValue<bool>().Should().BeTrue();
     }

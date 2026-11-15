@@ -1,25 +1,24 @@
-using System.Text.Json;
-using System.Text.Json.Nodes;
 using AutoFixture;
+using ControleFinanceiro.Application.IA;
 using ControleFinanceiro.Domain.Contas;
 using ControleFinanceiro.Domain.Importacoes;
 using ControleFinanceiro.Domain.Shared.ValueObjects;
 using ControleFinanceiro.Domain.Transacoes;
 using ControleFinanceiro.Domain.Usuarios;
 using ControleFinanceiro.Mcp.Tests.Infraestrutura;
-using ControleFinanceiro.Tests.Shared.Respostas;
 using ControleFinanceiro.Tests.Shared;
 using ControleFinanceiro.Tests.Shared.AutoFixture.Attributes;
+using ControleFinanceiro.Tests.Shared.Respostas;
 using ModelContextProtocol.Client;
 using ModelContextProtocol.Protocol;
+using System.Text.Json;
+using System.Text.Json.Nodes;
 
 namespace ControleFinanceiro.Mcp.Tests.Ferramentas;
 
 [Collection(ServidorMcpCollection.Nome)]
 public sealed class ListarTransacoesToolTests : IAsyncLifetime
 {
-    private const string NomeFerramenta = "listar_transacoes";
-
     private readonly ServidorMcpFixture _servidor;
     private readonly BancoDeTeste _banco;
 
@@ -39,7 +38,7 @@ public sealed class ListarTransacoesToolTests : IAsyncLifetime
     {
         IList<McpClientTool> ferramentas = await _servidor.ClienteMcp.ListToolsAsync();
 
-        JsonElement esquema = ferramentas.Single(f => f.Name == NomeFerramenta).ProtocolTool.InputSchema;
+        JsonElement esquema = ferramentas.Single(f => f.Name == Tools.ListarTransacoes).ProtocolTool.InputSchema;
 
         esquema
             .GetProperty("properties")
@@ -71,7 +70,7 @@ public sealed class ListarTransacoesToolTests : IAsyncLifetime
         IReadOnlyList<Transacao> transacoes = await GravarExtratoAsync(fixture, NaData(fixture, mes.Inicio));
         Transacao transacao = transacoes.Single();
 
-        CallToolResult resultado = await _servidor.ClienteMcp.ChamarDoMesAsync(NomeFerramenta, mes.Ano, mes.Mes);
+        CallToolResult resultado = await _servidor.ClienteMcp.ChamarDoMesAsync(Tools.ListarTransacoes, mes.Ano, mes.Mes);
 
         resultado.Json.Select(campo => campo.Key).Should().BeEquivalentTo("mes", "transacoes");
         resultado.Json["transacoes"]![0]!.AsObject()
@@ -111,7 +110,7 @@ public sealed class ListarTransacoesToolTests : IAsyncLifetime
         Lancamento lancamento = NaData(fixture, mes.Inicio);
         await GravarExtratoAsync(fixture, lancamento.ComTextos(lancamento.Descricao, contraparte: null));
 
-        JsonObject json = (await _servidor.ClienteMcp.ChamarDoMesAsync(NomeFerramenta, mes.Ano, mes.Mes)).Json;
+        JsonObject json = (await _servidor.ClienteMcp.ChamarDoMesAsync(Tools.ListarTransacoes, mes.Ano, mes.Mes)).Json;
 
         json["transacoes"]![0]!.AsObject().Should().NotContainKey("contraparte");
     }
@@ -131,7 +130,7 @@ public sealed class ListarTransacoesToolTests : IAsyncLifetime
     [Fact]
     public async Task Listar_Quando_MesInvalido_Deve_DevolverSoOErroSemRepetirOMes()
     {
-        CallToolResult resultado = await _servidor.ClienteMcp.ChamarDoMesAsync(NomeFerramenta, ano: 2026, mes: 13);
+        CallToolResult resultado = await _servidor.ClienteMcp.ChamarDoMesAsync(Tools.ListarTransacoes, ano: 2026, mes: 13);
 
         resultado.IsError.Should().NotBe(true);
         resultado.Json.Select(campo => campo.Key).Should().Equal("erro");
@@ -143,7 +142,7 @@ public sealed class ListarTransacoesToolTests : IAsyncLifetime
     {
         await using McpClient clienteMcp = await ServidorMcpFixture.IniciarClienteMcpAsync(_servidor.ConexaoDoContainer, idUsuario: null);
 
-        CallToolResult resultado = await clienteMcp.ChamarDoMesAsync(NomeFerramenta, ano: 2026, mes: 3);
+        CallToolResult resultado = await clienteMcp.ChamarDoMesAsync(Tools.ListarTransacoes, ano: 2026, mes: 3);
 
         resultado.IsError.Should().BeTrue();
         resultado.Texto.Should().NotContain("Mcp:IdUsuario")
@@ -153,7 +152,7 @@ public sealed class ListarTransacoesToolTests : IAsyncLifetime
 
     private async Task<TransacoesDoMesLidas> ListarAsync(MesReferencia mes)
     {
-        CallToolResult resultado = await _servidor.ClienteMcp.ChamarDoMesAsync(NomeFerramenta, mes.Ano, mes.Mes);
+        CallToolResult resultado = await _servidor.ClienteMcp.ChamarDoMesAsync(Tools.ListarTransacoes, mes.Ano, mes.Mes);
         return new TransacoesDoMesLidas(resultado.Json);
     }
 

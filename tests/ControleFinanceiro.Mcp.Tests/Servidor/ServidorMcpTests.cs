@@ -1,4 +1,5 @@
 using CliWrap.Buffered;
+using ControleFinanceiro.Application.IA;
 using ControleFinanceiro.Mcp.Tests.Infraestrutura;
 using ModelContextProtocol.Client;
 using ModelContextProtocol.Protocol;
@@ -9,8 +10,6 @@ namespace ControleFinanceiro.Mcp.Tests.Servidor;
 [Collection(ServidorMcpCollection.Nome)]
 public sealed class ServidorMcpTests
 {
-    private const string NomeFerramenta = "verificar_servidor";
-
     private readonly ServidorMcpFixture _fixture;
 
     public ServidorMcpTests(ServidorMcpFixture fixture)
@@ -32,7 +31,23 @@ public sealed class ServidorMcpTests
 
         ferramentas
             .Select(ferramenta => ferramenta.Name)
-            .Should().BeEquivalentTo(NomeFerramenta, "listar_transacoes", "listar_despesas_fixas", "balanco_mensal", "prever_vinculo", "confirmar_vinculo", "listar_cartoes", "listar_candidatos_pagamento_fatura", "prever_pagamento_fatura", "confirmar_pagamento_fatura", "prever_importacao", "confirmar_importacao");
+            .Should().BeEquivalentTo(
+                "verificar_servidor",
+
+                "listar_transacoes",
+                "listar_despesas_fixas",
+                "balanco_mensal",
+
+                "prever_vinculo",
+                "confirmar_vinculo",
+
+                "listar_cartoes",
+                "listar_candidatos_pagamento_fatura",
+                "prever_pagamento_fatura",
+                "confirmar_pagamento_fatura",
+
+                "prever_importacao",
+                "confirmar_importacao");
     }
 
     // O cliente descarta o tipo em lista, como o ["string", "null"] do parâmetro anulável, e sem o tipo o modelo
@@ -108,12 +123,12 @@ public sealed class ServidorMcpTests
         // Descartar o cliente fecha o stdin, e o servidor esvazia o log ao sair.
         await using (McpClient clienteMcp = await ServidorMcpFixture.IniciarClienteMcpAsync(_fixture.ConexaoDoContainer, idUsuario: null, caminhoLog))
         {
-            CallToolResult resultado = await clienteMcp.CallToolAsync("listar_transacoes", new Dictionary<string, object?> { ["ano"] = 2026, ["mes"] = 3 });
+            CallToolResult resultado = await clienteMcp.CallToolAsync(Tools.ListarTransacoes, new Dictionary<string, object?> { ["ano"] = 2026, ["mes"] = 3 });
             resultado.IsError.Should().BeTrue();
             resposta = resultado.Content.OfType<TextContentBlock>().Single().Text;
         }
 
-        LerLog(Path.GetDirectoryName(caminhoLog)!).Should().Contain("\"listar_transacoes\" threw an unhandled exception")
+        LerLog(Path.GetDirectoryName(caminhoLog)!).Should().Contain($"\"{Tools.ListarTransacoes}\" threw an unhandled exception")
             .And.Contain("System.InvalidOperationException")
             .And.Contain("UsuarioAtualConfigurado")
             .And.Contain("   at ");
@@ -151,7 +166,7 @@ public sealed class ServidorMcpTests
 
     private static async Task<string> VerificarAsync(McpClient clienteMcp)
     {
-        CallToolResult resultado = await clienteMcp.CallToolAsync(NomeFerramenta);
+        CallToolResult resultado = await clienteMcp.CallToolAsync(Tools.VerificarServidor);
 
         return resultado.Content.OfType<TextContentBlock>().Single().Text;
     }

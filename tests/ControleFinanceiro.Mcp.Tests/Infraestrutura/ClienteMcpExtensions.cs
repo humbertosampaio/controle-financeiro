@@ -1,3 +1,4 @@
+using ControleFinanceiro.Application.IA;
 using ControleFinanceiro.Domain.Shared.ValueObjects;
 using ModelContextProtocol.Client;
 using ModelContextProtocol.Protocol;
@@ -27,7 +28,7 @@ internal static class ClienteMcpExtensions
         public ValueTask<CallToolResult> PreverVinculoAsync(Guid idTransacao, Guid idDespesa)
         {
             return clienteMcp.CallToolAsync(
-                "prever_vinculo",
+                Tools.PreverVinculo,
                 new Dictionary<string, object?> { ["idTransacao"] = idTransacao, ["idDespesa"] = idDespesa });
         }
 
@@ -35,21 +36,21 @@ internal static class ClienteMcpExtensions
         public ValueTask<CallToolResult> ConfirmarVinculoAsync(Guid idTransacao, Guid idDespesa, string resumo)
         {
             return clienteMcp.CallToolAsync(
-                "confirmar_vinculo",
+                Tools.ConfirmarVinculo,
                 new Dictionary<string, object?> { ["resumo"] = resumo, ["idTransacao"] = idTransacao, ["idDespesa"] = idDespesa });
         }
     }
 
     extension(McpClient clienteMcp)
     {
-        public ValueTask<CallToolResult> ListarCartoesAsync() => clienteMcp.CallToolAsync("listar_cartoes", new Dictionary<string, object?>());
+        public ValueTask<CallToolResult> ListarCartoesAsync() => clienteMcp.CallToolAsync(Tools.ListarCartoes, new Dictionary<string, object?>());
 
         public ValueTask<CallToolResult> ListarCandidatosPagamentoFaturaAsync(MesReferencia mesVencimento) =>
-            clienteMcp.ChamarDoMesAsync("listar_candidatos_pagamento_fatura", mesVencimento.Ano, mesVencimento.Mes);
+            clienteMcp.ChamarDoMesAsync(Tools.ListarCandidatosPagamentoFatura, mesVencimento.Ano, mesVencimento.Mes);
 
         public ValueTask<CallToolResult> PreverPagamentoFaturaAsync(Guid idTransacao, Guid idCartao, MesReferencia mesVencimento)
         {
-            return clienteMcp.CallToolAsync("prever_pagamento_fatura", ArgumentosDoPagamento(idTransacao, idCartao, mesVencimento));
+            return clienteMcp.CallToolAsync(Tools.PreverPagamentoFatura, ArgumentosDoPagamento(idTransacao, idCartao, mesVencimento));
         }
 
         /// <summary>Chama a confirmação como o cliente a envia depois que o usuário aprova a chamada, com o resumo primeiro.</summary>
@@ -59,7 +60,7 @@ internal static class ClienteMcpExtensions
             foreach ((string nome, object? valor) in ArgumentosDoPagamento(idTransacao, idCartao, mesVencimento))
                 argumentos[nome] = valor;
 
-            return clienteMcp.CallToolAsync("confirmar_pagamento_fatura", argumentos);
+            return clienteMcp.CallToolAsync(Tools.ConfirmarPagamentoFatura, argumentos);
         }
     }
 
@@ -68,7 +69,7 @@ internal static class ClienteMcpExtensions
         /// <param name="sufixoConta">Só no extrato sem a conta no arquivo; nulo, o argumento não vai.</param>
         public ValueTask<CallToolResult> PreverImportacaoAsync(string caminho, string layout, string? sufixoConta = null, string? vencimento = null)
         {
-            return clienteMcp.CallToolAsync("prever_importacao", ArgumentosDaImportacao(caminho, layout, sufixoConta, vencimento));
+            return clienteMcp.CallToolAsync(Tools.PreverImportacao, ArgumentosDaImportacao(caminho, layout, sufixoConta, vencimento));
         }
 
         /// <summary>Chama a confirmação como o cliente a envia depois que o usuário aprova a chamada, com o resumo primeiro.</summary>
@@ -83,7 +84,7 @@ internal static class ClienteMcpExtensions
             foreach ((string nome, object? valor) in ArgumentosDaImportacao(caminho, layout, sufixoConta, vencimento))
                 argumentos[nome] = valor;
 
-            return clienteMcp.CallToolAsync("confirmar_importacao", argumentos);
+            return clienteMcp.CallToolAsync(Tools.ConfirmarImportacao, argumentos);
         }
     }
 

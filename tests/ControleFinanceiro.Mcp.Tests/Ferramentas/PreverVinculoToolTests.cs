@@ -1,4 +1,5 @@
 using AutoFixture;
+using ControleFinanceiro.Application.IA;
 using ControleFinanceiro.Application.IA.Saida;
 using ControleFinanceiro.Domain.Despesas;
 using ControleFinanceiro.Domain.Shared.ValueObjects;
@@ -17,8 +18,6 @@ namespace ControleFinanceiro.Mcp.Tests.Ferramentas;
 [Collection(ServidorMcpCollection.Nome)]
 public sealed class PreverVinculoToolTests : IAsyncLifetime
 {
-    private const string NomeFerramenta = "prever_vinculo";
-
     private readonly ServidorMcpFixture _servidor;
     private readonly VinculoDeTeste _vinculo;
 
@@ -36,7 +35,7 @@ public sealed class PreverVinculoToolTests : IAsyncLifetime
     [Fact]
     public async Task Esquema_Deve_TerSoOsDoisIds()
     {
-        McpClientTool ferramenta = await _servidor.ClienteMcp.ObterFerramentaAsync(NomeFerramenta);
+        McpClientTool ferramenta = await _servidor.ClienteMcp.ObterFerramentaAsync(Tools.PreverVinculo);
 
         ferramenta.ProtocolTool.InputSchema
             .GetProperty("properties")
@@ -49,7 +48,7 @@ public sealed class PreverVinculoToolTests : IAsyncLifetime
     [Fact]
     public async Task Meta_Deve_NaoPedirAInteracaoDoUsuario()
     {
-        McpClientTool ferramenta = await _servidor.ClienteMcp.ObterFerramentaAsync(NomeFerramenta);
+        McpClientTool ferramenta = await _servidor.ClienteMcp.ObterFerramentaAsync(Tools.PreverVinculo);
 
         (ferramenta.ProtocolTool.Meta?.ContainsKey(ServidorMcpFixture.MetaInteracaoDoUsuario) ?? false).Should().BeFalse();
     }
