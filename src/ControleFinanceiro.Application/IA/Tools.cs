@@ -20,9 +20,6 @@ public static class Tools
     public const string PreverPagamentoFatura = "prever_pagamento_fatura";
     public const string ConfirmarPagamentoFatura = "confirmar_pagamento_fatura";
 
-    public const string PreverImportacao = "prever_importacao";
-    public const string ConfirmarImportacao = "confirmar_importacao";
-
     public const string PreverImportacaoC6ContaCsv = "prever_importacao_c6_conta_csv";
     public const string ConfirmarImportacaoC6ContaCsv = "confirmar_importacao_c6_conta_csv";
     public const string PreverImportacaoMercadoPagoContaCsv = "prever_importacao_mercado_pago_conta_csv";

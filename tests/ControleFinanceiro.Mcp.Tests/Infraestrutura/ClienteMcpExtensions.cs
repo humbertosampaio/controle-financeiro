@@ -67,27 +67,6 @@ internal static class ClienteMcpExtensions
 
     extension(McpClient clienteMcp)
     {
-        /// <param name="sufixoConta">Só no extrato sem a conta no arquivo; nulo, o argumento não vai.</param>
-        public ValueTask<CallToolResult> PreverImportacaoAsync(string caminho, string layout, string? sufixoConta = null, string? vencimento = null)
-        {
-            return clienteMcp.CallToolAsync(Tools.PreverImportacao, ArgumentosDaImportacao(caminho, layout, sufixoConta, vencimento));
-        }
-
-        /// <summary>Chama a confirmação como o cliente a envia depois que o usuário aprova a chamada, com o resumo primeiro.</summary>
-        public ValueTask<CallToolResult> ConfirmarImportacaoAsync(
-            string resumo,
-            string caminho,
-            string layout,
-            string? sufixoConta = null,
-            string? vencimento = null)
-        {
-            Dictionary<string, object?> argumentos = new() { ["resumo"] = resumo };
-            foreach ((string nome, object? valor) in ArgumentosDaImportacao(caminho, layout, sufixoConta, vencimento))
-                argumentos[nome] = valor;
-
-            return clienteMcp.CallToolAsync(Tools.ConfirmarImportacao, argumentos);
-        }
-
         /// <summary>
         /// Chama a prévia do layout só com os argumentos dele. O sufixo e o vencimento vão só no layout que os pede, com o
         /// valor das fixtures quando nulos.
@@ -148,18 +127,6 @@ internal static class ClienteMcpExtensions
 
         if (LayoutArquivoImportacao.FaturasVencimentoInformado.Contains(layout))
             argumentos["vencimento"] = vencimento ?? ImportacaoDeTeste.VencimentoFaturaC6;
-
-        return argumentos;
-    }
-
-    private static Dictionary<string, object?> ArgumentosDaImportacao(string caminho, string layout, string? sufixoConta, string? vencimento)
-    {
-        Dictionary<string, object?> argumentos = new() { ["caminho"] = caminho, ["layout"] = layout };
-        if (sufixoConta is not null)
-            argumentos["sufixoConta"] = sufixoConta;
-
-        if (vencimento is not null)
-            argumentos["vencimento"] = vencimento;
 
         return argumentos;
     }

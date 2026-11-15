@@ -69,13 +69,9 @@ public static class ErrosParaModelo
 
         public static readonly ErroParaModelo ArquivoGrandeDemais = Fixo("O arquivo passa de 5 MB, o tamanho máximo da importação.");
 
-        public static readonly ErroParaModelo LayoutInvalido = Fixo("Layout inválido: use um dos códigos de layout da descrição da ferramenta.");
-
         public static readonly ErroParaModelo SufixoContaInvalido = Fixo($"O layout {LayoutArquivoImportacao.MercadoPagoContaCsv.Value} pede o sufixo da conta: os 4 últimos caracteres do número da conta, que o usuário informa.");
 
         public static readonly ErroParaModelo VencimentoObrigatorio = Fixo($"O layout {LayoutArquivoImportacao.C6CartaoCsv.Value} pede o vencimento da fatura: a data em AAAA-MM-DD, que o usuário informa.");
-
-        public static readonly ErroParaModelo VencimentoNoArquivo = Fixo($"O layout {LayoutArquivoImportacao.MercadoPagoCartaoCsv.Value} traz o vencimento no arquivo: chame a ferramenta de novo sem o vencimento.");
 
         public static readonly ErroParaModelo VencimentoIncompativel = Fixo($"O vencimento da fatura não fecha com as datas das compras do arquivo, e nada foi importado: no layout {LayoutArquivoImportacao.C6CartaoCsv.Value}, confira com o usuário a data de vencimento informada; nos outros, peça a ele para conferir o arquivo.");
 

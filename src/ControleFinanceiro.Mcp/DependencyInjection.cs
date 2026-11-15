@@ -33,7 +33,6 @@ public static class DependencyInjection
                 .AddTransient<LeituraParaModeloService>()
                 .AddTransient<VinculoParaModeloService>()
                 .AddTransient<PagamentoFaturaParaModeloService>()
-                .AddTransient<ImportacaoParaModeloService>()
                 .AddTransient<ImportacaoExtratoParaModeloService>()
                 .AddTransient<ImportacaoFaturaParaModeloService>()
                 .AddTransient<ConfirmacaoImportacaoParaModeloService>()
@@ -55,7 +54,6 @@ public static class DependencyInjection
             return servidor
                 .WithTools<PreverVinculoTool>()
                 .WithTools<PreverPagamentoFaturaTool>()
-                .WithTools<PreverImportacaoTool>()
                 .WithTools<PreverImportacaoC6ContaCsvTool>()
                 .WithTools<PreverImportacaoMercadoPagoContaCsvTool>()
                 .WithTools<PreverImportacaoC6CartaoCsvTool>()
@@ -68,7 +66,6 @@ public static class DependencyInjection
             return servidor
                 .WithTools<ConfirmarVinculoTool>()
                 .WithTools<ConfirmarPagamentoFaturaTool>()
-                .WithTools<ConfirmarImportacaoTool>()
                 .WithTools<ConfirmarImportacaoC6ContaCsvTool>()
                 .WithTools<ConfirmarImportacaoMercadoPagoContaCsvTool>()
                 .WithTools<ConfirmarImportacaoC6CartaoCsvTool>()

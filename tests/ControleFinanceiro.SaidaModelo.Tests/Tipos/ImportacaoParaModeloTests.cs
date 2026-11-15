@@ -182,10 +182,10 @@ public sealed class ImportacaoParaModeloTests
     [Fact]
     public void Serializar_Quando_Falha_Deve_TerSoOErro()
     {
-        JsonObject json = ImportacaoParaModelo.Falha(ErrosParaModelo.Importacao.LayoutInvalido).Serializar();
+        JsonObject json = ImportacaoParaModelo.Falha(ErrosParaModelo.Importacao.ArquivoNaoEncontrado).Serializar();
 
         json.Select(campo => campo.Key).Should().Equal("erro");
-        ErroLido.DoEnvelope(json).Mensagem.Should().Be(ErrosParaModelo.Importacao.LayoutInvalido.Mensagem);
+        ErroLido.DoEnvelope(json).Mensagem.Should().Be(ErrosParaModelo.Importacao.ArquivoNaoEncontrado.Mensagem);
     }
 
     [Theory, DomainAutoData]

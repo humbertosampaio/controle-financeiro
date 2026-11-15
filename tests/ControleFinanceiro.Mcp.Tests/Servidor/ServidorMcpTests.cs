@@ -47,8 +47,6 @@ public sealed class ServidorMcpTests
                 "prever_pagamento_fatura",
                 "confirmar_pagamento_fatura",
 
-                "prever_importacao",
-                "confirmar_importacao",
                 "prever_importacao_c6_conta_csv",
                 "confirmar_importacao_c6_conta_csv",
                 "prever_importacao_mercado_pago_conta_csv",
