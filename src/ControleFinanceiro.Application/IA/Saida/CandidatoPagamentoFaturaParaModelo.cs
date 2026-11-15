@@ -8,7 +8,7 @@ namespace ControleFinanceiro.Application.IA.Saida;
 
 /// <summary>
 /// O que o modelo vê de um candidato a pagamento de fatura: a saída da conta e o bastante para pedir o pagamento ao
-/// <c>prever_pagamento_fatura</c>. Não vão o final do cartão, o sufixo da conta, a conta nem a agência.
+/// <see cref="Tools.PreverPagamentoFatura"/>. Não vão o final do cartão, o sufixo da conta, a conta nem a agência.
 /// </summary>
 public sealed record CandidatoPagamentoFaturaParaModelo : ISaidaModelo
 {
@@ -16,7 +16,7 @@ public sealed record CandidatoPagamentoFaturaParaModelo : ISaidaModelo
     [JsonPropertyName("transacao")]
     public TransacaoParaModelo Transacao { get; }
 
-    /// <summary>Um cartão da fatura, o id que o <c>prever_pagamento_fatura</c> pede.</summary>
+    /// <summary>Um cartão da fatura, o id que o <see cref="Tools.PreverPagamentoFatura"/> pede.</summary>
     [JsonPropertyName("idCartao")]
     public Guid IdCartao { get; }
 

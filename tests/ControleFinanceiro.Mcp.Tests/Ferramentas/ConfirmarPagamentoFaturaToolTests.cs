@@ -1,4 +1,5 @@
 using AutoFixture;
+using ControleFinanceiro.Application.IA;
 using ControleFinanceiro.Application.IA.Saida;
 using ControleFinanceiro.Domain.Cartoes;
 using ControleFinanceiro.Domain.Despesas;
@@ -19,8 +20,6 @@ namespace ControleFinanceiro.Mcp.Tests.Ferramentas;
 [Collection(ServidorMcpCollection.Nome)]
 public sealed class ConfirmarPagamentoFaturaToolTests : IAsyncLifetime
 {
-    private const string NomeFerramenta = "confirmar_pagamento_fatura";
-
     private readonly ServidorMcpFixture _servidor;
     private readonly PagamentoFaturaDeTeste _fatura;
 
@@ -38,7 +37,7 @@ public sealed class ConfirmarPagamentoFaturaToolTests : IAsyncLifetime
     [Fact]
     public async Task Esquema_Deve_TerOResumoOsIdsEOMesDeVencimento()
     {
-        McpClientTool ferramenta = await _servidor.ClienteMcp.ObterFerramentaAsync(NomeFerramenta);
+        McpClientTool ferramenta = await _servidor.ClienteMcp.ObterFerramentaAsync(Tools.ConfirmarPagamentoFatura);
 
         ferramenta.ProtocolTool.InputSchema
             .GetProperty("properties")
@@ -50,7 +49,7 @@ public sealed class ConfirmarPagamentoFaturaToolTests : IAsyncLifetime
     [Fact]
     public async Task Meta_Deve_PedirAInteracaoDoUsuario()
     {
-        McpClientTool ferramenta = await _servidor.ClienteMcp.ObterFerramentaAsync(NomeFerramenta);
+        McpClientTool ferramenta = await _servidor.ClienteMcp.ObterFerramentaAsync(Tools.ConfirmarPagamentoFatura);
 
         ferramenta.ProtocolTool.Meta![ServidorMcpFixture.MetaInteracaoDoUsuario]!.GetValue<bool>().Should().BeTrue();
     }

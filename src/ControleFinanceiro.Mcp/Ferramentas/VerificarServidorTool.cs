@@ -1,14 +1,15 @@
-using System.ComponentModel;
+using ControleFinanceiro.Application.IA;
 using ControleFinanceiro.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 using ModelContextProtocol.Server;
+using System.ComponentModel;
 
 namespace ControleFinanceiro.Mcp.Ferramentas;
 
 [McpServerToolType]
 internal sealed class VerificarServidorTool
 {
-    [McpServerTool(Name = "verificar_servidor", ReadOnly = true)]
+    [McpServerTool(Name = Tools.VerificarServidor, ReadOnly = true)]
     [Description("Verifica se o servidor do Controle Financeiro está de pé e consegue acessar o banco de dados.")]
     public static async Task<VerificacaoServidor> Verificar(ControleFinanceiroDbContext dbContext, CancellationToken cancellationToken)
     {

@@ -1,3 +1,4 @@
+using ControleFinanceiro.Application.IA;
 using ControleFinanceiro.Application.IA.Escritas;
 using ControleFinanceiro.Application.IA.Saida;
 using ModelContextProtocol.Server;
@@ -8,8 +9,8 @@ namespace ControleFinanceiro.Mcp.Ferramentas;
 [McpServerToolType]
 internal sealed class PreverPagamentoFaturaTool
 {
-    [McpServerTool(Name = "prever_pagamento_fatura", ReadOnly = true, Idempotent = true, OpenWorld = false)]
-    [Description("Mostra, sem gravar, como fica o pagamento da fatura do cartão por uma saída da conta, pelo id da saída de listar_transacoes, pelo id de um cartão da fatura de listar_cartoes e pelo mês em que a fatura vence. A saída paga as despesas já cobradas e pendentes de todos os cartões da mesma fatura nesse mês, com o valor cobrado. Devolve a saída, as despesas pagas, o total e o resumo, ou o erro. Nada é gravado: mostre o resumo ao usuário e, se ele quiser o pagamento, chame confirmar_pagamento_fatura com os mesmos argumentos e o resumo sem alteração.")]
+    [McpServerTool(Name = Tools.PreverPagamentoFatura, ReadOnly = true, Idempotent = true, OpenWorld = false)]
+    [Description($"Mostra, sem gravar, como fica o pagamento da fatura do cartão por uma saída da conta, pelo id da saída de {Tools.ListarTransacoes}, pelo id de um cartão da fatura de {Tools.ListarCartoes} e pelo mês em que a fatura vence. A saída paga as despesas já cobradas e pendentes de todos os cartões da mesma fatura nesse mês, com o valor cobrado. Devolve a saída, as despesas pagas, o total e o resumo, ou o erro. Nada é gravado: mostre o resumo ao usuário e, se ele quiser o pagamento, chame {Tools.ConfirmarPagamentoFatura} com os mesmos argumentos e o resumo sem alteração.")]
     public static Task<PagamentoFaturaParaModelo> Prever(
         PagamentoFaturaParaModeloService pagamento,
         [Description("O id da transação, uma saída da conta.")] Guid idTransacao,

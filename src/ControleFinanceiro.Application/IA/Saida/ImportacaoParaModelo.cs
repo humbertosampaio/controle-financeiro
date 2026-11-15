@@ -62,7 +62,7 @@ public sealed record ImportacaoParaModelo : ISaidaModelo
 
     /// <summary>
     /// Só na confirmação, e omitida quando não há: as saídas da conta que provavelmente pagaram uma fatura, reveladas pela
-    /// importação gravada. Para ligar, o modelo segue com o <c>prever_pagamento_fatura</c>.
+    /// importação gravada. Para ligar, o modelo segue com o <see cref="Tools.PreverPagamentoFatura"/>.
     /// </summary>
     [JsonPropertyName("candidatos_pagamento_fatura")]
     public IReadOnlyList<CandidatoPagamentoFaturaParaModelo>? CandidatosPagamentoFatura { get; }

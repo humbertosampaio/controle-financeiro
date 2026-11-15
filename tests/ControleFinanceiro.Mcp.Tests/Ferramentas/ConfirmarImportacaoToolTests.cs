@@ -1,4 +1,5 @@
 using AutoFixture;
+using ControleFinanceiro.Application.IA;
 using ControleFinanceiro.Application.IA.Saida;
 using ControleFinanceiro.Domain.Cartoes;
 using ControleFinanceiro.Domain.Importacoes;
@@ -18,7 +19,6 @@ namespace ControleFinanceiro.Mcp.Tests.Ferramentas;
 [Collection(ServidorMcpCollection.Nome)]
 public sealed class ConfirmarImportacaoToolTests : IAsyncLifetime
 {
-    private const string NomeFerramenta = "confirmar_importacao";
     private const decimal ValorBoleto = 230.45m;
 
     private static readonly DateOnly DiaBoleto = new(2026, 3, 3);
@@ -43,7 +43,7 @@ public sealed class ConfirmarImportacaoToolTests : IAsyncLifetime
     [Fact]
     public async Task Esquema_Deve_TerOResumoOCaminhoOLayoutEOSufixo()
     {
-        McpClientTool ferramenta = await _servidor.ClienteMcp.ObterFerramentaAsync(NomeFerramenta);
+        McpClientTool ferramenta = await _servidor.ClienteMcp.ObterFerramentaAsync(Tools.ConfirmarImportacao);
 
         ferramenta.ProtocolTool.InputSchema
             .GetProperty("properties")
@@ -58,7 +58,7 @@ public sealed class ConfirmarImportacaoToolTests : IAsyncLifetime
     [InlineData("vencimento")]
     public async Task Esquema_Deve_TerOParametroComoTextoOpcional(string parametro)
     {
-        McpClientTool ferramenta = await _servidor.ClienteMcp.ObterFerramentaAsync(NomeFerramenta);
+        McpClientTool ferramenta = await _servidor.ClienteMcp.ObterFerramentaAsync(Tools.ConfirmarImportacao);
 
         JsonElement esquema = ferramenta.ProtocolTool.InputSchema;
         esquema.GetProperty("properties").GetProperty(parametro).GetProperty("type").GetString().Should().Be("string");
@@ -68,7 +68,7 @@ public sealed class ConfirmarImportacaoToolTests : IAsyncLifetime
     [Fact]
     public async Task Meta_Deve_PedirAInteracaoDoUsuario()
     {
-        McpClientTool ferramenta = await _servidor.ClienteMcp.ObterFerramentaAsync(NomeFerramenta);
+        McpClientTool ferramenta = await _servidor.ClienteMcp.ObterFerramentaAsync(Tools.ConfirmarImportacao);
 
         ferramenta.ProtocolTool.Meta![ServidorMcpFixture.MetaInteracaoDoUsuario]!.GetValue<bool>().Should().BeTrue();
     }

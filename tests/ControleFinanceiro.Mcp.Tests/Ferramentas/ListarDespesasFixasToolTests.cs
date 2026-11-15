@@ -1,23 +1,22 @@
-using System.Text.Json;
-using System.Text.Json.Nodes;
 using AutoFixture;
+using ControleFinanceiro.Application.IA;
 using ControleFinanceiro.Domain.Despesas;
 using ControleFinanceiro.Domain.Shared.ValueObjects;
 using ControleFinanceiro.Domain.Usuarios;
 using ControleFinanceiro.Mcp.Tests.Infraestrutura;
-using ControleFinanceiro.Tests.Shared.Respostas;
 using ControleFinanceiro.Tests.Shared;
 using ControleFinanceiro.Tests.Shared.AutoFixture.Attributes;
+using ControleFinanceiro.Tests.Shared.Respostas;
 using ModelContextProtocol.Client;
 using ModelContextProtocol.Protocol;
+using System.Text.Json;
+using System.Text.Json.Nodes;
 
 namespace ControleFinanceiro.Mcp.Tests.Ferramentas;
 
 [Collection(ServidorMcpCollection.Nome)]
 public sealed class ListarDespesasFixasToolTests : IAsyncLifetime
 {
-    private const string NomeFerramenta = "listar_despesas_fixas";
-
     private readonly ServidorMcpFixture _servidor;
     private readonly BancoDeTeste _banco;
 
@@ -36,7 +35,7 @@ public sealed class ListarDespesasFixasToolTests : IAsyncLifetime
     {
         IList<McpClientTool> ferramentas = await _servidor.ClienteMcp.ListToolsAsync();
 
-        JsonElement esquema = ferramentas.Single(f => f.Name == NomeFerramenta).ProtocolTool.InputSchema;
+        JsonElement esquema = ferramentas.Single(f => f.Name == Tools.ListarDespesasFixas).ProtocolTool.InputSchema;
 
         esquema
             .GetProperty("properties")
@@ -51,7 +50,7 @@ public sealed class ListarDespesasFixasToolTests : IAsyncLifetime
         fixture.Inject(_servidor.Usuario.Id);
         DespesaRecorrente recorrente = await _banco.GravarRecorrenteAsync(fixture);
 
-        JsonObject json = (await _servidor.ClienteMcp.ChamarDoMesAsync(NomeFerramenta, mes.Ano, mes.Mes)).Json;
+        JsonObject json = (await _servidor.ClienteMcp.ChamarDoMesAsync(Tools.ListarDespesasFixas, mes.Ano, mes.Mes)).Json;
 
         json.Select(campo => campo.Key).Should().BeEquivalentTo("mes", "despesasFixas");
         json["despesasFixas"]![0]!.AsObject()
@@ -70,7 +69,7 @@ public sealed class ListarDespesasFixasToolTests : IAsyncLifetime
         DespesaRecorrente recorrente = await _banco.GravarRecorrenteAsync(fixture);
         Despesa despesa = await _banco.GravarDespesaDoMesAsync(recorrente, mes);
 
-        CallToolResult resultado = await _servidor.ClienteMcp.ChamarDoMesAsync(NomeFerramenta, mes.Ano, mes.Mes);
+        CallToolResult resultado = await _servidor.ClienteMcp.ChamarDoMesAsync(Tools.ListarDespesasFixas, mes.Ano, mes.Mes);
 
         resultado.Json["despesasFixas"]![0]!["despesaDoMes"]!.AsObject()
             .Select(campo => campo.Key)
@@ -133,7 +132,7 @@ public sealed class ListarDespesasFixasToolTests : IAsyncLifetime
     [Fact]
     public async Task Listar_Quando_MesInvalido_Deve_DevolverSoOErroSemRepetirOMes()
     {
-        CallToolResult resultado = await _servidor.ClienteMcp.ChamarDoMesAsync(NomeFerramenta, ano: 2026, mes: 13);
+        CallToolResult resultado = await _servidor.ClienteMcp.ChamarDoMesAsync(Tools.ListarDespesasFixas, ano: 2026, mes: 13);
 
         resultado.Json.Select(campo => campo.Key).Should().Equal("erro");
         resultado.Texto.Should().NotContain("13");
@@ -141,7 +140,7 @@ public sealed class ListarDespesasFixasToolTests : IAsyncLifetime
 
     private async Task<DespesasFixasDoMesLidas> ListarAsync(MesReferencia mes)
     {
-        CallToolResult resultado = await _servidor.ClienteMcp.ChamarDoMesAsync(NomeFerramenta, mes.Ano, mes.Mes);
+        CallToolResult resultado = await _servidor.ClienteMcp.ChamarDoMesAsync(Tools.ListarDespesasFixas, mes.Ano, mes.Mes);
         return new DespesasFixasDoMesLidas(resultado.Json);
     }
 }

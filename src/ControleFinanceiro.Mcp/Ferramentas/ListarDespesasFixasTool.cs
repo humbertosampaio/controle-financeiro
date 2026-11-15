@@ -1,14 +1,15 @@
-using System.ComponentModel;
+using ControleFinanceiro.Application.IA;
 using ControleFinanceiro.Application.IA.Leituras;
 using ControleFinanceiro.Application.IA.Saida;
 using ModelContextProtocol.Server;
+using System.ComponentModel;
 
 namespace ControleFinanceiro.Mcp.Ferramentas;
 
 [McpServerToolType]
 internal sealed class ListarDespesasFixasTool
 {
-    [McpServerTool(Name = "listar_despesas_fixas", ReadOnly = true)]
+    [McpServerTool(Name = Tools.ListarDespesasFixas, ReadOnly = true)]
     [Description("Lista as despesas fixas (recorrentes) com o valor e o dia em que ocorrem, cada uma com a despesa do mês pedido e o status do pagamento (Pago ou Pendente), quando a despesa do mês já foi gerada. A despesa do cartão cobrada na fatura e ainda não paga sai como Pendente, com o valor cobrado.")]
     public static Task<DespesasFixasDoMesParaModelo> Listar(
         LeituraParaModeloService leitura,

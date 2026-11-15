@@ -21,11 +21,11 @@ public static class ErrosParaModelo
 
         public static readonly ErroParaModelo UsuarioNaoEncontrado = Fixo("O usuário configurado no servidor não foi encontrado.");
 
-        public static readonly ErroParaModelo TransacaoNaoEncontrada = Fixo("A transação não foi encontrada: use o id de uma transação de listar_transacoes.");
+        public static readonly ErroParaModelo TransacaoNaoEncontrada = Fixo($"A transação não foi encontrada: use o id de uma transação de {Tools.ListarTransacoes}.");
 
-        public static readonly ErroParaModelo DespesaNaoEncontrada = Fixo("A despesa não foi encontrada: use o id de uma despesa de listar_despesas_fixas.");
+        public static readonly ErroParaModelo DespesaNaoEncontrada = Fixo($"A despesa não foi encontrada: use o id de uma despesa de {Tools.ListarDespesasFixas}.");
 
-        public static readonly ErroParaModelo CartaoNaoEncontrado = Fixo("O cartão não foi encontrado: use o id de um cartão de listar_cartoes.");
+        public static readonly ErroParaModelo CartaoNaoEncontrado = Fixo($"O cartão não foi encontrado: use o id de um cartão de {Tools.ListarCartoes}.");
     }
 
     /// <summary>O vínculo entre uma transação e a despesa que ela paga ou cobra, também no pagamento da fatura.</summary>
@@ -43,7 +43,7 @@ public static class ErrosParaModelo
 
         public static readonly ErroParaModelo ParcelaIncompativel = Fixo("A parcela da transação não combina com a despesa: só a despesa parcelada é cobrada por parcela, e só pela parcela da mesma compra.");
 
-        public static readonly ErroParaModelo ResumoDivergente = Fixo("O resumo não corresponde ao vínculo desses ids, e nada foi gravado: chame prever_vinculo de novo, mostre o novo resumo ao usuário e confirme com ele sem alteração.");
+        public static readonly ErroParaModelo ResumoDivergente = Fixo($"O resumo não corresponde ao vínculo desses ids, e nada foi gravado: chame {Tools.PreverVinculo} de novo, mostre o novo resumo ao usuário e confirme com ele sem alteração.");
     }
 
     /// <summary>O pagamento da fatura do cartão por uma saída da conta.</summary>
@@ -53,7 +53,7 @@ public static class ErrosParaModelo
 
         public static readonly ErroParaModelo FaturaSemCobrancaPendente = Fixo("A fatura não tem cobrança pendente nesse mês de vencimento: confira o cartão e o mês em que a fatura vence, e se a fatura já foi importada.");
 
-        public static readonly ErroParaModelo ResumoDivergente = Fixo("O resumo não corresponde ao pagamento da fatura com essa saída, esse cartão e esse mês, e nada foi gravado: chame prever_pagamento_fatura de novo, mostre o novo resumo ao usuário e confirme com ele sem alteração.");
+        public static readonly ErroParaModelo ResumoDivergente = Fixo($"O resumo não corresponde ao pagamento da fatura com essa saída, esse cartão e esse mês, e nada foi gravado: chame {Tools.PreverPagamentoFatura} de novo, mostre o novo resumo ao usuário e confirme com ele sem alteração.");
     }
 
     /// <summary>A importação de um extrato ou de uma fatura: a origem do arquivo, a leitura dele e o que falta cadastrar.</summary>
@@ -91,7 +91,7 @@ public static class ErrosParaModelo
 
         public static readonly ErroParaModelo IdentificadorRepetido = Fixo("O arquivo repete o identificador de um lançamento, e nada foi importado: peça ao usuário para conferir o arquivo.");
 
-        public static readonly ErroParaModelo ResumoDivergente = Fixo("O resumo não corresponde à importação desse arquivo, e nada foi gravado: o arquivo mudou ou já foi importado. Chame prever_importacao de novo, mostre o novo resumo ao usuário e confirme com ele sem alteração.");
+        public static readonly ErroParaModelo ResumoDivergente = Fixo($"O resumo não corresponde à importação desse arquivo, e nada foi gravado: o arquivo mudou ou já foi importado. Chame {Tools.PreverImportacao} de novo, mostre o novo resumo ao usuário e confirme com ele sem alteração.");
 
         private static readonly Dictionary<FalhaOrigemArquivoImportacao, ErroParaModelo> _porFalhaOrigem = new()
         {

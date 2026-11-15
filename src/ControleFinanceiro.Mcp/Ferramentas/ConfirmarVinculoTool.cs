@@ -1,7 +1,8 @@
-using System.ComponentModel;
+using ControleFinanceiro.Application.IA;
 using ControleFinanceiro.Application.IA.Escritas;
 using ControleFinanceiro.Application.IA.Saida;
 using ModelContextProtocol.Server;
+using System.ComponentModel;
 
 namespace ControleFinanceiro.Mcp.Ferramentas;
 
@@ -12,12 +13,12 @@ namespace ControleFinanceiro.Mcp.Ferramentas;
 [McpServerToolType]
 internal sealed class ConfirmarVinculoTool
 {
-    [McpServerTool(Name = "confirmar_vinculo", ReadOnly = false, Destructive = false, Idempotent = true, OpenWorld = false)]
+    [McpServerTool(Name = Tools.ConfirmarVinculo, ReadOnly = false, Destructive = false, Idempotent = true, OpenWorld = false)]
     [McpMeta("anthropic/requiresUserInteraction", true)]
-    [Description("Grava o vínculo de uma saída a uma despesa, depois de prever_vinculo. O usuário aprova a chamada no cliente, lendo o resumo; sem a aprovação, nada é gravado. Use os mesmos ids da prévia e o resumo dela sem alteração: se o vínculo recalculado não tiver esse resumo, nada é gravado. Devolve a transação, a despesa como fica (paga pela saída da conta, ou pendente com o valor cobrado pela compra do cartão), o valor previsto e o resumo, ou o erro.")]
+    [Description($"Grava o vínculo de uma saída a uma despesa, depois de {Tools.PreverVinculo}. O usuário aprova a chamada no cliente, lendo o resumo; sem a aprovação, nada é gravado. Use os mesmos ids da prévia e o resumo dela sem alteração: se o vínculo recalculado não tiver esse resumo, nada é gravado. Devolve a transação, a despesa como fica (paga pela saída da conta, ou pendente com o valor cobrado pela compra do cartão), o valor previsto e o resumo, ou o erro.")]
     public static Task<VinculoParaModelo> Confirmar(
         VinculoParaModeloService vinculo,
-        [Description("O resumo devolvido por prever_vinculo, sem alteração.")] string resumo,
+        [Description($"O resumo devolvido por {Tools.PreverVinculo}, sem alteração.")] string resumo,
         [Description("O id da transação, o mesmo da prévia.")] Guid idTransacao,
         [Description("O id da despesa, o mesmo da prévia.")] Guid idDespesa,
         CancellationToken cancellationToken)
