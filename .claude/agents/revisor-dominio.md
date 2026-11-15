@@ -59,7 +59,10 @@ Os arquivos `.Designer.cs` e `ModelSnapshot.cs` são gerados pelo EF: não leia.
 17. **Forma do tipo segue o conceito** (seção 7 do guia, "a forma do tipo vem do conceito"). Para cada tipo novo ou alterado no Domain, aplique as perguntas em ordem e compare com a forma do código. É achado MÉDIO, dizendo a forma que o critério dá e por quê:
     - um conceito que o negócio nomeia (no produto, na issue ou no plano) modelado como `record` "de retorno", primitivo ou tupla, em vez de value object;
     - um value object sem as invariantes que o conceito tem declaradas no tipo, como total que não pode ser negativo em `Reais` em vez de `ReaisPositivo`;
-    - uma entidade sem identidade própria, ou um conjunto fechado de casos em `string` ou `int` em vez de SmartEnum.
+    - uma entidade sem identidade própria, ou um conjunto fechado de casos em `string` ou `int` em vez de SmartEnum;
+    - um value object que guarda um valor só sem ser `SimpleValueObject<T>`;
+    - um método que devolve `bool` sem ser uma afirmação, como uma conferência com a mensagem de falha numa constante à parte, em vez de devolver `Result` (seção 5 do guia, "afirmação ou conferência");
+    - uma regra de negócio que só o comentário explica, feita com aritmética ou condições sem nome num método privado, quando cada condição poderia ser um membro com nome no tipo dono do dado (seção 7 do guia, "a regra aparece no código").
 
     Ter seguido o plano não dispensa o achado: a forma só é decisão do dono quando está em "Decisões fechadas".
 
