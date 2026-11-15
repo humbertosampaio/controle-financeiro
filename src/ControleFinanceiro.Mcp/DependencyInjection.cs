@@ -23,22 +23,10 @@ public static class DependencyInjection
                 .WithTools<ListarTransacoesTool>()
                 .WithTools<ListarDespesasFixasTool>()
                 .WithTools<BalancoMensalTool>()
-                .WithTools<PreverVinculoTool>()
-                .WithTools<ConfirmarVinculoTool>()
                 .WithTools<ListarCartoesTool>()
                 .WithTools<ListarCandidatosPagamentoFaturaTool>()
-                .WithTools<PreverPagamentoFaturaTool>()
-                .WithTools<ConfirmarPagamentoFaturaTool>()
-                .WithTools<PreverImportacaoTool>()
-                .WithTools<ConfirmarImportacaoTool>()
-                .WithTools<PreverImportacaoC6ContaCsvTool>()
-                .WithTools<ConfirmarImportacaoC6ContaCsvTool>()
-                .WithTools<PreverImportacaoMercadoPagoContaCsvTool>()
-                .WithTools<ConfirmarImportacaoMercadoPagoContaCsvTool>()
-                .WithTools<PreverImportacaoC6CartaoCsvTool>()
-                .WithTools<ConfirmarImportacaoC6CartaoCsvTool>()
-                .WithTools<PreverImportacaoMercadoPagoCartaoCsvTool>()
-                .WithTools<ConfirmarImportacaoMercadoPagoCartaoCsvTool>();
+                .ComFerramentasPrevia()
+                .ComFerramentasConfirmacao();
 
             return services
                 .AddTransient<IUsuarioAtual, UsuarioAtualConfigurado>()
@@ -56,6 +44,35 @@ public static class DependencyInjection
                 .AddTransient<PendenciasImportacaoAppService>()
                 .AddTransient<CandidatosPagamentoFaturaAppService>()
                 .AddSingleton(TimeProvider.System);
+        }
+    }
+
+    extension(IMcpServerBuilder servidor)
+    {
+        /// <summary>As ferramentas que mostram, sem gravar, o que a confirmação gravaria.</summary>
+        private IMcpServerBuilder ComFerramentasPrevia()
+        {
+            return servidor
+                .WithTools<PreverVinculoTool>()
+                .WithTools<PreverPagamentoFaturaTool>()
+                .WithTools<PreverImportacaoTool>()
+                .WithTools<PreverImportacaoC6ContaCsvTool>()
+                .WithTools<PreverImportacaoMercadoPagoContaCsvTool>()
+                .WithTools<PreverImportacaoC6CartaoCsvTool>()
+                .WithTools<PreverImportacaoMercadoPagoCartaoCsvTool>();
+        }
+
+        /// <summary>As ferramentas que gravam, depois que o usuário aprova o resumo da prévia no cliente.</summary>
+        private IMcpServerBuilder ComFerramentasConfirmacao()
+        {
+            return servidor
+                .WithTools<ConfirmarVinculoTool>()
+                .WithTools<ConfirmarPagamentoFaturaTool>()
+                .WithTools<ConfirmarImportacaoTool>()
+                .WithTools<ConfirmarImportacaoC6ContaCsvTool>()
+                .WithTools<ConfirmarImportacaoMercadoPagoContaCsvTool>()
+                .WithTools<ConfirmarImportacaoC6CartaoCsvTool>()
+                .WithTools<ConfirmarImportacaoMercadoPagoCartaoCsvTool>();
         }
     }
 }
