@@ -34,7 +34,7 @@ public sealed record PendenciasImportacaoParaModelo : ISaidaModelo
     public static PendenciasImportacaoParaModelo DoExtrato(IReadOnlyList<Alias> beneficiarios) =>
         new(beneficiarios.Count, categorias: 0, finaisSemCartao: []);
 
-    public static PendenciasImportacaoParaModelo DaFatura(PendenciasFatura pendencias)
+    public static PendenciasImportacaoParaModelo DaFatura(PendenciasFaturaDto pendencias)
     {
         return new PendenciasImportacaoParaModelo(
             pendencias.Beneficiarios.Count,

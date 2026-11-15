@@ -1,8 +1,12 @@
 using ArchUnitNET.xUnit;
 using Ardalis.SmartEnum;
+using ControleFinanceiro.Application;
 using ControleFinanceiro.Application.IA.Saida;
+using ControleFinanceiro.Domain;
 using ControleFinanceiro.Domain.Shared.ValueObjects;
+using ControleFinanceiro.Infrastructure.Importacao;
 using ControleFinanceiro.Infrastructure.Persistence;
+using ControleFinanceiro.Mcp;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using ModelContextProtocol;
@@ -13,13 +17,11 @@ using static ArchUnitNET.Fluent.ArchRuleDefinition;
 using Architecture = ArchUnitNET.Domain.Architecture;
 using ArchLoader = ArchUnitNET.Loader.ArchLoader;
 using DependencyInjectionImportacao = ControleFinanceiro.Infrastructure.Importacao.DependencyInjection;
-using DependencyInjectionMcp = ControleFinanceiro.Mcp.DependencyInjection;
 using DependencyInjectionPersistence = ControleFinanceiro.Infrastructure.Persistence.DependencyInjection;
 using DiaFechamentoCartao = ControleFinanceiro.Domain.Cartoes.DiaFechamentoCartao;
 using DiaOcorrenciaRecorrente = ControleFinanceiro.Domain.Despesas.DiaOcorrenciaRecorrente;
 using DiaVencimentoCartao = ControleFinanceiro.Domain.Cartoes.DiaVencimentoCartao;
-using IdTransacao = ControleFinanceiro.Domain.Transacoes.IdTransacao;
-using PeriodoArquivo = ControleFinanceiro.Domain.Importacoes.PeriodoArquivo;
+using Periodo = ControleFinanceiro.Domain.Shared.ValueObjects.Periodo;
 using SufixoCartao = ControleFinanceiro.Domain.Cartoes.SufixoCartao;
 using SufixoConta = ControleFinanceiro.Domain.Contas.SufixoConta;
 
@@ -32,11 +34,11 @@ namespace ControleFinanceiro.SaidaModelo.Tests.Arquitetura;
 /// </summary>
 public sealed class SaidaModeloArquiteturaTests
 {
-    private static readonly Assembly _mcp = typeof(DependencyInjectionMcp).Assembly;
-    private static readonly Assembly _application = typeof(ISaidaModelo).Assembly;
-    private static readonly Assembly _domain = typeof(IdTransacao).Assembly;
-    private static readonly Assembly _persistence = typeof(ControleFinanceiroDbContext).Assembly;
-    private static readonly Assembly _importacao = typeof(DependencyInjectionImportacao).Assembly;
+    private static readonly Assembly _mcp = typeof(McpAssemblyMarker).Assembly;
+    private static readonly Assembly _application = typeof(ApplicationAssemblyMarker).Assembly;
+    private static readonly Assembly _domain = typeof(DomainAssemblyMarker).Assembly;
+    private static readonly Assembly _persistence = typeof(PersistenceAssemblyMarker).Assembly;
+    private static readonly Assembly _importacao = typeof(ImportacaoAssemblyMarker).Assembly;
     private static readonly Assembly _efCore = typeof(DbContext).Assembly;
     private static readonly Assembly _efRelational = typeof(RelationalDatabaseFacadeExtensions).Assembly;
     private static readonly Assembly _sdkMcp = typeof(McpServer).Assembly;
@@ -70,7 +72,7 @@ public sealed class SaidaModeloArquiteturaTests
         typeof(DocumentoMascarado),
         typeof(Reais),
         typeof(MesReferencia),
-        typeof(PeriodoArquivo),
+        typeof(Periodo),
         typeof(DiaOcorrenciaRecorrente),
         typeof(DiaFechamentoCartao),
         typeof(DiaVencimentoCartao),

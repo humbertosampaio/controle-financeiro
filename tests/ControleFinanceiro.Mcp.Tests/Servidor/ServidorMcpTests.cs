@@ -32,7 +32,7 @@ public sealed class ServidorMcpTests
 
         ferramentas
             .Select(ferramenta => ferramenta.Name)
-            .Should().BeEquivalentTo(NomeFerramenta, "listar_transacoes", "listar_despesas_fixas", "balanco_mensal", "prever_vinculo", "confirmar_vinculo", "listar_cartoes", "prever_pagamento_fatura", "confirmar_pagamento_fatura", "prever_importacao", "confirmar_importacao");
+            .Should().BeEquivalentTo(NomeFerramenta, "listar_transacoes", "listar_despesas_fixas", "balanco_mensal", "prever_vinculo", "confirmar_vinculo", "listar_cartoes", "listar_candidatos_pagamento_fatura", "prever_pagamento_fatura", "confirmar_pagamento_fatura", "prever_importacao", "confirmar_importacao");
     }
 
     // O cliente descarta o tipo em lista, como o ["string", "null"] do parâmetro anulável, e sem o tipo o modelo

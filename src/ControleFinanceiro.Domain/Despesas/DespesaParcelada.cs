@@ -127,6 +127,12 @@ public sealed class DespesaParcelada : Despesa, IDespesaDoCartao
             && _parcelas.TrueForAll(p => p.Pagamento.IdTransacao != idSaida || p.MesReferencia == fatura.Vencimento.Mes);
     }
 
+    public bool EstaPagaPelaFatura(FaturaCartao fatura)
+    {
+        return fatura.Contem(IdCartao)
+            && ParcelaDoMes(fatura.Vencimento.Mes).Map(p => p.Pagamento.FoiPagoPorTransacao).GetValueOrDefault(defaultValue: false);
+    }
+
     bool IDespesaDoCartao.PagarFatura(FaturaCartao fatura, IdTransacao idSaida, DateOnly dataPagamento)
     {
         if (!fatura.Contem(IdCartao))

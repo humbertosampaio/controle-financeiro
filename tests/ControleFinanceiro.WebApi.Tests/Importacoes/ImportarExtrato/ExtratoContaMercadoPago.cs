@@ -1,5 +1,5 @@
 using ControleFinanceiro.Domain.Contas;
-using ControleFinanceiro.Domain.Importacoes;
+using ControleFinanceiro.Domain.Shared.ValueObjects;
 using System.Text;
 
 namespace ControleFinanceiro.WebApi.Tests.Importacoes.ImportarExtrato;
@@ -18,7 +18,7 @@ internal static class ExtratoContaMercadoPago
     public const int QuantidadeLancamentos = 10;
     public const decimal SomaLancamentos = 1480.85m;
     public static readonly SufixoConta SufixoConta = (SufixoConta)"1234";
-    public static readonly PeriodoArquivo Periodo = (PeriodoArquivo)(new DateOnly(2026, 3, 2), new DateOnly(2026, 3, 9));
+    public static readonly Periodo Periodo = new Periodo(new DateOnly(2026, 3, 2), new DateOnly(2026, 3, 9));
     public static readonly string[] CpfFicticio = ["12345678909", "123.456.789-09"];
 
     /// <summary>O arquivo como está em disco.</summary>

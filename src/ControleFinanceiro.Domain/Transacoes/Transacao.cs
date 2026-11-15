@@ -1,3 +1,4 @@
+using ControleFinanceiro.Domain.Cartoes;
 using ControleFinanceiro.Domain.Importacoes;
 using ControleFinanceiro.Domain.Shared;
 using ControleFinanceiro.Domain.Shared.ValueObjects;
@@ -102,7 +103,23 @@ public sealed class Transacao : AggregateRoot<IdTransacao>, IPertenceAoUsuario
     /// </summary>
     public bool EhPagamentoFatura { get; private set; }
 
+    /// <summary>Verdadeiro quando o dinheiro saiu de uma conta, como a saída que paga a fatura do cartão.</summary>
+    public bool EhSaidaConta => EhSaida && EhOrigemConta;
+
     public ChaveDeduplicacao Chave { get; private set; } = null!;
+
+    /// <summary>
+    /// Verdadeiro na linha que entra no total da <paramref name="fatura"/>: de um cartão dela, trazida pela fatura do mês
+    /// de vencimento dela (o <see cref="MesVencimentoFatura"/>), e que não é o pagamento da fatura anterior. Entram as
+    /// compras, as parcelas, os estornos e as tarifas.
+    /// </summary>
+    public bool CompoeTotalFatura(FaturaCartao fatura)
+    {
+        return Origem.IdCartao is IdCartao idCartao
+            && fatura.Contem(idCartao)
+            && MesVencimentoFatura == fatura.Vencimento.Mes
+            && !EhPagamentoFatura;
+    }
 
     private Transacao()
     {

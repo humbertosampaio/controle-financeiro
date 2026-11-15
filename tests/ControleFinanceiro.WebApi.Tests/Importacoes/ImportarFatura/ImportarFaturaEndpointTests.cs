@@ -37,6 +37,27 @@ public sealed class ImportarFaturaEndpointTests : IAsyncLifetime
     public Task DisposeAsync() => Task.CompletedTask;
 
     [Theory, ApiAutoData]
+    public async Task Post_Quando_ExtratoImportadoComASaidaDoTotal_Deve_ApontarASaidaComoCandidata(CadastrarUsuarioRequest cadastro)
+    {
+        Guid idUsuario = await _api.CadastrarUsuarioAsync(cadastro);
+        await _api.ImportarExtratoC6Async(idUsuario);
+
+        ImportarFaturaResponse resposta = await _api.ImportarFaturaPagaPeloBoletoAsync(idUsuario);
+
+        List<Transacao> transacoes = await _api.ObterTodosAsync(db => db.Transacoes);
+        Transacao boleto = transacoes.Single(t => t.EhSaidaConta && t.Data == ExtratoContaC6.DiaBoleto && t.ValorAbsoluto == (ReaisPositivo)FaturaCartaoC6.TotalPagaPeloBoleto);
+        resposta.CandidatosPagamentoFatura.Should().Equal(new ImportarFaturaResponse.CandidatoPagamentoFaturaResponse(
+            boleto.Id.Value,
+            ExtratoContaC6.DiaBoleto,
+            resposta.Cartoes.Single().IdCartao,
+            Banco.C6.Name,
+            Ano: 2026,
+            Mes: 3,
+            FaturaCartaoC6.VencimentoPagaPeloBoleto,
+            FaturaCartaoC6.TotalPagaPeloBoleto));
+    }
+
+    [Theory, ApiAutoData]
     public async Task Post_Quando_FinaisEAliasesResolvidos_Deve_GravarUmaImportacaoPorCartaoEAsTransacoes(CadastrarUsuarioRequest cadastro)
     {
         Guid idUsuario = await _api.CadastrarUsuarioAsync(cadastro);
@@ -73,7 +94,7 @@ public sealed class ImportarFaturaEndpointTests : IAsyncLifetime
         ImportacaoArquivo importacaoFisico = importacoes.Single(i => i.Origem == OrigemTransacao.DoCartao(fisico.Id));
         ((Guid)importacaoFisico.Id).Should().Be(linhaFisico.IdImportacao);
         importacaoFisico.Layout.Should().BeSameAs(LayoutArquivoImportacao.C6CartaoCsv);
-        importacaoFisico.Periodo.Should().Be((PeriodoArquivo)(FaturaCartaoC6.PrimeiraCompraFisico, FaturaCartaoC6.UltimaCompraFisico));
+        importacaoFisico.Periodo.Should().Be(new Periodo(FaturaCartaoC6.PrimeiraCompraFisico, FaturaCartaoC6.UltimaCompraFisico));
         importacaoFisico.Lidas.Should().Be(FaturaCartaoC6.LancamentosPorCartao);
         VencimentoFatura vencimento = (VencimentoFatura)FaturaCartaoC6.Vencimento;
         importacoes.Should().OnlyContain(i => i.VencimentoFatura == vencimento);

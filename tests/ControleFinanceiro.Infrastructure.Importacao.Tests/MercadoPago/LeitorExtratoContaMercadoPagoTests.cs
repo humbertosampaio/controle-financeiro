@@ -39,7 +39,7 @@ public sealed class LeitorExtratoContaMercadoPagoTests
     {
         Extrato extrato = await LerFixtureAsync();
 
-        extrato.Periodo.Should().Be((PeriodoArquivo)(Dia(2), Dia(9)));
+        extrato.Periodo.Should().Be(new Periodo(Dia(2), Dia(9)));
     }
 
     [Fact]

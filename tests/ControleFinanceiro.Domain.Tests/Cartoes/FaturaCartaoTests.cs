@@ -13,36 +13,18 @@ public sealed class FaturaCartaoTests
         Cartao outroFinal = cartao.OutroFinal(outroSufixo);
         Cartao deOutroBanco = cartao.EmOutroBanco();
 
-        FaturaCartao result = FaturaCartao.DoCartao(cartao, [cartao, outroFinal, deOutroBanco], mesVencimento);
+        FaturaCartao result = FaturaCartao.DoCartao(cartao.Id, [cartao, outroFinal, deOutroBanco], mesVencimento);
 
         result.Cartoes.Should().BeEquivalentTo([cartao.Id, outroFinal.Id]);
         result.Vencimento.Should().Be(cartao.VencimentoNoMes(mesVencimento));
     }
 
     [Theory, DomainAutoData]
-    public void DoCartao_Quando_CartaoForaDaLista_Deve_IncluirOCartao(Cartao cartao, MesReferencia mesVencimento)
-    {
-        FaturaCartao result = FaturaCartao.DoCartao(cartao, cartoesDoUsuario: [], mesVencimento);
-
-        result.Cartoes.Should().Equal(cartao.Id);
-    }
-
-    [Theory, DomainAutoData]
-    public void DoCartao_Deve_SerAFaturaDoCartaoDaLista(Cartao cartao, SufixoCartao outroSufixo, MesReferencia mesVencimento)
-    {
-        Cartao outroFinal = cartao.OutroFinal(outroSufixo);
-
-        FaturaCartao result = FaturaCartao.DoCartao(cartao.Id, [outroFinal, cartao], mesVencimento);
-
-        result.Should().Be(FaturaCartao.DoCartao(cartao, [outroFinal, cartao], mesVencimento));
-    }
-
-    [Theory, DomainAutoData]
     public void DoCartao_Quando_CartaoForaDaLista_Deve_LancarExcecao(Cartao cartao, MesReferencia mesVencimento)
     {
-        Action act = () => FaturaCartao.DoCartao(cartao.Id, cartoesDoUsuario: [], mesVencimento);
+        Action act = () => FaturaCartao.DoCartao(cartao.Id, cartoesUsuario: [], mesVencimento);
 
-        act.Should().ThrowExactly<ArgumentException>().WithParameterName("cartoesDoUsuario");
+        act.Should().ThrowExactly<ArgumentException>().WithParameterName("cartoesUsuario");
     }
 
     [Theory, DomainAutoData]
@@ -54,7 +36,7 @@ public sealed class FaturaCartaoTests
         Cartao outroFinal = cartao.OutroFinal(outroSufixo);
         Cartao cartaoOutroBanco = cartao.EmOutroBanco();
 
-        FaturaCartao result = FaturaCartao.Importada([cartao], [outroFinal, cartaoOutroBanco], vencimento);
+        FaturaCartao result = FaturaCartao.Importada(cartao.Banco, [cartao], [outroFinal, cartaoOutroBanco], vencimento);
 
         result.Cartoes.Should().BeEquivalentTo([cartao.Id, outroFinal.Id]);
         result.Vencimento.Should().Be(vencimento);
@@ -63,9 +45,19 @@ public sealed class FaturaCartaoTests
     [Theory, DomainAutoData]
     public void Importada_Quando_SemCartoesArquivo_Deve_FicarSemCartoes(Cartao cartao, VencimentoFatura vencimento)
     {
-        FaturaCartao result = FaturaCartao.Importada(cartoesArquivo: [], [cartao], vencimento);
+        FaturaCartao result = FaturaCartao.Importada(cartao.Banco, cartoesArquivo: [], [cartao], vencimento);
 
         result.Cartoes.Should().BeEmpty();
+    }
+
+    [Theory, DomainAutoData]
+    public void Importada_Quando_CartaoArquivoDeOutroBanco_Deve_LancarExcecao(Cartao cartao, VencimentoFatura vencimento)
+    {
+        Cartao cartaoOutroBanco = cartao.EmOutroBanco();
+
+        Action act = () => FaturaCartao.Importada(cartao.Banco, [cartao, cartaoOutroBanco], cartoesUsuario: [], vencimento);
+
+        act.Should().ThrowExactly<ArgumentException>().WithParameterName("cartoesArquivo");
     }
 
     [Theory, DomainAutoData]
@@ -73,7 +65,7 @@ public sealed class FaturaCartaoTests
     {
         Cartao deOutroBanco = cartao.EmOutroBanco();
 
-        FaturaCartao.DoCartao(cartao, [cartao, deOutroBanco], mesVencimento).Contem(deOutroBanco.Id).Should().BeFalse();
+        FaturaCartao.DoCartao(cartao.Id, [cartao, deOutroBanco], mesVencimento).Contem(deOutroBanco.Id).Should().BeFalse();
     }
 
     [Theory, DomainAutoData]
@@ -81,7 +73,42 @@ public sealed class FaturaCartaoTests
     {
         Cartao outroFinal = cartao.OutroFinal(outroSufixo);
 
-        FaturaCartao.DoCartao(cartao, [cartao, outroFinal], mesVencimento)
-            .Should().Be(FaturaCartao.DoCartao(outroFinal, [outroFinal, cartao], mesVencimento));
+        FaturaCartao.DoCartao(cartao.Id, [cartao, outroFinal], mesVencimento)
+            .Should().Be(FaturaCartao.DoCartao(outroFinal.Id, [outroFinal, cartao], mesVencimento));
+    }
+
+    [Theory, DomainAutoData]
+    public void DoCartao_Deve_TerOBancoDoCartao(Cartao cartao, MesReferencia mesVencimento)
+    {
+        FaturaCartao.DoCartao(cartao.Id, [cartao], mesVencimento).Banco.Should().Be(cartao.Banco);
+    }
+
+    [Theory, DomainAutoData]
+    public void Importada_Quando_SemCartoesArquivo_Deve_TerOBancoInformado(Banco banco, Cartao cartao, VencimentoFatura vencimento)
+    {
+        FaturaCartao.Importada(banco, cartoesArquivo: [], [cartao], vencimento).Banco.Should().Be(banco);
+    }
+
+    [Theory, DomainAutoData]
+    public void Igualdade_Quando_OutroBanco_Deve_SerDiferente(Cartao cartao, VencimentoFatura vencimento)
+    {
+        Banco outroBanco = Banco.List.First(b => b != cartao.Banco);
+
+        FaturaCartao.Importada(cartao.Banco, cartoesArquivo: [], [cartao], vencimento)
+            .Should().NotBe(FaturaCartao.Importada(outroBanco, cartoesArquivo: [], [cartao], vencimento));
+    }
+
+    [Theory, DomainAutoData]
+    public void TodasVencendoEm_Deve_JuntarOsFinaisDaMesmaFaturaESepararOsBancos(Cartao cartao, SufixoCartao outroSufixo, MesReferencia mesVencimento)
+    {
+        Cartao outroFinal = cartao.OutroFinal(outroSufixo);
+        Cartao cartaoOutroBanco = cartao.EmOutroBanco();
+        Cartao[] cartoes = [cartao, outroFinal, cartaoOutroBanco];
+
+        IReadOnlyList<FaturaCartao> result = FaturaCartao.TodasVencendoEm(cartoes, mesVencimento);
+
+        result.Should().BeEquivalentTo([
+            FaturaCartao.DoCartao(cartao.Id, cartoes, mesVencimento),
+            FaturaCartao.DoCartao(cartaoOutroBanco.Id, cartoes, mesVencimento)]);
     }
 }

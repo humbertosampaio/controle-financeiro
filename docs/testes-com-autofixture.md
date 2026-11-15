@@ -74,6 +74,8 @@ DateOnly noPrimeiroMesPossivel = modelo.Vencimento.Value.AddMonths(-mesesDepoisP
 DateOnly dataCompra = noPrimeiroMesPossivel.AddMonths(-parcela.QuantidadeParcelasAnteriores);
 ```
 
+Vale também para o valor de um passo só que o caso escolhe, como a data na ponta da janela: ele vai numa variável cujo nome diz a intenção (`ultimoDiaJanela`), em vez de ficar escrito na chamada do método testado.
+
 ### Sinais de que o teste precisa de outra montagem
 
 Já decidido que o teste tem valor, o critério é a legibilidade: deve ser fácil entender o cenário e o que cada variável representa. Um AutoData privado declara só o cenário da classe, como congelar o usuário ou fixar a parcela. Um `Register` grande, com vários `fixture.Create<T>`, não deixa claro o que se quer representar. Três sinais pedem outra montagem:
@@ -128,6 +130,8 @@ Cinco caminhos, do mais geral para o mais local:
    ```
 
 **Não contorne essas limitações.** Nada de atributo próprio que alimente o `[Frozen]` com `MemberData`, nem de parâmetro `[Frozen] T _` (ou `_1`) que só existe para congelar e nunca é lido: a assinatura do teste passa a esconder o que ele depende. Para variar poucos valores da mesma regra, use `[InlineDomainAutoData(...)]`.
+
+**O resultado esperado não é parâmetro.** Quando os casos de uma `[Theory]` esperam resultados diferentes (`true` num, `false` noutro, ou listas diferentes), eles são cenários diferentes, e cada um vira um teste com o cenário no nome. Os casos de uma mesma `[Theory]` variam só a entrada que leva ao mesmo resultado. Na #153, o `AceitaPagamentoEm` do `VencimentoFatura` tinha uma `[Theory]` com `bool esperado` e passou a ter duas: `AceitaPagamentoEm_Quando_DentroDaJanela_Deve_SerVerdadeiro`, com as duas pontas e o próprio vencimento, e `AceitaPagamentoEm_Quando_ForaDaJanela_Deve_SerFalso`, com um dia além de cada ponta.
 
 Valor fixo direto no teste (`(TextoObrigatorio)"INSS"`) só quando o próprio valor é o assunto, como num teste de soma com o resultado calculado à mão.
 

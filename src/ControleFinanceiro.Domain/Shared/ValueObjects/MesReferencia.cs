@@ -96,7 +96,22 @@ public sealed class MesReferencia : ComparableValueObject
     /// <param name="dia">O componente dia da data, que existe em todo mês</param>
     public DateOnly NoDia(DiaValidoEmTodoMes dia) => new(Ano, Mes, dia);
 
-    public bool Contem(DateOnly data) => data >= Inicio && data <= Fim;
+    /// <summary>Os meses que o <paramref name="periodo"/> toca, do mês do início ao do fim, em ordem.</summary>
+    public static IReadOnlyList<MesReferencia> Entre(Periodo periodo)
+    {
+        MesReferencia ultimo = periodo.Fim;
+        List<MesReferencia> meses = [periodo.Inicio];
+
+        while (meses[^1] < ultimo)
+            meses.Add(meses[^1].Posterior());
+
+        return meses;
+    }
+
+    /// <summary>Os dias do mês, do primeiro ao último.</summary>
+    public Periodo Periodo => new Periodo(Inicio, Fim);
+
+    public bool Contem(DateOnly data) => Periodo.Contem(data);
     public bool Contem(DateTimeOffset data) => Contem(data.ToDateOnly());
 
     public override string ToString() => $"{Mes:00}/{Ano}";

@@ -122,4 +122,22 @@ public sealed class ReaisTests
 
         resultado.Should().Be(reais.Value);
     }
+
+    [Theory, DomainAutoData]
+    public void ComoPositivo_Quando_ValorNaoNegativo_Deve_TerOMesmoValor(ReaisPositivo valor)
+    {
+        Reais reais = valor.Value;
+
+        reais.ComoPositivo().Should().Be(valor);
+    }
+
+    [Theory, DomainAutoData]
+    public void ComoPositivo_Quando_ValorNegativo_Deve_LancarExcecao(ReaisPositivo valor)
+    {
+        Reais negativo = -(valor.Value + 0.01m);
+
+        Action act = () => negativo.ComoPositivo();
+
+        act.Should().ThrowExactly<ArgumentOutOfRangeException>();
+    }
 }

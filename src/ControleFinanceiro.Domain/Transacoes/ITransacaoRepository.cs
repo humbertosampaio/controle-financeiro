@@ -1,4 +1,3 @@
-using ControleFinanceiro.Domain.Importacoes;
 using ControleFinanceiro.Domain.Shared.ValueObjects;
 
 namespace ControleFinanceiro.Domain.Transacoes;
@@ -20,8 +19,14 @@ public interface ITransacaoRepository
     /// <summary>
     /// As transações da origem gravadas no banco de dados com a data dentro do período.
     /// </summary>
-    Task<IReadOnlyList<Transacao>> ListarNoPeriodoAsync(OrigemTransacao origem, PeriodoArquivo periodo, CancellationToken cancellationToken);
+    Task<IReadOnlyList<Transacao>> ListarNoPeriodoAsync(OrigemTransacao origem, Periodo periodo, CancellationToken cancellationToken);
 
     /// <summary>As transações de todas as origens com a data dentro do mês, em ordem de data.</summary>
     Task<IReadOnlyList<Transacao>> ListarDoMesAsync(MesReferencia mesReferencia, CancellationToken cancellationToken);
+
+    /// <summary>
+    /// As transações de cartão trazidas pela fatura que vence no <paramref name="mesVencimento"/>, pelo
+    /// <see cref="Transacao.MesVencimentoFatura"/>, de qualquer cartão.
+    /// </summary>
+    Task<IReadOnlyList<Transacao>> ListarTransacoesFaturaEmAsync(MesReferencia mesVencimento, CancellationToken cancellationToken);
 }

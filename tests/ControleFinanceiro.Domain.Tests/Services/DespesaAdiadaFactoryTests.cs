@@ -259,7 +259,7 @@ public sealed class DespesaAdiadaFactoryTests
 
         Action act = () => fatura.CriarAdiadas(cartoesDoUsuario: [], adiadasDoUsuario: [], novas);
 
-        act.Should().ThrowExactly<ArgumentException>().WithParameterName("cartoesDoUsuario");
+        act.Should().ThrowExactly<ArgumentException>().WithParameterName("cartoesUsuario");
     }
 
     [Theory, CompraAutoData]
@@ -402,7 +402,7 @@ public sealed class DespesaAdiadaFactoryTests
     {
         private readonly IdUsuario _idUsuario;
         private readonly LayoutArquivoImportacao _layout;
-        private readonly PeriodoArquivo _periodo;
+        private readonly Periodo _periodo;
         private readonly DateTimeOffset _importadaEm;
         private readonly List<Beneficiario> _beneficiarios = [];
         private readonly List<CategoriaDespesa> _categorias = [];
@@ -410,7 +410,7 @@ public sealed class DespesaAdiadaFactoryTests
         public IReadOnlyList<Beneficiario> Beneficiarios => _beneficiarios;
         public IReadOnlyList<CategoriaDespesa> Categorias => _categorias;
 
-        public FaturaDeTeste(IdUsuario idUsuario, LayoutArquivoImportacao layout, PeriodoArquivo periodo, DateTimeOffset importadaEm)
+        public FaturaDeTeste(IdUsuario idUsuario, LayoutArquivoImportacao layout, Periodo periodo, DateTimeOffset importadaEm)
         {
             _idUsuario = idUsuario;
             _layout = layout;

@@ -2,6 +2,7 @@ using ControleFinanceiro.Domain.Cartoes;
 using ControleFinanceiro.Domain.Contas;
 using ControleFinanceiro.Domain.Importacoes;
 using ControleFinanceiro.Domain.Shared;
+using ControleFinanceiro.Domain.Shared.ValueObjects;
 using ControleFinanceiro.Domain.Transacoes;
 using ControleFinanceiro.Domain.Usuarios;
 
@@ -17,7 +18,7 @@ public static class ImportacaoArquivoFactory
     public static ImportacaoArquivo Registrar(
         ContaBancaria conta,
         LayoutArquivoImportacao layout,
-        PeriodoArquivo periodo,
+        Periodo periodo,
         int lidas,
         DateTimeOffset importadaEm)
     {
@@ -38,12 +39,12 @@ public static class ImportacaoArquivoFactory
         IReadOnlyCollection<Cartao> cartoesUsuario,
         IReadOnlyCollection<ImportacaoArquivo> importacoesFaturaMes,
         LayoutArquivoImportacao layout,
-        PeriodoArquivo periodo,
+        Periodo periodo,
         VencimentoFatura vencimento,
         int lidas,
         DateTimeOffset importadaEm)
     {
-        return ConferirVencimentoFatura(cartao.IdUsuario, vencimento, cartoesFatura: [cartao], cartoesUsuario, importacoesFaturaMes)
+        return ConferirVencimentoFatura(cartao.IdUsuario, cartao.Banco, vencimento, cartoesFatura: [cartao], cartoesUsuario, importacoesFaturaMes)
             .Map(() => ImportacaoArquivo.RegistrarFatura(
                 cartao.IdUsuario,
                 OrigemTransacao.DoCartao(cartao.Id),
@@ -64,27 +65,24 @@ public static class ImportacaoArquivoFactory
     /// Sem índice único: a regra depende do ciclo atual dos cartões, que não é coluna da importação, e duas importações
     /// ao mesmo tempo podem passar.
     /// </remarks>
+    /// <param name="banco">O banco da fatura, que o layout do arquivo define.</param>
     /// <param name="cartoesFatura">Os cartões dos finais do arquivo.</param>
     /// <param name="cartoesUsuario">Todos os cartões do usuário, e só os dele.</param>
     /// <param name="importacoesFaturaMes">As importações de fatura do usuário com vencimento no mês do <paramref name="vencimento"/>.</param>
     /// <exception cref="ArgumentException">Quando um cartão ou uma importação é de outro usuário.</exception>
     public static UnitResult<Erro> ConferirVencimentoFatura(
         IdUsuario idUsuario,
+        Banco banco,
         VencimentoFatura vencimento,
         IReadOnlyCollection<Cartao> cartoesFatura,
         IReadOnlyCollection<Cartao> cartoesUsuario,
         IReadOnlyCollection<ImportacaoArquivo> importacoesFaturaMes)
     {
-        if (cartoesFatura.Any(c => c.IdUsuario != idUsuario))
-            throw new ArgumentException("A lista traz um cartão de outro usuário.", nameof(cartoesFatura));
+        cartoesFatura.ConferirDono(idUsuario, nameof(cartoesFatura));
+        cartoesUsuario.ConferirDono(idUsuario, nameof(cartoesUsuario));
+        importacoesFaturaMes.ConferirDono(idUsuario, nameof(importacoesFaturaMes));
 
-        if (cartoesUsuario.Any(c => c.IdUsuario != idUsuario))
-            throw new ArgumentException("A lista traz um cartão de outro usuário.", nameof(cartoesUsuario));
-
-        if (importacoesFaturaMes.Any(i => i.IdUsuario != idUsuario))
-            throw new ArgumentException("A lista traz uma importação de outro usuário.", nameof(importacoesFaturaMes));
-
-        FaturaCartao fatura = FaturaCartao.Importada(cartoesFatura, cartoesUsuario, vencimento);
+        FaturaCartao fatura = FaturaCartao.Importada(banco, cartoesFatura, cartoesUsuario, vencimento);
 
         return UnitResult.FailureIf<Erro>(
             importacoesFaturaMes.Any(i => i.TemOutroVencimentoNoMesmoMes(fatura)),

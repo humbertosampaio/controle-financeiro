@@ -154,7 +154,7 @@ Cada correção do dono é uma chance de o harness ensinar o que faltou, para a 
 1. **Quando**: o dono corrige a IA, ou sugere algo e a IA concorda (se ela discorda, conversa, como em qualquer regra).
 2. **A pergunta**: *algo nas instruções que eu segui poderia ser diferente para eu ter acertado logo de cara?* Procure a regra que faltou, a que existia mas não dava o critério, ou a que estava num lugar que a tarefa não leva a ler.
 3. **Se sim**: avise no chat, diga a causa e proponha o texto e o lugar. Prefira, nesta ordem, um gate (verificável mecanicamente), o guia que a tarefa já manda ler (`padroes-de-dominio.md`, `testes-com-autofixture.md`), o passo da skill em que a decisão é tomada e o item do revisor que cobra. Um exemplo real do repositório vale mais que uma regra abstrata.
-4. **Com o ok do dono**: faça a mudança em branch (`docs/<n>-<slug>`) e PR próprios, sem misturar com a issue em andamento.
+4. **Com o ok do dono**: faça a mudança num commit próprio, `docs(harness)` ou `docs(<escopo>)`, separado dos commits da issue, na branch da issue em andamento: ela vai no mesmo PR, sem issue nem PR próprios. Só pede branch (`docs/<n>-<slug>`) e PR próprios a mudança que não é simples, como uma regra nova no guardrail ou num gate, ou a que surge sem issue em andamento.
 5. **Se não**: diga em uma linha que as instruções já davam o critério, para o dono saber que a análise foi feita.
 
 Exemplo: no desfazer do pagamento da fatura (#149), a entidade devolvia `bool` e o serviço escrevia o motivo da falha. O dono apontou; a causa foi copiar o análogo pela vizinhança do fluxo. Daí vieram o item "filtro ou falha" da seção 5 do guia de domínio, o passo na `implementar-issue` e o achado no `revisor-dominio`.

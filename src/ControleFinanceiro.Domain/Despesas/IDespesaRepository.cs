@@ -20,5 +20,8 @@ public interface IDespesaRepository
     /// <summary>As despesas que a transação pagou, inteiras ou por uma das parcelas.</summary>
     Task<IReadOnlyList<Despesa>> ListarPeloPagamentoAsync(IdTransacao idTransacao, CancellationToken cancellationToken);
 
+    /// <summary>As despesas que alguma das transações pagou, inteiras ou por uma das parcelas, cada uma uma vez.</summary>
+    Task<IReadOnlyList<Despesa>> ListarPagasPorAsync(IReadOnlyCollection<IdTransacao> idsTransacao, CancellationToken cancellationToken);
+
     Task AdicionarAsync(IEnumerable<Despesa> despesas, CancellationToken cancellationToken);
 }

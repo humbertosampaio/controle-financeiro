@@ -3,9 +3,13 @@ using ControleFinanceiro.Domain.Importacoes;
 using ControleFinanceiro.Domain.Shared.ValueObjects;
 using ControleFinanceiro.Domain.Transacoes;
 using ControleFinanceiro.Domain.Usuarios;
+using ControleFinanceiro.WebApi.Endpoints.Despesas.PagarFatura;
 using ControleFinanceiro.WebApi.Endpoints.Importacoes.ImportarExtrato;
+using ControleFinanceiro.WebApi.Endpoints.Importacoes.ImportarFatura;
 using ControleFinanceiro.WebApi.Endpoints.Usuarios.Cadastrar;
 using ControleFinanceiro.WebApi.Tests.AutoFixture;
+using ControleFinanceiro.WebApi.Tests.Despesas.PagarFatura;
+using ControleFinanceiro.WebApi.Tests.Importacoes.ImportarFatura;
 using ControleFinanceiro.WebApi.Tests.Infraestrutura;
 using Microsoft.EntityFrameworkCore;
 using System.Net;
@@ -294,6 +298,54 @@ public sealed class ImportarExtratoEndpointTests : IAsyncLifetime
         await DeveEstarSemImportacaoAsync();
     }
 
+    [Theory, ApiAutoData]
+    public async Task Post_Quando_FaturaImportadaComOTotalDeUmaSaida_Deve_ApontarASaidaComoCandidata(CadastrarUsuarioRequest cadastro)
+    {
+        Guid idUsuario = await _api.CadastrarUsuarioAsync(cadastro);
+        ImportarFaturaResponse fatura = await _api.ImportarFaturaPagaPeloBoletoAsync(idUsuario);
+
+        ImportarExtratoResponse resposta = await _api.ImportarExtratoC6Async(idUsuario);
+
+        Transacao boleto = await ObterBoletoAsync();
+        resposta.CandidatosPagamentoFatura.Should().Equal(new ImportarExtratoResponse.CandidatoPagamentoFaturaResponse(
+            boleto.Id.Value,
+            ExtratoContaC6.DiaBoleto,
+            fatura.Cartoes.Single().IdCartao,
+            Banco.C6.Name,
+            Ano: 2026,
+            Mes: 3,
+            FaturaCartaoC6.VencimentoPagaPeloBoleto,
+            FaturaCartaoC6.TotalPagaPeloBoleto));
+    }
+
+    [Theory, ApiAutoData]
+    public async Task Post_Quando_ReimportadoSemPagarAFatura_Deve_ApontarOMesmoCandidato(CadastrarUsuarioRequest cadastro)
+    {
+        Guid idUsuario = await _api.CadastrarUsuarioAsync(cadastro);
+        await _api.ImportarFaturaPagaPeloBoletoAsync(idUsuario);
+        ImportarExtratoResponse primeira = await _api.ImportarExtratoC6Async(idUsuario);
+
+        ImportarExtratoResponse resposta = await _api.ImportarExtratoC6Async(idUsuario);
+
+        resposta.CandidatosPagamentoFatura.Should().ContainSingle();
+        resposta.CandidatosPagamentoFatura.Should().Equal(primeira.CandidatosPagamentoFatura);
+    }
+
+    [Theory, ApiAutoData]
+    public async Task Post_Quando_FaturaJaPagaPeloCandidato_Deve_FicarSemCandidato(CadastrarUsuarioRequest cadastro, PagarFaturaRequest requisicao)
+    {
+        Guid idUsuario = await _api.CadastrarUsuarioAsync(cadastro);
+        await _api.ImportarFaturaPagaPeloBoletoAsync(idUsuario);
+        ImportarExtratoResponse.CandidatoPagamentoFaturaResponse candidato = (await _api.ImportarExtratoC6Async(idUsuario)).CandidatosPagamentoFatura.Single();
+        await _api.PagarFaturaComSucessoAsync(
+            idUsuario,
+            requisicao with { IdTransacao = candidato.IdTransacao, IdCartao = candidato.IdCartao, Ano = candidato.Ano, Mes = candidato.Mes });
+
+        ImportarExtratoResponse resposta = await _api.ImportarExtratoC6Async(idUsuario);
+
+        resposta.CandidatosPagamentoFatura.Should().BeEmpty();
+    }
+
     private async Task<HttpResponseMessage> ImportarAsync(Guid idUsuario, byte[] arquivo)
     {
         using ByteArrayContent conteudo = new(arquivo);
@@ -327,4 +379,11 @@ public sealed class ImportarExtratoEndpointTests : IAsyncLifetime
 
     private Task ResolverBeneficiariosAsync(Guid idUsuario, byte[] arquivo) =>
         _api.ResolverBeneficiariosDoExtratoAsync(idUsuario, LayoutArquivoImportacao.C6ContaCsv, arquivo);
+
+    /// <summary>A saída do pagamento de boleto do extrato fictício, lida do banco.</summary>
+    private async Task<Transacao> ObterBoletoAsync()
+    {
+        List<Transacao> transacoes = await _api.ObterTodosAsync(db => db.Transacoes);
+        return transacoes.Single(t => t.EhSaidaConta && t.Data == ExtratoContaC6.DiaBoleto && t.ValorAbsoluto == (ReaisPositivo)FaturaCartaoC6.TotalPagaPeloBoleto);
+    }
 }

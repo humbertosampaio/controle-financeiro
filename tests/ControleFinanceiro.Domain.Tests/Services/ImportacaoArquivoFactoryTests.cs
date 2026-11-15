@@ -18,7 +18,7 @@ public sealed class ImportacaoArquivoFactoryTests
     public void Registrar_Quando_Conta_Deve_GuardarOsDadosDaImportacaoComOUsuarioEAOrigemDaConta(
         ContaBancaria conta,
         LayoutArquivoImportacao layout,
-        PeriodoArquivo periodo,
+        Periodo periodo,
         byte lidas,
         DateTimeOffset importadaEm)
     {
@@ -38,7 +38,7 @@ public sealed class ImportacaoArquivoFactoryTests
     public void Registrar_Quando_Cartao_Deve_GuardarOUsuarioAOrigemEOVencimentoDaFatura(
         Cartao cartao,
         LayoutArquivoImportacao layout,
-        PeriodoArquivo periodo,
+        Periodo periodo,
         VencimentoFatura vencimento,
         byte lidas,
         DateTimeOffset importadaEm)
@@ -57,7 +57,7 @@ public sealed class ImportacaoArquivoFactoryTests
     public void Registrar_Quando_CartaoComLidasNegativas_Deve_LancarExcecao(
         Cartao cartao,
         LayoutArquivoImportacao layout,
-        PeriodoArquivo periodo,
+        Periodo periodo,
         VencimentoFatura vencimento,
         DateTimeOffset importadaEm)
     {
@@ -78,7 +78,7 @@ public sealed class ImportacaoArquivoFactoryTests
     public void Registrar_Quando_LidasNegativas_Deve_LancarExcecao(
         ContaBancaria conta,
         LayoutArquivoImportacao layout,
-        PeriodoArquivo periodo,
+        Periodo periodo,
         DateTimeOffset importadaEm)
     {
         Action registrar = () => ImportacaoArquivoFactory.Registrar(conta, layout, periodo, lidas: -1, importadaEm);
@@ -115,6 +115,7 @@ public sealed class ImportacaoArquivoFactoryTests
     {
         UnitResult<Erro> result = ImportacaoArquivoFactory.ConferirVencimentoFatura(
             cartao.IdUsuario,
+            cartao.Banco,
             VencimentoFatura.Projetado(mes, outroDia),
             cartoesFatura: [cartao],
             cartoesUsuario: [cartao],
@@ -135,6 +136,7 @@ public sealed class ImportacaoArquivoFactoryTests
 
         UnitResult<Erro> result = ImportacaoArquivoFactory.ConferirVencimentoFatura(
             cartao.IdUsuario,
+            cartao.Banco,
             VencimentoFatura.Projetado(mes, outroDia),
             cartoesFatura: [outroFinal],
             cartoesUsuario: [cartao, outroFinal],
@@ -154,6 +156,7 @@ public sealed class ImportacaoArquivoFactoryTests
 
         UnitResult<Erro> result = ImportacaoArquivoFactory.ConferirVencimentoFatura(
             cartao.IdUsuario,
+            cartaoOutroBanco.Banco,
             VencimentoFatura.Projetado(mes, outroDia),
             cartoesFatura: [cartaoOutroBanco],
             cartoesUsuario: [cartao, cartaoOutroBanco],
@@ -167,6 +170,7 @@ public sealed class ImportacaoArquivoFactoryTests
     {
         UnitResult<Erro> result = ImportacaoArquivoFactory.ConferirVencimentoFatura(
             cartao.IdUsuario,
+            cartao.Banco,
             importada.VencimentoFatura!,
             cartoesFatura: [cartao],
             cartoesUsuario: [cartao],
@@ -184,6 +188,7 @@ public sealed class ImportacaoArquivoFactoryTests
     {
         UnitResult<Erro> result = ImportacaoArquivoFactory.ConferirVencimentoFatura(
             cartao.IdUsuario,
+            cartao.Banco,
             VencimentoFatura.Projetado(outroMes, dia),
             cartoesFatura: [cartao],
             cartoesUsuario: [cartao],
@@ -197,6 +202,7 @@ public sealed class ImportacaoArquivoFactoryTests
     {
         UnitResult<Erro> result = ImportacaoArquivoFactory.ConferirVencimentoFatura(
             cartao.IdUsuario,
+            cartao.Banco,
             vencimento,
             cartoesFatura: [cartao],
             cartoesUsuario: [cartao],
@@ -213,6 +219,7 @@ public sealed class ImportacaoArquivoFactoryTests
     {
         Action conferir = () => ImportacaoArquivoFactory.ConferirVencimentoFatura(
             cartao.IdUsuario,
+            cartao.Banco,
             vencimento,
             cartoesFatura: [cartao],
             cartoesUsuario: [cartao],
@@ -229,6 +236,7 @@ public sealed class ImportacaoArquivoFactoryTests
     {
         Action conferir = () => ImportacaoArquivoFactory.ConferirVencimentoFatura(
             cartao.IdUsuario,
+            cartao.Banco,
             vencimento,
             cartoesFatura: [cartao],
             [cartao, cartaoOutroUsuario],
@@ -245,6 +253,7 @@ public sealed class ImportacaoArquivoFactoryTests
     {
         Action conferir = () => ImportacaoArquivoFactory.ConferirVencimentoFatura(
             cartao.IdUsuario,
+            cartao.Banco,
             vencimento,
             [cartaoOutroUsuario],
             cartoesUsuario: [cartao],
@@ -257,7 +266,7 @@ public sealed class ImportacaoArquivoFactoryTests
     public void Registrar_Deve_GerarIdVersao7(
         ContaBancaria conta,
         LayoutArquivoImportacao layout,
-        PeriodoArquivo periodo,
+        Periodo periodo,
         byte lidas,
         DateTimeOffset importadaEm)
     {

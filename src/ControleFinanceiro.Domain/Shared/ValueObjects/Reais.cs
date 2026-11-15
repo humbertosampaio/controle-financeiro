@@ -19,6 +19,17 @@ public class Reais(decimal valor) : SimpleValueObject<decimal>(Arredondar(valor)
         return arredondado == 0m ? decimal.Abs(arredondado) : arredondado;
     }
 
+    /// <summary>
+    /// O mesmo valor como <see cref="ReaisPositivo"/>, para quem já sabe que ele não é negativo. Faz o papel de uma
+    /// conversão explícita, que o C# não permite entre o tipo base e o derivado.
+    /// </summary>
+    /// <exception cref="ArgumentOutOfRangeException">Quando o valor é negativo: é bug de quem chama.</exception>
+    public ReaisPositivo ComoPositivo()
+    {
+        ArgumentOutOfRangeException.ThrowIfNegative(Value);
+        return (ReaisPositivo)Value;
+    }
+
     public override string ToString() => Value.ToString("C2", FormatProvider);
 
     public static Reais operator +(Reais a, Reais b) => new(a.Value + b.Value);

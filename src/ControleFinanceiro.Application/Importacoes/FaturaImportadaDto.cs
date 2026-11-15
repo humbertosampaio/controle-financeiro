@@ -14,10 +14,10 @@ namespace ControleFinanceiro.Application.Importacoes;
 /// <param name="VencimentoCicloCartoes">
 /// Falha, com o aviso em texto, quando o vencimento não fecha com o ciclo cadastrado de algum cartão da fatura.
 /// </param>
-public sealed record FaturaImportada(
+public sealed record FaturaImportadaDto(
     Banco Banco,
     VencimentoFatura Vencimento,
-    IReadOnlyList<FaturaImportada.CartaoImportado> Cartoes,
+    IReadOnlyList<FaturaImportadaDto.CartaoImportado> Cartoes,
     Result PagamentoFaturaAnterior,
     Result VencimentoCicloCartoes)
 {

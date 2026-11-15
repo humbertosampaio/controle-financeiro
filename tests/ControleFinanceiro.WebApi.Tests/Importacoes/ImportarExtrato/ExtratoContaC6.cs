@@ -22,6 +22,9 @@ internal static class ExtratoContaC6
     public static readonly DateOnly Inicio = new(2026, 3, 2);
     public static readonly DateOnly DiaTarifasIdenticas = new(2026, 3, 3);
 
+    /// <summary>O dia do pagamento de boleto, a saída de 230,45 que paga a fatura da <c>FaturaCartaoC6.PagaPeloBoletoExtrato</c>.</summary>
+    public static readonly DateOnly DiaBoleto = new(2026, 3, 3);
+
     /// <summary>O número completo da conta no cabeçalho, que não pode ser gravado.</summary>
     public const string NumeroCompletoConta = "987654321";
 

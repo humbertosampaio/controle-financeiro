@@ -43,6 +43,32 @@ public static class LancamentoDeTeste
         }
 
         /// <summary>
+        /// A mesma linha na fatura de um cartão, como compra ou estorno, com o valor do caso e sem categoria, para o caso cujo
+        /// assunto é o total da fatura.
+        /// </summary>
+        public Lancamento NoCartaoComValor(decimal valor)
+        {
+            return Lancamento.DoCartao(
+                lancamento.Data,
+                lancamento.Hora,
+                valor,
+                lancamento.Descricao,
+                lancamento.Contraparte,
+                lancamento.Parcela,
+                categoriaBanco: null,
+                lancamento.Identidade);
+        }
+
+        /// <summary>
+        /// A mesma linha no extrato de uma conta, na data e com o valor do caso e sem categoria, para o caso cujo assunto é a
+        /// saída que paga a fatura.
+        /// </summary>
+        public Lancamento NaContaComValor(DateOnly data, decimal valor)
+        {
+            return Lancamento.DaConta(data, lancamento.Hora, valor, lancamento.Descricao, lancamento.Contraparte, categoriaBanco: null, lancamento.Identidade);
+        }
+
+        /// <summary>
         /// A mesma linha na fatura de um cartão, na data e com a parcela do caso, para o caso cujo assunto é a data da compra
         /// diante do vencimento.
         /// </summary>

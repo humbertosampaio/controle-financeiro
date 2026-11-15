@@ -59,7 +59,7 @@ internal sealed class PagamentoFaturaDeTeste
                 cartoesUsuario: [cartao],
                 importacoesFaturaMes: [],
                 fixture.Create<LayoutArquivoImportacao>(),
-                fixture.Create<PeriodoArquivo>(),
+                fixture.Create<Periodo>(),
                 cartao.VencimentoNoMes(compra.Data),
                 lidas: 1,
                 fixture.Create<DateTimeOffset>().ToUniversalTime())
@@ -84,6 +84,41 @@ internal sealed class PagamentoFaturaDeTeste
 
         await _banco.GravarDespesaAsync(adiada, beneficiario);
         return adiada;
+    }
+
+    /// <summary>
+    /// Um cartão do usuário do servidor, a fatura dele importada com uma compra de 100,00 e uma saída da conta de 100,00 no
+    /// dia do vencimento: o candidato único a pagamento da fatura.
+    /// </summary>
+    public async Task<CandidatoPagamentoFaturaGravado> GravarCandidatoPagamentoFaturaAsync(IFixture fixture)
+    {
+        fixture.Inject(_servidor.Usuario.Id);
+        Cartao cartao = fixture.Create<Cartao>();
+        VencimentoFatura vencimento = cartao.VencimentoNoMes(fixture.Create<MesReferencia>());
+        await GravarFaturaImportadaAsync(fixture, cartao, vencimento, valorCompra: -100m);
+        Transacao saida = await _vinculo.GravarExtratoAsync(fixture, fixture.Create<Lancamento>().NaContaComValor(vencimento, valor: -100m));
+
+        return new CandidatoPagamentoFaturaGravado(cartao, vencimento, saida);
+    }
+
+    /// <summary>
+    /// A fatura do cartão importada com o vencimento informado e uma compra no valor do caso, sem despesa que ela cobre.
+    /// </summary>
+    public async Task GravarFaturaImportadaAsync(IFixture fixture, Cartao cartao, VencimentoFatura vencimento, decimal valorCompra)
+    {
+        // O Postgres só grava o instante em UTC, como o TimeProvider da aplicação o dá.
+        ImportacaoArquivo importacao = ImportacaoArquivoFactory
+            .Registrar(
+                cartao,
+                cartoesUsuario: [cartao],
+                importacoesFaturaMes: [],
+                fixture.Create<LayoutArquivoImportacao>(),
+                fixture.Create<Periodo>(),
+                vencimento,
+                lidas: 1,
+                fixture.Create<DateTimeOffset>().ToUniversalTime())
+            .Value;
+        await _banco.GravarFaturaAsync(cartao, importacao, [fixture.Create<Lancamento>().NoCartaoComValor(valorCompra)]);
     }
 
     /// <summary>Paga a fatura pelas duas etapas, como outra conversa faria antes da chamada do teste.</summary>
@@ -113,3 +148,8 @@ internal sealed class PagamentoFaturaDeTeste
 /// <param name="Adiada">A despesa cobrada e pendente, no mês de vencimento da fatura.</param>
 /// <param name="Saida">A saída da conta que pode pagar a fatura.</param>
 internal sealed record FaturaDeTeste(Cartao Cartao, DespesaAdiada Adiada, Transacao Saida);
+
+/// <summary>O que o <see cref="PagamentoFaturaDeTeste.GravarCandidatoPagamentoFaturaAsync"/> gravou.</summary>
+/// <param name="Vencimento">O vencimento real da fatura, o que a importação gravou.</param>
+/// <param name="Saida">A saída da conta com o valor do total da fatura, no dia do vencimento.</param>
+internal sealed record CandidatoPagamentoFaturaGravado(Cartao Cartao, VencimentoFatura Vencimento, Transacao Saida);

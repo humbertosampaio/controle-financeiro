@@ -121,6 +121,83 @@ public sealed class TransacaoTests
         transacao.EhCompraAVistaNoCartao.Should().BeFalse();
     }
 
+    [Theory, TransacaoAutoData]
+    public void CompoeTotalFatura_Quando_CompraNoCartaoNoMesDaFatura_Deve_SerVerdadeiro(TransacoesDeTeste transacoes, Cartao cartao, Lancamento lancamento)
+    {
+        Transacao transacao = transacoes.DoCartao(cartao, lancamento.SemCategoria().ComoSaida());
+
+        transacao.CompoeTotalFatura(FaturaTransacao(cartao, transacao)).Should().BeTrue();
+    }
+
+    [Theory, TransacaoAutoData]
+    public void CompoeTotalFatura_Quando_EstornoNoCartao_Deve_SerVerdadeiro(TransacoesDeTeste transacoes, Cartao cartao, Lancamento lancamento)
+    {
+        Transacao transacao = transacoes.DoCartao(cartao, lancamento.SemCategoria().ComoEntrada());
+
+        transacao.CompoeTotalFatura(FaturaTransacao(cartao, transacao)).Should().BeTrue();
+    }
+
+    [Theory, TransacaoAutoData]
+    public void CompoeTotalFatura_Quando_FaturaDeOutroMes_Deve_SerFalso(TransacoesDeTeste transacoes, Cartao cartao, Lancamento lancamento)
+    {
+        Transacao transacao = transacoes.DoCartao(cartao, lancamento.SemCategoria().ComoSaida());
+        FaturaCartao faturaMesSeguinte = FaturaCartao.DoCartao(cartao.Id, [cartao], transacao.MesVencimentoFatura!.Posterior());
+
+        transacao.CompoeTotalFatura(faturaMesSeguinte).Should().BeFalse();
+    }
+
+    [Theory, TransacaoAutoData]
+    public void CompoeTotalFatura_Quando_FaturaDeOutroCartao_Deve_SerFalso(TransacoesDeTeste transacoes, Cartao cartao, Lancamento lancamento)
+    {
+        Transacao transacao = transacoes.DoCartao(cartao, lancamento.SemCategoria().ComoSaida());
+
+        transacao.CompoeTotalFatura(FaturaTransacao(cartao.EmOutroBanco(), transacao)).Should().BeFalse();
+    }
+
+    [Theory, TransacaoAutoData]
+    public void CompoeTotalFatura_Quando_PagamentoFaturaAnterior_Deve_SerFalso(TransacoesDeTeste transacoes, Cartao cartao, Lancamento lancamento)
+    {
+        Transacao transacao = transacoes.DoCartao(cartao, lancamento.SemCategoria().ComoPagamentoFatura());
+
+        transacao.CompoeTotalFatura(FaturaTransacao(cartao, transacao)).Should().BeFalse();
+    }
+
+    [Theory, TransacaoAutoData]
+    public void CompoeTotalFatura_Quando_DaConta_Deve_SerFalso(TransacoesDeTeste transacoes, Cartao cartao, Lancamento lancamento, MesReferencia mesVencimento)
+    {
+        Transacao transacao = transacoes.DaConta(lancamento.SemCategoria().ComoSaida());
+
+        transacao.CompoeTotalFatura(FaturaCartao.DoCartao(cartao.Id, [cartao], mesVencimento)).Should().BeFalse();
+    }
+
+    [Theory, TransacaoAutoData]
+    public void EhSaidaConta_Quando_SaidaDaConta_Deve_SerVerdadeiro(TransacoesDeTeste transacoes, Lancamento lancamento)
+    {
+        Transacao transacao = transacoes.DaConta(lancamento.SemCategoria().ComoSaida());
+
+        transacao.EhSaidaConta.Should().BeTrue();
+    }
+
+    [Theory, TransacaoAutoData]
+    public void EhSaidaConta_Quando_EntradaNaConta_Deve_SerFalso(TransacoesDeTeste transacoes, Lancamento lancamento)
+    {
+        Transacao transacao = transacoes.DaConta(lancamento.SemCategoria().ComoEntrada());
+
+        transacao.EhSaidaConta.Should().BeFalse();
+    }
+
+    [Theory, TransacaoAutoData]
+    public void EhSaidaConta_Quando_SaidaNoCartao_Deve_SerFalso(TransacoesDeTeste transacoes, Cartao cartao, Lancamento lancamento)
+    {
+        Transacao transacao = transacoes.DoCartao(cartao, lancamento.SemCategoria().ComoSaida());
+
+        transacao.EhSaidaConta.Should().BeFalse();
+    }
+
+    /// <summary>A fatura do <paramref name="cartao"/> no mês em que vence a fatura que trouxe a transação.</summary>
+    private static FaturaCartao FaturaTransacao(Cartao cartao, Transacao transacao) =>
+        FaturaCartao.DoCartao(cartao.Id, [cartao], transacao.MesVencimentoFatura!);
+
     /// <summary>Tudo sai do mesmo usuário.</summary>
     private sealed class TransacaoAutoDataAttribute : DomainAutoDataAttribute
     {

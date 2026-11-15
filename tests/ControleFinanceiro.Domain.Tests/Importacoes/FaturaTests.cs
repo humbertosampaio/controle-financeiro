@@ -96,7 +96,7 @@ public sealed class FaturaTests
                 ])
             .Value;
 
-        sut.PeriodoCartao(sufixo).Should().Be((PeriodoArquivo)(dia.AddDays(-270), dia));
+        sut.PeriodoCartao(sufixo).Should().Be(new Periodo(dia.AddDays(-270), dia));
     }
 
     [Theory, DomainAutoData]
@@ -118,7 +118,7 @@ public sealed class FaturaTests
                 ])
             .Value;
 
-        sut.Periodo.Should().Be((PeriodoArquivo)(dia.AddDays(-400), dia.AddDays(5)));
+        sut.Periodo.Should().Be(new Periodo(dia.AddDays(-400), dia.AddDays(5)));
     }
 
     [Theory, DomainAutoData]
@@ -132,7 +132,7 @@ public sealed class FaturaTests
     [Theory, DomainAutoData]
     public void PeriodoCartao_Quando_FinalForaDaFatura_Deve_LancarExcecao(Fatura sut, SufixoCartao foraDaFatura)
     {
-        Func<PeriodoArquivo> act = () => sut.PeriodoCartao(foraDaFatura);
+        Func<Periodo> act = () => sut.PeriodoCartao(foraDaFatura);
 
         act.Should().ThrowExactly<ArgumentException>().WithParameterName("sufixo");
     }

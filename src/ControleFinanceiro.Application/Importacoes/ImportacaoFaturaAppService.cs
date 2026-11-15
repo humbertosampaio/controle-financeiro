@@ -24,7 +24,7 @@ namespace ControleFinanceiro.Application.Importacoes;
 /// prévia que descarta o escopo; o <see cref="ImportarAsync"/> grava num commit só. Nada é gravado quando o resultado é
 /// de erro.
 /// </summary>
-public sealed class ImportacaoFaturaService
+public sealed class ImportacaoFaturaAppService
 {
     private readonly ICartaoRepository _cartaoRepository;
     private readonly IBeneficiarioRepository _beneficiarioRepository;
@@ -35,7 +35,7 @@ public sealed class ImportacaoFaturaService
     private readonly TimeProvider _timeProvider;
     private readonly IUnitOfWork _unitOfWork;
 
-    public ImportacaoFaturaService(
+    public ImportacaoFaturaAppService(
         ICartaoRepository cartaoRepository,
         IBeneficiarioRepository beneficiarioRepository,
         ICategoriaDespesaRepository categoriaDespesaRepository,
@@ -57,7 +57,7 @@ public sealed class ImportacaoFaturaService
 
     /// <summary>Aplica a importação e grava, num commit só, se nada falhar.</summary>
     /// <param name="idUsuario">Um usuário que existe.</param>
-    public async Task<Result<FaturaImportada, Erro>> ImportarAsync(
+    public async Task<Result<FaturaImportadaDto, Erro>> ImportarAsync(
         IdUsuario idUsuario,
         LayoutArquivoImportacao layout,
         Fatura fatura,
@@ -73,7 +73,7 @@ public sealed class ImportacaoFaturaService
     /// e nenhum lote falhar. Não grava.
     /// </summary>
     /// <param name="idUsuario">Um usuário que existe.</param>
-    public async Task<Result<FaturaImportada, Erro>> AplicarAsync(
+    public async Task<Result<FaturaImportadaDto, Erro>> AplicarAsync(
         IdUsuario idUsuario,
         LayoutArquivoImportacao layout,
         Fatura fatura,
@@ -126,6 +126,7 @@ public sealed class ImportacaoFaturaService
 
         return ImportacaoArquivoFactory.ConferirVencimentoFatura(
             idUsuario,
+            fatura.Banco,
             fatura.Vencimento,
             cartoesFatura,
             cartoesUsuario,
@@ -213,7 +214,7 @@ public sealed class ImportacaoFaturaService
     /// Cria as despesas adiadas das transações novas de todos os cartões de uma vez, para a previsão num final cobrir a
     /// compra de outro final da mesma fatura uma vez só.
     /// </param>
-    private async Task<FaturaImportada> AcrescentarAsync(
+    private async Task<FaturaImportadaDto> AcrescentarAsync(
         Fatura fatura,
         IReadOnlyList<LoteCartao> lotes,
         Func<IReadOnlyList<Transacao>, IReadOnlyList<DespesaAdiada>> criarAdiadas,
@@ -240,11 +241,11 @@ public sealed class ImportacaoFaturaService
             .Select(lote => lote.Cartao.ConferirVencimento(fatura.Vencimento))
             .FirstOrDefault(conferencia => conferencia.IsFailure, Result.Success());
 
-        return new FaturaImportada(
+        return new FaturaImportadaDto(
             fatura.Banco,
             fatura.Vencimento,
             acrescentados
-                .Select(acrescentado => new FaturaImportada.CartaoImportado(
+                .Select(acrescentado => new FaturaImportadaDto.CartaoImportado(
                     acrescentado.Lote.Importacao.Id,
                     acrescentado.Lote.Cartao.Id,
                     acrescentado.Lote.Cartao.Sufixo,

@@ -1,8 +1,10 @@
 using ControleFinanceiro.Application.Abstractions;
+using ControleFinanceiro.Application.Despesas;
 using ControleFinanceiro.Application.Importacoes;
 using ControleFinanceiro.Domain.Beneficiarios;
 using ControleFinanceiro.Domain.Cartoes;
 using ControleFinanceiro.Domain.Categorias;
+using ControleFinanceiro.Domain.Despesas;
 using ControleFinanceiro.Domain.Importacoes;
 using ControleFinanceiro.Domain.Shared;
 using ControleFinanceiro.Domain.Usuarios;
@@ -13,7 +15,7 @@ using Microsoft.AspNetCore.Mvc;
 namespace ControleFinanceiro.WebApi.Endpoints.Importacoes.ImportarFatura;
 
 /// <summary>
-/// Lê a fatura no layout da rota e a importa pelo <see cref="ImportacaoFaturaService"/>. Nada é gravado quando a
+/// Lê a fatura no layout da rota e a importa pelo <see cref="ImportacaoFaturaAppService"/>. Nada é gravado quando a
 /// resposta é de erro.
 /// </summary>
 public sealed class ImportarFaturaEndpoint : Endpoint<ImportarFaturaRequest, ImportarFaturaResponse>
@@ -25,17 +27,20 @@ public sealed class ImportarFaturaEndpoint : Endpoint<ImportarFaturaRequest, Imp
     public const long TamanhoMaximoFormulario = ImportarFaturaValidator.TamanhoMaximoArquivo + 1024 * 1024;
 
     private readonly IUsuarioAtual _usuarioAtual;
-    private readonly LeituraFaturaService _leituraFatura;
-    private readonly ImportacaoFaturaService _importacaoFatura;
+    private readonly LeituraFaturaAppService _leituraFaturaAppService;
+    private readonly ImportacaoFaturaAppService _importacaoFaturaAppService;
+    private readonly CandidatosPagamentoFaturaAppService _candidatosPagamentoFaturaAppService;
 
     public ImportarFaturaEndpoint(
         IUsuarioAtual usuarioAtual,
-        LeituraFaturaService leituraFatura,
-        ImportacaoFaturaService importacaoFatura)
+        LeituraFaturaAppService leituraFaturaAppService,
+        ImportacaoFaturaAppService importacaoFaturaAppService,
+        CandidatosPagamentoFaturaAppService candidatosPagamentoFaturaAppService)
     {
         _usuarioAtual = usuarioAtual;
-        _leituraFatura = leituraFatura;
-        _importacaoFatura = importacaoFatura;
+        _leituraFaturaAppService = leituraFaturaAppService;
+        _importacaoFaturaAppService = importacaoFaturaAppService;
+        _candidatosPagamentoFaturaAppService = candidatosPagamentoFaturaAppService;
     }
 
     public override void Configure()
@@ -55,10 +60,10 @@ public sealed class ImportarFaturaEndpoint : Endpoint<ImportarFaturaRequest, Imp
         LayoutArquivoImportacao layout = LayoutArquivoImportacao.FromValue(req.Layout);
 
         await LerAsync(layout, req, ct)
-            .Bind(fatura => _importacaoFatura
+            .Bind(fatura => _importacaoFaturaAppService
                 .ImportarAsync(idUsuario, layout, fatura, ct)
                 .MapError(Falha.DeDominio))
-            .Map(Responder)
+            .Map(importado => ResponderAsync(importado, ct))
             .Match(
                 resposta => Send.OkAsync(resposta, ct),
                 falha => EnviarFalhaAsync(layout, falha, ct));
@@ -68,7 +73,7 @@ public sealed class ImportarFaturaEndpoint : Endpoint<ImportarFaturaRequest, Imp
     {
         await using Stream conteudo = req.Arquivo!.OpenReadStream();
 
-        return await _leituraFatura
+        return await _leituraFaturaAppService
             .LerAsync(layout, conteudo, VencimentoDoLayout(layout, req), ct)
             .MapError(Falha.ArquivoInvalido);
     }
@@ -81,8 +86,11 @@ public sealed class ImportarFaturaEndpoint : Endpoint<ImportarFaturaRequest, Imp
             : Maybe<VencimentoFatura>.None;
     }
 
-    private static ImportarFaturaResponse Responder(FaturaImportada importada)
+    /// <summary>Os candidatos saem depois do commit, que o <see cref="ImportacaoFaturaAppService.ImportarAsync"/> já fez.</summary>
+    private async Task<ImportarFaturaResponse> ResponderAsync(FaturaImportadaDto importada, CancellationToken ct)
     {
+        IReadOnlyList<CandidatoPagamentoFaturaDto> candidatos = await _candidatosPagamentoFaturaAppService.ListarCandidatosFaturaImportadaAsync(importada, ct);
+
         return new ImportarFaturaResponse(
             importada.Vencimento,
             importada.Cartoes
@@ -97,7 +105,23 @@ public sealed class ImportarFaturaEndpoint : Endpoint<ImportarFaturaRequest, Imp
                     cartao.DespesasAdiadasCriadas))
                 .ToArray(),
             importada.PagamentoFaturaAnterior.IsFailure ? importada.PagamentoFaturaAnterior.Error : null,
-            importada.VencimentoCicloCartoes.IsFailure ? importada.VencimentoCicloCartoes.Error : null);
+            importada.VencimentoCicloCartoes.IsFailure ? importada.VencimentoCicloCartoes.Error : null,
+            candidatos.Select(Responder).ToArray());
+    }
+
+    private static ImportarFaturaResponse.CandidatoPagamentoFaturaResponse Responder(CandidatoPagamentoFaturaDto candidatoDto)
+    {
+        CandidatoPagamentoFatura candidato = candidatoDto.Candidato;
+
+        return new ImportarFaturaResponse.CandidatoPagamentoFaturaResponse(
+            candidato.IdSaida.Value,
+            candidatoDto.Saida.Data,
+            candidato.IdCartao.Value,
+            candidato.FaturaCartaoAberta.Fatura.Banco.Name,
+            candidato.FaturaCartaoAberta.Vencimento.Mes.Ano,
+            candidato.FaturaCartaoAberta.Vencimento.Mes.Mes,
+            candidato.FaturaCartaoAberta.Vencimento,
+            candidato.FaturaCartaoAberta.Total);
     }
 
     private async Task EnviarFalhaAsync(LayoutArquivoImportacao layout, Falha falha, CancellationToken ct)

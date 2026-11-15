@@ -1,4 +1,5 @@
 using ControleFinanceiro.Application.Abstractions;
+using ControleFinanceiro.Application.Despesas;
 using ControleFinanceiro.Application.IA.Saida;
 using ControleFinanceiro.Domain.Cartoes;
 using ControleFinanceiro.Domain.Despesas;
@@ -23,6 +24,7 @@ public sealed class LeituraParaModeloService
     private readonly IUsuarioRepository _usuarios;
     private readonly IUsuarioAtual _usuarioAtual;
     private readonly ICartaoRepository _cartoes;
+    private readonly CandidatosPagamentoFaturaAppService _candidatosPagamentoFaturaAppService;
 
     public LeituraParaModeloService(
         ITransacaoRepository transacoes,
@@ -30,7 +32,8 @@ public sealed class LeituraParaModeloService
         IDespesaRepository despesas,
         IUsuarioRepository usuarios,
         IUsuarioAtual usuarioAtual,
-        ICartaoRepository cartoes)
+        ICartaoRepository cartoes,
+        CandidatosPagamentoFaturaAppService candidatosPagamentoFaturaAppService)
     {
         _transacoes = transacoes;
         _recorrentes = recorrentes;
@@ -38,6 +41,7 @@ public sealed class LeituraParaModeloService
         _usuarios = usuarios;
         _usuarioAtual = usuarioAtual;
         _cartoes = cartoes;
+        _candidatosPagamentoFaturaAppService = candidatosPagamentoFaturaAppService;
     }
 
     public async Task<TransacoesDoMesParaModelo> ListarTransacoesAsync(int ano, int mes, CancellationToken cancellationToken)
@@ -114,5 +118,24 @@ public sealed class LeituraParaModeloService
         IReadOnlyList<Cartao> cartoes = await _cartoes.ListarAsync(cancellationToken);
 
         return CartoesParaModelo.De(cartoes.Select(cartao => cartao.ParaModelo()).ToArray());
+    }
+
+    /// <summary>
+    /// As saídas da conta que provavelmente pagaram as faturas que vencem no mês e que ainda não foram ligadas a elas, pela
+    /// <see cref="CandidatosPagamentoFaturaAppService.ListarCandidatosMesVencimentoAsync"/>. Nada é gravado.
+    /// </summary>
+    public async Task<CandidatosPagamentoFaturaParaModelo> ListarCandidatosPagamentoFaturaAsync(int ano, int mes, CancellationToken cancellationToken)
+    {
+        Result<MesReferencia> mesValido = MesReferencia.Criar(mes, ano);
+        if (mesValido.IsFailure)
+            return CandidatosPagamentoFaturaParaModelo.Falha(ErrosParaModelo.Consulta.MesInvalido);
+
+        MesReferencia mesVencimento = mesValido.Value;
+
+        IReadOnlyList<CandidatoPagamentoFaturaDto> candidatos = await _candidatosPagamentoFaturaAppService.ListarCandidatosMesVencimentoAsync(mesVencimento, cancellationToken);
+
+        return CandidatosPagamentoFaturaParaModelo.De(
+            mesVencimento,
+            candidatos.Select(candidatoDto => candidatoDto.ParaModelo()).ToArray());
     }
 }

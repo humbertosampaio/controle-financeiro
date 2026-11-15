@@ -22,6 +22,9 @@ public sealed class ImportacaoLida
     /// <summary>Os avisos fixos, que não impedem a importação; vazio quando não há.</summary>
     public IReadOnlyList<string> Avisos { get; }
 
+    /// <summary>Só na confirmação: as saídas que provavelmente pagaram uma fatura; vazio quando não há.</summary>
+    public IReadOnlyList<CandidatoPagamentoFaturaLido> CandidatosPagamentoFatura { get; }
+
     public ImportacaoLida(JsonObject json)
     {
         Lidas = json["lidas"]!.GetValue<int>();
@@ -36,5 +39,9 @@ public sealed class ImportacaoLida
 
         Resumo = json.Texto("resumo");
         Avisos = json["avisos"]?.AsArray().Select(aviso => aviso!.GetValue<string>()).ToArray() ?? [];
+        CandidatosPagamentoFatura = json["candidatos_pagamento_fatura"]?
+            .AsArray()
+            .Select(candidato => new CandidatoPagamentoFaturaLido(candidato!.AsObject()))
+            .ToArray() ?? [];
     }
 }

@@ -13,13 +13,13 @@ namespace ControleFinanceiro.Application.Importacoes;
 /// O que o usuário precisa resolver antes de importar um arquivo já lido, em qualquer rota: os beneficiários e as
 /// categorias do banco sem alias e, na fatura, os finais sem cartão. Nada é gravado.
 /// </summary>
-public sealed class PendenciasImportacaoService
+public sealed class PendenciasImportacaoAppService
 {
     private readonly ICartaoRepository _cartaoRepository;
     private readonly IBeneficiarioRepository _beneficiarioRepository;
     private readonly ICategoriaDespesaRepository _categoriaDespesaRepository;
 
-    public PendenciasImportacaoService(
+    public PendenciasImportacaoAppService(
         ICartaoRepository cartaoRepository,
         IBeneficiarioRepository beneficiarioRepository,
         ICategoriaDespesaRepository categoriaDespesaRepository)
@@ -40,16 +40,16 @@ public sealed class PendenciasImportacaoService
         return AliasesBeneficiarioPendentes.Listar(idUsuario, beneficiarios, extrato.Lancamentos);
     }
 
-    public async Task<PendenciasFatura> ListarDaFaturaAsync(IdUsuario idUsuario, Fatura fatura, CancellationToken ct)
+    public async Task<PendenciasFaturaDto> ListarDaFaturaAsync(IdUsuario idUsuario, Fatura fatura, CancellationToken ct)
     {
         IReadOnlyList<Cartao> cartoes = await _cartaoRepository.ListarAsync(ct);
         IReadOnlyList<Beneficiario> beneficiarios = await _beneficiarioRepository.ListarAsync(ct);
         IReadOnlyList<CategoriaDespesa> categorias = await _categoriaDespesaRepository.ListarAsync(ct);
         IReadOnlyList<Lancamento> lancamentos = fatura.Lancamentos.Select(l => l.Lancamento).ToArray();
 
-        return new PendenciasFatura(
+        return new PendenciasFaturaDto(
             fatura.Sufixos
-                .Select(sufixo => new PendenciasFatura.FinalCartao(sufixo, CartaoFactory.ObterDoFinal(idUsuario, cartoes, fatura.Banco, sufixo)))
+                .Select(sufixo => new PendenciasFaturaDto.FinalCartao(sufixo, CartaoFactory.ObterDoFinal(idUsuario, cartoes, fatura.Banco, sufixo)))
                 .ToArray(),
             AliasesBeneficiarioPendentes.Listar(idUsuario, beneficiarios, lancamentos),
             AliasesCategoriaPendentes.Listar(idUsuario, categorias, lancamentos));

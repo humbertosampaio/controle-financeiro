@@ -333,4 +333,26 @@ public sealed class MesReferenciaTests
 
         act.Should().ThrowExactly<InvalidOperationException>().WithMessage("Não há mês de referência 3 meses antes de '03/1'");
     }
+
+    [Theory, DomainAutoData]
+    public void Entre_Quando_MesmoMes_Deve_SerApenasOMes(MesReferencia mes)
+    {
+        IReadOnlyList<MesReferencia> result = MesReferencia.Entre(mes.Periodo);
+
+        result.Should().Equal(mes);
+    }
+
+    [Fact]
+    public void Entre_Quando_IntervaloViraOAno_Deve_ListarCadaMesEmOrdem()
+    {
+        IReadOnlyList<MesReferencia> result = MesReferencia.Entre(new Periodo(new DateOnly(2026, 11, 30), new DateOnly(2027, 1, 1)));
+
+        result.Should().Equal((MesReferencia)(11, 2026), (MesReferencia)(12, 2026), (MesReferencia)(1, 2027));
+    }
+
+    [Theory, DomainAutoData]
+    public void Periodo_Deve_IrDoPrimeiroAoUltimoDiaDoMes(MesReferencia sut)
+    {
+        sut.Periodo.Should().Be(new Periodo(sut.Inicio, sut.Fim));
+    }
 }

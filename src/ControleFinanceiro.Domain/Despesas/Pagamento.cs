@@ -21,6 +21,12 @@ public sealed class Pagamento : ValueObject
     /// </summary>
     public IdTransacao? IdTransacao { get; }
 
+    /// <summary>
+    /// Verdadeiro quando uma transação importada pagou: a saída na simples, a saída que pagou a fatura na despesa do
+    /// cartão. O pagamento que nasceu pago, como a parcela anterior à primeira fatura importada, não foi.
+    /// </summary>
+    public bool FoiPagoPorTransacao => IdTransacao is not null;
+
     [MemberNotNullWhen(true, nameof(DataEfetiva), nameof(ValorEfetivo))]
     public bool EstaPago => Status == StatusPagamento.Pago;
 

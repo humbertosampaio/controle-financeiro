@@ -8,12 +8,12 @@ namespace ControleFinanceiro.Application.Importacoes;
 /// Escolhe o leitor da fatura pelo layout, em qualquer rota: o layout cujo arquivo não traz o vencimento é lido com a data
 /// que o usuário informou.
 /// </summary>
-public sealed class LeituraFaturaService
+public sealed class LeituraFaturaAppService
 {
     private readonly IEnumerable<ILeitorFatura> _leitores;
     private readonly IEnumerable<ILeitorFaturaVencimentoInformado> _leitoresVencimentoInformado;
 
-    public LeituraFaturaService(IEnumerable<ILeitorFatura> leitores, IEnumerable<ILeitorFaturaVencimentoInformado> leitoresVencimentoInformado)
+    public LeituraFaturaAppService(IEnumerable<ILeitorFatura> leitores, IEnumerable<ILeitorFaturaVencimentoInformado> leitoresVencimentoInformado)
     {
         _leitores = leitores;
         _leitoresVencimentoInformado = leitoresVencimentoInformado;

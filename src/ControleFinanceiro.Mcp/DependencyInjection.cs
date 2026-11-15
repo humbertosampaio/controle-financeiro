@@ -1,4 +1,5 @@
 using ControleFinanceiro.Application.Abstractions;
+using ControleFinanceiro.Application.Despesas;
 using ControleFinanceiro.Application.IA.Escritas;
 using ControleFinanceiro.Application.IA.Leituras;
 using ControleFinanceiro.Application.Importacoes;
@@ -25,6 +26,7 @@ public static class DependencyInjection
                 .WithTools<PreverVinculoTool>()
                 .WithTools<ConfirmarVinculoTool>()
                 .WithTools<ListarCartoesTool>()
+                .WithTools<ListarCandidatosPagamentoFaturaTool>()
                 .WithTools<PreverPagamentoFaturaTool>()
                 .WithTools<ConfirmarPagamentoFaturaTool>()
                 .WithTools<PreverImportacaoTool>()
@@ -36,11 +38,12 @@ public static class DependencyInjection
                 .AddTransient<VinculoParaModeloService>()
                 .AddTransient<PagamentoFaturaParaModeloService>()
                 .AddTransient<ImportacaoParaModeloService>()
-                .AddTransient<LeituraExtratoService>()
-                .AddTransient<LeituraFaturaService>()
-                .AddTransient<ImportacaoExtratoService>()
-                .AddTransient<ImportacaoFaturaService>()
-                .AddTransient<PendenciasImportacaoService>()
+                .AddTransient<LeituraExtratoAppService>()
+                .AddTransient<LeituraFaturaAppService>()
+                .AddTransient<ImportacaoExtratoAppService>()
+                .AddTransient<ImportacaoFaturaAppService>()
+                .AddTransient<PendenciasImportacaoAppService>()
+                .AddTransient<CandidatosPagamentoFaturaAppService>()
                 .AddSingleton(TimeProvider.System);
         }
     }

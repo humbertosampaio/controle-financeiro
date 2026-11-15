@@ -35,6 +35,15 @@ internal static class FaturaCartaoC6
     /// <summary>O mês do <see cref="Vencimento"/>: o de todas as compras da fatura, inclusive a de fevereiro.</summary>
     public static readonly MesReferencia MesVencimento = (MesReferencia)(04, 2026);
 
+    /// <summary>
+    /// O vencimento informado da <see cref="PagaPeloBoletoExtrato"/>: com 7 dias para cada lado, a janela alcança o boleto
+    /// do extrato fictício do C6, em 03/03/2026, e as compras do final 2222 são todas anteriores a ele.
+    /// </summary>
+    public static readonly DateOnly VencimentoPagaPeloBoleto = new(2026, 3, 10);
+
+    /// <summary>O total da <see cref="PagaPeloBoletoExtrato"/>, o mesmo valor do boleto do extrato fictício do C6.</summary>
+    public const decimal TotalPagaPeloBoleto = 230.45m;
+
     /// <summary>O arquivo como está em disco.</summary>
     public static byte[] Completo() => File.ReadAllBytes(_caminho);
 
@@ -65,6 +74,16 @@ internal static class FaturaCartaoC6
             .Where(linha => linha.Split(';')[ColunaFinal].Trim('"') == sufixo.Value);
 
         return Encoding.UTF8.GetBytes(string.Join(QuebraLinha, linhasFinal.Prepend(linhas[0])) + QuebraLinha);
+    }
+
+    /// <summary>
+    /// A fatura só do final 2222, com a padaria de 241,45 em vez de 18,90: com o estorno de 35,00 e as duas corridas de
+    /// 12,00, o total é o <see cref="TotalPagaPeloBoleto"/>, o valor do boleto do extrato fictício do C6.
+    /// </summary>
+    public static byte[] PagaPeloBoletoExtrato()
+    {
+        string conteudo = Encoding.UTF8.GetString(ApenasLinhasFinal(SufixoVirtual)).Replace(";18.90", ";241.45", StringComparison.Ordinal);
+        return Encoding.UTF8.GetBytes(conteudo);
     }
 
     /// <summary>A fatura com duas compras idênticas parceladas: a linha da parcela 9/10 aparece duas vezes.</summary>

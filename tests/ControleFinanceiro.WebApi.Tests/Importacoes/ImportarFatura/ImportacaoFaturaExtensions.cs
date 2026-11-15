@@ -69,6 +69,23 @@ internal static class ImportacaoFaturaExtensions
             await api.ImportarFaturaComSucessoAsync(idUsuario, layout, arquivo);
         }
 
+        /// <summary>
+        /// A <see cref="FaturaCartaoC6.PagaPeloBoletoExtrato"/> importada por um usuário sem pendências, com o
+        /// <see cref="FaturaCartaoC6.VencimentoPagaPeloBoleto"/> informado.
+        /// </summary>
+        public async Task<ImportarFaturaResponse> ImportarFaturaPagaPeloBoletoAsync(Guid idUsuario)
+        {
+            LayoutArquivoImportacao layout = LayoutArquivoImportacao.C6CartaoCsv;
+            byte[] arquivo = FaturaCartaoC6.PagaPeloBoletoExtrato();
+            await api.ResolverCartoesDaFaturaAsync(idUsuario, layout, arquivo);
+            await api.ResolverBeneficiariosDaFaturaAsync(idUsuario, layout, arquivo);
+            await api.ResolverCategoriasDaFaturaAsync(idUsuario, layout, arquivo);
+
+            using HttpResponseMessage resposta = await api.ImportarFaturaAsync(idUsuario, layout, arquivo, FaturaCartaoC6.VencimentoPagaPeloBoleto);
+            resposta.StatusCode.Should().Be(HttpStatusCode.OK, await resposta.Content.ReadAsStringAsync());
+            return (await resposta.Content.ReadFromJsonAsync<ImportarFaturaResponse>())!;
+        }
+
         public async Task DeveEstarSemImportacaoAsync()
         {
             (await api.ObterTodosAsync(db => db.Transacoes)).Should().BeEmpty();

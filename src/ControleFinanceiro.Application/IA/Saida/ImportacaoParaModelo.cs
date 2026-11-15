@@ -60,6 +60,13 @@ public sealed record ImportacaoParaModelo : ISaidaModelo
     [JsonPropertyName("avisos")]
     public IReadOnlyList<string>? Avisos { get; }
 
+    /// <summary>
+    /// Só na confirmação, e omitida quando não há: as saídas da conta que provavelmente pagaram uma fatura, reveladas pela
+    /// importação gravada. Para ligar, o modelo segue com o <c>prever_pagamento_fatura</c>.
+    /// </summary>
+    [JsonPropertyName("candidatos_pagamento_fatura")]
+    public IReadOnlyList<CandidatoPagamentoFaturaParaModelo>? CandidatosPagamentoFatura { get; }
+
     /// <summary>Na falha que o usuário resolve pela API: o que falta cadastrar.</summary>
     [JsonPropertyName("pendencias")]
     public PendenciasImportacaoParaModelo? Pendencias { get; }
@@ -79,7 +86,7 @@ public sealed record ImportacaoParaModelo : ISaidaModelo
         Banco banco,
         TipoConta tipoConta,
         SufixoConta finalConta,
-        PeriodoArquivo periodo,
+        Periodo periodo,
         bool contaNova,
         int lidas,
         int novas,
@@ -109,7 +116,7 @@ public sealed record ImportacaoParaModelo : ISaidaModelo
     private ImportacaoParaModelo(
         LayoutArquivoImportacao layout,
         Banco banco,
-        PeriodoArquivo periodo,
+        Periodo periodo,
         DateOnly vencimento,
         IReadOnlyList<CartaoImportadoParaModelo> cartoes,
         IReadOnlyList<DocumentoMascarado> avisos)
@@ -132,13 +139,20 @@ public sealed record ImportacaoParaModelo : ISaidaModelo
             + ".");
     }
 
+    /// <summary>A <paramref name="importacao"/> como está, com os candidatos; a lista vazia fica de fora do payload.</summary>
+    private ImportacaoParaModelo(ImportacaoParaModelo importacao, IReadOnlyList<CandidatoPagamentoFaturaParaModelo> candidatos)
+        : this(importacao)
+    {
+        CandidatosPagamentoFatura = candidatos.Count == 0 ? null : candidatos;
+    }
+
     private ImportacaoParaModelo(ErroParaModelo erro, PendenciasImportacaoParaModelo? pendencias)
     {
         Erro = erro;
         Pendencias = pendencias;
     }
 
-    public static ImportacaoParaModelo DoExtrato(LayoutArquivoImportacao layout, ExtratoImportado importado)
+    public static ImportacaoParaModelo DoExtrato(LayoutArquivoImportacao layout, ExtratoImportadoDto importado)
     {
         return new ImportacaoParaModelo(
             layout,
@@ -155,7 +169,7 @@ public sealed record ImportacaoParaModelo : ISaidaModelo
     }
 
     /// <param name="fatura">A fatura lida, de onde sai o período de todos os cartões.</param>
-    public static ImportacaoParaModelo DaFatura(LayoutArquivoImportacao layout, Fatura fatura, FaturaImportada importada)
+    public static ImportacaoParaModelo DaFatura(LayoutArquivoImportacao layout, Fatura fatura, FaturaImportadaDto importada)
     {
         DocumentoMascarado[] avisos = new[] { importada.PagamentoFaturaAnterior, importada.VencimentoCicloCartoes }
             .Where(conferencia => conferencia.IsFailure)
@@ -175,6 +189,12 @@ public sealed record ImportacaoParaModelo : ISaidaModelo
 
     public static ImportacaoParaModelo Falha(ErroParaModelo erro, PendenciasImportacaoParaModelo pendencias) => new(erro, pendencias);
 
+    /// <summary>
+    /// A mesma importação, já gravada, com os candidatos a pagamento de fatura. O resumo não muda: ele é o que o usuário
+    /// aprovou.
+    /// </summary>
+    public ImportacaoParaModelo ComCandidatos(IReadOnlyList<CandidatoPagamentoFaturaParaModelo> candidatos) => new(this, candidatos);
+
     /// <summary>Se o resumo que o usuário aprovou é o desta importação, pelo <see cref="ResumoAprovado.Confere"/>.</summary>
     public bool ConfereResumo(string resumo) => ResumoAprovado.Confere(Resumo, resumo);
 
@@ -188,7 +208,7 @@ public sealed record ImportacaoParaModelo : ISaidaModelo
 
     private static string Contagens(int lidas, int novas, int jaExistentes) => $"{lidas} lidas, {novas} novas e {jaExistentes} já existentes";
 
-    private static string Datas(PeriodoArquivo periodo) => $"de {Data(periodo.Inicio)} a {Data(periodo.Fim)}";
+    private static string Datas(Periodo periodo) => $"de {Data(periodo.Inicio)} a {Data(periodo.Fim)}";
 
     private static string Data(DateOnly data) => data.ToString("dd/MM/yyyy", CultureInfo.InvariantCulture);
 
