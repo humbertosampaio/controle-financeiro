@@ -1,5 +1,6 @@
 using CliWrap.Buffered;
 using ControleFinanceiro.Application.IA;
+using ControleFinanceiro.Domain.Importacoes;
 using ControleFinanceiro.Mcp.Tests.Infraestrutura;
 using ModelContextProtocol.Client;
 using ModelContextProtocol.Protocol;
@@ -47,7 +48,27 @@ public sealed class ServidorMcpTests
                 "confirmar_pagamento_fatura",
 
                 "prever_importacao",
-                "confirmar_importacao");
+                "confirmar_importacao",
+                "prever_importacao_c6_conta_csv",
+                "confirmar_importacao_c6_conta_csv",
+                "prever_importacao_mercado_pago_conta_csv",
+                "confirmar_importacao_mercado_pago_conta_csv",
+                "prever_importacao_c6_cartao_csv",
+                "confirmar_importacao_c6_cartao_csv",
+                "prever_importacao_mercado_pago_cartao_csv",
+                "confirmar_importacao_mercado_pago_cartao_csv");
+    }
+
+    // Os nomes saem do código do layout, e não da Tools: um layout novo sem as suas ferramentas quebra este teste.
+    [Fact]
+    public async Task ListarFerramentas_Deve_TerUmaPreviaEUmaConfirmacaoPorLayout()
+    {
+        IList<McpClientTool> ferramentas = await _fixture.ClienteMcp.ListToolsAsync();
+
+        IEnumerable<string> esperadas = LayoutArquivoImportacao.List
+            .Select(layout => layout.Value.Replace('-', '_'))
+            .SelectMany(codigo => new[] { $"prever_importacao_{codigo}", $"confirmar_importacao_{codigo}" });
+        ferramentas.Select(ferramenta => ferramenta.Name).Should().Contain(esperadas);
     }
 
     // O cliente descarta o tipo em lista, como o ["string", "null"] do parâmetro anulável, e sem o tipo o modelo

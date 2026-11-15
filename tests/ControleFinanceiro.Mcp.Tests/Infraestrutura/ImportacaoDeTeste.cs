@@ -50,10 +50,6 @@ internal sealed class ImportacaoDeTeste
         _servidor = servidor;
     }
 
-    /// <summary>O vencimento que o usuário informa no layout de fatura sem o vencimento no arquivo; nulo nos outros.</summary>
-    public static string? VencimentoDoLayout(string layout) =>
-        layout == LayoutArquivoImportacao.C6CartaoCsv.Value ? VencimentoFaturaC6 : null;
-
     /// <summary>O caminho completo de um arquivo da pasta de origem, pelo caminho relativo que a ferramenta recebe.</summary>
     public static string Completo(string caminho) => Path.Combine(ServidorMcpFixture.RepositorioDeTeste, caminho);
 

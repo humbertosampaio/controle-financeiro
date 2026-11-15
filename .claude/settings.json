@@ -3,7 +3,11 @@
     "ask": [
       "mcp__controle-financeiro__confirmar_vinculo",
       "mcp__controle-financeiro__confirmar_pagamento_fatura",
-      "mcp__controle-financeiro__confirmar_importacao"
+      "mcp__controle-financeiro__confirmar_importacao",
+      "mcp__controle-financeiro__confirmar_importacao_c6_conta_csv",
+      "mcp__controle-financeiro__confirmar_importacao_mercado_pago_conta_csv",
+      "mcp__controle-financeiro__confirmar_importacao_c6_cartao_csv",
+      "mcp__controle-financeiro__confirmar_importacao_mercado_pago_cartao_csv"
     ]
   },
   "hooks": {

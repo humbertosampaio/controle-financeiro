@@ -30,7 +30,15 @@ public static class DependencyInjection
                 .WithTools<PreverPagamentoFaturaTool>()
                 .WithTools<ConfirmarPagamentoFaturaTool>()
                 .WithTools<PreverImportacaoTool>()
-                .WithTools<ConfirmarImportacaoTool>();
+                .WithTools<ConfirmarImportacaoTool>()
+                .WithTools<PreverImportacaoC6ContaCsvTool>()
+                .WithTools<ConfirmarImportacaoC6ContaCsvTool>()
+                .WithTools<PreverImportacaoMercadoPagoContaCsvTool>()
+                .WithTools<ConfirmarImportacaoMercadoPagoContaCsvTool>()
+                .WithTools<PreverImportacaoC6CartaoCsvTool>()
+                .WithTools<ConfirmarImportacaoC6CartaoCsvTool>()
+                .WithTools<PreverImportacaoMercadoPagoCartaoCsvTool>()
+                .WithTools<ConfirmarImportacaoMercadoPagoCartaoCsvTool>();
 
             return services
                 .AddTransient<IUsuarioAtual, UsuarioAtualConfigurado>()
