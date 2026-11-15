@@ -16,10 +16,10 @@ internal sealed class ConfirmarPagamentoFaturaTool
 {
     [McpServerTool(Name = Tools.ConfirmarPagamentoFatura, ReadOnly = false, Destructive = false, Idempotent = true, OpenWorld = false)]
     [McpMeta("anthropic/requiresUserInteraction", true)]
-    [Description("Grava o pagamento da fatura do cartão por uma saída da conta, depois de prever_pagamento_fatura. O usuário aprova a chamada no cliente, lendo o resumo; sem a aprovação, nada é gravado. Use os mesmos argumentos da prévia e o resumo dela sem alteração: se o pagamento recalculado não tiver esse resumo, por exemplo porque uma cobrança chegou depois da prévia, nada é gravado. Devolve a saída, as despesas pagas, o total e o resumo, ou o erro.")]
+    [Description($"Grava o pagamento da fatura do cartão por uma saída da conta, depois de {Tools.PreverPagamentoFatura}. O usuário aprova a chamada no cliente, lendo o resumo; sem a aprovação, nada é gravado. Use os mesmos argumentos da prévia e o resumo dela sem alteração: se o pagamento recalculado não tiver esse resumo, por exemplo porque uma cobrança chegou depois da prévia, nada é gravado. Devolve a saída, as despesas pagas, o total e o resumo, ou o erro.")]
     public static Task<PagamentoFaturaParaModelo> Confirmar(
         PagamentoFaturaParaModeloService pagamento,
-        [Description("O resumo devolvido por prever_pagamento_fatura, sem alteração.")] string resumo,
+        [Description($"O resumo devolvido por {Tools.PreverPagamentoFatura}, sem alteração.")] string resumo,
         [Description("O id da transação, o mesmo da prévia.")] Guid idTransacao,
         [Description("O id do cartão, o mesmo da prévia.")] Guid idCartao,
         [Description("O ano do vencimento, o mesmo da prévia.")] int ano,
