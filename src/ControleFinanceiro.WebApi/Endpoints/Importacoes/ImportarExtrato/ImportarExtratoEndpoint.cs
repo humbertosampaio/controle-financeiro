@@ -83,7 +83,7 @@ public sealed class ImportarExtratoEndpoint : Endpoint<ImportarExtratoRequest, I
             : Maybe<SufixoConta>.None;
     }
 
-    private static ImportarExtratoResponse Responder(ExtratoImportado importado)
+    private static ImportarExtratoResponse Responder(ExtratoImportadoDto importado)
     {
         return new ImportarExtratoResponse(
             importado.IdImportacao,

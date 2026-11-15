@@ -81,7 +81,7 @@ public sealed class ImportarFaturaEndpoint : Endpoint<ImportarFaturaRequest, Imp
             : Maybe<VencimentoFatura>.None;
     }
 
-    private static ImportarFaturaResponse Responder(FaturaImportada importada)
+    private static ImportarFaturaResponse Responder(FaturaImportadaDto importada)
     {
         return new ImportarFaturaResponse(
             importada.Vencimento,

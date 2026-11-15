@@ -40,16 +40,16 @@ public sealed class PendenciasImportacaoAppService
         return AliasesBeneficiarioPendentes.Listar(idUsuario, beneficiarios, extrato.Lancamentos);
     }
 
-    public async Task<PendenciasFatura> ListarDaFaturaAsync(IdUsuario idUsuario, Fatura fatura, CancellationToken ct)
+    public async Task<PendenciasFaturaDto> ListarDaFaturaAsync(IdUsuario idUsuario, Fatura fatura, CancellationToken ct)
     {
         IReadOnlyList<Cartao> cartoes = await _cartaoRepository.ListarAsync(ct);
         IReadOnlyList<Beneficiario> beneficiarios = await _beneficiarioRepository.ListarAsync(ct);
         IReadOnlyList<CategoriaDespesa> categorias = await _categoriaDespesaRepository.ListarAsync(ct);
         IReadOnlyList<Lancamento> lancamentos = fatura.Lancamentos.Select(l => l.Lancamento).ToArray();
 
-        return new PendenciasFatura(
+        return new PendenciasFaturaDto(
             fatura.Sufixos
-                .Select(sufixo => new PendenciasFatura.FinalCartao(sufixo, CartaoFactory.ObterDoFinal(idUsuario, cartoes, fatura.Banco, sufixo)))
+                .Select(sufixo => new PendenciasFaturaDto.FinalCartao(sufixo, CartaoFactory.ObterDoFinal(idUsuario, cartoes, fatura.Banco, sufixo)))
                 .ToArray(),
             AliasesBeneficiarioPendentes.Listar(idUsuario, beneficiarios, lancamentos),
             AliasesCategoriaPendentes.Listar(idUsuario, categorias, lancamentos));

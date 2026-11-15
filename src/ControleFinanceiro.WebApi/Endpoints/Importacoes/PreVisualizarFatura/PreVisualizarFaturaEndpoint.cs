@@ -101,7 +101,7 @@ public sealed class PreVisualizarFaturaEndpoint : Endpoint<PreVisualizarFaturaRe
 
     private async Task<PreVisualizarFaturaResponse> PreVisualizarAsync(IdUsuario idUsuario, Fatura fatura, CancellationToken ct)
     {
-        PendenciasFatura pendencias = await _pendenciasImportacaoAppService.ListarDaFaturaAsync(idUsuario, fatura, ct);
+        PendenciasFaturaDto pendencias = await _pendenciasImportacaoAppService.ListarDaFaturaAsync(idUsuario, fatura, ct);
 
         return new PreVisualizarFaturaResponse(
             fatura.Vencimento,
@@ -110,7 +110,7 @@ public sealed class PreVisualizarFaturaEndpoint : Endpoint<PreVisualizarFaturaRe
             pendencias.CategoriasBanco.Select(a => a.TextoOriginal).ToArray());
     }
 
-    private static PreVisualizarFaturaResponse.FinalCartao LerFinal(PendenciasFatura.FinalCartao final)
+    private static PreVisualizarFaturaResponse.FinalCartao LerFinal(PendenciasFaturaDto.FinalCartao final)
     {
         return final.Cartao.Match(
             Some: cartao => new PreVisualizarFaturaResponse.FinalCartao(final.Sufixo, Cadastrado: true, cartao.DiaVencimento, cartao.DiaFechamento),

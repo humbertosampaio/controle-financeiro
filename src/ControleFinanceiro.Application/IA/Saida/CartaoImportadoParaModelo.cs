@@ -43,7 +43,7 @@ public sealed record CartaoImportadoParaModelo : ISaidaModelo
         DespesasAdiadas = despesasAdiadas;
     }
 
-    public static CartaoImportadoParaModelo De(FaturaImportada.CartaoImportado cartao)
+    public static CartaoImportadoParaModelo De(FaturaImportadaDto.CartaoImportado cartao)
     {
         return new CartaoImportadoParaModelo(
             cartao.Sufixo,

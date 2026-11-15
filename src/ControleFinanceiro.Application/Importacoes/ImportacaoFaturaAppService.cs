@@ -57,7 +57,7 @@ public sealed class ImportacaoFaturaAppService
 
     /// <summary>Aplica a importação e grava, num commit só, se nada falhar.</summary>
     /// <param name="idUsuario">Um usuário que existe.</param>
-    public async Task<Result<FaturaImportada, Erro>> ImportarAsync(
+    public async Task<Result<FaturaImportadaDto, Erro>> ImportarAsync(
         IdUsuario idUsuario,
         LayoutArquivoImportacao layout,
         Fatura fatura,
@@ -73,7 +73,7 @@ public sealed class ImportacaoFaturaAppService
     /// e nenhum lote falhar. Não grava.
     /// </summary>
     /// <param name="idUsuario">Um usuário que existe.</param>
-    public async Task<Result<FaturaImportada, Erro>> AplicarAsync(
+    public async Task<Result<FaturaImportadaDto, Erro>> AplicarAsync(
         IdUsuario idUsuario,
         LayoutArquivoImportacao layout,
         Fatura fatura,
@@ -214,7 +214,7 @@ public sealed class ImportacaoFaturaAppService
     /// Cria as despesas adiadas das transações novas de todos os cartões de uma vez, para a previsão num final cobrir a
     /// compra de outro final da mesma fatura uma vez só.
     /// </param>
-    private async Task<FaturaImportada> AcrescentarAsync(
+    private async Task<FaturaImportadaDto> AcrescentarAsync(
         Fatura fatura,
         IReadOnlyList<LoteCartao> lotes,
         Func<IReadOnlyList<Transacao>, IReadOnlyList<DespesaAdiada>> criarAdiadas,
@@ -241,11 +241,11 @@ public sealed class ImportacaoFaturaAppService
             .Select(lote => lote.Cartao.ConferirVencimento(fatura.Vencimento))
             .FirstOrDefault(conferencia => conferencia.IsFailure, Result.Success());
 
-        return new FaturaImportada(
+        return new FaturaImportadaDto(
             fatura.Banco,
             fatura.Vencimento,
             acrescentados
-                .Select(acrescentado => new FaturaImportada.CartaoImportado(
+                .Select(acrescentado => new FaturaImportadaDto.CartaoImportado(
                     acrescentado.Lote.Importacao.Id,
                     acrescentado.Lote.Cartao.Id,
                     acrescentado.Lote.Cartao.Sufixo,

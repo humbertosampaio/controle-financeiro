@@ -138,7 +138,7 @@ public sealed record ImportacaoParaModelo : ISaidaModelo
         Pendencias = pendencias;
     }
 
-    public static ImportacaoParaModelo DoExtrato(LayoutArquivoImportacao layout, ExtratoImportado importado)
+    public static ImportacaoParaModelo DoExtrato(LayoutArquivoImportacao layout, ExtratoImportadoDto importado)
     {
         return new ImportacaoParaModelo(
             layout,
@@ -155,7 +155,7 @@ public sealed record ImportacaoParaModelo : ISaidaModelo
     }
 
     /// <param name="fatura">A fatura lida, de onde sai o período de todos os cartões.</param>
-    public static ImportacaoParaModelo DaFatura(LayoutArquivoImportacao layout, Fatura fatura, FaturaImportada importada)
+    public static ImportacaoParaModelo DaFatura(LayoutArquivoImportacao layout, Fatura fatura, FaturaImportadaDto importada)
     {
         DocumentoMascarado[] avisos = new[] { importada.PagamentoFaturaAnterior, importada.VencimentoCicloCartoes }
             .Where(conferencia => conferencia.IsFailure)

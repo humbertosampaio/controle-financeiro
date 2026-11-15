@@ -15,9 +15,9 @@ namespace ControleFinanceiro.SaidaModelo.Tests.Tipos;
 public sealed class ImportacaoParaModeloTests
 {
     [Theory, DomainAutoData]
-    public void Serializar_Quando_Extrato_Deve_TerSomenteOsCamposPermitidos(ExtratoImportado importado)
+    public void Serializar_Quando_Extrato_Deve_TerSomenteOsCamposPermitidos(ExtratoImportadoDto importado)
     {
-        ExtratoImportado semAvisos = importado with { PeriodoNaoImportado = Maybe<Periodo>.None, SomaPeriodo = Result.Success() };
+        ExtratoImportadoDto semAvisos = importado with { PeriodoNaoImportado = Maybe<Periodo>.None, SomaPeriodo = Result.Success() };
 
         JsonObject json = ImportacaoParaModelo.DoExtrato(LayoutArquivoImportacao.C6ContaCsv, semAvisos).Serializar();
 
@@ -26,7 +26,7 @@ public sealed class ImportacaoParaModeloTests
     }
 
     [Theory, DomainAutoData]
-    public void Serializar_Quando_Extrato_Deve_LevarOLayoutOBancoOPeriodoEAsContagens(ExtratoImportado importado)
+    public void Serializar_Quando_Extrato_Deve_LevarOLayoutOBancoOPeriodoEAsContagens(ExtratoImportadoDto importado)
     {
         JsonObject json = ImportacaoParaModelo.DoExtrato(LayoutArquivoImportacao.C6ContaCsv, importado).Serializar();
 
@@ -40,7 +40,7 @@ public sealed class ImportacaoParaModeloTests
     }
 
     [Theory, DomainAutoData]
-    public void Serializar_Quando_ExtratoComPeriodoNaoImportado_Deve_LevarOPeriodo(ExtratoImportado importado, Periodo naoImportado)
+    public void Serializar_Quando_ExtratoComPeriodoNaoImportado_Deve_LevarOPeriodo(ExtratoImportadoDto importado, Periodo naoImportado)
     {
         JsonObject json = ImportacaoParaModelo
             .DoExtrato(LayoutArquivoImportacao.C6ContaCsv, importado with { PeriodoNaoImportado = naoImportado })
@@ -50,9 +50,9 @@ public sealed class ImportacaoParaModeloTests
     }
 
     [Theory, DomainAutoData]
-    public void Serializar_Quando_SomaDoPeriodoNaoFecha_Deve_LevarOAvisoFixoSemOsValores(ExtratoImportado importado)
+    public void Serializar_Quando_SomaDoPeriodoNaoFecha_Deve_LevarOAvisoFixoSemOsValores(ExtratoImportadoDto importado)
     {
-        ExtratoImportado naoFecha = importado with { SomaPeriodo = Result.Failure("A soma de R$ 10,00 não fecha com R$ 12,00.") };
+        ExtratoImportadoDto naoFecha = importado with { SomaPeriodo = Result.Failure("A soma de R$ 10,00 não fecha com R$ 12,00.") };
 
         JsonObject json = ImportacaoParaModelo.DoExtrato(LayoutArquivoImportacao.C6ContaCsv, naoFecha).Serializar();
 
@@ -61,9 +61,9 @@ public sealed class ImportacaoParaModeloTests
     }
 
     [Theory, DomainAutoData]
-    public void Serializar_Quando_Fatura_Deve_TerSomenteOsCamposPermitidos(Fatura fatura, FaturaImportada importada)
+    public void Serializar_Quando_Fatura_Deve_TerSomenteOsCamposPermitidos(Fatura fatura, FaturaImportadaDto importada)
     {
-        FaturaImportada semAvisos = importada with { PagamentoFaturaAnterior = Result.Success(), VencimentoCicloCartoes = Result.Success() };
+        FaturaImportadaDto semAvisos = importada with { PagamentoFaturaAnterior = Result.Success(), VencimentoCicloCartoes = Result.Success() };
 
         JsonObject json = ImportacaoParaModelo.DaFatura(LayoutArquivoImportacao.C6CartaoCsv, fatura, semAvisos).Serializar();
 
@@ -74,7 +74,7 @@ public sealed class ImportacaoParaModeloTests
     }
 
     [Theory, DomainAutoData]
-    public void Serializar_Quando_Fatura_Deve_LevarCadaCartaoESomarAsContagens(Fatura fatura, FaturaImportada importada)
+    public void Serializar_Quando_Fatura_Deve_LevarCadaCartaoESomarAsContagens(Fatura fatura, FaturaImportadaDto importada)
     {
         JsonObject json = ImportacaoParaModelo.DaFatura(LayoutArquivoImportacao.C6CartaoCsv, fatura, importada).Serializar();
 
@@ -86,7 +86,7 @@ public sealed class ImportacaoParaModeloTests
     }
 
     [Theory, DomainAutoData]
-    public void Serializar_Quando_Fatura_Deve_LevarOPeriodoDeTodosOsCartoes(Fatura fatura, FaturaImportada importada)
+    public void Serializar_Quando_Fatura_Deve_LevarOPeriodoDeTodosOsCartoes(Fatura fatura, FaturaImportadaDto importada)
     {
         JsonObject json = ImportacaoParaModelo.DaFatura(LayoutArquivoImportacao.C6CartaoCsv, fatura, importada).Serializar();
 
@@ -94,7 +94,7 @@ public sealed class ImportacaoParaModeloTests
     }
 
     [Theory, DomainAutoData]
-    public void Serializar_Quando_Fatura_Deve_LevarOVencimento(Fatura fatura, FaturaImportada importada)
+    public void Serializar_Quando_Fatura_Deve_LevarOVencimento(Fatura fatura, FaturaImportadaDto importada)
     {
         JsonObject json = ImportacaoParaModelo.DaFatura(LayoutArquivoImportacao.C6CartaoCsv, fatura, importada).Serializar();
 
@@ -102,9 +102,9 @@ public sealed class ImportacaoParaModeloTests
     }
 
     [Theory, DomainAutoData]
-    public void Serializar_Quando_AvisosDaFatura_Deve_LevarOTextoDeCadaUmNaOrdem(Fatura fatura, FaturaImportada importada)
+    public void Serializar_Quando_AvisosDaFatura_Deve_LevarOTextoDeCadaUmNaOrdem(Fatura fatura, FaturaImportadaDto importada)
     {
-        FaturaImportada comAvisos = importada with
+        FaturaImportadaDto comAvisos = importada with
         {
             PagamentoFaturaAnterior = Result.Failure("Aviso fixo do pagamento."),
             VencimentoCicloCartoes = Result.Failure("Aviso fixo do ciclo."),
@@ -123,7 +123,7 @@ public sealed class ImportacaoParaModeloTests
         Fatura outraFatura,
         Cartao cartao,
         Cartao outroCartao,
-        FaturaImportada importada)
+        FaturaImportadaDto importada)
     {
         string[] avisos = AvisosReais(fatura, cartao, importada);
 
@@ -136,9 +136,9 @@ public sealed class ImportacaoParaModeloTests
     }
 
     [Theory, DomainAutoData]
-    public void Serializar_Quando_AvisoComDocumento_Deve_MascararODocumento(Fatura fatura, FaturaImportada importada, Cpf cpf)
+    public void Serializar_Quando_AvisoComDocumento_Deve_MascararODocumento(Fatura fatura, FaturaImportadaDto importada, Cpf cpf)
     {
-        FaturaImportada comAviso = importada with
+        FaturaImportadaDto comAviso = importada with
         {
             PagamentoFaturaAnterior = Result.Failure($"Aviso com o CPF {cpf}."),
             VencimentoCicloCartoes = Result.Success(),
@@ -165,8 +165,8 @@ public sealed class ImportacaoParaModeloTests
         IReadOnlyList<Alias> beneficiarios,
         IReadOnlyList<Alias> categorias)
     {
-        PendenciasFatura pendencias = new(
-            [new PendenciasFatura.FinalCartao(semCartao, Maybe<Cartao>.None), new PendenciasFatura.FinalCartao(cartao.Sufixo, cartao)],
+        PendenciasFaturaDto pendencias = new(
+            [new PendenciasFaturaDto.FinalCartao(semCartao, Maybe<Cartao>.None), new PendenciasFaturaDto.FinalCartao(cartao.Sufixo, cartao)],
             beneficiarios,
             categorias);
 
@@ -196,9 +196,9 @@ public sealed class ImportacaoParaModeloTests
     }
 
     [Theory, DomainAutoData]
-    public void Resumo_Quando_ExtratoComContaExistente_Deve_DescreverOArquivoEAsContagens(ExtratoImportado importado)
+    public void Resumo_Quando_ExtratoComContaExistente_Deve_DescreverOArquivoEAsContagens(ExtratoImportadoDto importado)
     {
-        ExtratoImportado contaExistente = importado with { ContaNova = false };
+        ExtratoImportadoDto contaExistente = importado with { ContaNova = false };
 
         string? resumo = ImportacaoParaModelo.DoExtrato(LayoutArquivoImportacao.C6ContaCsv, contaExistente).Resumo;
 
@@ -208,9 +208,9 @@ public sealed class ImportacaoParaModeloTests
     }
 
     [Theory, DomainAutoData]
-    public void Resumo_Quando_ExtratoComContaNova_Deve_DizerQueCriaAConta(ExtratoImportado importado)
+    public void Resumo_Quando_ExtratoComContaNova_Deve_DizerQueCriaAConta(ExtratoImportadoDto importado)
     {
-        ExtratoImportado contaNova = importado with { ContaNova = true, TipoConta = TipoConta.ContaCorrente };
+        ExtratoImportadoDto contaNova = importado with { ContaNova = true, TipoConta = TipoConta.ContaCorrente };
 
         string? resumo = ImportacaoParaModelo.DoExtrato(LayoutArquivoImportacao.C6ContaCsv, contaNova).Resumo;
 
@@ -218,11 +218,11 @@ public sealed class ImportacaoParaModeloTests
     }
 
     [Theory, DomainAutoData]
-    public void Resumo_Quando_Fatura_Deve_DescreverCadaCartaoSemOsIds(Fatura fatura, FaturaImportada importada)
+    public void Resumo_Quando_Fatura_Deve_DescreverCadaCartaoSemOsIds(Fatura fatura, FaturaImportadaDto importada)
     {
         string? resumo = ImportacaoParaModelo.DaFatura(LayoutArquivoImportacao.C6CartaoCsv, fatura, importada).Resumo;
 
-        FaturaImportada.CartaoImportado cartao = importada.Cartoes[0];
+        FaturaImportadaDto.CartaoImportado cartao = importada.Cartoes[0];
         resumo.Should()
             .StartWith($"Importa a fatura c6-cartao-csv do {importada.Banco.Name} com vencimento em {importada.Vencimento:dd/MM/yyyy}, de ")
             .And.Contain($"cartão final {cartao.Sufixo}, {cartao.Lidas} lidas, {cartao.Novas} novas e {cartao.JaExistentes} já existentes, ")
@@ -231,7 +231,7 @@ public sealed class ImportacaoParaModeloTests
     }
 
     [Theory, DomainAutoData]
-    public void ConfereResumo_Quando_ResumoDaPrevia_Deve_RetornarVerdadeiro(ExtratoImportado importado)
+    public void ConfereResumo_Quando_ResumoDaPrevia_Deve_RetornarVerdadeiro(ExtratoImportadoDto importado)
     {
         ImportacaoParaModelo importacao = ImportacaoParaModelo.DoExtrato(LayoutArquivoImportacao.C6ContaCsv, importado);
 
@@ -239,7 +239,7 @@ public sealed class ImportacaoParaModeloTests
     }
 
     [Theory, DomainAutoData]
-    public void ConfereResumo_Quando_OutroFinalDeConta_Deve_RetornarFalso(ExtratoImportado importado, SufixoConta outroFinal)
+    public void ConfereResumo_Quando_OutroFinalDeConta_Deve_RetornarFalso(ExtratoImportadoDto importado, SufixoConta outroFinal)
     {
         string resumo = ImportacaoParaModelo.DoExtrato(LayoutArquivoImportacao.MercadoPagoContaCsv, importado).Resumo!;
         ImportacaoParaModelo outraConta = ImportacaoParaModelo.DoExtrato(
@@ -250,7 +250,7 @@ public sealed class ImportacaoParaModeloTests
     }
 
     [Theory, DomainAutoData]
-    public void ConfereResumo_Quando_OutraContagem_Deve_RetornarFalso(ExtratoImportado importado)
+    public void ConfereResumo_Quando_OutraContagem_Deve_RetornarFalso(ExtratoImportadoDto importado)
     {
         string resumo = ImportacaoParaModelo.DoExtrato(LayoutArquivoImportacao.C6ContaCsv, importado).Resumo!;
         ImportacaoParaModelo repetida = ImportacaoParaModelo.DoExtrato(
@@ -264,10 +264,10 @@ public sealed class ImportacaoParaModeloTests
     /// Os avisos que a fatura gerada e o cartão de fato produzem: a fatura gerada não traz o pagamento da anterior, e o
     /// vencimento um dia antes do dia do cartão sai do ciclo.
     /// </summary>
-    private static string[] AvisosReais(Fatura fatura, Cartao cartao, FaturaImportada importada)
+    private static string[] AvisosReais(Fatura fatura, Cartao cartao, FaturaImportadaDto importada)
     {
         VencimentoFatura foraCiclo = (VencimentoFatura)cartao.VencimentoNoMes(fatura.Vencimento.Mes).Value.AddDays(-1);
-        FaturaImportada comAvisos = importada with
+        FaturaImportadaDto comAvisos = importada with
         {
             PagamentoFaturaAnterior = fatura.ConferirPagamentoAnterior(),
             VencimentoCicloCartoes = cartao.ConferirVencimento(foraCiclo),

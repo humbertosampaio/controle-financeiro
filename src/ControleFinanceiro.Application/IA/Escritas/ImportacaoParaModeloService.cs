@@ -137,7 +137,7 @@ public sealed class ImportacaoParaModeloService
             return ImportacaoParaModelo.Falha(ErrosParaModelo.Importacao.ArquivoInvalido(lido.Error));
 
         Extrato extrato = lido.Value;
-        Result<ExtratoImportado, Erro> importado = await _importacaoExtratoAppService.AplicarAsync(_usuarioAtual.Id, layout, extrato, cancellationToken);
+        Result<ExtratoImportadoDto, Erro> importado = await _importacaoExtratoAppService.AplicarAsync(_usuarioAtual.Id, layout, extrato, cancellationToken);
         if (importado.IsSuccess)
             return ImportacaoParaModelo.DoExtrato(layout, importado.Value);
 
@@ -164,7 +164,7 @@ public sealed class ImportacaoParaModeloService
             return ImportacaoParaModelo.Falha(ErrosParaModelo.Importacao.ArquivoInvalido(lida.Error));
 
         Fatura fatura = lida.Value;
-        Result<FaturaImportada, Erro> importada = await _importacaoFaturaAppService.AplicarAsync(_usuarioAtual.Id, layout, fatura, cancellationToken);
+        Result<FaturaImportadaDto, Erro> importada = await _importacaoFaturaAppService.AplicarAsync(_usuarioAtual.Id, layout, fatura, cancellationToken);
         if (importada.IsSuccess)
             return ImportacaoParaModelo.DaFatura(layout, fatura, importada.Value);
 
@@ -172,7 +172,7 @@ public sealed class ImportacaoParaModeloService
         if (!PedePendencias(importada.Error))
             return ImportacaoParaModelo.Falha(erro);
 
-        PendenciasFatura pendencias = await _pendenciasImportacaoAppService.ListarDaFaturaAsync(_usuarioAtual.Id, fatura, cancellationToken);
+        PendenciasFaturaDto pendencias = await _pendenciasImportacaoAppService.ListarDaFaturaAsync(_usuarioAtual.Id, fatura, cancellationToken);
         return ImportacaoParaModelo.Falha(erro, PendenciasImportacaoParaModelo.DaFatura(pendencias));
     }
 

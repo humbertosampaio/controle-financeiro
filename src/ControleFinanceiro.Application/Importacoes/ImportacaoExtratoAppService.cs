@@ -49,7 +49,7 @@ public sealed class ImportacaoExtratoAppService
 
     /// <summary>Aplica a importação e grava, num commit só, se nada falhar.</summary>
     /// <param name="idUsuario">Um usuário que existe.</param>
-    public async Task<Result<ExtratoImportado, Erro>> ImportarAsync(
+    public async Task<Result<ExtratoImportadoDto, Erro>> ImportarAsync(
         IdUsuario idUsuario,
         LayoutArquivoImportacao layout,
         Extrato extrato,
@@ -63,7 +63,7 @@ public sealed class ImportacaoExtratoAppService
     /// Obtém a conta, registra a importação e monta o lote; só acrescenta ao escopo se nenhum deles falhar. Não grava.
     /// </summary>
     /// <param name="idUsuario">Um usuário que existe.</param>
-    public async Task<Result<ExtratoImportado, Erro>> AplicarAsync(
+    public async Task<Result<ExtratoImportadoDto, Erro>> AplicarAsync(
         IdUsuario idUsuario,
         LayoutArquivoImportacao layout,
         Extrato extrato,
@@ -100,7 +100,7 @@ public sealed class ImportacaoExtratoAppService
             .Map(transacoes => (conta, importacao, transacoes));
     }
 
-    private async Task<ExtratoImportado> AcrescentarAsync(
+    private async Task<ExtratoImportadoDto> AcrescentarAsync(
         Extrato extrato,
         IReadOnlyList<ContaBancaria> contasDoUsuario,
         LoteConta lote,
@@ -121,7 +121,7 @@ public sealed class ImportacaoExtratoAppService
         await _importacaoRepository.AdicionarAsync(importacao, ct);
         IReadOnlyList<Transacao> novas = await _transacaoRepository.AdicionarNovasAsync(transacoes, ct);
 
-        return new ExtratoImportado(
+        return new ExtratoImportadoDto(
             importacao.Id,
             conta.Id,
             contaNova,

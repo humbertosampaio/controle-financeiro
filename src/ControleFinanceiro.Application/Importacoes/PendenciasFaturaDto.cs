@@ -17,8 +17,8 @@ namespace ControleFinanceiro.Application.Importacoes;
 /// As categorias que o banco deu aos lançamentos que ainda não são alias de nenhuma categoria do usuário, uma por forma
 /// normalizada, na ordem do arquivo. Vazia no layout que não traz categoria.
 /// </param>
-public sealed record PendenciasFatura(
-    IReadOnlyList<PendenciasFatura.FinalCartao> Finais,
+public sealed record PendenciasFaturaDto(
+    IReadOnlyList<PendenciasFaturaDto.FinalCartao> Finais,
     IReadOnlyList<Alias> Beneficiarios,
     IReadOnlyList<Alias> CategoriasBanco)
 {

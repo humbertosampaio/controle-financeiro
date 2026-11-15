@@ -12,7 +12,7 @@ namespace ControleFinanceiro.Application.Importacoes;
 /// <param name="ContaNova">Verdadeiro quando a importação criou a conta.</param>
 /// <param name="PeriodoNaoImportado">Os dias entre a importação anterior da conta e esta que nenhum arquivo cobriu.</param>
 /// <param name="SomaPeriodo">Falha, com o aviso em texto, quando a soma das transações gravadas no período não fecha com a do arquivo.</param>
-public sealed record ExtratoImportado(
+public sealed record ExtratoImportadoDto(
     IdImportacao IdImportacao,
     IdConta IdConta,
     bool ContaNova,
