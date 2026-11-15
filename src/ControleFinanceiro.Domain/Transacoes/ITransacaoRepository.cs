@@ -23,4 +23,10 @@ public interface ITransacaoRepository
 
     /// <summary>As transações de todas as origens com a data dentro do mês, em ordem de data.</summary>
     Task<IReadOnlyList<Transacao>> ListarDoMesAsync(MesReferencia mesReferencia, CancellationToken cancellationToken);
+
+    /// <summary>
+    /// As transações de cartão trazidas pela fatura que vence no <paramref name="mesVencimento"/>, pelo
+    /// <see cref="Transacao.MesVencimentoFatura"/>, de qualquer cartão.
+    /// </summary>
+    Task<IReadOnlyList<Transacao>> ListarTransacoesFaturaEmAsync(MesReferencia mesVencimento, CancellationToken cancellationToken);
 }

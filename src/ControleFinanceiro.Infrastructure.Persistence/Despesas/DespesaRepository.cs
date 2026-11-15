@@ -48,6 +48,20 @@ internal sealed class DespesaRepository : IDespesaRepository
             .ToListAsync(cancellationToken);
     }
 
+    public async Task<IReadOnlyList<Despesa>> ListarPagasPorAsync(IReadOnlyCollection<IdTransacao> idsTransacao, CancellationToken cancellationToken)
+    {
+        if (idsTransacao.Count == 0)
+            return [];
+
+        // O id é anulável na coluna: a lista vai como IdTransacao?, para o Contains comparar o mesmo tipo.
+        IdTransacao?[] ids = idsTransacao.Select(id => (IdTransacao?)id).ToArray();
+
+        return await _dbSet
+            .Where(d => (d is DespesaInteira && ids.Contains(((DespesaInteira)d).Pagamento.IdTransacao))
+                || (d is DespesaParcelada && ((DespesaParcelada)d).Parcelas.Any(p => ids.Contains(p.Pagamento.IdTransacao))))
+            .ToListAsync(cancellationToken);
+    }
+
     public async Task AdicionarAsync(IEnumerable<Despesa> despesas, CancellationToken cancellationToken) =>
         await _dbSet.AddRangeAsync(despesas, cancellationToken);
 }

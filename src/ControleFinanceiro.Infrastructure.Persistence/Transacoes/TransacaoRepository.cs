@@ -65,6 +65,13 @@ internal sealed class TransacaoRepository : ITransacaoRepository
             .ToListAsync(cancellationToken);
     }
 
+    public async Task<IReadOnlyList<Transacao>> ListarTransacoesFaturaEmAsync(MesReferencia mesVencimento, CancellationToken cancellationToken)
+    {
+        return await _dbSet
+            .Where(t => t.MesVencimentoFatura == mesVencimento)
+            .ToListAsync(cancellationToken);
+    }
+
     // Um filtro por coluna, e não a comparação das duas, para a consulta usar o índice da conta ou o do cartão.
     private IQueryable<Transacao> DaOrigem(OrigemTransacao origem)
     {
