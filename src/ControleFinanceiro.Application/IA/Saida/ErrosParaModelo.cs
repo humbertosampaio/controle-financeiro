@@ -91,7 +91,14 @@ public static class ErrosParaModelo
 
         public static readonly ErroParaModelo IdentificadorRepetido = Fixo("O arquivo repete o identificador de um lançamento, e nada foi importado: peça ao usuário para conferir o arquivo.");
 
-        public static readonly ErroParaModelo ResumoDivergente = Fixo($"O resumo não corresponde à importação desse arquivo, e nada foi gravado: o arquivo mudou ou já foi importado. Chame {Tools.PreverImportacao} de novo, mostre o novo resumo ao usuário e confirme com ele sem alteração.");
+        /// <summary>A ferramenta de prévia de cada layout, que o resumo divergente manda chamar de novo.</summary>
+        private static readonly Dictionary<LayoutArquivoImportacao, string> _previaPorLayout = new()
+        {
+            [LayoutArquivoImportacao.C6ContaCsv] = Tools.PreverImportacaoC6ContaCsv,
+            [LayoutArquivoImportacao.MercadoPagoContaCsv] = Tools.PreverImportacaoMercadoPagoContaCsv,
+            [LayoutArquivoImportacao.C6CartaoCsv] = Tools.PreverImportacaoC6CartaoCsv,
+            [LayoutArquivoImportacao.MercadoPagoCartaoCsv] = Tools.PreverImportacaoMercadoPagoCartaoCsv,
+        };
 
         private static readonly Dictionary<FalhaOrigemArquivoImportacao, ErroParaModelo> _porFalhaOrigem = new()
         {
@@ -110,6 +117,10 @@ public static class ErrosParaModelo
             [TipoFalhaLeituraArquivo.LancamentoInvalido] = "traz um lançamento que a importação não aceita, e nada foi importado: peça ao usuário para conferir essa linha.",
             [TipoFalhaLeituraArquivo.ConteudoInvalido] = "não fecha com o layout escolhido, no cabeçalho, nos saldos ou nos lançamentos, e nada foi importado: peça ao usuário para importar pela API, que mostra o motivo.",
         };
+
+        /// <summary>A mensagem fixa de quando o resumo da confirmação não é o da importação recalculada, com a prévia do layout.</summary>
+        public static ErroParaModelo ResumoDivergente(LayoutArquivoImportacao layout) =>
+            Fixo($"O resumo não corresponde à importação desse arquivo, e nada foi gravado: o arquivo mudou ou já foi importado. Chame {_previaPorLayout[layout]} de novo, mostre o novo resumo ao usuário e confirme com ele sem alteração.");
 
         /// <summary>A mensagem fixa de quando a origem não abriu o arquivo, sem repetir o caminho.</summary>
         public static ErroParaModelo De(FalhaOrigemArquivoImportacao falha) => _porFalhaOrigem[falha];

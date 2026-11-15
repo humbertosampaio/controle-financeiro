@@ -22,4 +22,9 @@ public static class Tools
 
     public const string PreverImportacao = "prever_importacao";
     public const string ConfirmarImportacao = "confirmar_importacao";
+
+    public const string PreverImportacaoC6ContaCsv = "prever_importacao_c6_conta_csv";
+    public const string PreverImportacaoMercadoPagoContaCsv = "prever_importacao_mercado_pago_conta_csv";
+    public const string PreverImportacaoC6CartaoCsv = "prever_importacao_c6_cartao_csv";
+    public const string PreverImportacaoMercadoPagoCartaoCsv = "prever_importacao_mercado_pago_cartao_csv";
 }

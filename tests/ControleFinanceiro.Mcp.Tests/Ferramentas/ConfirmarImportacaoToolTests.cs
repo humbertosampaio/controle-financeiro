@@ -115,7 +115,7 @@ public sealed class ConfirmarImportacaoToolTests : IAsyncLifetime
             "mercado-pago-conta-csv",
             sufixoConta: "9999");
 
-        ErroLido.DoEnvelope(resultado.Json).Mensagem.Should().Be(ErrosParaModelo.Importacao.ResumoDivergente.Mensagem);
+        ErroLido.DoEnvelope(resultado.Json).Mensagem.Should().Be(ErrosParaModelo.Importacao.ResumoDivergente(LayoutArquivoImportacao.MercadoPagoContaCsv).Mensagem);
         (await _importacao.LerGravadoAsync()).Should().Be(Gravado.Nada);
     }
 
@@ -174,7 +174,7 @@ public sealed class ConfirmarImportacaoToolTests : IAsyncLifetime
             "c6-cartao-csv",
             vencimento: "2026-04-12");
 
-        ErroLido.DoEnvelope(resultado.Json).Mensagem.Should().Be(ErrosParaModelo.Importacao.ResumoDivergente.Mensagem);
+        ErroLido.DoEnvelope(resultado.Json).Mensagem.Should().Be(ErrosParaModelo.Importacao.ResumoDivergente(LayoutArquivoImportacao.C6CartaoCsv).Mensagem);
         (await _importacao.LerGravadoAsync()).Should().Be(Gravado.Nada);
     }
 
@@ -207,7 +207,7 @@ public sealed class ConfirmarImportacaoToolTests : IAsyncLifetime
             ImportacaoDeTeste.ExtratoC6,
             "c6-conta-csv");
 
-        ErroLido.DoEnvelope(resultado.Json).Mensagem.Should().Be(ErrosParaModelo.Importacao.ResumoDivergente.Mensagem);
+        ErroLido.DoEnvelope(resultado.Json).Mensagem.Should().Be(ErrosParaModelo.Importacao.ResumoDivergente(LayoutArquivoImportacao.C6ContaCsv).Mensagem);
         (await _importacao.LerGravadoAsync()).Should().Be(Gravado.Nada);
     }
 
@@ -221,7 +221,7 @@ public sealed class ConfirmarImportacaoToolTests : IAsyncLifetime
 
         CallToolResult resultado = await _servidor.ClienteMcp.ConfirmarImportacaoAsync(resumo, ImportacaoDeTeste.ExtratoC6, "c6-conta-csv");
 
-        ErroLido.DoEnvelope(resultado.Json).Mensagem.Should().Be(ErrosParaModelo.Importacao.ResumoDivergente.Mensagem);
+        ErroLido.DoEnvelope(resultado.Json).Mensagem.Should().Be(ErrosParaModelo.Importacao.ResumoDivergente(LayoutArquivoImportacao.C6ContaCsv).Mensagem);
         (await _importacao.LerGravadoAsync()).Should().Be(depoisDaPrimeira);
     }
 

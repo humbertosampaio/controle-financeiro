@@ -95,7 +95,7 @@ public sealed class ImportacaoParaModeloService
             return aplicada.Saida;
 
         if (!aplicada.Saida.ConfereResumo(resumo))
-            return ImportacaoParaModelo.Falha(ErrosParaModelo.Importacao.ResumoDivergente);
+            return ImportacaoParaModelo.Falha(ErrosParaModelo.Importacao.ResumoDivergente(LayoutArquivoImportacao.FromValue(layout)));
 
         await _unitOfWork.CommitAsync(cancellationToken);
 

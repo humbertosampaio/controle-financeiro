@@ -53,7 +53,10 @@ public sealed class ErrosParaModeloTests
         ErrosParaModelo.Importacao.BeneficiariosNaoResolvidos,
         ErrosParaModelo.Importacao.CategoriasNaoResolvidas,
         ErrosParaModelo.Importacao.IdentificadorRepetido,
-        ErrosParaModelo.Importacao.ResumoDivergente);
+        ErrosParaModelo.Importacao.ResumoDivergente(LayoutArquivoImportacao.C6ContaCsv),
+        ErrosParaModelo.Importacao.ResumoDivergente(LayoutArquivoImportacao.MercadoPagoContaCsv),
+        ErrosParaModelo.Importacao.ResumoDivergente(LayoutArquivoImportacao.C6CartaoCsv),
+        ErrosParaModelo.Importacao.ResumoDivergente(LayoutArquivoImportacao.MercadoPagoCartaoCsv));
 
     public static readonly TheoryData<Erro, ErroParaModelo> ErrosDoDominio = new()
     {
@@ -79,6 +82,26 @@ public sealed class ErrosParaModeloTests
         { FalhaOrigemArquivoImportacao.NaoEncontrado, ErrosParaModelo.Importacao.ArquivoNaoEncontrado },
         { FalhaOrigemArquivoImportacao.GrandeDemais, ErrosParaModelo.Importacao.ArquivoGrandeDemais },
     };
+
+    [Theory]
+    [InlineData("c6-conta-csv", "prever_importacao_c6_conta_csv")]
+    [InlineData("mercado-pago-conta-csv", "prever_importacao_mercado_pago_conta_csv")]
+    [InlineData("c6-cartao-csv", "prever_importacao_c6_cartao_csv")]
+    [InlineData("mercado-pago-cartao-csv", "prever_importacao_mercado_pago_cartao_csv")]
+    public void ResumoDivergente_Deve_CitarAPreviaDoLayout(string layout, string previa)
+    {
+        ErrosParaModelo.Importacao.ResumoDivergente(LayoutArquivoImportacao.FromValue(layout)).Mensagem.Should()
+            .Be($"O resumo não corresponde à importação desse arquivo, e nada foi gravado: o arquivo mudou ou já foi importado. Chame {previa} de novo, mostre o novo resumo ao usuário e confirme com ele sem alteração.");
+    }
+
+    // Um layout novo sem a sua prévia no dicionário quebra este teste, e não a confirmação.
+    [Fact]
+    public void ResumoDivergente_Deve_TerAPreviaDeCadaLayout()
+    {
+        Action act = () => _ = LayoutArquivoImportacao.List.Select(ErrosParaModelo.Importacao.ResumoDivergente).ToArray();
+
+        act.Should().NotThrow();
+    }
 
     [Theory, MemberData(nameof(Erros))]
     public void Serializar_Deve_TerSomenteAMensagem(ErroParaModelo erro)
