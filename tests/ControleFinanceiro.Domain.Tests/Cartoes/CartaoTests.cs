@@ -3,6 +3,7 @@ using ControleFinanceiro.Domain.Despesas;
 using ControleFinanceiro.Domain.Shared.ValueObjects;
 using ControleFinanceiro.Tests.Shared;
 using ControleFinanceiro.Tests.Shared.AutoFixture.Attributes;
+using CSharpFunctionalExtensions;
 
 namespace ControleFinanceiro.Domain.Tests.Cartoes;
 
@@ -59,6 +60,30 @@ public sealed class CartaoTests
         VencimentoFatura result = sut.VencimentoDaCompra(dataCompra);
 
         result.Should().Be(new VencimentoFatura(sut.MesVencimento(dataCompra), sut.DiaVencimento));
+    }
+
+    [Theory]
+    [InlineDomainAutoData(0)]
+    [InlineDomainAutoData(Cartao.ToleranciaDiasVencimento)]
+    public void ConferirVencimento_Quando_DoDiaCadastradoAteATolerancia_Deve_TerSucesso(int diasDepois, Cartao sut, MesReferencia mes)
+    {
+        DateOnly vencimento = mes.NoDia(sut.DiaVencimento).AddDays(diasDepois);
+
+        Result result = sut.ConferirVencimento(vencimento);
+
+        result.Should().Succeed();
+    }
+
+    [Theory]
+    [InlineDomainAutoData(-1)]
+    [InlineDomainAutoData(Cartao.ToleranciaDiasVencimento + 1)]
+    public void ConferirVencimento_Quando_AntesDoDiaCadastradoOuDepoisDaTolerancia_Deve_FalharComOAviso(int diasDepois, Cartao sut, MesReferencia mes)
+    {
+        DateOnly vencimento = mes.NoDia(sut.DiaVencimento).AddDays(diasDepois);
+
+        Result result = sut.ConferirVencimento(vencimento);
+
+        result.Should().FailWith("O vencimento da fatura não fecha com o dia de vencimento cadastrado no cartão: confira a data do vencimento e o ciclo do cartão.");
     }
 
     [Theory, DomainAutoData]

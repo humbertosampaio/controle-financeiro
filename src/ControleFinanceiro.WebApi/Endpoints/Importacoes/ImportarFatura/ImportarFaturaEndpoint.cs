@@ -61,7 +61,7 @@ public sealed class ImportarFaturaEndpoint : Endpoint<ImportarFaturaRequest, Imp
             .Map(Responder)
             .Match(
                 resposta => Send.OkAsync(resposta, ct),
-                falha => EnviarFalhaAsync(falha, ct));
+                falha => EnviarFalhaAsync(layout, falha, ct));
     }
 
     private async Task<Result<Fatura, Falha>> LerAsync(LayoutArquivoImportacao layout, ImportarFaturaRequest req, CancellationToken ct)
@@ -98,12 +98,22 @@ public sealed class ImportarFaturaEndpoint : Endpoint<ImportarFaturaRequest, Imp
             importada.PagamentoFaturaAnterior.IsFailure ? importada.PagamentoFaturaAnterior.Error : null);
     }
 
-    private async Task EnviarFalhaAsync(Falha falha, CancellationToken ct)
+    private async Task EnviarFalhaAsync(LayoutArquivoImportacao layout, Falha falha, CancellationToken ct)
     {
         switch (falha)
         {
             case Falha.Arquivo(string mensagem):
                 AddError(r => r.Arquivo, mensagem);
+                await Send.ErrorsAsync(StatusCodes.Status422UnprocessableEntity, ct);
+                break;
+
+            case Falha.Dominio(ErroVencimentoIncompativelComFatura erro) when LayoutArquivoImportacao.FaturasVencimentoInformado.Contains(layout):
+                AddError(r => r.DataVencimento, erro.Descricao);
+                await Send.ErrorsAsync(StatusCodes.Status422UnprocessableEntity, ct);
+                break;
+
+            case Falha.Dominio(ErroVencimentoIncompativelComFatura erro):
+                AddError(r => r.Arquivo, erro.Descricao);
                 await Send.ErrorsAsync(StatusCodes.Status422UnprocessableEntity, ct);
                 break;
 

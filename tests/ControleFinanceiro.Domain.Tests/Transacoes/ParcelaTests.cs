@@ -75,4 +75,14 @@ public sealed class ParcelaTests
     {
         ((Parcela)(3, 10)).Should().NotBe((Parcela)(3, 12));
     }
+
+    [Theory]
+    [InlineData(1, 0)]
+    [InlineData(9, 8)]
+    public void QuantidadeParcelasAnteriores_Deve_ContarAsParcelasAntesDesta(int numero, int anteriores)
+    {
+        Parcela sut = (Parcela)(numero, 10);
+
+        sut.QuantidadeParcelasAnteriores.Should().Be(anteriores);
+    }
 }

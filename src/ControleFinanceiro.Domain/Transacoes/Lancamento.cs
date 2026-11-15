@@ -36,6 +36,16 @@ public sealed class Lancamento : ValueObject
     /// <summary>Preenchida quando o layout traz a parcela; nula na compra à vista e nos layouts sem parcela.</summary>
     public Parcela? Parcela { get; }
 
+    /// <summary>Verdadeiro quando o lançamento não traz parcela: a compra à vista, ou a entrada.</summary>
+    public bool EhAVista => Parcela is null;
+
+    /// <summary>
+    /// O primeiro mês em que este lançamento pode vencer: o mês da <see cref="Data"/>, avançado um mês por parcela
+    /// anterior a ele. A parcela traz a data da compra original, e cada parcela anterior venceu numa fatura antes desta;
+    /// o lançamento à vista não avança.
+    /// </summary>
+    public MesReferencia PrimeiroMesVencimentoPossivel => Data.AddMonths(Parcela?.QuantidadeParcelasAnteriores ?? 0);
+
     /// <summary>
     /// A categoria que o banco deu à compra, aparada; nula quando o layout não traz ou traz em branco. Não entra
     /// na <see cref="Identidade"/>.

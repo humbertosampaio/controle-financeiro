@@ -15,8 +15,8 @@ using LoteCartao = (ControleFinanceiro.Domain.Cartoes.Cartao Cartao, ControleFin
 namespace ControleFinanceiro.Application.Importacoes;
 
 /// <summary>
-/// O que a importação de uma fatura faz depois de ler o arquivo, em qualquer rota: confere que todo final já tem
-/// cartão e que todo texto de beneficiário e toda categoria do banco já são alias e acrescenta, de cada cartão, a
+/// O que a importação de uma fatura faz depois de ler o arquivo, em qualquer rota: confere o vencimento com as compras
+/// (<see cref="Fatura.ConferirVencimento"/>), que todo final já tem cartão e que todo texto de beneficiário e toda categoria do banco já são alias e acrescenta, de cada cartão, a
 /// importação, só as transações novas e as despesas parceladas que faltam, e, das compras à vista novas sem despesa
 /// prevista, as despesas adiadas já cobradas. O <see cref="AplicarAsync"/> deixa tudo no escopo sem gravar, para a
 /// prévia que descarta o escopo; o <see cref="ImportarAsync"/> grava num commit só. Nada é gravado quando o resultado é
@@ -66,8 +66,8 @@ public sealed class ImportacaoFaturaService
     }
 
     /// <summary>
-    /// Obtém os cartões e monta o lote de cada um; só acrescenta ao escopo se nenhum final ficar sem cartão e nenhum
-    /// lote falhar. Não grava.
+    /// Confere o vencimento, obtém os cartões e monta o lote de cada um; só acrescenta ao escopo se o vencimento fechar
+    /// com as compras, nenhum final ficar sem cartão e nenhum lote falhar. Não grava.
     /// </summary>
     /// <param name="idUsuario">Um usuário que existe.</param>
     public async Task<Result<FaturaImportada, Erro>> AplicarAsync(
@@ -82,8 +82,9 @@ public sealed class ImportacaoFaturaService
         IReadOnlyList<DespesaParcelada> parceladasDoUsuario = await _despesaRepository.ListarParceladasAsync(ct);
         IReadOnlyList<DespesaAdiada> adiadasDoUsuario = await _despesaRepository.ListarAdiadasAsync(ct);
 
-        return await CartaoFactory
-            .ObterDosFinais(idUsuario, cartoesDoUsuario, fatura.Banco, fatura.Sufixos)
+        return await fatura
+            .ConferirVencimento()
+            .Bind(() => CartaoFactory.ObterDosFinais(idUsuario, cartoesDoUsuario, fatura.Banco, fatura.Sufixos))
             .Bind(cartoes => MontarLotes(idUsuario, beneficiariosDoUsuario, categoriasDoUsuario, parceladasDoUsuario, layout, fatura, cartoes))
             .Map(lotes => AcrescentarAsync(fatura, lotes, novas => DespesaAdiadaFactory.CriarDaFatura(
                 idUsuario,

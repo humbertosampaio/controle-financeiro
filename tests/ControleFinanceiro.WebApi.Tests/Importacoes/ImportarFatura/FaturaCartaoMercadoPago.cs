@@ -36,6 +36,9 @@ internal static class FaturaCartaoMercadoPago
     /// <summary>O arquivo com as duas compras iguais trazendo também o mesmo número da transação.</summary>
     public static byte[] ComLinhasIguais() => Trocar("\"100000000006\"", "\"100000000005\"");
 
+    /// <summary>O arquivo com outro vencimento em toda linha, antes das compras de março.</summary>
+    public static byte[] ComVencimentoAntesDasCompras() => Trocar("\"04/2026\";\"10/04/2026\";", "\"03/2026\";\"01/03/2026\";");
+
     /// <summary>O arquivo com a coluna <c>status</c> renomeada, fora do prompt.</summary>
     public static byte[] ComColunaRenomeada() => Trocar("\"status\"", "\"situacao\"");
 

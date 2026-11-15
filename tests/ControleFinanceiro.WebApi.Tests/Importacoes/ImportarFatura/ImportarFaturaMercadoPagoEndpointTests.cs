@@ -169,6 +169,22 @@ public sealed class ImportarFaturaMercadoPagoEndpointTests : IAsyncLifetime
     }
 
     [Theory, ApiAutoData]
+    public async Task Post_Quando_VencimentoDoArquivoAntesDasCompras_Deve_RetornarErroNoArquivoSemGravar(CadastrarUsuarioRequest cadastro)
+    {
+        Guid idUsuario = await _api.CadastrarUsuarioAsync(cadastro);
+        await ResolverPendenciasAsync(idUsuario, FaturaCartaoMercadoPago.Completo());
+
+        using HttpResponseMessage resposta = await _api.ImportarFaturaAsync(
+            idUsuario,
+            LayoutArquivoImportacao.MercadoPagoCartaoCsv,
+            FaturaCartaoMercadoPago.ComVencimentoAntesDasCompras());
+
+        resposta.StatusCode.Should().Be(HttpStatusCode.UnprocessableEntity);
+        (await resposta.CamposComErroAsync()).Should().Equal("arquivo");
+        await _api.DeveEstarSemImportacaoAsync();
+    }
+
+    [Theory, ApiAutoData]
     public async Task Post_Quando_VencimentoNoLayoutQueOTraz_Deve_RetornarErroNoVencimentoSemGravar(CadastrarUsuarioRequest cadastro)
     {
         Guid idUsuario = await _api.CadastrarUsuarioAsync(cadastro);

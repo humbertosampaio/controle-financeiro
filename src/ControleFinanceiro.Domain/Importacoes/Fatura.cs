@@ -1,4 +1,5 @@
 using ControleFinanceiro.Domain.Cartoes;
+using ControleFinanceiro.Domain.Shared;
 using ControleFinanceiro.Domain.Shared.ValueObjects;
 using ControleFinanceiro.Domain.Transacoes;
 
@@ -19,6 +20,12 @@ public sealed class Fatura : ValueObject
     /// <summary>A falha do <see cref="ConferirPagamentoAnterior"/>: um texto fixo, sem dado do arquivo.</summary>
     public const string AvisoSemPagamentoAnterior =
         "A fatura não traz o pagamento da fatura anterior: se não é a primeira fatura do cartão, confira se o layout do banco mudou.";
+
+    /// <summary>
+    /// Quantos meses, no máximo, a parcela de uma compra que a fatura traz vence depois do mês da compra, contada a partir
+    /// da primeira: nenhum ciclo cadastrável põe a primeira fatura de uma compra mais longe que isso.
+    /// </summary>
+    public const int MaximoMesesAteVencimento = 2;
 
     private readonly List<LancamentoFatura> _lancamentos;
     private readonly List<SufixoCartao> _sufixos;
@@ -78,6 +85,43 @@ public sealed class Fatura : ValueObject
         return Result.SuccessIf(
             _lancamentos.Any(l => l.Lancamento.EhPagamentoFatura),
             AvisoSemPagamentoAnterior);
+    }
+
+    /// <summary>
+    /// Confere o vencimento com as compras, as saídas da fatura: a entrada, como o pagamento da fatura anterior e o
+    /// estorno, não tem o que conferir. Falha quando uma compra à vista é do dia do vencimento ou depois, ou quando,
+    /// para a parcela <c>n</c> de uma compra (a compra à vista conta como a parcela 1), o mês do vencimento fica antes do
+    /// mês da compra avançado <c>n − 1</c> meses ou mais de <see cref="MaximoMesesAteVencimento"/> meses depois dele.
+    /// </summary>
+    public UnitResult<Erro> ConferirVencimento()
+    {
+        bool confere = Compras.All(compra => CompraAVistaAntesDoVencimento(compra) && ParcelaVenceNestaFatura(compra));
+
+        return UnitResult.SuccessIf<Erro>(confere, ErroVencimentoIncompativelComFatura.Instancia);
+    }
+
+    /// <summary>As saídas da fatura. As entradas, como o pagamento da fatura anterior e o estorno, ficam de fora.</summary>
+    private IEnumerable<Lancamento> Compras => _lancamentos.Select(l => l.Lancamento).Where(l => l.EhSaida);
+
+    /// <summary>
+    /// A fatura fecha antes de vencer, então a compra à vista dela é anterior ao vencimento. A parcela traz a data da
+    /// compra original, que é antiga, e fica de fora.
+    /// </summary>
+    /// <param name="compra">Uma saída da fatura.</param>
+    private bool CompraAVistaAntesDoVencimento(Lancamento compra) => !compra.EhAVista || compra.Data < Vencimento;
+
+    /// <summary>
+    /// O mês do vencimento está entre o primeiro mês em que a compra pode vencer e
+    /// <see cref="MaximoMesesAteVencimento"/> meses depois dele.
+    /// </summary>
+    /// <param name="compra">Uma saída da fatura.</param>
+    private bool ParcelaVenceNestaFatura(Lancamento compra)
+    {
+        MesReferencia primeiroMes = compra.PrimeiroMesVencimentoPossivel;
+        MesReferencia ultimoMes = primeiroMes.Posterior(MaximoMesesAteVencimento);
+        MesReferencia mesVencimento = Vencimento;
+
+        return mesVencimento >= primeiroMes && mesVencimento <= ultimoMes;
     }
 
     /// <summary>Da menor à maior data de compra de todos os cartões.</summary>

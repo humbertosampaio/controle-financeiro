@@ -245,4 +245,48 @@ public sealed class MesReferenciaTests
         referencia1.Should().NotBe(referencia2);
         referencia1.GetHashCode().Should().NotBe(referencia2.GetHashCode());
     }
+
+    [Fact]
+    public void Posterior_Quando_MesesPassamDeDezembroDoAno9999_Deve_LancarInvalidOperationException()
+    {
+        MesReferencia sut = (MesReferencia)(10, 9999);
+
+        Action act = () => sut.Posterior(meses: 3);
+
+        act.Should().ThrowExactly<InvalidOperationException>().WithMessage("Não há mês de referência 3 meses depois de '10/9999'");
+    }
+
+    [Fact]
+    public void Posterior_Quando_MesesChegamADezembroDoAno9999_Deve_SerOUltimoMes()
+    {
+        MesReferencia sut = (MesReferencia)(10, 9999);
+
+        MesReferencia result = sut.Posterior(meses: 2);
+
+        result.Should().Be((MesReferencia)(12, 9999));
+    }
+
+    [Fact]
+    public void Posterior_Quando_MesesPassamDoAno_Deve_AvancarParaOAnoSeguinte()
+    {
+        MesReferencia sut = (MesReferencia)(11, 2025);
+
+        MesReferencia result = sut.Posterior(meses: 3);
+
+        result.Should().Be((MesReferencia)(02, 2026));
+    }
+
+    [Theory, DomainAutoData]
+    public void Posterior_Quando_ZeroMeses_Deve_SerOMesmoMes(MesReferencia sut)
+    {
+        sut.Posterior(meses: 0).Should().Be(sut);
+    }
+
+    [Theory, DomainAutoData]
+    public void Posterior_Quando_MesesNegativos_Deve_LancarExcecao(MesReferencia sut)
+    {
+        Func<MesReferencia> act = () => sut.Posterior(meses: -1);
+
+        act.Should().ThrowExactly<ArgumentOutOfRangeException>().WithParameterName("meses");
+    }
 }

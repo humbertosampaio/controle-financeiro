@@ -12,6 +12,12 @@ public readonly partial struct IdCartao
 
 public sealed class Cartao : AggregateRoot<IdCartao>, IPertenceAoUsuario
 {
+    /// <summary>
+    /// Quantos dias corridos depois do dia de vencimento o banco pode empurrar o vencimento que cai em fim de semana ou
+    /// feriado: cobre o fim de semana emendado num feriado.
+    /// </summary>
+    public const int ToleranciaDiasVencimento = 4;
+
     public IdUsuario IdUsuario { get; private set; }
     public Banco Banco { get; private set; } = null!;
     public SufixoCartao Sufixo { get; private set; } = null!;
@@ -91,6 +97,20 @@ public sealed class Cartao : AggregateRoot<IdCartao>, IPertenceAoUsuario
 
     /// <summary>O vencimento da fatura em que a compra cai: o <see cref="MesVencimento"/> dela, no dia de vencimento do cartão.</summary>
     public VencimentoFatura VencimentoDaCompra(DateOnly dataCompra) => new(MesVencimento(dataCompra), DiaVencimento);
+
+    /// <summary>
+    /// Confere o vencimento da fatura com o ciclo cadastrado: ele cai do dia de vencimento do cartão, no mês dele, até
+    /// <see cref="ToleranciaDiasVencimento"/> dias corridos depois, como o banco faz com o vencimento que cai em fim de
+    /// semana ou feriado. Falha com um aviso de texto fixo, sem dado do usuário, que não impede a importação.
+    /// </summary>
+    public Result ConferirVencimento(DateOnly vencimento)
+    {
+        DateOnly cadastrado = VencimentoNoMes(vencimento);
+
+        return Result.SuccessIf(
+            vencimento >= cadastrado && vencimento <= cadastrado.AddDays(ToleranciaDiasVencimento),
+            "O vencimento da fatura não fecha com o dia de vencimento cadastrado no cartão: confira a data do vencimento e o ciclo do cartão.");
+    }
 
     /// <summary>O vencimento da fatura do cartão no mês, no dia de vencimento dele.</summary>
     public VencimentoFatura VencimentoNoMes(MesReferencia mesVencimento) => new(mesVencimento, DiaVencimento);

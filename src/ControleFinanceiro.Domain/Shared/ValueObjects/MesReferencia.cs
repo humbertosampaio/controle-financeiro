@@ -44,6 +44,23 @@ public sealed class MesReferencia : ComparableValueObject
         return Inicio.AddMonths(1);
     }
 
+    /// <summary>O mês <paramref name="meses"/> meses depois deste.</summary>
+    /// <param name="meses">Zero ou mais.</param>
+    /// <exception cref="ArgumentOutOfRangeException">Quando <paramref name="meses"/> é negativo.</exception>
+    /// <exception cref="InvalidOperationException">
+    /// Quando o mês passa de 12/9999, o último que o <see cref="DateOnly"/> representa, como no <see cref="Posterior()"/>.
+    /// </exception>
+    public MesReferencia Posterior(int meses)
+    {
+        ArgumentOutOfRangeException.ThrowIfNegative(meses);
+
+        int mesesAteOUltimo = (DateOnly.MaxValue.Year - Ano) * 12 + (DateOnly.MaxValue.Month - Mes);
+        if (meses > mesesAteOUltimo)
+            throw new InvalidOperationException($"Não há mês de referência {meses} meses depois de '{this}'");
+
+        return Inicio.AddMonths(meses);
+    }
+
     /// <summary>
     /// Tenta criar um <see cref="DateOnly"/> representando o dia específico dentro do mês de referência. 
     /// Caso o dia seja inválido para o mês de referência atual, retorna uma falha.
@@ -69,6 +86,8 @@ public sealed class MesReferencia : ComparableValueObject
 
     public static bool operator >(MesReferencia a, MesReferencia b) => a.Inicio > b.Inicio;
     public static bool operator <(MesReferencia a, MesReferencia b) => a.Inicio < b.Inicio;
+    public static bool operator >=(MesReferencia a, MesReferencia b) => a.Inicio >= b.Inicio;
+    public static bool operator <=(MesReferencia a, MesReferencia b) => a.Inicio <= b.Inicio;
 
     protected override IEnumerable<IComparable> GetComparableEqualityComponents()
     {

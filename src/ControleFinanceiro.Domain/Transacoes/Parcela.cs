@@ -16,6 +16,9 @@ public sealed class Parcela : ValueObject
     public int Numero { get; }
     public int Total { get; }
 
+    /// <summary>Quantas parcelas da mesma compra vieram antes desta, cada uma numa fatura anterior.</summary>
+    public int QuantidadeParcelasAnteriores => Numero - 1;
+
     private Parcela(int numero, int total)
     {
         Numero = numero;

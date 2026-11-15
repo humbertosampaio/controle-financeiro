@@ -471,6 +471,34 @@ public sealed class LancamentoTests
         result.Identidade.Should().Be(identidade);
     }
 
+    [Theory, DomainAutoData]
+    public void EhAVista_Quando_SemParcela_Deve_SerVerdadeiro(Lancamento lancamento)
+    {
+        lancamento.NaFatura(lancamento.Data, parcela: null).EhAVista.Should().BeTrue();
+    }
+
+    [Theory, DomainAutoData]
+    public void EhAVista_Quando_ComParcela_Deve_SerFalso(Lancamento lancamento, Parcela parcela)
+    {
+        lancamento.NaFatura(lancamento.Data, parcela).EhAVista.Should().BeFalse();
+    }
+
+    [Theory, DomainAutoData]
+    public void PrimeiroMesVencimentoPossivel_Quando_AVista_Deve_SerOMesDaData(Lancamento lancamento)
+    {
+        Lancamento sut = lancamento.NaFatura(lancamento.Data, parcela: null);
+
+        sut.PrimeiroMesVencimentoPossivel.Should().Be((MesReferencia)sut.Data);
+    }
+
+    [Theory, DomainAutoData]
+    public void PrimeiroMesVencimentoPossivel_Quando_Parcela_Deve_AvancarUmMesPorParcelaAnterior(Lancamento lancamento)
+    {
+        Lancamento sut = lancamento.NaFatura(new DateOnly(2025, 7, 15), (Parcela)(9, 10));
+
+        sut.PrimeiroMesVencimentoPossivel.Should().Be((MesReferencia)(03, 2026));
+    }
+
     /// <summary>A linha de fatura com o valor pedido e, além da descrição, só os campos opcionais que o caso informa.</summary>
     private static Lancamento NoCartao(
         Lancamento lancamento,

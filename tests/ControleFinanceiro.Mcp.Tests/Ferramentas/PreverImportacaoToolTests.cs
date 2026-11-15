@@ -142,6 +142,17 @@ public sealed class PreverImportacaoToolTests : IAsyncLifetime
     }
 
     [Fact]
+    public async Task Prever_Quando_VencimentoAntesDasCompras_Deve_DevolverVencimentoIncompativelSemGravar()
+    {
+        await _importacao.ResolverAsync(LayoutArquivoImportacao.C6CartaoCsv, ImportacaoDeTeste.FaturaC6);
+
+        CallToolResult resultado = await _servidor.ClienteMcp.PreverImportacaoAsync(ImportacaoDeTeste.FaturaC6, "c6-cartao-csv", vencimento: "2026-03-01");
+
+        ErroLido.DoEnvelope(resultado.Json).Mensagem.Should().Be(ErrosParaModelo.Importacao.VencimentoIncompativel.Mensagem);
+        (await _importacao.LerGravadoAsync()).Should().Be(Gravado.Nada);
+    }
+
+    [Fact]
     public async Task Prever_Quando_FaturaMercadoPagoComVencimento_Deve_DevolverVencimentoNoArquivoSemGravar()
     {
         await _importacao.ResolverAsync(LayoutArquivoImportacao.MercadoPagoCartaoCsv, ImportacaoDeTeste.FaturaMercadoPago);

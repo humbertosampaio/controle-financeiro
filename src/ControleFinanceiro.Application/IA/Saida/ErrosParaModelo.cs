@@ -77,6 +77,8 @@ public static class ErrosParaModelo
 
         public static readonly ErroParaModelo VencimentoNoArquivo = Fixo($"O layout {LayoutArquivoImportacao.MercadoPagoCartaoCsv.Value} traz o vencimento no arquivo: chame a ferramenta de novo sem o vencimento.");
 
+        public static readonly ErroParaModelo VencimentoIncompativel = Fixo($"O vencimento da fatura não fecha com as datas das compras do arquivo, e nada foi importado: no layout {LayoutArquivoImportacao.C6CartaoCsv.Value}, confira com o usuário a data de vencimento informada; nos outros, peça a ele para conferir o arquivo.");
+
         public static readonly ErroParaModelo ContaDeOutroTipo = Fixo("O usuário já tem uma conta nesse banco com esse final, mas de outro tipo: peça a ele para resolver pela API antes de importar.");
 
         public static readonly ErroParaModelo CartoesNaoResolvidos = Fixo("A fatura tem finais de cartão sem cartão cadastrado, em pendencias.finais_sem_cartao, e nada foi importado: peça ao usuário para cadastrar os cartões pela API e importe de novo.");
@@ -142,6 +144,7 @@ public static class ErrosParaModelo
             ErroBeneficiariosNaoResolvidos => Importacao.BeneficiariosNaoResolvidos,
             ErroCategoriasBancoNaoResolvidas => Importacao.CategoriasNaoResolvidas,
             ErroIdentificadorRepetido => Importacao.IdentificadorRepetido,
+            ErroVencimentoIncompativelComFatura => Importacao.VencimentoIncompativel,
             _ => throw new InvalidOperationException($"Erro sem mensagem mapeada: {erro}"),
         };
     }

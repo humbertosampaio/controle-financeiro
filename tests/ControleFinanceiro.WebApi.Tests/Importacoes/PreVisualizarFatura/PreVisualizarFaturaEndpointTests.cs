@@ -201,6 +201,21 @@ public sealed class PreVisualizarFaturaEndpointTests : IAsyncLifetime
     }
 
     [Theory, ApiAutoData]
+    public async Task Post_Quando_VencimentoAntesDasCompras_Deve_RetornarErroNoVencimento(CadastrarUsuarioRequest cadastro)
+    {
+        Guid idUsuario = await _api.CadastrarUsuarioAsync(cadastro);
+
+        using HttpResponseMessage resposta = await PreVisualizarAsync(
+            idUsuario,
+            LayoutArquivoImportacao.C6CartaoCsv,
+            FaturaCartaoC6.Completo(),
+            FaturaCartaoC6.UltimaCompraFisico);
+
+        resposta.StatusCode.Should().Be(HttpStatusCode.UnprocessableEntity);
+        (await resposta.CamposComErroAsync()).Should().Equal("dataVencimento");
+    }
+
+    [Theory, ApiAutoData]
     public async Task Post_Quando_SemVencimentoNoLayoutQueOPede_Deve_RetornarErroNoVencimento(CadastrarUsuarioRequest cadastro)
     {
         Guid idUsuario = await _api.CadastrarUsuarioAsync(cadastro);
