@@ -2,7 +2,6 @@ using AutoFixture.Kernel;
 using ControleFinanceiro.Domain.Beneficiarios;
 using ControleFinanceiro.Domain.Cartoes;
 using ControleFinanceiro.Domain.Despesas;
-using ControleFinanceiro.Domain.Importacoes;
 using ControleFinanceiro.Domain.Services;
 using ControleFinanceiro.Domain.Shared.ValueObjects;
 using ControleFinanceiro.Domain.Transacoes;
@@ -34,21 +33,14 @@ public sealed class DespesaParceladaGenerator : ISpecimenBuilder
             categoriaBanco: null,
             context.Create<IdentidadeLancamento>());
 
-        DateOnly vencimento = cartao.VencimentoNoMes(compra.PrimeiroMesVencimentoPossivel.Posterior());
-        ImportacaoArquivo importacao = ImportacaoArquivoFactory.Registrar(
-            cartao,
-            context.Create<LayoutArquivoImportacao>(),
-            context.Create<PeriodoArquivo>(),
-            vencimento,
-            lidas: 1,
-            context.Create<DateTimeOffset>());
+        VencimentoFatura vencimento = cartao.VencimentoNoMes(compra.PrimeiroMesVencimentoPossivel.Posterior());
 
         IReadOnlyList<Beneficiario> beneficiarios = BeneficiarioFactory
             .Resolver(cartao.IdUsuario, beneficiariosDoUsuario: [], [new BeneficiarioNovo(descricao, (Alias)(string)descricao)])
             .Value;
 
         return DespesaParceladaFactory
-            .CriarDaFatura(cartao.IdUsuario, beneficiarios, categoriasDoUsuario: [], cartao, importacao, parceladasDoUsuario: [], [compra])
+            .CriarDaFatura(cartao.IdUsuario, beneficiarios, categoriasDoUsuario: [], cartao, vencimento, parceladasDoUsuario: [], [compra])
             .Single();
     }
 }

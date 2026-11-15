@@ -1,4 +1,5 @@
 using AutoFixture.Kernel;
+using ControleFinanceiro.Domain.Cartoes;
 using ControleFinanceiro.Domain.Importacoes;
 using ControleFinanceiro.Domain.Shared.ValueObjects;
 
@@ -16,7 +17,7 @@ public sealed class FaturaGenerator : ISpecimenBuilder
             return new NoSpecimen();
 
         return Fatura
-            .Criar(context.Create<Banco>(), context.Create<DateOnly>(), context.CreateMany<LancamentoFatura>())
+            .Criar(context.Create<Banco>(), context.Create<VencimentoFatura>(), context.CreateMany<LancamentoFatura>())
             .Value;
     }
 }

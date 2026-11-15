@@ -157,7 +157,7 @@ public sealed class ImportacaoFaturaService
                     beneficiariosDoUsuario,
                     categoriasDoUsuario,
                     cartao,
-                    importacao,
+                    fatura.Vencimento,
                     parceladasDoUsuario,
                     lancamentos);
 

@@ -55,7 +55,7 @@ public sealed class ImportarFaturaMercadoPagoEndpointTests : IAsyncLifetime
         importacao.Layout.Should().BeSameAs(LayoutArquivoImportacao.MercadoPagoCartaoCsv);
         importacao.Origem.Should().Be(OrigemTransacao.DoCartao(cartao.Id));
         importacao.Periodo.Should().Be((PeriodoArquivo)(FaturaCartaoMercadoPago.PrimeiraData, FaturaCartaoMercadoPago.UltimaData));
-        importacao.DataVencimentoFatura.Should().Be(FaturaCartaoMercadoPago.Vencimento);
+        importacao.DataVencimentoFatura.Should().Be((VencimentoFatura)FaturaCartaoMercadoPago.Vencimento);
 
         List<Transacao> transacoes = await _api.ObterTodosAsync(db => db.Transacoes);
         transacoes.Should().HaveCount(FaturaCartaoMercadoPago.QuantidadeLancamentos).And.AllSatisfy(t =>

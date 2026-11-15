@@ -75,7 +75,8 @@ public sealed class ImportarFaturaEndpointTests : IAsyncLifetime
         importacaoFisico.Layout.Should().BeSameAs(LayoutArquivoImportacao.C6CartaoCsv);
         importacaoFisico.Periodo.Should().Be((PeriodoArquivo)(FaturaCartaoC6.PrimeiraCompraFisico, FaturaCartaoC6.UltimaCompraFisico));
         importacaoFisico.Lidas.Should().Be(FaturaCartaoC6.LancamentosPorCartao);
-        importacoes.Should().OnlyContain(i => i.DataVencimentoFatura == FaturaCartaoC6.Vencimento);
+        VencimentoFatura vencimento = (VencimentoFatura)FaturaCartaoC6.Vencimento;
+        importacoes.Should().OnlyContain(i => i.DataVencimentoFatura == vencimento);
 
         List<Transacao> transacoes = await _api.ObterTodosAsync(db => db.Transacoes);
         transacoes.Should().HaveCount(FaturaCartaoC6.QuantidadeLancamentos);
@@ -532,6 +533,29 @@ public sealed class ImportarFaturaEndpointTests : IAsyncLifetime
         await ImportarComSucessoAsync(idOutro, FaturaCartaoC6.Completo());
 
         (await _api.ObterParceladasAsync()).Select(d => d.IdUsuario).Should().BeEquivalentTo([IdUsuario.From(idUsuario), IdUsuario.From(idOutro)]);
+    }
+
+    // Decisão 10 da #185: o mesmo arquivo reimportado com outro vencimento, como o C6 com a data digitada errada e depois
+    // corrigida, não muda nada do que foi gravado e só registra a importação nova, com a outra data.
+    [Theory, ApiAutoData]
+    public async Task Post_Quando_MesmoArquivoComOutroVencimento_Deve_ManterOQueJaFoiGravado(CadastrarUsuarioRequest cadastro)
+    {
+        Guid idUsuario = await _api.CadastrarUsuarioAsync(cadastro);
+        await ResolverPendenciasAsync(idUsuario, FaturaCartaoC6.Completo());
+        await ImportarComSucessoAsync(idUsuario, FaturaCartaoC6.Completo());
+        VencimentoFatura outroVencimento = (VencimentoFatura)new DateOnly(2026, 03, 24);
+
+        using HttpResponseMessage resposta = await _api.ImportarFaturaAsync(
+            idUsuario,
+            LayoutArquivoImportacao.C6CartaoCsv,
+            FaturaCartaoC6.Completo(),
+            outroVencimento.Value);
+
+        resposta.StatusCode.Should().Be(HttpStatusCode.OK, await resposta.Content.ReadAsStringAsync());
+        ImportarFaturaResponse corpo = (await resposta.Content.ReadFromJsonAsync<ImportarFaturaResponse>())!;
+        corpo.Cartoes.Should().OnlyContain(c => c.Novas == 0 && c.DespesasParceladasCriadas == 0 && c.DespesasAdiadasCriadas == 0);
+        (await _api.ObterTodosAsync(db => db.Transacoes)).Should().OnlyContain(t => t.MesVencimentoFatura == FaturaCartaoC6.MesVencimento);
+        (await _api.ObterTodosAsync(db => db.Importacoes)).Count(i => i.DataVencimentoFatura == outroVencimento).Should().Be(2);
     }
 
     // O banco empurrou o vencimento do dia 10, o do cartão, para o dia 13: a adiada e a parcela do arquivo vencem nele, e as

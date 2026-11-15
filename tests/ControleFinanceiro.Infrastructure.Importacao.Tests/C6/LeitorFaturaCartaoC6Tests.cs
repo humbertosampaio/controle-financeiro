@@ -20,7 +20,7 @@ public sealed class LeitorFaturaCartaoC6Tests
     private const string TitularFicticio = "FULANA DE TAL FICTICIA";
 
     /// <summary>O vencimento que o usuário informa, coerente com as compras da fatura fictícia.</summary>
-    private static readonly DateOnly _vencimento = new(2026, 4, 10);
+    private static readonly VencimentoFatura _vencimento = (VencimentoFatura)new DateOnly(2026, 4, 10);
 
     /// <summary>O arquivo como o banco exporta: UTF-8 sem BOM e CRLF.</summary>
     private static readonly ArquivoFixture _fixture = new("C6", "fatura-cartao.csv", fimLinha: "\r\n", comBom: false);

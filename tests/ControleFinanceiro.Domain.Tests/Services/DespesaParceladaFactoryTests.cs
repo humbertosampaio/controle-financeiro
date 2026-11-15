@@ -3,7 +3,6 @@ using ControleFinanceiro.Domain.Beneficiarios;
 using ControleFinanceiro.Domain.Cartoes;
 using ControleFinanceiro.Domain.Categorias;
 using ControleFinanceiro.Domain.Despesas;
-using ControleFinanceiro.Domain.Importacoes;
 using ControleFinanceiro.Domain.Services;
 using ControleFinanceiro.Domain.Shared.ValueObjects;
 using ControleFinanceiro.Domain.Transacoes;
@@ -24,7 +23,7 @@ public sealed class DespesaParceladaFactoryTests
     /// O vencimento exato da fatura que traz a parcela 3 da compra, num dia que o cartão não pode ter (a faixa vai até o
     /// 24), para o teste distinguir a data exata do arquivo do dia de vencimento do cartão.
     /// </summary>
-    private static readonly DateOnly _vencimento = new(2026, 05, 25);
+    private static readonly VencimentoFatura _vencimento = (VencimentoFatura)new DateOnly(2026, 05, 25);
 
     [Theory, CompraAutoData]
     public void CriarDaFatura_Quando_CompraSemDespesa_Deve_CriarADespesaDoCartao([Frozen] IdUsuario idUsuario, Cartao cartao, Lancamento compra)
@@ -37,7 +36,7 @@ public sealed class DespesaParceladaFactoryTests
             beneficiarios,
             categorias,
             cartao,
-            ImportacaoDe(cartao),
+            _vencimento,
             parceladasDoUsuario: [],
             [compra]);
 
@@ -52,7 +51,7 @@ public sealed class DespesaParceladaFactoryTests
         despesa.Parcelas.Should().HaveCount(10);
         despesa.Parcelas[0].MesReferencia.Should().Be(mesPrimeiraParcela);
         despesa.Parcelas[0].Pagamento.DataProjetada.Should().Be(mesPrimeiraParcela.NoDia(cartao.DiaVencimento));
-        despesa.Parcelas[2].Pagamento.DataProjetada.Should().Be(_vencimento);
+        despesa.Parcelas[2].Pagamento.DataProjetada.Should().Be(_vencimento.Value);
         despesa.Parcelas.Should().OnlyContain(p => p.Pagamento.ValorProjetado == (ReaisPositivo)99.90m);
         despesa.Parcelas.Count(p => p.Pagamento.EstaPago).Should().Be(2);
     }
@@ -234,7 +233,7 @@ public sealed class DespesaParceladaFactoryTests
             BeneficiariosResolvidos.Dos(outroUsuario, [compra]),
             CategoriasResolvidas.Dos(idUsuario, [compra]),
             cartao,
-            ImportacaoDe(cartao),
+            _vencimento,
             parceladasDoUsuario: [],
             [compra]);
 
@@ -250,7 +249,7 @@ public sealed class DespesaParceladaFactoryTests
             BeneficiariosResolvidos.Dos(idUsuario, [compra]),
             CategoriasResolvidas.Dos(outroUsuario, [compra]),
             cartao,
-            ImportacaoDe(cartao),
+            _vencimento,
             parceladasDoUsuario: [],
             [compra]);
 
@@ -278,7 +277,7 @@ public sealed class DespesaParceladaFactoryTests
             beneficiariosDoUsuario: [],
             CategoriasResolvidas.Dos(idUsuario, [compra]),
             cartao,
-            ImportacaoDe(cartao),
+            _vencimento,
             parceladasDoUsuario: [],
             [compra]);
 
@@ -293,7 +292,7 @@ public sealed class DespesaParceladaFactoryTests
             BeneficiariosResolvidos.Dos(idUsuario, [compra]),
             categoriasDoUsuario: [],
             cartao,
-            ImportacaoDe(cartao),
+            _vencimento,
             parceladasDoUsuario: [],
             [compra]);
 
@@ -311,28 +310,9 @@ public sealed class DespesaParceladaFactoryTests
             BeneficiariosResolvidos.Dos(idUsuario, lancamentos),
             CategoriasResolvidas.Dos(idUsuario, lancamentos),
             cartao,
-            ImportacaoDe(cartao),
+            _vencimento,
             parceladas,
             lancamentos);
-    }
-
-    [Theory, CompraAutoData]
-    public void CriarDaFatura_Quando_ImportacaoDeOutroCartao_Deve_LancarExcecao(
-        [Frozen] IdUsuario idUsuario,
-        Cartao cartao,
-        Cartao outroCartao,
-        Lancamento compra)
-    {
-        Action act = () => DespesaParceladaFactory.CriarDaFatura(
-            idUsuario,
-            BeneficiariosResolvidos.Dos(idUsuario, [compra]),
-            CategoriasResolvidas.Dos(idUsuario, [compra]),
-            cartao,
-            ImportacaoDe(outroCartao),
-            parceladasDoUsuario: [],
-            [compra]);
-
-        act.Should().ThrowExactly<ArgumentException>().WithParameterName("importacao");
     }
 
     [Theory, CompraAutoData]
@@ -345,23 +325,11 @@ public sealed class DespesaParceladaFactoryTests
             beneficiariosDoUsuario: [],
             categoriasDoUsuario: [],
             cartao,
-            ImportacaoDe(cartao),
+            _vencimento,
             parceladasDoUsuario: [],
             [doExtrato]);
 
         act.Should().ThrowExactly<ArgumentException>().WithParameterName("lancamentos");
-    }
-
-    /// <summary>A importação da fatura do cartão, com o <see cref="_vencimento"/>.</summary>
-    private static ImportacaoArquivo ImportacaoDe(Cartao cartao)
-    {
-        return ImportacaoArquivoFactory.Registrar(
-            cartao,
-            LayoutArquivoImportacao.C6CartaoCsv,
-            (PeriodoArquivo)(_dataCompra, _dataCompra),
-            _vencimento,
-            lidas: 1,
-            DateTimeOffset.UnixEpoch);
     }
 
     /// <param name="numero">Nulo na compra à vista.</param>

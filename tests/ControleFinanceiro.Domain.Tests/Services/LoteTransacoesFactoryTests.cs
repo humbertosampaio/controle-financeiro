@@ -706,7 +706,7 @@ public sealed class LoteTransacoesFactoryTests
                 fixture.Inject(TipoOrigem.Cartao);
                 fixture.Register(
                     (Cartao cartao, LayoutArquivoImportacao layout, PeriodoArquivo periodo, DateTimeOffset importadaEm) =>
-                        ImportacaoArquivoFactory.Registrar(cartao, layout, periodo, fixture.Create<DateOnly>(), fixture.Create<byte>(), importadaEm));
+                        ImportacaoArquivoFactory.Registrar(cartao, layout, periodo, fixture.Create<VencimentoFatura>(), fixture.Create<byte>(), importadaEm));
             })
         {
         }

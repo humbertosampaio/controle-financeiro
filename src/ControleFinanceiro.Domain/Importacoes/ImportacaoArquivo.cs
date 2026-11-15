@@ -1,3 +1,4 @@
+using ControleFinanceiro.Domain.Cartoes;
 using ControleFinanceiro.Domain.Shared;
 using ControleFinanceiro.Domain.Shared.ValueObjects;
 using ControleFinanceiro.Domain.Transacoes;
@@ -28,11 +29,11 @@ public sealed class ImportacaoArquivo : AggregateRoot<IdImportacao>, IPertenceAo
     public int Lidas { get; private set; }
     public DateTimeOffset ImportadaEm { get; private set; }
 
-    /// <summary>A data de vencimento da fatura do arquivo; nula no extrato de uma conta.</summary>
-    public DateOnly? DataVencimentoFatura { get; private set; }
+    /// <summary>O vencimento da fatura do arquivo; nulo no extrato de uma conta.</summary>
+    public VencimentoFatura? DataVencimentoFatura { get; private set; }
 
     /// <summary>O mês em que vence a fatura do arquivo, o da <see cref="DataVencimentoFatura"/>; nulo no extrato de uma conta.</summary>
-    public MesReferencia? MesVencimentoFatura => DataVencimentoFatura is DateOnly data ? data : null;
+    public MesReferencia? MesVencimentoFatura => DataVencimentoFatura?.Mes;
 
     private ImportacaoArquivo()
     {
@@ -46,7 +47,7 @@ public sealed class ImportacaoArquivo : AggregateRoot<IdImportacao>, IPertenceAo
         PeriodoArquivo periodo,
         int lidas,
         DateTimeOffset importadaEm,
-        DateOnly? dataVencimentoFatura)
+        VencimentoFatura? dataVencimentoFatura)
             : base(id)
     {
         IdUsuario = idUsuario;
@@ -87,7 +88,7 @@ public sealed class ImportacaoArquivo : AggregateRoot<IdImportacao>, IPertenceAo
         OrigemTransacao origem,
         LayoutArquivoImportacao layout,
         PeriodoArquivo periodo,
-        DateOnly vencimento,
+        VencimentoFatura vencimento,
         int lidas,
         DateTimeOffset importadaEm)
     {

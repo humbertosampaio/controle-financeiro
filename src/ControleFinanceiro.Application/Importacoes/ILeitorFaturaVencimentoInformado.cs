@@ -1,3 +1,4 @@
+using ControleFinanceiro.Domain.Cartoes;
 using ControleFinanceiro.Domain.Importacoes;
 using CSharpFunctionalExtensions;
 
@@ -16,6 +17,6 @@ public interface ILeitorFaturaVencimentoInformado
     /// lançamentos (<see cref="Fatura.Criar"/>); a mensagem cita no máximo o número da linha, e nunca o conteúdo do
     /// arquivo.
     /// </summary>
-    /// <param name="vencimento">A data de vencimento da fatura, como o usuário informou.</param>
-    Task<Result<Fatura, FalhaLeituraArquivo>> LerAsync(Stream arquivo, DateOnly vencimento, CancellationToken cancellationToken);
+    /// <param name="vencimento">O vencimento da fatura, como o usuário informou.</param>
+    Task<Result<Fatura, FalhaLeituraArquivo>> LerAsync(Stream arquivo, VencimentoFatura vencimento, CancellationToken cancellationToken);
 }

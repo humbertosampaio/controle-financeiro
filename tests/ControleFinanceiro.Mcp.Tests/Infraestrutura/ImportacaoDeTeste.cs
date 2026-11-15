@@ -78,7 +78,7 @@ internal sealed class ImportacaoDeTeste
         await using FileStream arquivo = File.OpenRead(Completo(caminho));
 
         return layout == LayoutArquivoImportacao.C6CartaoCsv
-            ? (await new LeitorFaturaCartaoC6().LerAsync(arquivo, DateOnly.Parse(VencimentoFaturaC6, CultureInfo.InvariantCulture), CancellationToken.None)).Value
+            ? (await new LeitorFaturaCartaoC6().LerAsync(arquivo, (VencimentoFatura)DateOnly.Parse(VencimentoFaturaC6, CultureInfo.InvariantCulture), CancellationToken.None)).Value
             : (await new LeitorFaturaCartaoMercadoPago().LerAsync(arquivo, CancellationToken.None)).Value;
     }
 

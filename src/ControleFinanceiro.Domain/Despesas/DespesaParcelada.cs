@@ -78,7 +78,7 @@ public sealed class DespesaParcelada : Despesa, IDespesaDoCartao
             dataOcorrencia,
             idCartao);
 
-        MesReferencia mesPrimeiraParcela = vencimentoParcelaInformada.Value.AddMonths(-parcela.QuantidadeParcelasAnteriores);
+        MesReferencia mesPrimeiraParcela = vencimentoParcelaInformada.Mes.Anterior(parcela.QuantidadeParcelasAnteriores);
         for (int numero = 1; numero <= parcela.Total; numero++)
         {
             VencimentoFatura vencimento = numero == parcela.Numero

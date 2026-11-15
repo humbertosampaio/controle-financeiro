@@ -155,7 +155,7 @@ public sealed class ImportacaoParaModeloService
         string? vencimento,
         CancellationToken cancellationToken)
     {
-        Result<Maybe<DateOnly>, ErroParaModelo> vencimentoLayout = LerVencimento(layout, vencimento);
+        Result<Maybe<VencimentoFatura>, ErroParaModelo> vencimentoLayout = LerVencimento(layout, vencimento);
         if (vencimentoLayout.IsFailure)
             return ImportacaoParaModelo.Falha(vencimentoLayout.Error);
 
@@ -180,18 +180,18 @@ public sealed class ImportacaoParaModeloService
     /// O vencimento que o usuário informou, só no layout de fatura sem o vencimento no arquivo. Vazio vale como não
     /// informado.
     /// </summary>
-    private static Result<Maybe<DateOnly>, ErroParaModelo> LerVencimento(LayoutArquivoImportacao layout, string? vencimento)
+    private static Result<Maybe<VencimentoFatura>, ErroParaModelo> LerVencimento(LayoutArquivoImportacao layout, string? vencimento)
     {
         bool informado = !string.IsNullOrWhiteSpace(vencimento);
         if (!LayoutArquivoImportacao.FaturasVencimentoInformado.Contains(layout))
         {
             return informado
                 ? ErrosParaModelo.Importacao.VencimentoNoArquivo
-                : Maybe<DateOnly>.None;
+                : Maybe<VencimentoFatura>.None;
         }
 
         return DateOnly.TryParseExact(vencimento, "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out DateOnly data)
-            ? Maybe.From(data)
+            ? Maybe.From((VencimentoFatura)data)
             : ErrosParaModelo.Importacao.VencimentoObrigatorio;
     }
 

@@ -1,7 +1,6 @@
 using AutoFixture.Xunit2;
 using ControleFinanceiro.Domain.Cartoes;
 using ControleFinanceiro.Domain.Despesas;
-using ControleFinanceiro.Domain.Importacoes;
 using ControleFinanceiro.Domain.Services;
 using ControleFinanceiro.Domain.Shared.ValueObjects;
 using ControleFinanceiro.Domain.Transacoes;
@@ -230,13 +229,6 @@ public sealed class DespesaParceladaTests
             (Parcela)(numero, total),
             categoriaBanco: null,
             IdentidadeLancamento.Unica("1").Value);
-        ImportacaoArquivo importacao = ImportacaoArquivoFactory.Registrar(
-            cartao,
-            LayoutArquivoImportacao.C6CartaoCsv,
-            (PeriodoArquivo)(_dataOcorrencia, _dataOcorrencia),
-            VencimentoInformado(numero),
-            lidas: 1,
-            DateTimeOffset.UnixEpoch);
 
         return DespesaParceladaFactory
             .CriarDaFatura(
@@ -244,7 +236,7 @@ public sealed class DespesaParceladaTests
                 BeneficiariosResolvidos.Dos(idUsuario, [compra]),
                 categoriasDoUsuario: [],
                 cartao,
-                importacao,
+                (VencimentoFatura)VencimentoInformado(numero),
                 parceladasDoUsuario: [],
                 [compra])
             .Single();

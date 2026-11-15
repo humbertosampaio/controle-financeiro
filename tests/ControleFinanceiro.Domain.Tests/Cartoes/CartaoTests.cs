@@ -28,7 +28,7 @@ public sealed class CartaoTests
     {
         DateOnly vencimento = mes.NoDia(sut.DiaVencimento).AddDays(diasDepois);
 
-        Result result = sut.ConferirVencimento(vencimento);
+        Result result = sut.ConferirVencimento((VencimentoFatura)vencimento);
 
         result.Should().Succeed();
     }
@@ -40,7 +40,7 @@ public sealed class CartaoTests
     {
         DateOnly vencimento = mes.NoDia(sut.DiaVencimento).AddDays(diasDepois);
 
-        Result result = sut.ConferirVencimento(vencimento);
+        Result result = sut.ConferirVencimento((VencimentoFatura)vencimento);
 
         result.Should().FailWith("O vencimento da fatura não fecha com o dia de vencimento cadastrado no cartão: confira a data do vencimento e o ciclo do cartão.");
     }

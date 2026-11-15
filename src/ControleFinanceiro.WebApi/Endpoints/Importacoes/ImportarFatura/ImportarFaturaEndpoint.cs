@@ -74,11 +74,11 @@ public sealed class ImportarFaturaEndpoint : Endpoint<ImportarFaturaRequest, Imp
     }
 
     /// <summary>O validator já garantiu o vencimento no layout de vencimento informado; nos outros, ele não vale.</summary>
-    private static Maybe<DateOnly> VencimentoDoLayout(LayoutArquivoImportacao layout, ImportarFaturaRequest req)
+    private static Maybe<VencimentoFatura> VencimentoDoLayout(LayoutArquivoImportacao layout, ImportarFaturaRequest req)
     {
         return LayoutArquivoImportacao.FaturasVencimentoInformado.Contains(layout)
-            ? req.DataVencimento!.Value
-            : Maybe<DateOnly>.None;
+            ? (VencimentoFatura)req.DataVencimento!.Value
+            : Maybe<VencimentoFatura>.None;
     }
 
     private static ImportarFaturaResponse Responder(FaturaImportada importada)

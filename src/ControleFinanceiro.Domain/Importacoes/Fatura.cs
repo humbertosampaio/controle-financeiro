@@ -28,15 +28,15 @@ public sealed class Fatura : ValueObject
 
     public Banco Banco { get; }
 
-    /// <summary>A data em que a fatura vence, a mesma para todos os finais.</summary>
-    public DateOnly Vencimento { get; }
+    /// <summary>O vencimento da fatura, o mesmo para todos os finais.</summary>
+    public VencimentoFatura Vencimento { get; }
 
     public IReadOnlyList<LancamentoFatura> Lancamentos => _lancamentos;
 
     /// <summary>Os finais distintos, na ordem em que aparecem pela primeira vez no arquivo.</summary>
     public IReadOnlyList<SufixoCartao> Sufixos => _sufixos;
 
-    private Fatura(Banco banco, DateOnly vencimento, List<LancamentoFatura> lancamentos)
+    private Fatura(Banco banco, VencimentoFatura vencimento, List<LancamentoFatura> lancamentos)
     {
         Banco = banco;
         Vencimento = vencimento;
@@ -48,7 +48,7 @@ public sealed class Fatura : ValueObject
     }
 
     /// <summary>Falha quando a fatura não traz nenhum lançamento.</summary>
-    public static Result<Fatura> Criar(Banco banco, DateOnly vencimento, IEnumerable<LancamentoFatura> lancamentos)
+    public static Result<Fatura> Criar(Banco banco, VencimentoFatura vencimento, IEnumerable<LancamentoFatura> lancamentos)
     {
         List<LancamentoFatura> lancamentosFatura = lancamentos.ToList();
 
@@ -92,7 +92,8 @@ public sealed class Fatura : ValueObject
     /// </summary>
     public UnitResult<Erro> ConferirVencimento()
     {
-        bool confere = Compras.All(compra => CompraAVistaAntesDoVencimento(compra) && ParcelaVenceNestaFatura(compra));
+        MesReferencia mesVencimento = Vencimento.Mes;
+        bool confere = Compras.All(compra => CompraAVistaAntesVencimento(compra) && ParcelaVenceNestaFatura(compra, mesVencimento));
 
         return UnitResult.SuccessIf<Erro>(confere, ErroVencimentoIncompativelComFatura.Instancia);
     }
@@ -105,18 +106,18 @@ public sealed class Fatura : ValueObject
     /// compra original, que é antiga, e fica de fora.
     /// </summary>
     /// <param name="compra">Uma saída da fatura.</param>
-    private bool CompraAVistaAntesDoVencimento(Lancamento compra) => !compra.EhAVista || compra.Data < Vencimento;
+    private bool CompraAVistaAntesVencimento(Lancamento compra) => !compra.EhAVista || compra.Data < Vencimento.Value;
 
     /// <summary>
     /// O mês do vencimento está entre o primeiro mês em que a compra pode vencer e
     /// <see cref="MaximoMesesAteVencimento"/> meses depois dele.
     /// </summary>
     /// <param name="compra">Uma saída da fatura.</param>
-    private bool ParcelaVenceNestaFatura(Lancamento compra)
+    /// <param name="mesVencimento">O mês do <see cref="Vencimento"/>.</param>
+    private static bool ParcelaVenceNestaFatura(Lancamento compra, MesReferencia mesVencimento)
     {
         MesReferencia primeiroMes = compra.PrimeiroMesVencimentoPossivel;
         MesReferencia ultimoMes = primeiroMes.Posterior(MaximoMesesAteVencimento);
-        MesReferencia mesVencimento = Vencimento;
 
         return mesVencimento >= primeiroMes && mesVencimento <= ultimoMes;
     }

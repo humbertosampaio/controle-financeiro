@@ -1,5 +1,6 @@
 using ControleFinanceiro.Application.Abstractions;
 using ControleFinanceiro.Application.Importacoes;
+using ControleFinanceiro.Domain.Cartoes;
 using ControleFinanceiro.Domain.Importacoes;
 using ControleFinanceiro.Domain.Shared;
 using ControleFinanceiro.Domain.Usuarios;
@@ -70,11 +71,11 @@ public sealed class PreVisualizarFaturaEndpoint : Endpoint<PreVisualizarFaturaRe
     }
 
     /// <summary>O validator já garantiu o vencimento no layout de vencimento informado; nos outros, ele não vale.</summary>
-    private static Maybe<DateOnly> VencimentoDoLayout(LayoutArquivoImportacao layout, PreVisualizarFaturaRequest req)
+    private static Maybe<VencimentoFatura> VencimentoDoLayout(LayoutArquivoImportacao layout, PreVisualizarFaturaRequest req)
     {
         return LayoutArquivoImportacao.FaturasVencimentoInformado.Contains(layout)
-            ? req.DataVencimento!.Value
-            : Maybe<DateOnly>.None;
+            ? (VencimentoFatura)req.DataVencimento!.Value
+            : Maybe<VencimentoFatura>.None;
     }
 
     private static Result<Fatura, Falha> ConferirVencimento(Fatura fatura)

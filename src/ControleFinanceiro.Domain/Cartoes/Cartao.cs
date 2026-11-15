@@ -83,12 +83,12 @@ public sealed class Cartao : AggregateRoot<IdCartao>, IPertenceAoUsuario
     /// <see cref="ToleranciaDiasVencimento"/> dias corridos depois, como o banco faz com o vencimento que cai em fim de
     /// semana ou feriado. Falha com um aviso de texto fixo, sem dado do usuário, que não impede a importação.
     /// </summary>
-    public Result ConferirVencimento(DateOnly vencimento)
+    public Result ConferirVencimento(VencimentoFatura vencimento)
     {
-        DateOnly cadastrado = VencimentoNoMes(vencimento);
+        DateOnly cadastrado = VencimentoNoMes(vencimento.Mes);
 
         return Result.SuccessIf(
-            vencimento >= cadastrado && vencimento <= cadastrado.AddDays(ToleranciaDiasVencimento),
+            vencimento.Value >= cadastrado && vencimento.Value <= cadastrado.AddDays(ToleranciaDiasVencimento),
             "O vencimento da fatura não fecha com o dia de vencimento cadastrado no cartão: confira a data do vencimento e o ciclo do cartão.");
     }
 

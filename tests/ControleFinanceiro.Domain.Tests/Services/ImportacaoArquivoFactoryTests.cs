@@ -35,7 +35,7 @@ public sealed class ImportacaoArquivoFactoryTests
         Cartao cartao,
         LayoutArquivoImportacao layout,
         PeriodoArquivo periodo,
-        DateOnly vencimento,
+        VencimentoFatura vencimento,
         byte lidas,
         DateTimeOffset importadaEm)
     {
@@ -44,7 +44,7 @@ public sealed class ImportacaoArquivoFactoryTests
         result.IdUsuario.Should().Be(cartao.IdUsuario);
         result.Origem.Should().Be(OrigemTransacao.DoCartao(cartao.Id));
         result.DataVencimentoFatura.Should().Be(vencimento);
-        result.MesVencimentoFatura.Should().Be((MesReferencia)vencimento);
+        result.MesVencimentoFatura.Should().Be(vencimento.Mes);
     }
 
     [Theory, DomainAutoData]
@@ -52,7 +52,7 @@ public sealed class ImportacaoArquivoFactoryTests
         Cartao cartao,
         LayoutArquivoImportacao layout,
         PeriodoArquivo periodo,
-        DateOnly vencimento,
+        VencimentoFatura vencimento,
         DateTimeOffset importadaEm)
     {
         Action registrar = () => ImportacaoArquivoFactory.Registrar(cartao, layout, periodo, vencimento, lidas: -1, importadaEm);

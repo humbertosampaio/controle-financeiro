@@ -20,7 +20,7 @@ public static class DespesaAdiadaFactory
     /// <param name="categoriasDoUsuario">Todas as categorias do usuário, entre elas a de cada categoria do banco.</param>
     /// <param name="cartoesDoUsuario">Todos os cartões do usuário, entre eles o de cada compra.</param>
     /// <param name="adiadasDoUsuario">Todas as despesas adiadas do usuário, e só as dele.</param>
-    /// <param name="vencimento">A data de vencimento da fatura do arquivo: a adiada criada vence nela.</param>
+    /// <param name="vencimento">O vencimento da fatura do arquivo: a adiada criada vence nele.</param>
     /// <param name="transacoesNovas">
     /// As transações que a importação acabou de gravar, de todos os cartões do arquivo, na ordem dele: reimportar não cria
     /// a despesa de novo.
@@ -37,7 +37,7 @@ public static class DespesaAdiadaFactory
         IReadOnlyCollection<CategoriaDespesa> categoriasDoUsuario,
         IReadOnlyCollection<Cartao> cartoesDoUsuario,
         IReadOnlyCollection<DespesaAdiada> adiadasDoUsuario,
-        DateOnly vencimento,
+        VencimentoFatura vencimento,
         IReadOnlyList<Transacao> transacoesNovas)
     {
         if (beneficiariosDoUsuario.Any(b => b.IdUsuario != idUsuario))
@@ -58,7 +58,7 @@ public static class DespesaAdiadaFactory
         if (transacoesNovas.Any(t => t.EhOrigemConta))
             throw new ArgumentException("A lista traz uma transação que não é de fatura.", nameof(transacoesNovas));
 
-        MesReferencia mesVencimento = vencimento;
+        MesReferencia mesVencimento = vencimento.Mes;
         if (transacoesNovas.Any(t => t.MesVencimentoFatura != mesVencimento))
             throw new ArgumentException("A lista traz uma transação de outra fatura.", nameof(transacoesNovas));
 
@@ -79,7 +79,7 @@ public static class DespesaAdiadaFactory
                 continue;
             }
 
-            criadas.Add(Criar(idUsuario, categoriasDoUsuario, idCartao, idBeneficiario, VencimentoFatura.Criar(vencimento), compra));
+            criadas.Add(Criar(idUsuario, categoriasDoUsuario, idCartao, idBeneficiario, vencimento, compra));
         }
 
         return criadas;

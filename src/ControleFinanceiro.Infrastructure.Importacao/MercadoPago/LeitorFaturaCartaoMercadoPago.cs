@@ -91,7 +91,7 @@ public sealed partial class LeitorFaturaCartaoMercadoPago : ILeitorFatura
             .Bind(() => LerLinhasAsync(csv, cancellationToken))
             .Bind(lidos => LerVencimentoELancamentos(lidos).MapError(ConteudoInvalido))
             .Bind(vencimentoELancamentos => Fatura
-                .Criar(Banco.MercadoPago, vencimentoELancamentos.Vencimento, vencimentoELancamentos.Lancamentos)
+                .Criar(Banco.MercadoPago, (VencimentoFatura)vencimentoELancamentos.Vencimento, vencimentoELancamentos.Lancamentos)
                 .MapError(ConteudoInvalido));
     }
 

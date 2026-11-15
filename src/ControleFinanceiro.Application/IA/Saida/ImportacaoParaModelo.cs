@@ -166,7 +166,7 @@ public sealed record ImportacaoParaModelo : ISaidaModelo
             layout,
             importada.Banco,
             fatura.Periodo,
-            importada.Vencimento,
+            importada.Vencimento.Value,
             importada.Cartoes.Select(CartaoImportadoParaModelo.De).ToArray(),
             avisos);
     }

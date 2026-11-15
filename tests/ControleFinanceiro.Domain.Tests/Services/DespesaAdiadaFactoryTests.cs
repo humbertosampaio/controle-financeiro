@@ -23,7 +23,7 @@ public sealed class DespesaAdiadaFactoryTests
     /// O vencimento exato da fatura que traz as compras, num dia que o cartão não pode ter (a faixa vai até o 24), para o
     /// teste distinguir a data exata do arquivo do dia de vencimento do cartão.
     /// </summary>
-    private static readonly DateOnly _vencimento = new(2026, 04, 25);
+    private static readonly VencimentoFatura _vencimento = (VencimentoFatura)new DateOnly(2026, 04, 25);
 
     [Theory, CompraAutoData]
     public void CriarDaFatura_Quando_CompraAVistaSemPrevisao_Deve_CriarAdiadaCobradaEPendente(
@@ -44,11 +44,11 @@ public sealed class DespesaAdiadaFactoryTests
         despesa.IdDespesaRecorrente.Should().BeNull();
         despesa.Descricao.Should().Be((TextoObrigatorio)DescricaoCompra);
         despesa.DataOcorrencia.Should().Be(_dataCompra);
-        despesa.MesReferencia.Should().Be((MesReferencia)_vencimento);
+        despesa.MesReferencia.Should().Be(_vencimento.Mes);
         despesa.Cobranca.Should().Be(new Cobranca(novas.Single().Id, (ReaisPositivo)99.90m));
         despesa.Pagamento.EstaPago.Should().BeFalse();
         despesa.Pagamento.ValorProjetado.Should().Be((ReaisPositivo)99.90m);
-        despesa.Pagamento.DataProjetada.Should().Be(_vencimento);
+        despesa.Pagamento.DataProjetada.Should().Be(_vencimento.Value);
     }
 
     // A regressão da #185: o banco empurrou o fechamento do dia 3 para o dia 6, e a compra do dia 4 veio na fatura que vence
@@ -60,14 +60,14 @@ public sealed class DespesaAdiadaFactoryTests
         Lancamento compra)
     {
         cartao.AlterarCicloFatura((DiaVencimentoCartao)10, (DiaFechamentoCartao)3);
-        DateOnly vencimentoEmpurrado = new(2026, 03, 13);
+        VencimentoFatura vencimentoEmpurrado = (VencimentoFatura)new DateOnly(2026, 03, 13);
         IReadOnlyList<Transacao> novas = fatura.Importar(cartao, vencimentoEmpurrado, Compra(compra.Identidade, data: new DateOnly(2026, 03, 04)));
 
         IReadOnlyList<DespesaAdiada> result = fatura.CriarAdiadas([cartao], adiadasDoUsuario: [], vencimentoEmpurrado, novas);
 
         DespesaAdiada despesa = result.Should().ContainSingle().Subject;
         despesa.MesReferencia.Should().Be((MesReferencia)(03, 2026));
-        despesa.Pagamento.DataProjetada.Should().Be(vencimentoEmpurrado);
+        despesa.Pagamento.DataProjetada.Should().Be(vencimentoEmpurrado.Value);
     }
 
     [Theory, CompraAutoData]
@@ -75,7 +75,7 @@ public sealed class DespesaAdiadaFactoryTests
     {
         IReadOnlyList<Transacao> novas = fatura.Importar(cartao, compra);
 
-        Action act = () => fatura.CriarAdiadas([cartao], adiadasDoUsuario: [], _vencimento.AddMonths(1), novas);
+        Action act = () => fatura.CriarAdiadas([cartao], adiadasDoUsuario: [], (VencimentoFatura)_vencimento.Value.AddMonths(1), novas);
 
         act.Should().ThrowExactly<ArgumentException>().WithParameterName("transacoesNovas");
     }
@@ -175,7 +175,7 @@ public sealed class DespesaAdiadaFactoryTests
     public void CriarDaFatura_Quando_PrevisaoDeOutroMes_Deve_Criar(Cartao cartao, FaturaDeTeste fatura, Lancamento compra)
     {
         IReadOnlyList<Transacao> novas = fatura.Importar(cartao, compra);
-        MesReferencia mesSeguinte = ((MesReferencia)_vencimento).Posterior();
+        MesReferencia mesSeguinte = _vencimento.Mes.Posterior();
 
         IReadOnlyList<DespesaAdiada> result = fatura.CriarAdiadas([cartao], [fatura.PrevisaoDe(cartao, compra, mesSeguinte)], novas);
 
@@ -421,7 +421,7 @@ public sealed class DespesaAdiadaFactoryTests
         /// <summary>As compras importadas numa fatura que vence em <see cref="_vencimento"/>.</summary>
         public IReadOnlyList<Transacao> Importar(Cartao cartao, params Lancamento[] compras) => Importar(cartao, _vencimento, compras);
 
-        public IReadOnlyList<Transacao> Importar(Cartao cartao, DateOnly vencimento, params Lancamento[] compras)
+        public IReadOnlyList<Transacao> Importar(Cartao cartao, VencimentoFatura vencimento, params Lancamento[] compras)
         {
             Resolver(compras);
             ImportacaoArquivo importacao = ImportacaoArquivoFactory.Registrar(cartao, _layout, _periodo, vencimento, compras.Length, _importadaEm);
@@ -441,7 +441,7 @@ public sealed class DespesaAdiadaFactoryTests
         public IReadOnlyList<DespesaAdiada> CriarAdiadas(
             IReadOnlyCollection<Cartao> cartoesDoUsuario,
             IReadOnlyCollection<DespesaAdiada> adiadasDoUsuario,
-            DateOnly vencimento,
+            VencimentoFatura vencimento,
             IReadOnlyList<Transacao> transacoesNovas)
         {
             return DespesaAdiadaFactory.CriarDaFatura(
@@ -455,7 +455,7 @@ public sealed class DespesaAdiadaFactoryTests
         }
 
         /// <summary>A adiada que prevê a compra no cartão, na fatura que vence em <see cref="_vencimento"/>.</summary>
-        public DespesaAdiada PrevisaoDe(Cartao cartao, Lancamento compra) => PrevisaoDe(cartao, compra, _vencimento);
+        public DespesaAdiada PrevisaoDe(Cartao cartao, Lancamento compra) => PrevisaoDe(cartao, compra, _vencimento.Mes);
 
         /// <summary>A adiada que prevê a compra no cartão: mesmo beneficiário, no mês de vencimento pedido, sem cobrança.</summary>
         public DespesaAdiada PrevisaoDe(Cartao cartao, Lancamento compra, MesReferencia mesVencimento)

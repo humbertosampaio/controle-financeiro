@@ -1,3 +1,4 @@
+using ControleFinanceiro.Domain.Cartoes;
 using ControleFinanceiro.Domain.Importacoes;
 using ControleFinanceiro.Domain.Usuarios;
 using Microsoft.EntityFrameworkCore;
@@ -61,6 +62,7 @@ internal sealed class ImportacaoArquivoConfiguration : IEntityTypeConfiguration<
             .HasColumnName("importada_em");
 
         entity.Property(i => i.DataVencimentoFatura)
-            .HasColumnName("data_vencimento_fatura");
+            .HasColumnName("data_vencimento_fatura")
+            .HasConversion(vencimento => vencimento!.Value, data => (VencimentoFatura)data);
     }
 }

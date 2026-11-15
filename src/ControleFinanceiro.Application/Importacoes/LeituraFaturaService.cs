@@ -1,3 +1,4 @@
+using ControleFinanceiro.Domain.Cartoes;
 using ControleFinanceiro.Domain.Importacoes;
 using CSharpFunctionalExtensions;
 
@@ -24,13 +25,13 @@ public sealed class LeituraFaturaService
     public Task<Result<Fatura, FalhaLeituraArquivo>> LerAsync(
         LayoutArquivoImportacao layout,
         Stream arquivo,
-        Maybe<DateOnly> vencimento,
+        Maybe<VencimentoFatura> vencimento,
         CancellationToken ct)
     {
         if (!LayoutArquivoImportacao.FaturasVencimentoInformado.Contains(layout))
             return _leitores.Single(l => l.Layout == layout).LerAsync(arquivo, ct);
 
-        DateOnly informado = vencimento.GetValueOrThrow($"O layout {layout.Value} pede o vencimento da fatura.");
+        VencimentoFatura informado = vencimento.GetValueOrThrow($"O layout {layout.Value} pede o vencimento da fatura.");
         return _leitoresVencimentoInformado.Single(l => l.Layout == layout).LerAsync(arquivo, informado, ct);
     }
 }

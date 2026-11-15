@@ -22,13 +22,13 @@ public static class ImportacaoArquivoFactory
         return ImportacaoArquivo.RegistrarExtrato(conta.IdUsuario, OrigemTransacao.DaConta(conta.Id), layout, periodo, lidas, importadaEm);
     }
 
-    /// <param name="vencimento">A data em que a fatura do arquivo vence.</param>
+    /// <param name="vencimento">O vencimento da fatura do arquivo.</param>
     /// <param name="lidas">Quantos lançamentos o arquivo trazia.</param>
     public static ImportacaoArquivo Registrar(
         Cartao cartao,
         LayoutArquivoImportacao layout,
         PeriodoArquivo periodo,
-        DateOnly vencimento,
+        VencimentoFatura vencimento,
         int lidas,
         DateTimeOffset importadaEm)
     {

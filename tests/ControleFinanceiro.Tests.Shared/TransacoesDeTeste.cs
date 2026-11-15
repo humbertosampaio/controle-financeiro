@@ -15,7 +15,7 @@ public sealed class TransacoesDeTeste
     private readonly ContaBancaria _conta;
     private readonly LayoutArquivoImportacao _layout;
     private readonly PeriodoArquivo _periodo;
-    private readonly DateOnly _vencimentoFatura;
+    private readonly VencimentoFatura _vencimentoFatura;
     private readonly DateTimeOffset _importadaEm;
 
     /// <param name="vencimentoFatura">O vencimento da fatura que traz as transações do cartão.</param>
@@ -24,7 +24,7 @@ public sealed class TransacoesDeTeste
         ContaBancaria conta,
         LayoutArquivoImportacao layout,
         PeriodoArquivo periodo,
-        DateOnly vencimentoFatura,
+        VencimentoFatura vencimentoFatura,
         DateTimeOffset importadaEm)
     {
         _idUsuario = idUsuario;

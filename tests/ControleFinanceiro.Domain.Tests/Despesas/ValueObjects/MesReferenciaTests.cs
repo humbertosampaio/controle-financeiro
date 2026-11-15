@@ -289,4 +289,48 @@ public sealed class MesReferenciaTests
 
         act.Should().ThrowExactly<ArgumentOutOfRangeException>().WithParameterName("meses");
     }
+
+    [Fact]
+    public void Anterior_Quando_MesesPassamDoAno_Deve_RecuarParaOAnoAnterior()
+    {
+        MesReferencia sut = (MesReferencia)(02, 2026);
+
+        MesReferencia result = sut.Anterior(meses: 3);
+
+        result.Should().Be((MesReferencia)(11, 2025));
+    }
+
+    [Theory, DomainAutoData]
+    public void Anterior_Quando_ZeroMeses_Deve_SerOMesmoMes(MesReferencia sut)
+    {
+        sut.Anterior(meses: 0).Should().Be(sut);
+    }
+
+    [Theory, DomainAutoData]
+    public void Anterior_Quando_MesesNegativos_Deve_LancarExcecao(MesReferencia sut)
+    {
+        Func<MesReferencia> act = () => sut.Anterior(meses: -1);
+
+        act.Should().ThrowExactly<ArgumentOutOfRangeException>().WithParameterName("meses");
+    }
+
+    [Fact]
+    public void Anterior_Quando_MesesChegamAJaneiroDoAno1_Deve_SerOPrimeiroMes()
+    {
+        MesReferencia sut = (MesReferencia)(03, 1);
+
+        MesReferencia result = sut.Anterior(meses: 2);
+
+        result.Should().Be((MesReferencia)(01, 1));
+    }
+
+    [Fact]
+    public void Anterior_Quando_MesesPassamDeJaneiroDoAno1_Deve_LancarInvalidOperationException()
+    {
+        MesReferencia sut = (MesReferencia)(03, 1);
+
+        Action act = () => sut.Anterior(meses: 3);
+
+        act.Should().ThrowExactly<InvalidOperationException>().WithMessage("Não há mês de referência 3 meses antes de '03/1'");
+    }
 }

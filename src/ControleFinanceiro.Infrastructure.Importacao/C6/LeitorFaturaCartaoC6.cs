@@ -69,7 +69,7 @@ public sealed partial class LeitorFaturaCartaoC6 : ILeitorFaturaVencimentoInform
     public LayoutArquivoImportacao Layout => LayoutArquivoImportacao.C6CartaoCsv;
 
     /// <summary>Lê as colunas, depois cada compra, e monta a fatura com o vencimento informado.</summary>
-    public async Task<Result<Fatura, FalhaLeituraArquivo>> LerAsync(Stream arquivo, DateOnly vencimento, CancellationToken cancellationToken)
+    public async Task<Result<Fatura, FalhaLeituraArquivo>> LerAsync(Stream arquivo, VencimentoFatura vencimento, CancellationToken cancellationToken)
     {
         using StreamReader leitor = new(arquivo, Encoding.UTF8, detectEncodingFromByteOrderMarks: true, leaveOpen: true);
         using CsvReader csv = CsvReader.Create(leitor, _opcoes);
