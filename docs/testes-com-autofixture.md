@@ -65,6 +65,15 @@ Lancamento lancamento = new(despesa.DataOcorrencia.AddDays(1), despesa.Descricao
 
 Parâmetro lido pelo teste, inclusive `[Frozen]` lido no arrange ou no assert, passa no critério: ele decide o cenário ou é o que se verifica.
 
+### Conta de mais de um passo vira variáveis com nome
+
+Quando o arrange calcula um valor em mais de um passo, cada passo vai numa variável com nome, de preferência com o vocabulário do domínio. Na #185, a data da compra de uma parcela saía de uma expressão só, que recuava o vencimento pelos meses do cenário e pelas parcelas anteriores de uma vez, e passou a sair em dois passos, um recuo do vencimento ao primeiro mês possível e outro dele às parcelas anteriores:
+
+```csharp
+DateOnly noPrimeiroMesPossivel = modelo.Vencimento.Value.AddMonths(-mesesDepoisPrimeiroMesPossivel);
+DateOnly dataCompra = noPrimeiroMesPossivel.AddMonths(-parcela.QuantidadeParcelasAnteriores);
+```
+
 ### Sinais de que o teste precisa de outra montagem
 
 Já decidido que o teste tem valor, o critério é a legibilidade: deve ser fácil entender o cenário e o que cada variável representa. Um AutoData privado declara só o cenário da classe, como congelar o usuário ou fixar a parcela. Um `Register` grande, com vários `fixture.Create<T>`, não deixa claro o que se quer representar. Três sinais pedem outra montagem:
