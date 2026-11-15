@@ -1,3 +1,4 @@
+using ControleFinanceiro.Domain.Cartoes;
 using ControleFinanceiro.Domain.Importacoes;
 using ControleFinanceiro.Domain.Usuarios;
 using Microsoft.EntityFrameworkCore;
@@ -15,6 +16,7 @@ internal sealed class ImportacaoArquivoConfiguration : IEntityTypeConfiguration<
             tabela.HasCheckConstraint("CK_importacoes_origem", "num_nonnulls(id_conta, id_cartao) = 1");
             tabela.HasCheckConstraint("CK_importacoes_periodo", "periodo_inicio <= periodo_fim");
             tabela.HasCheckConstraint("CK_importacoes_lidas", "lidas >= 0");
+            tabela.HasCheckConstraint("CK_importacoes_vencimento_fatura", "(id_cartao IS NULL) = (data_vencimento_fatura IS NULL)");
         });
 
         entity.HasKey(i => i.Id);
@@ -58,5 +60,9 @@ internal sealed class ImportacaoArquivoConfiguration : IEntityTypeConfiguration<
 
         entity.Property(i => i.ImportadaEm)
             .HasColumnName("importada_em");
+
+        entity.Property(i => i.VencimentoFatura)
+            .HasColumnName("data_vencimento_fatura")
+            .HasConversion(vencimento => vencimento!.Value, data => (VencimentoFatura)data);
     }
 }

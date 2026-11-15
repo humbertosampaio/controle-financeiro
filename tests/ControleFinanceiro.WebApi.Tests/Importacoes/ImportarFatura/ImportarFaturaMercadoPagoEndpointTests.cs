@@ -38,6 +38,7 @@ public sealed class ImportarFaturaMercadoPagoEndpointTests : IAsyncLifetime
 
         ImportarFaturaResponse corpo = await ImportarComSucessoAsync(idUsuario, FaturaCartaoMercadoPago.Completo());
 
+        corpo.DataVencimento.Should().Be(FaturaCartaoMercadoPago.Vencimento);
         ImportarFaturaResponse.CartaoImportado linha = corpo.Cartoes.Should().ContainSingle().Subject;
         ((SufixoCartao)linha.Sufixo).Should().Be(FaturaCartaoMercadoPago.Sufixo);
         linha.Lidas.Should().Be(FaturaCartaoMercadoPago.QuantidadeLancamentos);
@@ -54,12 +55,14 @@ public sealed class ImportarFaturaMercadoPagoEndpointTests : IAsyncLifetime
         importacao.Layout.Should().BeSameAs(LayoutArquivoImportacao.MercadoPagoCartaoCsv);
         importacao.Origem.Should().Be(OrigemTransacao.DoCartao(cartao.Id));
         importacao.Periodo.Should().Be((PeriodoArquivo)(FaturaCartaoMercadoPago.PrimeiraData, FaturaCartaoMercadoPago.UltimaData));
+        importacao.VencimentoFatura.Should().Be((VencimentoFatura)FaturaCartaoMercadoPago.Vencimento);
 
         List<Transacao> transacoes = await _api.ObterTodosAsync(db => db.Transacoes);
         transacoes.Should().HaveCount(FaturaCartaoMercadoPago.QuantidadeLancamentos).And.AllSatisfy(t =>
         {
             t.Origem.Should().Be(OrigemTransacao.DoCartao(cartao.Id));
             t.IdImportacao.Should().Be(importacao.Id);
+            t.MesVencimentoFatura.Should().Be((MesReferencia)FaturaCartaoMercadoPago.Vencimento);
         });
         transacoes.Sum(t => t.Valor).Should().Be(FaturaCartaoMercadoPago.SomaLancamentos);
     }
@@ -74,7 +77,7 @@ public sealed class ImportarFaturaMercadoPagoEndpointTests : IAsyncLifetime
 
         List<Transacao> transacoes = await _api.ObterTodosAsync(db => db.Transacoes);
         Transacao parcelada = transacoes.Should().ContainSingle(t => t.EhParcelada).Subject;
-        parcelada.Parcela.Should().Be((Parcela)(3, 10));
+        parcelada.Parcela.Should().Be((Parcela)(5, 10));
         parcelada.Data.Should().Be(FaturaCartaoMercadoPago.PrimeiraData);
     }
 
@@ -136,7 +139,24 @@ public sealed class ImportarFaturaMercadoPagoEndpointTests : IAsyncLifetime
         transacoes
             .Where(t => t.EhParcelada)
             .Select(t => t.Parcela)
-            .Should().BeEquivalentTo([(Parcela)(3, 10), (Parcela)(4, 10)]);
+            .Should().BeEquivalentTo([(Parcela)(5, 10), (Parcela)(6, 10)]);
+    }
+
+    // Decisão 10 da #185: a reimportação não muda o que já foi gravado, e só a transação nova pega o mês da fatura nova.
+    [Theory, ApiAutoData]
+    public async Task Post_Quando_FaturaSeguinteComOutroVencimento_Deve_ManterOMesDasTransacoesJaGravadas(CadastrarUsuarioRequest cadastro)
+    {
+        Guid idUsuario = await _api.CadastrarUsuarioAsync(cadastro);
+        await ResolverPendenciasAsync(idUsuario, FaturaCartaoMercadoPago.Completo());
+        _ = await ImportarComSucessoAsync(idUsuario, FaturaCartaoMercadoPago.Completo());
+
+        _ = await ImportarComSucessoAsync(idUsuario, FaturaCartaoMercadoPago.NaFaturaSeguinte());
+
+        List<Transacao> transacoes = await _api.ObterTodosAsync(db => db.Transacoes);
+        Parcela parcelaNova = (Parcela)(6, 10);
+        MesReferencia mesPrimeiraFatura = (MesReferencia)FaturaCartaoMercadoPago.Vencimento;
+        transacoes.Single(t => t.Parcela == parcelaNova).MesVencimentoFatura.Should().Be(mesPrimeiraFatura.Posterior());
+        transacoes.Where(t => t.Parcela != parcelaNova).Should().OnlyContain(t => t.MesVencimentoFatura == mesPrimeiraFatura);
     }
 
     [Theory, ApiAutoData]
@@ -165,6 +185,39 @@ public sealed class ImportarFaturaMercadoPagoEndpointTests : IAsyncLifetime
         resposta.StatusCode.Should().Be(HttpStatusCode.UnprocessableEntity);
         (await resposta.CamposComErroAsync()).Should().Equal("arquivo");
         (await _api.ObterTodosAsync(db => db.Cartoes)).Should().BeEmpty();
+        await _api.DeveEstarSemImportacaoAsync();
+    }
+
+    [Theory, ApiAutoData]
+    public async Task Post_Quando_VencimentoDoArquivoAntesDasCompras_Deve_RetornarErroNoArquivoSemGravar(CadastrarUsuarioRequest cadastro)
+    {
+        Guid idUsuario = await _api.CadastrarUsuarioAsync(cadastro);
+        await ResolverPendenciasAsync(idUsuario, FaturaCartaoMercadoPago.Completo());
+
+        using HttpResponseMessage resposta = await _api.ImportarFaturaAsync(
+            idUsuario,
+            LayoutArquivoImportacao.MercadoPagoCartaoCsv,
+            FaturaCartaoMercadoPago.ComVencimentoAntesDasCompras());
+
+        resposta.StatusCode.Should().Be(HttpStatusCode.UnprocessableEntity);
+        (await resposta.CamposComErroAsync()).Should().Equal("arquivo");
+        await _api.DeveEstarSemImportacaoAsync();
+    }
+
+    [Theory, ApiAutoData]
+    public async Task Post_Quando_VencimentoNoLayoutQueOTraz_Deve_RetornarErroNoVencimentoSemGravar(CadastrarUsuarioRequest cadastro)
+    {
+        Guid idUsuario = await _api.CadastrarUsuarioAsync(cadastro);
+        await ResolverPendenciasAsync(idUsuario, FaturaCartaoMercadoPago.Completo());
+
+        using HttpResponseMessage resposta = await _api.ImportarFaturaAsync(
+            idUsuario,
+            LayoutArquivoImportacao.MercadoPagoCartaoCsv,
+            FaturaCartaoMercadoPago.Completo(),
+            FaturaCartaoMercadoPago.Vencimento);
+
+        resposta.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+        (await resposta.CamposComErroAsync()).Should().Equal("dataVencimento");
         await _api.DeveEstarSemImportacaoAsync();
     }
 

@@ -124,7 +124,7 @@ public static class LoteTransacoesFactory
         IReadOnlyList<ChaveDeduplicacao> chaves = ChaveDeduplicacao.CalcularLote(banco, origem, lancamentos.Select(l => l.Identidade));
 
         return lancamentos
-            .Zip(chaves, (lancamento, chave) => Transacao.Criar(idUsuario, importacao.Id, origem, lancamento, chave))
+            .Zip(chaves, (lancamento, chave) => Transacao.Criar(idUsuario, importacao.Id, origem, importacao.MesVencimentoFatura, lancamento, chave))
             .ToArray();
     }
 }

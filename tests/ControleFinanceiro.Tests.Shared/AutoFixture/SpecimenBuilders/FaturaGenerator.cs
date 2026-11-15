@@ -1,11 +1,12 @@
 using AutoFixture.Kernel;
+using ControleFinanceiro.Domain.Cartoes;
 using ControleFinanceiro.Domain.Importacoes;
 using ControleFinanceiro.Domain.Shared.ValueObjects;
 
 namespace ControleFinanceiro.Tests.Shared.AutoFixture.SpecimenBuilders;
 
 /// <summary>
-/// Monta a <see cref="Fatura"/> pelo <c>Criar</c>, que devolve <c>Result</c>, com os lançamentos do contexto. Com
+/// Monta a <see cref="Fatura"/> pelo <c>Criar</c>, que devolve <c>Result</c>, com o vencimento e os lançamentos do contexto. Com
 /// <c>[Frozen] SufixoCartao</c> no teste, todos os lançamentos são do mesmo cartão.
 /// </summary>
 public sealed class FaturaGenerator : ISpecimenBuilder
@@ -16,7 +17,7 @@ public sealed class FaturaGenerator : ISpecimenBuilder
             return new NoSpecimen();
 
         return Fatura
-            .Criar(context.Create<Banco>(), context.CreateMany<LancamentoFatura>())
+            .Criar(context.Create<Banco>(), context.Create<VencimentoFatura>(), context.CreateMany<LancamentoFatura>())
             .Value;
     }
 }

@@ -4,6 +4,7 @@ using ControleFinanceiro.Domain.Cartoes;
 using ControleFinanceiro.Domain.Categorias;
 using ControleFinanceiro.Domain.Contas;
 using ControleFinanceiro.Domain.Despesas;
+using ControleFinanceiro.Domain.Importacoes;
 using ControleFinanceiro.Domain.Shared;
 using ControleFinanceiro.Domain.Shared.ValueObjects;
 using ControleFinanceiro.Domain.Transacoes;
@@ -70,7 +71,13 @@ public static class ErrosParaModelo
 
         public static readonly ErroParaModelo LayoutInvalido = Fixo("Layout inválido: use um dos códigos de layout da descrição da ferramenta.");
 
-        public static readonly ErroParaModelo SufixoContaInvalido = Fixo("O layout mercado-pago-conta-csv pede o sufixo da conta: os 4 últimos caracteres do número da conta, que o usuário informa.");
+        public static readonly ErroParaModelo SufixoContaInvalido = Fixo($"O layout {LayoutArquivoImportacao.MercadoPagoContaCsv.Value} pede o sufixo da conta: os 4 últimos caracteres do número da conta, que o usuário informa.");
+
+        public static readonly ErroParaModelo VencimentoObrigatorio = Fixo($"O layout {LayoutArquivoImportacao.C6CartaoCsv.Value} pede o vencimento da fatura: a data em AAAA-MM-DD, que o usuário informa.");
+
+        public static readonly ErroParaModelo VencimentoNoArquivo = Fixo($"O layout {LayoutArquivoImportacao.MercadoPagoCartaoCsv.Value} traz o vencimento no arquivo: chame a ferramenta de novo sem o vencimento.");
+
+        public static readonly ErroParaModelo VencimentoIncompativel = Fixo($"O vencimento da fatura não fecha com as datas das compras do arquivo, e nada foi importado: no layout {LayoutArquivoImportacao.C6CartaoCsv.Value}, confira com o usuário a data de vencimento informada; nos outros, peça a ele para conferir o arquivo.");
 
         public static readonly ErroParaModelo ContaDeOutroTipo = Fixo("O usuário já tem uma conta nesse banco com esse final, mas de outro tipo: peça a ele para resolver pela API antes de importar.");
 
@@ -137,6 +144,7 @@ public static class ErrosParaModelo
             ErroBeneficiariosNaoResolvidos => Importacao.BeneficiariosNaoResolvidos,
             ErroCategoriasBancoNaoResolvidas => Importacao.CategoriasNaoResolvidas,
             ErroIdentificadorRepetido => Importacao.IdentificadorRepetido,
+            ErroVencimentoIncompativelComFatura => Importacao.VencimentoIncompativel,
             _ => throw new InvalidOperationException($"Erro sem mensagem mapeada: {erro}"),
         };
     }

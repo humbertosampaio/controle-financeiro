@@ -126,21 +126,23 @@ Uma cobrança que chegou entre as duas etapas muda o total, e a confirmação de
 
 O servidor importa os extratos e as faturas que estão na pasta `dados/` do repositório, ignorada pelo git, com a mesma regra da importação pela API. Como no vínculo, só a segunda chamada grava, e com as mesmas travas de aprovação:
 
-1. **`prever_importacao`** recebe o `caminho` do arquivo, o `layout` e, só no `mercado-pago-conta-csv`, o `sufixoConta` que você informa (os 4 últimos caracteres do número da conta, que esse arquivo não traz). O servidor lê o arquivo, aplica a importação em memória e devolve o banco, o período, os lançamentos lidos, novos e já existentes, os cartões da fatura, se a conta será criada e um `resumo` em uma frase. Nada é gravado.
-2. **`confirmar_importacao`** recebe o `resumo` da prévia, primeiro nos argumentos, e os mesmos caminho, layout e sufixo. O servidor lê o arquivo de novo, refaz a importação do zero e só grava se o resumo recalculado for o mesmo. O resumo traz o final da conta, e outro sufixo na confirmação muda o resumo e não grava. O caminho não entra no resumo, mas fica nos argumentos do pedido de aprovação.
+1. **`prever_importacao`** recebe o `caminho` do arquivo, o `layout` e, conforme o layout, o que o arquivo não traz e você informa: no `mercado-pago-conta-csv`, o `sufixoConta` (os 4 últimos caracteres do número da conta); no `c6-cartao-csv`, o `vencimento` da fatura, em AAAA-MM-DD. O `vencimento` no `mercado-pago-cartao-csv`, que o traz no arquivo, é recusado (`VencimentoNoArquivo`). O servidor lê o arquivo, aplica a importação em memória e devolve o banco, o período, o vencimento da fatura, os lançamentos lidos, novos e já existentes, os cartões da fatura, se a conta será criada, os avisos e um `resumo` em uma frase. Nada é gravado.
+2. **`confirmar_importacao`** recebe o `resumo` da prévia, primeiro nos argumentos, e os mesmos caminho, layout, sufixo e vencimento. O servidor lê o arquivo de novo, refaz a importação do zero e só grava se o resumo recalculado for o mesmo. O resumo traz o final da conta, no extrato, e o vencimento, na fatura (`com vencimento em dd/MM/yyyy`): outro sufixo ou outro vencimento na confirmação muda o resumo e não grava. O caminho não entra no resumo, mas fica nos argumentos do pedido de aprovação.
 
 | Layout | Arquivo |
 |---|---|
 | `c6-conta-csv` | extrato CSV da conta do C6 |
 | `mercado-pago-conta-csv` | extrato CSV da conta do Mercado Pago, com o `sufixoConta` |
-| `c6-cartao-csv` | fatura CSV do cartão do C6 |
+| `c6-cartao-csv` | fatura CSV do cartão do C6, com o `vencimento` |
 | `mercado-pago-cartao-csv` | fatura CSV do cartão do Mercado Pago, no formato de [fatura-mercado-pago.md](fatura-mercado-pago.md) |
 
-**O que vai ao modelo.** Só contagens, as datas do período, o banco, o layout, os finais de cartão, o final da conta (no resumo), o número da linha com erro e mensagens fixas. Nenhuma linha do arquivo, nem a descrição, a contraparte ou o valor de um lançamento, nem o nome do arquivo, o número inteiro da conta ou os ids. A falha de leitura diz só a linha e o tipo (fora do layout, sem as colunas, lançamento inválido ou conteúdo inválido); para ver o motivo completo, importe o mesmo arquivo pela API.
+**O que vai ao modelo.** Só contagens, as datas do período e do vencimento, o banco, o layout, os finais de cartão, o final da conta (no resumo), o número da linha com erro, os avisos de texto fixo do domínio, mascarados, e mensagens fixas. Nenhuma linha do arquivo, nem a descrição, a contraparte ou o valor de um lançamento, nem o nome do arquivo, o número inteiro da conta ou os ids. A falha de leitura diz só a linha e o tipo (fora do layout, sem as colunas, lançamento inválido ou conteúdo inválido); para ver o motivo completo, importe o mesmo arquivo pela API.
 
 **Pasta de origem.** Por padrão, é a `dados/` duas pastas acima da cópia publicada: de `artifacts/mcp/`, a `dados/` da raiz do repositório. Para usar outra pasta, defina `Mcp:OrigemArquivoImportacao` no User Secret do servidor ou numa variável de ambiente. O caminho pode ser absoluto ou relativo à pasta que contém a pasta de origem, que, com a pasta padrão, é a raiz do repositório: `dados/2026/extrato.csv`. O servidor só abre um `.csv` de até 5 MB dentro dessa pasta, e recusa o caminho que sai dela por `..`, por uma pasta irmã com o mesmo prefixo ou por um link (symlink ou junction) no caminho. Fora do `artifacts/mcp/`, como no `bin/` do `src` ou dos testes, a pasta padrão não existe e a importação falha: o servidor nunca procura o repositório subindo pastas.
 
 **Cadastros que faltam.** A conta do extrato que ainda não existe é criada, e a prévia avisa (`conta_nova`). O cartão nunca é criado: a fatura com um final sem cartão é recusada (`CartoesNaoResolvidos`) e lista os finais em `pendencias.finais_sem_cartao`. Os textos de beneficiário e as categorias do banco que ainda não são alias também recusam a importação, e vão só como quantidade em `pendencias`. Nos três casos, resolva pela API (a prévia da importação na API lista os textos) e importe de novo.
+
+**Vencimento da fatura.** O vencimento que não fecha com as compras do arquivo (uma compra à vista do dia do vencimento ou depois, ou uma compra que cairia a mais de 2 meses dele) é recusado com `VencimentoIncompativel`, e nada é gravado. O que diverge do ciclo cadastrado no cartão (fora do dia de vencimento até 4 dias depois) só gera um aviso em `avisos`: confira a data informada e o ciclo do cartão. A reimportação com outro vencimento não muda as transações já gravadas: só as novas ficam na fatura nova.
 
 **Erros.** Confirmar duas vezes, ou confirmar depois que o arquivo mudou, devolve `ResumoDivergente` sem gravar: a segunda leitura daria outras contagens. Uma prévia nova do mesmo arquivo já importado mostra 0 novas. A importação gravada se desfaz só no banco, pelo roteiro abaixo; desfazer uma importação pela API é a #54.
 
@@ -151,7 +153,7 @@ O servidor importa os extratos e as faturas que estão na pasta `dados/` do repo
 Para recomeçar o banco local a partir dos arquivos de `dados/`:
 
 1. Publique o servidor (`pwsh scripts/PublicarMcp.ps1`) e reconecte o cliente.
-2. Limpe os dados importados com o seu script SQL local, fora do git. A limpeza não é uma ferramenta do servidor.
+2. Limpe os dados importados com o seu script SQL local, fora do git. A limpeza não é uma ferramenta do servidor. Antes de aplicar a migration `VencimentoFaturaNaImportacao`, a limpeza é obrigatória: a migration não preenche o vencimento das importações e das transações de cartão já gravadas, e falha com elas no banco, assim como com um cartão de vencimento depois do dia 24.
 3. Importe pelo servidor os arquivos de `dados/`, extratos e faturas em ordem cronológica, cada um pela prévia e pela confirmação, resolvendo pela API o que a prévia pedir.
 4. Concilie as parcelas pela API.
 5. Rode o roteiro de conferência abaixo de ponta a ponta.
@@ -175,5 +177,6 @@ Faça as perguntas em ordem, numa conversa nova, em cada cliente. Troque `<mês>
 | "Importe o extrato `dados/<arquivo>` do C6", e recuse o pedido de aprovação | `prever_importacao` e o pedido da `confirmar_importacao` | o resumo com o layout, o final da conta (4 caracteres, nunca o número inteiro do cabeçalho), o banco, o período e as contagens nos argumentos do pedido, e nenhuma descrição de lançamento na conversa; recusado, nada é importado |
 | A mesma pergunta, aceitando o pedido | `prever_importacao` e `confirmar_importacao` | aceito, as transações aparecem em `listar_transacoes`; uma nova prévia do mesmo arquivo mostra 0 novas |
 | "Importe a fatura `dados/<arquivo>` do Mercado Pago" com um final sem cartão | `prever_importacao` | o erro com os finais sem cartão, e nada gravado |
+| "Importe a fatura `dados/<arquivo>` do C6, que vence em `<data>`" | `prever_importacao` e `confirmar_importacao` | o `vencimento` em AAAA-MM-DD nos argumentos, e o resumo com "com vencimento em" e a data; sem a data, a prévia pede o vencimento |
 
 `banco indisponivel` no primeiro passo indica o Postgres parado ou a conexão errada no User Secret; uma ferramenta de leitura que falha com o banco disponível indica o `Mcp:IdUsuario` ausente.

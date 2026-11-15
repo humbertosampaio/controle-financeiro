@@ -148,13 +148,13 @@ public sealed class VincularTransacaoEndpointTests : IAsyncLifetime
         using HttpResponseMessage resposta = await _api.VincularAsync(idUsuario, despesa.Id.Value, new VincularTransacaoRequest { IdTransacao = transacao.Id.Value });
 
         resposta.StatusCode.Should().Be(HttpStatusCode.OK);
-        ParcelaDespesa terceira = despesa.Parcelas.Single(p => p.NumeroParcela == 3);
+        ParcelaDespesa nona = despesa.Parcelas.Single(p => p.NumeroParcela == 9);
         VincularTransacaoResponse? corpo = await resposta.Content.ReadFromJsonAsync<VincularTransacaoResponse>();
         corpo.Should().Be(new VincularTransacaoResponse(
             despesa.Id.Value,
-            terceira.Id.Value,
-            NumeroParcela: 3,
-            terceira.ValorProjetado,
+            nona.Id.Value,
+            NumeroParcela: 9,
+            nona.ValorProjetado,
             ValorEfetivo: null,
             DataEfetiva: null,
             ValorCobrado: 99.90m));
@@ -177,14 +177,14 @@ public sealed class VincularTransacaoEndpointTests : IAsyncLifetime
         Guid idUsuario = await ImportarFaturaAsync(cadastro);
         await _api.ImportarFaturaComSucessoAsync(idUsuario, LayoutArquivoImportacao.C6CartaoCsv, FaturaCartaoC6.ComParcelaSeguinte());
         DespesaParcelada despesa = (await _api.ObterParceladasAsync()).Single();
-        Transacao quarta = (await _api.ObterTodosAsync(db => db.Transacoes)).Single(t => t.Parcela == (Parcela)(4, 10));
+        Transacao decima = (await _api.ObterTodosAsync(db => db.Transacoes)).Single(t => t.Parcela == (Parcela)(10, 10));
 
-        using HttpResponseMessage resposta = await _api.VincularAsync(idUsuario, despesa.Id.Value, new VincularTransacaoRequest { IdTransacao = quarta.Id.Value });
+        using HttpResponseMessage resposta = await _api.VincularAsync(idUsuario, despesa.Id.Value, new VincularTransacaoRequest { IdTransacao = decima.Id.Value });
 
         resposta.StatusCode.Should().Be(HttpStatusCode.OK);
         (await _api.ObterParceladasAsync()).Single().Parcelas
             .Single(p => p.TemCobranca)
-            .NumeroParcela.Should().Be(4);
+            .NumeroParcela.Should().Be(10);
     }
 
     [Theory, ApiAutoData]
@@ -198,7 +198,7 @@ public sealed class VincularTransacaoEndpointTests : IAsyncLifetime
         await _api.ImportarFaturaComSucessoAsync(idUsuario, LayoutArquivoImportacao.C6CartaoCsv, FaturaCartaoC6.Completo());
 
         (await _api.ObterParceladasAsync()).Single().Parcelas
-            .Single(p => p.NumeroParcela == 3)
+            .Single(p => p.NumeroParcela == 9)
             .Cobranca!.IdTransacao.Should().Be(transacao.Id);
     }
 

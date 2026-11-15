@@ -330,7 +330,15 @@ public sealed class ConciliacaoParcelasServiceTests
         public IReadOnlyList<DespesaParcelada> Despesas(params Lancamento[] lancamentos)
         {
             IReadOnlyList<Beneficiario> beneficiarios = BeneficiariosResolvidos.Dos(_cartao.IdUsuario, lancamentos);
-            return DespesaParceladaFactory.CriarDaFatura(_cartao.IdUsuario, beneficiarios, categoriasDoUsuario: [], _cartao, parceladasDoUsuario: [], lancamentos);
+            VencimentoFatura vencimento = _cartao.VencimentoNoMes(lancamentos[0].PrimeiroMesVencimentoPossivel.Posterior());
+
+            return DespesaParceladaFactory.CriarDaFatura(
+                _cartao.IdUsuario,
+                beneficiarios,
+                categoriasDoUsuario: [],
+                _cartao,
+                _cartao.FaturaCom(vencimento, lancamentos),
+                parceladasDoUsuario: []);
         }
 
         public (DespesaParcelada Menor, DespesaParcelada Maior) GemeasDeValoresDiferentes()

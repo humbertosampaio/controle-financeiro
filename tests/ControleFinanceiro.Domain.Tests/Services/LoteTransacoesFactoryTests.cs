@@ -103,6 +103,31 @@ public sealed class LoteTransacoesFactoryTests
         });
     }
 
+    [Theory, ImportacaoDoCartaoAutoData]
+    public void Criar_Quando_CartaoDoUsuario_Deve_CopiarOMesDaFaturaDaImportacao(
+        [Frozen] IdUsuario idUsuario,
+        [Frozen] Cartao cartao,
+        ImportacaoArquivo importacao,
+        Lancamento primeiro,
+        Lancamento segundo)
+    {
+        Result<IReadOnlyList<Transacao>, Erro> result = CriarComAliasesResolvidos(idUsuario, cartao, importacao, [primeiro, segundo]);
+
+        result.Should().Succeed().Which.Should().OnlyContain(t => t.MesVencimentoFatura == importacao.MesVencimentoFatura);
+    }
+
+    [Theory, DomainAutoData]
+    public void Criar_Quando_ContaDoUsuario_Deve_DeixarSemMesDaFatura(
+        [Frozen] IdUsuario idUsuario,
+        [Frozen] ContaBancaria conta,
+        ImportacaoArquivo importacao,
+        Lancamento lancamento)
+    {
+        Result<IReadOnlyList<Transacao>, Erro> result = CriarComAliasesResolvidos(idUsuario, conta, importacao, [lancamento]);
+
+        result.Should().Succeed().Which.Should().ContainSingle().Which.MesVencimentoFatura.Should().BeNull();
+    }
+
     [Theory, DomainAutoData]
     public void Criar_Deve_GerarIdVersao7ParaCadaTransacao(
         [Frozen] IdUsuario idUsuario,
@@ -681,7 +706,7 @@ public sealed class LoteTransacoesFactoryTests
                 fixture.Inject(TipoOrigem.Cartao);
                 fixture.Register(
                     (Cartao cartao, LayoutArquivoImportacao layout, PeriodoArquivo periodo, DateTimeOffset importadaEm) =>
-                        ImportacaoArquivoFactory.Registrar(cartao, layout, periodo, fixture.Create<byte>(), importadaEm));
+                        ImportacaoArquivoFactory.Registrar(cartao, layout, periodo, fixture.Create<VencimentoFatura>(), fixture.Create<byte>(), importadaEm));
             })
         {
         }

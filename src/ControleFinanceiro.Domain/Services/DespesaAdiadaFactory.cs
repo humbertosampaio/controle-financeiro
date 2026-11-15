@@ -2,6 +2,7 @@ using ControleFinanceiro.Domain.Beneficiarios;
 using ControleFinanceiro.Domain.Cartoes;
 using ControleFinanceiro.Domain.Categorias;
 using ControleFinanceiro.Domain.Despesas;
+using ControleFinanceiro.Domain.Shared.ValueObjects;
 using ControleFinanceiro.Domain.Transacoes;
 using ControleFinanceiro.Domain.Usuarios;
 
@@ -19,15 +20,16 @@ public static class DespesaAdiadaFactory
     /// <param name="categoriasDoUsuario">Todas as categorias do usuário, entre elas a de cada categoria do banco.</param>
     /// <param name="cartoesDoUsuario">Todos os cartões do usuário, entre eles o de cada compra.</param>
     /// <param name="adiadasDoUsuario">Todas as despesas adiadas do usuário, e só as dele.</param>
+    /// <param name="vencimento">O vencimento da fatura do arquivo: a adiada criada vence nele.</param>
     /// <param name="transacoesNovas">
     /// As transações que a importação acabou de gravar, de todos os cartões do arquivo, na ordem dele: reimportar não cria
     /// a despesa de novo.
     /// </param>
     /// <returns>As despesas que faltam, na ordem em que as compras aparecem.</returns>
     /// <exception cref="ArgumentException">
-    /// Quando um item das listas é de outro usuário, quando uma transação não é de cartão ou o cartão dela não está na
-    /// lista, ou quando o beneficiário ou a categoria de uma compra não está na lista: a <see cref="LoteTransacoesFactory"/>
-    /// já conferiu os aliases.
+    /// Quando um item das listas é de outro usuário, quando uma transação não é de cartão, é de outra fatura ou o cartão
+    /// dela não está na lista, ou quando o beneficiário ou a categoria de uma compra não está na lista: a
+    /// <see cref="LoteTransacoesFactory"/> já conferiu os aliases.
     /// </exception>
     public static IReadOnlyList<DespesaAdiada> CriarDaFatura(
         IdUsuario idUsuario,
@@ -35,6 +37,7 @@ public static class DespesaAdiadaFactory
         IReadOnlyCollection<CategoriaDespesa> categoriasDoUsuario,
         IReadOnlyCollection<Cartao> cartoesDoUsuario,
         IReadOnlyCollection<DespesaAdiada> adiadasDoUsuario,
+        VencimentoFatura vencimento,
         IReadOnlyList<Transacao> transacoesNovas)
     {
         if (beneficiariosDoUsuario.Any(b => b.IdUsuario != idUsuario))
@@ -55,6 +58,10 @@ public static class DespesaAdiadaFactory
         if (transacoesNovas.Any(t => t.EhOrigemConta))
             throw new ArgumentException("A lista traz uma transação que não é de fatura.", nameof(transacoesNovas));
 
+        MesReferencia mesVencimento = vencimento.Mes;
+        if (transacoesNovas.Any(t => t.MesVencimentoFatura != mesVencimento))
+            throw new ArgumentException("A lista traz uma transação de outra fatura.", nameof(transacoesNovas));
+
         List<DespesaAdiada> previsoesLivres = adiadasDoUsuario.ToList();
         List<DespesaAdiada> criadas = [];
 
@@ -63,7 +70,7 @@ public static class DespesaAdiadaFactory
             // O Value é seguro: a lista já recusou a transação da conta.
             IdCartao idCartao = compra.Origem.IdCartao!.Value;
             IdBeneficiario idBeneficiario = AliasesResolvidos.IdBeneficiarioDo(beneficiariosDoUsuario, compra.AliasTextoBeneficiario!);
-            FaturaCartao fatura = FaturaCartao.DaCompra(idCartao, compra.Data, cartoesDoUsuario);
+            FaturaCartao fatura = FaturaCartao.DoCartao(idCartao, cartoesDoUsuario, mesVencimento);
 
             DespesaAdiada? previsao = previsoesLivres.FirstOrDefault(d => d.EhPrevisaoDe(fatura, idBeneficiario));
             if (previsao is not null)
@@ -72,7 +79,7 @@ public static class DespesaAdiadaFactory
                 continue;
             }
 
-            criadas.Add(Criar(idUsuario, categoriasDoUsuario, idCartao, idBeneficiario, fatura, compra));
+            criadas.Add(Criar(idUsuario, categoriasDoUsuario, idCartao, idBeneficiario, vencimento, compra));
         }
 
         return criadas;
@@ -83,7 +90,7 @@ public static class DespesaAdiadaFactory
         IReadOnlyCollection<CategoriaDespesa> categoriasDoUsuario,
         IdCartao idCartao,
         IdBeneficiario idBeneficiario,
-        FaturaCartao fatura,
+        VencimentoFatura vencimento,
         Transacao compra)
     {
         return DespesaAdiada.CriarCobrada(
@@ -93,7 +100,7 @@ public static class DespesaAdiadaFactory
             AliasesResolvidos.IdCategoriaDo(categoriasDoUsuario, compra.AliasCategoriaBanco),
             compra.Data,
             idCartao,
-            fatura.Vencimento,
+            vencimento,
             new Cobranca(compra.Id, compra.ValorAbsoluto));
     }
 }

@@ -22,6 +22,9 @@ public sealed class LayoutArquivoImportacao : SmartEnum<LayoutArquivoImportacao,
     /// <summary>Os layouts de fatura de cartão, que a importação da fatura aceita.</summary>
     public static readonly IReadOnlyCollection<LayoutArquivoImportacao> Faturas = [C6CartaoCsv, MercadoPagoCartaoCsv];
 
+    /// <summary>Os layouts de fatura sem o vencimento no arquivo: o usuário informa a data ao importar.</summary>
+    public static readonly IReadOnlyCollection<LayoutArquivoImportacao> FaturasVencimentoInformado = [C6CartaoCsv];
+
     private LayoutArquivoImportacao(string codigo, string name) : base(name, codigo)
     {
     }

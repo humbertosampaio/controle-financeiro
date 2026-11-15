@@ -1,6 +1,8 @@
 using ControleFinanceiro.Domain.Cartoes;
+using ControleFinanceiro.Domain.Importacoes;
 using ControleFinanceiro.Domain.Services;
 using ControleFinanceiro.Domain.Shared.ValueObjects;
+using ControleFinanceiro.Domain.Transacoes;
 
 namespace ControleFinanceiro.Tests.Shared;
 
@@ -14,6 +16,14 @@ public static class CartoesDeTeste
     {
         /// <summary>Outro final do mesmo banco, com os mesmos dias de vencimento e de fechamento: sai na mesma fatura.</summary>
         public Cartao OutroFinal(SufixoCartao sufixo) => cartao.Copiar(cartao.Banco, sufixo);
+
+        /// <summary>A fatura do banco do cartão, com o vencimento e os lançamentos pedidos, todos no final dele.</summary>
+        public Fatura FaturaCom(VencimentoFatura vencimento, params Lancamento[] lancamentos)
+        {
+            return Fatura
+                .Criar(cartao.Banco, vencimento, lancamentos.Select(lancamento => LancamentoFatura.Criar(lancamento, cartao.Sufixo)))
+                .Value;
+        }
 
         /// <summary>O mesmo final e os mesmos dias, num banco diferente do dele.</summary>
         public Cartao EmOutroBanco() => cartao.Copiar(Banco.List.First(b => b != cartao.Banco), cartao.Sufixo);

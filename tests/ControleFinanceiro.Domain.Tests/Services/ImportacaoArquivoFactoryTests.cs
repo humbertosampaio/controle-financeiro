@@ -2,6 +2,7 @@ using ControleFinanceiro.Domain.Cartoes;
 using ControleFinanceiro.Domain.Contas;
 using ControleFinanceiro.Domain.Importacoes;
 using ControleFinanceiro.Domain.Services;
+using ControleFinanceiro.Domain.Shared.ValueObjects;
 using ControleFinanceiro.Domain.Transacoes;
 using ControleFinanceiro.Tests.Shared.AutoFixture.Attributes;
 
@@ -25,20 +26,38 @@ public sealed class ImportacaoArquivoFactoryTests
         result.Periodo.Should().Be(periodo);
         result.Lidas.Should().Be(lidas);
         result.ImportadaEm.Should().Be(importadaEm);
+        result.VencimentoFatura.Should().BeNull();
+        result.MesVencimentoFatura.Should().BeNull();
     }
 
     [Theory, DomainAutoData]
-    public void Registrar_Quando_Cartao_Deve_GuardarOUsuarioEAOrigemDoCartao(
+    public void Registrar_Quando_Cartao_Deve_GuardarOUsuarioAOrigemEOVencimentoDaFatura(
         Cartao cartao,
         LayoutArquivoImportacao layout,
         PeriodoArquivo periodo,
+        VencimentoFatura vencimento,
         byte lidas,
         DateTimeOffset importadaEm)
     {
-        ImportacaoArquivo result = ImportacaoArquivoFactory.Registrar(cartao, layout, periodo, lidas, importadaEm);
+        ImportacaoArquivo result = ImportacaoArquivoFactory.Registrar(cartao, layout, periodo, vencimento, lidas, importadaEm);
 
         result.IdUsuario.Should().Be(cartao.IdUsuario);
         result.Origem.Should().Be(OrigemTransacao.DoCartao(cartao.Id));
+        result.VencimentoFatura.Should().Be(vencimento);
+        result.MesVencimentoFatura.Should().Be(vencimento.Mes);
+    }
+
+    [Theory, DomainAutoData]
+    public void Registrar_Quando_CartaoComLidasNegativas_Deve_LancarExcecao(
+        Cartao cartao,
+        LayoutArquivoImportacao layout,
+        PeriodoArquivo periodo,
+        VencimentoFatura vencimento,
+        DateTimeOffset importadaEm)
+    {
+        Action registrar = () => ImportacaoArquivoFactory.Registrar(cartao, layout, periodo, vencimento, lidas: -1, importadaEm);
+
+        registrar.Should().ThrowExactly<ArgumentOutOfRangeException>().WithParameterName("lidas");
     }
 
     [Theory, DomainAutoData]

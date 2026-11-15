@@ -43,6 +43,35 @@ public static class LancamentoDeTeste
         }
 
         /// <summary>
+        /// A mesma linha na fatura de um cartão, na data e com a parcela do caso, para o caso cujo assunto é a data da compra
+        /// diante do vencimento.
+        /// </summary>
+        public Lancamento NaFatura(DateOnly data, Parcela? parcela)
+        {
+            return Lancamento.DoCartao(
+                data,
+                lancamento.Hora,
+                lancamento.Valor,
+                lancamento.Descricao,
+                lancamento.Contraparte,
+                parcela,
+                lancamento.CategoriaBanco,
+                lancamento.Identidade);
+        }
+
+        /// <summary>A mesma linha como entrada de dinheiro, com o valor positivo e nunca zero, como o estorno.</summary>
+        public Lancamento ComoEntrada()
+        {
+            return lancamento.Montar(
+                lancamento.TipoOrigem,
+                decimal.Abs(lancamento.Valor) + 1m,
+                lancamento.Descricao,
+                lancamento.Contraparte,
+                lancamento.CategoriaBanco,
+                lancamento.Identidade);
+        }
+
+        /// <summary>
         /// A mesma linha como o pagamento da fatura anterior: com o <see cref="Lancamento.ValorAbsoluto"/>, sem parcela e na
         /// origem cartão. É o último a aplicar: o <see cref="SemCategoria"/>, o <see cref="ComTextos"/>, o
         /// <see cref="ComIdentidade"/> e o <see cref="ComoSaida"/> remontam a linha pelo <c>DoCartao</c> ou pelo <c>DaConta</c> e

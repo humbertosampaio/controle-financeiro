@@ -9,7 +9,6 @@ using ControleFinanceiro.WebApi.Tests.AutoFixture;
 using ControleFinanceiro.WebApi.Tests.Importacoes.ImportarFatura;
 using ControleFinanceiro.WebApi.Tests.Infraestrutura;
 using System.Net;
-using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Text;
 
@@ -52,6 +51,7 @@ public sealed class PreVisualizarFaturaEndpointTests : IAsyncLifetime
 
         PreVisualizarFaturaResponse corpo = await PreVisualizarComSucessoAsync(idUsuario, LayoutArquivoImportacao.C6CartaoCsv, FaturaCartaoC6.Completo());
 
+        corpo.DataVencimento.Should().Be(FaturaCartaoC6.Vencimento);
         corpo.FinaisCartao.Should().Equal(
             new PreVisualizarFaturaResponse.FinalCartao(FaturaCartaoC6.SufixoFisico, Cadastrado: false, DiaVencimento: null, DiaFechamento: null),
             new PreVisualizarFaturaResponse.FinalCartao(FaturaCartaoC6.SufixoVirtual, Cadastrado: false, DiaVencimento: null, DiaFechamento: null));
@@ -201,6 +201,51 @@ public sealed class PreVisualizarFaturaEndpointTests : IAsyncLifetime
         (await resposta.CamposComErroAsync()).Should().Equal("generalErrors");
     }
 
+    [Theory, ApiAutoData]
+    public async Task Post_Quando_VencimentoAntesDasCompras_Deve_RetornarErroNoVencimento(CadastrarUsuarioRequest cadastro)
+    {
+        Guid idUsuario = await _api.CadastrarUsuarioAsync(cadastro);
+
+        using HttpResponseMessage resposta = await PreVisualizarAsync(
+            idUsuario,
+            LayoutArquivoImportacao.C6CartaoCsv,
+            FaturaCartaoC6.Completo(),
+            FaturaCartaoC6.UltimaCompraFisico);
+
+        resposta.StatusCode.Should().Be(HttpStatusCode.UnprocessableEntity);
+        (await resposta.CamposComErroAsync()).Should().Equal("dataVencimento");
+    }
+
+    [Theory, ApiAutoData]
+    public async Task Post_Quando_SemVencimentoNoLayoutQueOPede_Deve_RetornarErroNoVencimento(CadastrarUsuarioRequest cadastro)
+    {
+        Guid idUsuario = await _api.CadastrarUsuarioAsync(cadastro);
+
+        using HttpResponseMessage resposta = await PreVisualizarAsync(
+            idUsuario,
+            LayoutArquivoImportacao.C6CartaoCsv,
+            FaturaCartaoC6.Completo(),
+            dataVencimento: null);
+
+        resposta.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+        (await resposta.CamposComErroAsync()).Should().Equal("dataVencimento");
+    }
+
+    [Theory, ApiAutoData]
+    public async Task Post_Quando_VencimentoNoLayoutQueOTraz_Deve_RetornarErroNoVencimento(CadastrarUsuarioRequest cadastro)
+    {
+        Guid idUsuario = await _api.CadastrarUsuarioAsync(cadastro);
+
+        using HttpResponseMessage resposta = await PreVisualizarAsync(
+            idUsuario,
+            LayoutArquivoImportacao.MercadoPagoCartaoCsv,
+            FaturaCartaoMercadoPago.Completo(),
+            FaturaCartaoMercadoPago.Vencimento);
+
+        resposta.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+        (await resposta.CamposComErroAsync()).Should().Equal("dataVencimento");
+    }
+
     [Fact]
     public async Task Post_Quando_RequisicaoInvalida_Deve_RetornarErroEmCadaCampo()
     {
@@ -213,12 +258,19 @@ public sealed class PreVisualizarFaturaEndpointTests : IAsyncLifetime
         (await resposta.CamposComErroAsync()).Should().BeEquivalentTo("idUsuario", "layout", "arquivo");
     }
 
-    private async Task<HttpResponseMessage> PreVisualizarAsync(Guid idUsuario, LayoutArquivoImportacao layout, byte[] arquivo)
+    /// <summary>A prévia com o <see cref="ImportacaoFaturaExtensions.VencimentoPadrao"/> do layout.</summary>
+    private Task<HttpResponseMessage> PreVisualizarAsync(Guid idUsuario, LayoutArquivoImportacao layout, byte[] arquivo)
     {
-        using ByteArrayContent conteudo = new(arquivo);
-        conteudo.Headers.ContentType = new MediaTypeHeaderValue("text/csv");
+        return PreVisualizarAsync(idUsuario, layout, arquivo, ImportacaoFaturaExtensions.VencimentoPadrao(layout));
+    }
 
-        using MultipartFormDataContent formulario = new() { { conteudo, "arquivo", "fatura.csv" } };
+    private async Task<HttpResponseMessage> PreVisualizarAsync(
+        Guid idUsuario,
+        LayoutArquivoImportacao layout,
+        byte[] arquivo,
+        DateOnly? dataVencimento)
+    {
+        using MultipartFormDataContent formulario = ImportacaoFaturaExtensions.FormularioFatura(arquivo, dataVencimento);
 
         return await _api.Client.PostAsync(Rota(idUsuario, layout.Value), formulario);
     }

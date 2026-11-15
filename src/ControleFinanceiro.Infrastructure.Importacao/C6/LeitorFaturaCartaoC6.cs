@@ -31,6 +31,7 @@ namespace ControleFinanceiro.Infrastructure.Importacao.C6;
 /// <item>o pagamento da fatura anterior é a entrada sem parcela cuja descrição é o rótulo fixo do banco, comparado sem
 /// caixa, sem acento e sem espaços a mais. Se o C6 mudar o rótulo, a linha deixa de ser marcada.</item>
 /// </list>
+/// O arquivo não traz o vencimento nem o fechamento da fatura: o vencimento vem do usuário, e o leitor só o põe na fatura.
 /// Não há coluna de tipo: a categoria não separa o pagamento da isenção da anuidade, e por isso o pagamento é
 /// reconhecido pela descrição.
 /// </para>
@@ -39,7 +40,7 @@ namespace ControleFinanceiro.Infrastructure.Importacao.C6;
 /// titular, então ela é capturada e trocada por uma mensagem própria.
 /// </para>
 /// </remarks>
-public sealed partial class LeitorFaturaCartaoC6 : ILeitorFatura
+public sealed partial class LeitorFaturaCartaoC6 : ILeitorFaturaVencimentoInformado
 {
     private const string ParcelaUnica = "Única";
 
@@ -67,8 +68,8 @@ public sealed partial class LeitorFaturaCartaoC6 : ILeitorFatura
 
     public LayoutArquivoImportacao Layout => LayoutArquivoImportacao.C6CartaoCsv;
 
-    /// <summary>Lê as colunas, depois cada compra, e monta a fatura.</summary>
-    public async Task<Result<Fatura, FalhaLeituraArquivo>> LerAsync(Stream arquivo, CancellationToken cancellationToken)
+    /// <summary>Lê as colunas, depois cada compra, e monta a fatura com o vencimento informado.</summary>
+    public async Task<Result<Fatura, FalhaLeituraArquivo>> LerAsync(Stream arquivo, VencimentoFatura vencimento, CancellationToken cancellationToken)
     {
         using StreamReader leitor = new(arquivo, Encoding.UTF8, detectEncodingFromByteOrderMarks: true, leaveOpen: true);
         using CsvReader csv = CsvReader.Create(leitor, _opcoes);
@@ -76,7 +77,7 @@ public sealed partial class LeitorFaturaCartaoC6 : ILeitorFatura
         return await LerColunasAsync(csv)
             .Bind(() => LerLinhasAsync(csv, cancellationToken))
             .Bind(lancamentos => Fatura
-                .Criar(Banco.C6, lancamentos)
+                .Criar(Banco.C6, vencimento, lancamentos)
                 .MapError(erro => FalhaLeituraArquivo.NoArquivo(TipoFalhaLeituraArquivo.ConteudoInvalido, erro)));
     }
 

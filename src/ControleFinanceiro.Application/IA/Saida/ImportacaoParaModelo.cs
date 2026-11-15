@@ -10,8 +10,8 @@ namespace ControleFinanceiro.Application.IA.Saida;
 
 /// <summary>
 /// A importação de um extrato ou de uma fatura, já aplicada em memória, ou o erro que a impediu, com o que o usuário
-/// precisa resolver. Só leva contagens, datas, o banco, o layout, os finais de cartão e, no resumo, o final da conta:
-/// nenhuma linha do arquivo, nem o nome dele, nem o número inteiro da conta. É também a prévia que o usuário aprova: a confirmação só grava se a importação
+/// precisa resolver. Só leva contagens, datas, o banco, o layout, os finais de cartão, os avisos de texto fixo do domínio
+/// e, no resumo, o final da conta: nenhuma linha do arquivo, nem o nome dele, nem o número inteiro da conta. É também a prévia que o usuário aprova: a confirmação só grava se a importação
 /// recalculada tiver o mesmo resumo que ele leu.
 /// </summary>
 public sealed record ImportacaoParaModelo : ISaidaModelo
@@ -29,6 +29,10 @@ public sealed record ImportacaoParaModelo : ISaidaModelo
     /// <summary>O período do arquivo; na fatura, do primeiro ao último lançamento de todos os cartões.</summary>
     [JsonPropertyName("periodo")]
     public PeriodoParaModelo? Periodo { get; }
+
+    /// <summary>Só na fatura: a data em que ela vence.</summary>
+    [JsonPropertyName("vencimento")]
+    public DateOnly? Vencimento { get; }
 
     /// <summary>Só no extrato: verdadeiro quando a importação cria a conta.</summary>
     [JsonPropertyName("conta_nova")]
@@ -52,7 +56,7 @@ public sealed record ImportacaoParaModelo : ISaidaModelo
     [JsonPropertyName("periodo_nao_importado")]
     public PeriodoParaModelo? PeriodoNaoImportado { get; }
 
-    /// <summary>Avisos fixos, que não impedem a importação.</summary>
+    /// <summary>Avisos de texto fixo, que não impedem a importação.</summary>
     [JsonPropertyName("avisos")]
     public IReadOnlyList<string>? Avisos { get; }
 
@@ -101,24 +105,29 @@ public sealed record ImportacaoParaModelo : ISaidaModelo
             + $"{Contagens(lidas, novas, jaExistentes)}{conta}.");
     }
 
+    /// <param name="avisos">Os avisos do domínio, que só trazem texto fixo.</param>
     private ImportacaoParaModelo(
         LayoutArquivoImportacao layout,
         Banco banco,
         PeriodoArquivo periodo,
+        DateOnly vencimento,
         IReadOnlyList<CartaoImportadoParaModelo> cartoes,
-        bool trazPagamentoFaturaAnterior)
+        IReadOnlyList<DocumentoMascarado> avisos)
     {
         Layout = layout.Value;
         Banco = banco.Name;
         Periodo = PeriodoParaModelo.De(periodo);
+        Vencimento = vencimento;
         Cartoes = cartoes;
         Lidas = cartoes.Sum(cartao => cartao.Lidas);
         Novas = cartoes.Sum(cartao => cartao.Novas);
         JaExistentes = cartoes.Sum(cartao => cartao.JaExistentes);
-        Avisos = trazPagamentoFaturaAnterior ? null : [Fatura.AvisoSemPagamentoAnterior];
+        Avisos = avisos.Count == 0 ? null : avisos.Select(aviso => (string)aviso).ToArray();
 
+        // O vencimento amarra a confirmação à fatura da prévia: no layout em que o usuário informa a data, outra data na
+        // confirmação muda o resumo, em vez de gravar a fatura com o vencimento errado.
         Resumo = ResumoAprovado.Normalizar(
-            $"Importa a fatura {layout.Value} do {banco.Name}, {Datas(periodo)}: "
+            $"Importa a fatura {layout.Value} do {banco.Name} com vencimento em {Data(vencimento)}, {Datas(periodo)}: "
             + string.Join("; ", cartoes.Select(DescreverCartao))
             + ".");
     }
@@ -148,12 +157,18 @@ public sealed record ImportacaoParaModelo : ISaidaModelo
     /// <param name="fatura">A fatura lida, de onde sai o período de todos os cartões.</param>
     public static ImportacaoParaModelo DaFatura(LayoutArquivoImportacao layout, Fatura fatura, FaturaImportada importada)
     {
+        DocumentoMascarado[] avisos = new[] { importada.PagamentoFaturaAnterior, importada.VencimentoCicloCartoes }
+            .Where(conferencia => conferencia.IsFailure)
+            .Select(conferencia => (DocumentoMascarado)conferencia.Error)
+            .ToArray();
+
         return new ImportacaoParaModelo(
             layout,
             importada.Banco,
             fatura.Periodo,
+            importada.Vencimento,
             importada.Cartoes.Select(CartaoImportadoParaModelo.De).ToArray(),
-            importada.PagamentoFaturaAnterior.IsSuccess);
+            avisos);
     }
 
     public static ImportacaoParaModelo Falha(ErroParaModelo erro) => new(erro, pendencias: null);

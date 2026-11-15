@@ -11,15 +11,16 @@ public static class DependencyInjection
     extension(IServiceCollection services)
     {
         /// <summary>
-        /// Registra um <see cref="ILeitorExtrato"/>, um <see cref="ILeitorExtratoContaInformada"/> ou um
-        /// <see cref="ILeitorFatura"/> por layout; a importação escolhe pelo layout.
+        /// Registra um <see cref="ILeitorExtrato"/>, um <see cref="ILeitorExtratoContaInformada"/>, um
+        /// <see cref="ILeitorFatura"/> ou um <see cref="ILeitorFaturaVencimentoInformado"/> por layout; a importação escolhe
+        /// pelo layout.
         /// </summary>
         public IServiceCollection AddInfrastructureImportacao()
         {
             return services
                 .AddTransient<ILeitorExtrato, LeitorExtratoContaC6>()
                 .AddTransient<ILeitorExtratoContaInformada, LeitorExtratoContaMercadoPago>()
-                .AddTransient<ILeitorFatura, LeitorFaturaCartaoC6>()
+                .AddTransient<ILeitorFaturaVencimentoInformado, LeitorFaturaCartaoC6>()
                 .AddTransient<ILeitorFatura, LeitorFaturaCartaoMercadoPago>();
         }
 

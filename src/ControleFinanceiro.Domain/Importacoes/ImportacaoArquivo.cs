@@ -1,3 +1,4 @@
+using ControleFinanceiro.Domain.Cartoes;
 using ControleFinanceiro.Domain.Shared;
 using ControleFinanceiro.Domain.Shared.ValueObjects;
 using ControleFinanceiro.Domain.Transacoes;
@@ -12,8 +13,8 @@ public readonly partial struct IdImportacao
 }
 
 /// <summary>
-/// O registro de um arquivo importado: de qual origem, em qual layout, que período cobria e quantos
-/// lançamentos trazia. É por ele que a importação seguinte descobre se ficou um buraco entre as duas.
+/// O registro de um arquivo importado: de qual origem, em qual layout, que período cobria, quantos
+/// lançamentos trazia e, na fatura, quando ela vence. É por ele que a importação seguinte descobre se ficou um buraco entre as duas.
 /// </summary>
 /// <remarks>
 /// Cada transação guarda o <see cref="IdImportacao"/> da importação que a criou. Quantas eram novas não fica
@@ -28,6 +29,12 @@ public sealed class ImportacaoArquivo : AggregateRoot<IdImportacao>, IPertenceAo
     public int Lidas { get; private set; }
     public DateTimeOffset ImportadaEm { get; private set; }
 
+    /// <summary>O vencimento da fatura do arquivo; nulo no extrato de uma conta.</summary>
+    public VencimentoFatura? VencimentoFatura { get; private set; }
+
+    /// <summary>O mês em que vence a fatura do arquivo, o do <see cref="VencimentoFatura"/>; nulo no extrato de uma conta.</summary>
+    public MesReferencia? MesVencimentoFatura => VencimentoFatura?.Mes;
+
     private ImportacaoArquivo()
     {
     }
@@ -39,7 +46,8 @@ public sealed class ImportacaoArquivo : AggregateRoot<IdImportacao>, IPertenceAo
         LayoutArquivoImportacao layout,
         PeriodoArquivo periodo,
         int lidas,
-        DateTimeOffset importadaEm)
+        DateTimeOffset importadaEm,
+        VencimentoFatura? vencimentoFatura)
             : base(id)
     {
         IdUsuario = idUsuario;
@@ -48,14 +56,16 @@ public sealed class ImportacaoArquivo : AggregateRoot<IdImportacao>, IPertenceAo
         Periodo = periodo;
         Lidas = lidas;
         ImportadaEm = importadaEm;
+        VencimentoFatura = vencimentoFatura;
     }
 
+    /// <summary>A importação do extrato de uma conta, que não tem vencimento.</summary>
     /// <param name="lidas">Quantos lançamentos o arquivo trazia.</param>
     /// <remarks>
-    /// Interno pois o <paramref name="idUsuario"/> precisa ser o dono da <paramref name="origem"/>, e só a
-    /// <see cref="Services.ImportacaoArquivoFactory"/>, que recebe a conta ou o cartão, garante isso.
+    /// Interno pois o <paramref name="idUsuario"/> precisa ser o dono da conta da <paramref name="origem"/>, e só a
+    /// <see cref="Services.ImportacaoArquivoFactory"/>, que recebe a conta, garante isso.
     /// </remarks>
-    internal static ImportacaoArquivo Registrar(
+    internal static ImportacaoArquivo RegistrarExtrato(
         IdUsuario idUsuario,
         OrigemTransacao origem,
         LayoutArquivoImportacao layout,
@@ -64,7 +74,26 @@ public sealed class ImportacaoArquivo : AggregateRoot<IdImportacao>, IPertenceAo
         DateTimeOffset importadaEm)
     {
         ArgumentOutOfRangeException.ThrowIfNegative(lidas);
-        return new(IdImportacao.FromNewVersion7Guid(), idUsuario, origem, layout, periodo, lidas, importadaEm);
+        return new(IdImportacao.FromNewVersion7Guid(), idUsuario, origem, layout, periodo, lidas, importadaEm, vencimentoFatura: null);
+    }
+
+    /// <summary>A importação da fatura de um cartão, com a data em que ela vence.</summary>
+    /// <param name="lidas">Quantos lançamentos o arquivo trazia.</param>
+    /// <remarks>
+    /// Interno pois o <paramref name="idUsuario"/> precisa ser o dono do cartão da <paramref name="origem"/>, e só a
+    /// <see cref="Services.ImportacaoArquivoFactory"/>, que recebe o cartão, garante isso.
+    /// </remarks>
+    internal static ImportacaoArquivo RegistrarFatura(
+        IdUsuario idUsuario,
+        OrigemTransacao origem,
+        LayoutArquivoImportacao layout,
+        PeriodoArquivo periodo,
+        VencimentoFatura vencimento,
+        int lidas,
+        DateTimeOffset importadaEm)
+    {
+        ArgumentOutOfRangeException.ThrowIfNegative(lidas);
+        return new(IdImportacao.FromNewVersion7Guid(), idUsuario, origem, layout, periodo, lidas, importadaEm, vencimento);
     }
 
     /// <summary>

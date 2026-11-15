@@ -10,6 +10,7 @@ using ControleFinanceiro.Domain.Shared;
 using ControleFinanceiro.Domain.Shared.ValueObjects;
 using ControleFinanceiro.Domain.Usuarios;
 using CSharpFunctionalExtensions;
+using System.Globalization;
 
 namespace ControleFinanceiro.Application.IA.Escritas;
 
@@ -54,27 +55,34 @@ public sealed class ImportacaoParaModeloService
     /// <param name="arquivo">O arquivo já aberto; quem chama o fecha.</param>
     /// <param name="layout">Vem do modelo: um código que não é de layout vira erro, e não exceção.</param>
     /// <param name="sufixoConta">Lido só no layout de extrato sem a conta no arquivo, em que é obrigatório.</param>
+    /// <param name="vencimento">
+    /// A data de vencimento da fatura em <c>yyyy-MM-dd</c>, obrigatória no layout de fatura sem o vencimento no arquivo e
+    /// recusada no layout que o traz.
+    /// </param>
     public Task<ImportacaoParaModelo> PreverAsync(
         Stream arquivo,
         string layout,
         string? sufixoConta,
+        string? vencimento,
         CancellationToken cancellationToken)
     {
-        return AplicarAsync(arquivo, layout, sufixoConta, cancellationToken);
+        return AplicarAsync(arquivo, layout, sufixoConta, vencimento, cancellationToken);
     }
 
     /// <param name="arquivo">O arquivo já aberto, lido de novo; quem chama o fecha.</param>
     /// <param name="layout">Vem do modelo: um código que não é de layout vira erro, e não exceção.</param>
     /// <param name="sufixoConta">Lido só no layout de extrato sem a conta no arquivo, em que é obrigatório.</param>
+    /// <param name="vencimento">A data de vencimento da fatura, pela regra do <see cref="PreverAsync"/>.</param>
     /// <param name="resumo">O resumo da prévia que o usuário aprovou, nos argumentos da chamada.</param>
     public async Task<ImportacaoParaModelo> ConfirmarAsync(
         Stream arquivo,
         string layout,
         string? sufixoConta,
+        string? vencimento,
         string resumo,
         CancellationToken cancellationToken)
     {
-        ImportacaoParaModelo importacao = await AplicarAsync(arquivo, layout, sufixoConta, cancellationToken);
+        ImportacaoParaModelo importacao = await AplicarAsync(arquivo, layout, sufixoConta, vencimento, cancellationToken);
         if (importacao.Erro is not null)
             return importacao;
 
@@ -93,6 +101,7 @@ public sealed class ImportacaoParaModeloService
         Stream arquivo,
         string codigoLayout,
         string? sufixoConta,
+        string? vencimento,
         CancellationToken cancellationToken)
     {
         if (!LayoutArquivoImportacao.TryFromValue(codigoLayout, out LayoutArquivoImportacao? layout))
@@ -103,7 +112,7 @@ public sealed class ImportacaoParaModeloService
             return ImportacaoParaModelo.Falha(ErrosParaModelo.Consulta.UsuarioNaoEncontrado);
 
         return LayoutArquivoImportacao.Faturas.Contains(layout)
-            ? await AplicarFaturaAsync(arquivo, layout, cancellationToken)
+            ? await AplicarFaturaAsync(arquivo, layout, vencimento, cancellationToken)
             : await AplicarExtratoAsync(arquivo, layout, sufixoConta, cancellationToken);
     }
 
@@ -143,9 +152,14 @@ public sealed class ImportacaoParaModeloService
     private async Task<ImportacaoParaModelo> AplicarFaturaAsync(
         Stream arquivo,
         LayoutArquivoImportacao layout,
+        string? vencimento,
         CancellationToken cancellationToken)
     {
-        Result<Fatura, FalhaLeituraArquivo> lida = await _leituraFatura.LerAsync(layout, arquivo, cancellationToken);
+        Result<Maybe<VencimentoFatura>, ErroParaModelo> vencimentoLayout = LerVencimento(layout, vencimento);
+        if (vencimentoLayout.IsFailure)
+            return ImportacaoParaModelo.Falha(vencimentoLayout.Error);
+
+        Result<Fatura, FalhaLeituraArquivo> lida = await _leituraFatura.LerAsync(layout, arquivo, vencimentoLayout.Value, cancellationToken);
         if (lida.IsFailure)
             return ImportacaoParaModelo.Falha(ErrosParaModelo.Importacao.ArquivoInvalido(lida.Error));
 
@@ -160,6 +174,25 @@ public sealed class ImportacaoParaModeloService
 
         PendenciasFatura pendencias = await _pendencias.ListarDaFaturaAsync(_usuarioAtual.Id, fatura, cancellationToken);
         return ImportacaoParaModelo.Falha(erro, PendenciasImportacaoParaModelo.DaFatura(pendencias));
+    }
+
+    /// <summary>
+    /// O vencimento que o usuário informou, só no layout de fatura sem o vencimento no arquivo. Vazio vale como não
+    /// informado.
+    /// </summary>
+    private static Result<Maybe<VencimentoFatura>, ErroParaModelo> LerVencimento(LayoutArquivoImportacao layout, string? vencimento)
+    {
+        bool informado = !string.IsNullOrWhiteSpace(vencimento);
+        if (!LayoutArquivoImportacao.FaturasVencimentoInformado.Contains(layout))
+        {
+            return informado
+                ? ErrosParaModelo.Importacao.VencimentoNoArquivo
+                : Maybe<VencimentoFatura>.None;
+        }
+
+        return DateOnly.TryParseExact(vencimento, "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out DateOnly data)
+            ? Maybe.From((VencimentoFatura)data)
+            : ErrosParaModelo.Importacao.VencimentoObrigatorio;
     }
 
     /// <summary>Os erros que o usuário resolve cadastrando o que falta pela API.</summary>

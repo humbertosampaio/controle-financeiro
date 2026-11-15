@@ -35,6 +35,23 @@ public sealed class MesReferencia : ComparableValueObject
         return Inicio.AddMonths(-1);
     }
 
+    /// <summary>O mês <paramref name="meses"/> meses antes deste.</summary>
+    /// <param name="meses">Zero ou mais.</param>
+    /// <exception cref="ArgumentOutOfRangeException">Quando <paramref name="meses"/> é negativo.</exception>
+    /// <exception cref="InvalidOperationException">
+    /// Quando o mês passa de 01/1, o primeiro que o <see cref="DateOnly"/> representa, como no <see cref="Anterior()"/>.
+    /// </exception>
+    public MesReferencia Anterior(int meses)
+    {
+        ArgumentOutOfRangeException.ThrowIfNegative(meses);
+
+        int mesesRestantes = (Ano - DateOnly.MinValue.Year) * 12 + (Mes - DateOnly.MinValue.Month);
+        if (meses > mesesRestantes)
+            throw new InvalidOperationException($"Não há mês de referência {meses} meses antes de '{this}'");
+
+        return Inicio.AddMonths(-meses);
+    }
+
     /// <exception cref="InvalidOperationException">Quando o mês de referência é 12/9999, o último que o <see cref="DateOnly"/> representa.</exception>
     public MesReferencia Posterior()
     {
@@ -42,6 +59,23 @@ public sealed class MesReferencia : ComparableValueObject
             throw new InvalidOperationException($"Não há mês de referência posterior a '{this}'");
 
         return Inicio.AddMonths(1);
+    }
+
+    /// <summary>O mês <paramref name="meses"/> meses depois deste.</summary>
+    /// <param name="meses">Zero ou mais.</param>
+    /// <exception cref="ArgumentOutOfRangeException">Quando <paramref name="meses"/> é negativo.</exception>
+    /// <exception cref="InvalidOperationException">
+    /// Quando o mês passa de 12/9999, o último que o <see cref="DateOnly"/> representa, como no <see cref="Posterior()"/>.
+    /// </exception>
+    public MesReferencia Posterior(int meses)
+    {
+        ArgumentOutOfRangeException.ThrowIfNegative(meses);
+
+        int mesesRestantes = (DateOnly.MaxValue.Year - Ano) * 12 + (DateOnly.MaxValue.Month - Mes);
+        if (meses > mesesRestantes)
+            throw new InvalidOperationException($"Não há mês de referência {meses} meses depois de '{this}'");
+
+        return Inicio.AddMonths(meses);
     }
 
     /// <summary>
@@ -69,6 +103,8 @@ public sealed class MesReferencia : ComparableValueObject
 
     public static bool operator >(MesReferencia a, MesReferencia b) => a.Inicio > b.Inicio;
     public static bool operator <(MesReferencia a, MesReferencia b) => a.Inicio < b.Inicio;
+    public static bool operator >=(MesReferencia a, MesReferencia b) => a.Inicio >= b.Inicio;
+    public static bool operator <=(MesReferencia a, MesReferencia b) => a.Inicio <= b.Inicio;
 
     protected override IEnumerable<IComparable> GetComparableEqualityComponents()
     {

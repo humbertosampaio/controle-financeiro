@@ -1,6 +1,8 @@
 using ControleFinanceiro.Application.Abstractions;
 using ControleFinanceiro.Application.Importacoes;
+using ControleFinanceiro.Domain.Cartoes;
 using ControleFinanceiro.Domain.Importacoes;
+using ControleFinanceiro.Domain.Shared;
 using ControleFinanceiro.Domain.Usuarios;
 using CSharpFunctionalExtensions;
 using FastEndpoints;
@@ -51,20 +53,37 @@ public sealed class PreVisualizarFaturaEndpoint : Endpoint<PreVisualizarFaturaRe
         IdUsuario idUsuario = _usuarioAtual.Id;
         LayoutArquivoImportacao layout = LayoutArquivoImportacao.FromValue(req.Layout);
 
-        await LerAsync(layout, req.Arquivo!, ct)
+        await LerAsync(layout, req, ct)
+            .Bind(ConferirVencimento)
             .Map(fatura => PreVisualizarAsync(idUsuario, fatura, ct))
             .Match(
                 resposta => Send.OkAsync(resposta, ct),
-                falha => EnviarFalhaAsync(falha, ct));
+                falha => EnviarFalhaAsync(layout, falha, ct));
     }
 
-    private async Task<Result<Fatura, Falha>> LerAsync(LayoutArquivoImportacao layout, IFormFile arquivo, CancellationToken ct)
+    private async Task<Result<Fatura, Falha>> LerAsync(LayoutArquivoImportacao layout, PreVisualizarFaturaRequest req, CancellationToken ct)
     {
-        await using Stream conteudo = arquivo.OpenReadStream();
+        await using Stream conteudo = req.Arquivo!.OpenReadStream();
 
         return await _leituraFatura
-            .LerAsync(layout, conteudo, ct)
+            .LerAsync(layout, conteudo, VencimentoDoLayout(layout, req), ct)
             .MapError(Falha.ArquivoInvalido);
+    }
+
+    /// <summary>O validator já garantiu o vencimento no layout de vencimento informado; nos outros, ele não vale.</summary>
+    private static Maybe<VencimentoFatura> VencimentoDoLayout(LayoutArquivoImportacao layout, PreVisualizarFaturaRequest req)
+    {
+        return LayoutArquivoImportacao.FaturasVencimentoInformado.Contains(layout)
+            ? (VencimentoFatura)req.DataVencimento!.Value
+            : Maybe<VencimentoFatura>.None;
+    }
+
+    private static Result<Fatura, Falha> ConferirVencimento(Fatura fatura)
+    {
+        return fatura
+            .ConferirVencimento()
+            .Map(() => fatura)
+            .MapError(Falha.DeDominio);
     }
 
     private async Task<PreVisualizarFaturaResponse> PreVisualizarAsync(IdUsuario idUsuario, Fatura fatura, CancellationToken ct)
@@ -72,6 +91,7 @@ public sealed class PreVisualizarFaturaEndpoint : Endpoint<PreVisualizarFaturaRe
         PendenciasFatura pendencias = await _pendencias.ListarDaFaturaAsync(idUsuario, fatura, ct);
 
         return new PreVisualizarFaturaResponse(
+            fatura.Vencimento,
             pendencias.Finais.Select(LerFinal).ToArray(),
             pendencias.Beneficiarios.Select(a => a.TextoOriginal).ToArray(),
             pendencias.CategoriasBanco.Select(a => a.TextoOriginal).ToArray());
@@ -84,12 +104,22 @@ public sealed class PreVisualizarFaturaEndpoint : Endpoint<PreVisualizarFaturaRe
             None: () => new PreVisualizarFaturaResponse.FinalCartao(final.Sufixo, Cadastrado: false, DiaVencimento: null, DiaFechamento: null));
     }
 
-    private async Task EnviarFalhaAsync(Falha falha, CancellationToken ct)
+    private async Task EnviarFalhaAsync(LayoutArquivoImportacao layout, Falha falha, CancellationToken ct)
     {
         switch (falha)
         {
             case Falha.Arquivo(string mensagem):
                 AddError(r => r.Arquivo, mensagem);
+                await Send.ErrorsAsync(StatusCodes.Status422UnprocessableEntity, ct);
+                break;
+
+            case Falha.Dominio(ErroVencimentoIncompativelComFatura erro) when LayoutArquivoImportacao.FaturasVencimentoInformado.Contains(layout):
+                AddError(r => r.DataVencimento, erro.Descricao);
+                await Send.ErrorsAsync(StatusCodes.Status422UnprocessableEntity, ct);
+                break;
+
+            case Falha.Dominio(ErroVencimentoIncompativelComFatura erro):
+                AddError(r => r.Arquivo, erro.Descricao);
                 await Send.ErrorsAsync(StatusCodes.Status422UnprocessableEntity, ct);
                 break;
 
@@ -99,12 +129,17 @@ public sealed class PreVisualizarFaturaEndpoint : Endpoint<PreVisualizarFaturaRe
     }
 
     /// <summary>
-    /// O que interrompe a prévia, num tipo só para a cadeia: o arquivo que o leitor recusou (mensagem em texto).
+    /// O que interrompe a prévia, num tipo só para a cadeia: o arquivo que o leitor recusou (mensagem em texto) e o erro
+    /// tipado do domínio, o vencimento que não fecha com as compras.
     /// </summary>
     private abstract record Falha
     {
         public static Falha ArquivoInvalido(FalhaLeituraArquivo falha) => new Arquivo(falha.Mensagem);
 
+        public static Falha DeDominio(Erro erro) => new Dominio(erro);
+
         public sealed record Arquivo(string Mensagem) : Falha;
+
+        public sealed record Dominio(Erro Erro) : Falha;
     }
 }

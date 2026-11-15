@@ -15,14 +15,23 @@ public sealed class TransacoesDeTeste
     private readonly ContaBancaria _conta;
     private readonly LayoutArquivoImportacao _layout;
     private readonly PeriodoArquivo _periodo;
+    private readonly VencimentoFatura _vencimentoFatura;
     private readonly DateTimeOffset _importadaEm;
 
-    public TransacoesDeTeste(IdUsuario idUsuario, ContaBancaria conta, LayoutArquivoImportacao layout, PeriodoArquivo periodo, DateTimeOffset importadaEm)
+    /// <param name="vencimentoFatura">O vencimento da fatura que traz as transações do cartão.</param>
+    public TransacoesDeTeste(
+        IdUsuario idUsuario,
+        ContaBancaria conta,
+        LayoutArquivoImportacao layout,
+        PeriodoArquivo periodo,
+        VencimentoFatura vencimentoFatura,
+        DateTimeOffset importadaEm)
     {
         _idUsuario = idUsuario;
         _conta = conta;
         _layout = layout;
         _periodo = periodo;
+        _vencimentoFatura = vencimentoFatura;
         _importadaEm = importadaEm;
     }
 
@@ -40,7 +49,7 @@ public sealed class TransacoesDeTeste
     {
         Lancamento lancamento = linha.NaOrigem(TipoOrigem.Cartao);
         IReadOnlyList<Beneficiario> beneficiarios = BeneficiariosResolvidos.Dos(_idUsuario, [lancamento]);
-        ImportacaoArquivo importacao = ImportacaoArquivoFactory.Registrar(cartao, _layout, _periodo, lidas: 1, _importadaEm);
+        ImportacaoArquivo importacao = ImportacaoArquivoFactory.Registrar(cartao, _layout, _periodo, _vencimentoFatura, lidas: 1, _importadaEm);
         return LoteTransacoesFactory.Criar(_idUsuario, beneficiarios, categoriasDoUsuario: [], cartao, importacao, [lancamento]).Value.Single();
     }
 }

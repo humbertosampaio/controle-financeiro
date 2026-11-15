@@ -31,6 +31,13 @@ public sealed class Transacao : AggregateRoot<IdTransacao>, IPertenceAoUsuario
     public IdImportacao IdImportacao { get; private set; }
 
     public OrigemTransacao Origem { get; private set; } = null!;
+
+    /// <summary>
+    /// O mês em que vence a fatura que trouxe a transação do cartão, copiado da importação que a criou; nulo na transação
+    /// da conta. Uma reimportação com outro vencimento não o muda.
+    /// </summary>
+    public MesReferencia? MesVencimentoFatura { get; private set; }
+
     public DateOnly Data { get; private set; }
     public TimeOnly? Hora { get; private set; }
 
@@ -106,6 +113,7 @@ public sealed class Transacao : AggregateRoot<IdTransacao>, IPertenceAoUsuario
         IdUsuario idUsuario,
         IdImportacao idImportacao,
         OrigemTransacao origem,
+        MesReferencia? mesVencimentoFatura,
         Lancamento lancamento,
         ChaveDeduplicacao chave)
             : base(id)
@@ -113,6 +121,7 @@ public sealed class Transacao : AggregateRoot<IdTransacao>, IPertenceAoUsuario
         IdUsuario = idUsuario;
         IdImportacao = idImportacao;
         Origem = origem;
+        MesVencimentoFatura = mesVencimentoFatura;
         Data = lancamento.Data;
         Hora = lancamento.Hora;
         Valor = lancamento.Valor;
@@ -129,13 +138,19 @@ public sealed class Transacao : AggregateRoot<IdTransacao>, IPertenceAoUsuario
     /// lançamento, o <paramref name="idUsuario"/> precisa ser o dono da origem e a importação precisa ser da mesma origem, e só a
     /// <see cref="Services.LoteTransacoesFactory"/> garante isso.
     /// </remarks>
+    /// <param name="mesVencimentoFatura">O mês da fatura da importação: presente no cartão e nulo na conta.</param>
+    /// <exception cref="ArgumentException">Quando a presença do mês não bate com o tipo da origem: é bug de quem chama.</exception>
     internal static Transacao Criar(
         IdUsuario idUsuario,
         IdImportacao idImportacao,
         OrigemTransacao origem,
+        MesReferencia? mesVencimentoFatura,
         Lancamento lancamento,
         ChaveDeduplicacao chave)
     {
-        return new Transacao(IdTransacao.FromNewVersion7Guid(), idUsuario, idImportacao, origem, lancamento, chave);
+        if ((origem.Tipo == TipoOrigem.Cartao) != (mesVencimentoFatura is not null))
+            throw new ArgumentException("Só a transação do cartão tem o mês da fatura, e ela sempre o tem.", nameof(mesVencimentoFatura));
+
+        return new Transacao(IdTransacao.FromNewVersion7Guid(), idUsuario, idImportacao, origem, mesVencimentoFatura, lancamento, chave);
     }
 }

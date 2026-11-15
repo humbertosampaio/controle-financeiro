@@ -29,7 +29,7 @@ public sealed class DespesaAdiadaGenerator : ISpecimenBuilder
             data,
             context.Create<ReaisPositivo>(),
             cartao.Id,
-            cartao.VencimentoDaCompra(data),
+            cartao.VencimentoNoMes(data),
             idDespesaRecorrente: null);
     }
 }

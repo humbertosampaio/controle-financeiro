@@ -7,30 +7,49 @@ namespace ControleFinanceiro.Domain.Tests.Cartoes;
 public sealed class VencimentoFaturaTests
 {
     [Fact]
-    public void OperadorImplicito_Deve_SerODiaDeVencimentoNoMes()
+    public void Projetado_Deve_SerODiaDeVencimentoNoMes()
     {
-        VencimentoFatura vencimento = new((MesReferencia)(02, 2026), (DiaVencimentoCartao)28);
+        VencimentoFatura result = VencimentoFatura.Projetado((MesReferencia)(02, 2026), (DiaVencimentoCartao)24);
 
-        DateOnly result = vencimento;
-
-        result.Should().Be(new DateOnly(2026, 02, 28));
+        result.Value.Should().Be(new DateOnly(2026, 02, 24));
     }
 
     [Theory, DomainAutoData]
-    public void Seguinte_Deve_VencerNoMesSeguinteNoMesmoDia(VencimentoFatura vencimento)
+    public void Criar_Deve_GuardarADataExata(DateOnly data)
     {
-        VencimentoFatura result = vencimento.Seguinte();
+        VencimentoFatura result = VencimentoFatura.Criar(data);
 
-        result.Mes.Should().Be(vencimento.Mes.Posterior());
-        result.Dia.Should().Be(vencimento.Dia);
+        result.Value.Should().Be(data);
+    }
+
+    [Theory, DomainAutoData]
+    public void OperadorExplicito_Deve_SerODaDataExata(DateOnly data)
+    {
+        VencimentoFatura result = (VencimentoFatura)data;
+
+        result.Should().Be(VencimentoFatura.Criar(data));
+    }
+
+    [Theory, DomainAutoData]
+    public void Mes_Deve_SerOMesDaData(DateOnly data)
+    {
+        VencimentoFatura.Criar(data).Mes.Should().Be((MesReferencia)data);
+    }
+
+    [Theory, DomainAutoData]
+    public void Equals_Quando_DataExataIgualAoProjetado_Deve_SerIgual(MesReferencia mes, DiaVencimentoCartao dia)
+    {
+        VencimentoFatura projetado = VencimentoFatura.Projetado(mes, dia);
+
+        VencimentoFatura.Criar(mes.NoDia(dia)).Should().Be(projetado);
     }
 
     [Fact]
     public void Ordem_Deve_SerADaData()
     {
-        VencimentoFatura diaMaiorNoMesAnterior = new((MesReferencia)(03, 2026), (DiaVencimentoCartao)28);
-        VencimentoFatura diaMenorNoMesSeguinte = new((MesReferencia)(04, 2026), (DiaVencimentoCartao)1);
-        VencimentoFatura diaMaiorNoMesSeguinte = new((MesReferencia)(04, 2026), (DiaVencimentoCartao)10);
+        VencimentoFatura diaMaiorNoMesAnterior = VencimentoFatura.Projetado((MesReferencia)(03, 2026), (DiaVencimentoCartao)24);
+        VencimentoFatura diaMenorNoMesSeguinte = VencimentoFatura.Projetado((MesReferencia)(04, 2026), (DiaVencimentoCartao)1);
+        VencimentoFatura diaMaiorNoMesSeguinte = VencimentoFatura.Criar(new DateOnly(2026, 04, 13));
 
         VencimentoFatura[] result = new[] { diaMaiorNoMesSeguinte, diaMaiorNoMesAnterior, diaMenorNoMesSeguinte }.Order().ToArray();
 

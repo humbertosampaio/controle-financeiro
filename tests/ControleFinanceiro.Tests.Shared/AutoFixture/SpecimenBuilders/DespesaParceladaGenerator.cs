@@ -10,7 +10,8 @@ namespace ControleFinanceiro.Tests.Shared.AutoFixture.SpecimenBuilders;
 
 /// <summary>
 /// Monta a <see cref="DespesaParcelada"/> pela <see cref="DespesaParceladaFactory"/>, a única entrada, a partir de uma
-/// compra sem categoria do banco. O usuário é o do cartão: com <c>[Frozen] IdUsuario</c> no teste, a despesa sai desse
+/// compra sem categoria do banco, numa fatura que vence no mês seguinte ao primeiro em que a parcela pode vencer, no dia
+/// do cartão. O usuário é o do cartão: com <c>[Frozen] IdUsuario</c> no teste, a despesa sai desse
 /// usuário, e com <c>[Frozen] Cartao</c>, desse cartão.
 /// </summary>
 public sealed class DespesaParceladaGenerator : ISpecimenBuilder
@@ -32,12 +33,14 @@ public sealed class DespesaParceladaGenerator : ISpecimenBuilder
             categoriaBanco: null,
             context.Create<IdentidadeLancamento>());
 
+        VencimentoFatura vencimento = cartao.VencimentoNoMes(compra.PrimeiroMesVencimentoPossivel.Posterior());
+
         IReadOnlyList<Beneficiario> beneficiarios = BeneficiarioFactory
             .Resolver(cartao.IdUsuario, beneficiariosDoUsuario: [], [new BeneficiarioNovo(descricao, (Alias)(string)descricao)])
             .Value;
 
         return DespesaParceladaFactory
-            .CriarDaFatura(cartao.IdUsuario, beneficiarios, categoriasDoUsuario: [], cartao, parceladasDoUsuario: [], [compra])
+            .CriarDaFatura(cartao.IdUsuario, beneficiarios, categoriasDoUsuario: [], cartao, cartao.FaturaCom(vencimento, compra), parceladasDoUsuario: [])
             .Single();
     }
 }

@@ -20,6 +20,7 @@ internal sealed class TransacaoConfiguration : IEntityTypeConfiguration<Transaca
             tabela.HasCheckConstraint(
                 "CK_transacoes_parcela",
                 "num_nulls(parcela_numero, parcela_total) = 2 OR (num_nulls(parcela_numero, parcela_total) = 0 AND parcela_total >= 2 AND parcela_numero BETWEEN 1 AND parcela_total AND id_cartao IS NOT NULL)");
+            tabela.HasCheckConstraint("CK_transacoes_mes_vencimento_fatura", "(id_cartao IS NULL) = (mes_vencimento_fatura IS NULL)");
             tabela.HasCheckConstraint(
                 "CK_transacoes_pagamento_fatura",
                 "NOT eh_pagamento_fatura OR (id_cartao IS NOT NULL AND valor >= 0 AND parcela_numero IS NULL)");
@@ -59,6 +60,10 @@ internal sealed class TransacaoConfiguration : IEntityTypeConfiguration<Transaca
             origem.Property(o => o.IdCartao)
                 .HasColumnName("id_cartao");
         });
+
+        // O conversor global grava o mês como o primeiro dia dele.
+        entity.Property(t => t.MesVencimentoFatura)
+            .HasColumnName("mes_vencimento_fatura");
 
         entity.Property(t => t.Data)
             .HasColumnName("data");

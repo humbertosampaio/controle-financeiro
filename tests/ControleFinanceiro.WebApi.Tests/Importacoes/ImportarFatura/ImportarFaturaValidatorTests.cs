@@ -34,9 +34,28 @@ public sealed class ImportarFaturaValidatorTests
     public void Validate_Quando_LayoutDaFaturaDoMercadoPago_Deve_Passar(ImportarFaturaRequest requisicao)
     {
         TestValidationResult<ImportarFaturaRequest> resultado = _sut.TestValidate(
-            requisicao with { Layout = LayoutArquivoImportacao.MercadoPagoCartaoCsv.Value });
+            requisicao with { Layout = LayoutArquivoImportacao.MercadoPagoCartaoCsv.Value, DataVencimento = null });
 
         resultado.ShouldNotHaveAnyValidationErrors();
+    }
+
+    [Theory, ApiAutoData]
+    public void Validate_Quando_LayoutSemVencimentoNoArquivoESemVencimento_Deve_RetornarErroNoVencimento(ImportarFaturaRequest requisicao)
+    {
+        TestValidationResult<ImportarFaturaRequest> resultado = _sut.TestValidate(requisicao with { DataVencimento = null });
+
+        resultado.ShouldHaveValidationErrorFor(r => r.DataVencimento)
+            .WithErrorMessage(ImportarFaturaValidator.MensagemVencimentoObrigatorio);
+    }
+
+    [Theory, ApiAutoData]
+    public void Validate_Quando_LayoutComVencimentoNoArquivoEComVencimento_Deve_RetornarErroNoVencimento(ImportarFaturaRequest requisicao)
+    {
+        TestValidationResult<ImportarFaturaRequest> resultado = _sut.TestValidate(
+            requisicao with { Layout = LayoutArquivoImportacao.MercadoPagoCartaoCsv.Value });
+
+        resultado.ShouldHaveValidationErrorFor(r => r.DataVencimento)
+            .WithErrorMessage(ImportarFaturaValidator.MensagemVencimentoNoArquivo);
     }
 
     [Theory]

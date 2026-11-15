@@ -51,16 +51,16 @@ public sealed class DesfazerPagamentoFaturaEndpointTests : IAsyncLifetime
         Transacao compra = await _api.ObterTransacaoAsync(idUsuario, VinculoExtensions.CompraParcelada);
         await _api.VincularComSucessoAsync(idUsuario, despesa.Id.Value, compra.Id.Value);
         DespesaParcelada cobrada = (await _api.ObterParceladasAsync()).Single();
-        ParcelaDespesa terceira = cobrada.Parcelas.Single(p => p.NumeroParcela == 3);
+        ParcelaDespesa nona = cobrada.Parcelas.Single(p => p.NumeroParcela == 9);
         Transacao saida = await _api.ObterTransacaoAsync(idUsuario, VinculoExtensions.PixEnviado);
-        await _api.PagarFaturaComSucessoAsync(idUsuario, requisicao.Pagando(saida, despesa.IdCartao, terceira.MesReferencia));
+        await _api.PagarFaturaComSucessoAsync(idUsuario, requisicao.Pagando(saida, despesa.IdCartao, nona.MesReferencia));
 
         using HttpResponseMessage resposta = await DesfazerAsync(idUsuario, saida.Id.Value);
 
         resposta.StatusCode.Should().Be(HttpStatusCode.NoContent);
         IReadOnlyList<ParcelaDespesa> gravadas = (await _api.ObterParceladasAsync()).Single().Parcelas;
         gravadas.Should().BeEquivalentTo(cobrada.Parcelas);
-        gravadas.Single(p => p.NumeroParcela == 3).Cobranca!.IdTransacao.Should().Be(compra.Id);
+        gravadas.Single(p => p.NumeroParcela == 9).Cobranca!.IdTransacao.Should().Be(compra.Id);
     }
 
     [Theory, ApiAutoData]

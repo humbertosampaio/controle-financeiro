@@ -5,6 +5,7 @@ using ControleFinanceiro.WebApi.Endpoints.Categorias.CadastrarLote;
 using ControleFinanceiro.WebApi.Endpoints.Importacoes.PreVisualizarExtrato;
 using ControleFinanceiro.WebApi.Endpoints.Importacoes.PreVisualizarFatura;
 using ControleFinanceiro.WebApi.Endpoints.Usuarios.AdicionarCartao;
+using ControleFinanceiro.WebApi.Tests.Importacoes.ImportarFatura;
 using ControleFinanceiro.WebApi.Tests.Infraestrutura;
 using System.Net;
 using System.Net.Http.Headers;
@@ -104,7 +105,9 @@ internal static class ResolucaoAliasesExtensions
 
         private async Task<PreVisualizarFaturaResponse> PreVisualizarFaturaAsync(Guid idUsuario, LayoutArquivoImportacao layout, byte[] arquivo)
         {
-            using MultipartFormDataContent formulario = Formulario(arquivo, "fatura.csv");
+            using MultipartFormDataContent formulario = ImportacaoFaturaExtensions.FormularioFatura(
+                arquivo,
+                ImportacaoFaturaExtensions.VencimentoPadrao(layout));
 
             using HttpResponseMessage resposta = await api.Client.PostAsync(
                 new Uri($"/api/usuarios/{idUsuario}/importacoes/faturas/{layout.Value}/previa", UriKind.Relative),

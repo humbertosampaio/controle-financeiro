@@ -10,7 +10,7 @@ namespace ControleFinanceiro.Mcp.Ferramentas;
 /// Grava a importação que o usuário aprovou no cliente, como a <see cref="ConfirmarPagamentoFaturaTool"/>: a meta pede
 /// ao cliente a aprovação do usuário em toda chamada, e o resumo vem primeiro nos argumentos para ser o que ele lê
 /// primeiro no pedido. O caminho, que o resumo não traz, fica nos argumentos, que o usuário também vê. O sufixo da
-/// conta é opcional com o texto vazio, pelo mesmo motivo da <see cref="PreverImportacaoTool"/>.
+/// conta e o vencimento são opcionais com o texto vazio, pelo mesmo motivo da <see cref="PreverImportacaoTool"/>.
 /// </summary>
 [McpServerToolType]
 internal sealed class ConfirmarImportacaoTool
@@ -25,12 +25,13 @@ internal sealed class ConfirmarImportacaoTool
         [Description("O caminho do arquivo, o mesmo da prévia.")] string caminho,
         [Description("O código do layout, o mesmo da prévia.")] string layout,
         [Description("O sufixo da conta, o mesmo da prévia; só no layout mercado-pago-conta-csv.")] string sufixoConta = "",
+        [Description("O vencimento da fatura em AAAA-MM-DD, o mesmo da prévia; só no layout c6-cartao-csv.")] string vencimento = "",
         CancellationToken cancellationToken = default)
     {
         return ArquivoDaOrigem.ImportarAsync(
             origem,
             caminho,
-            arquivo => importacao.ConfirmarAsync(arquivo, layout, sufixoConta, resumo, cancellationToken),
+            arquivo => importacao.ConfirmarAsync(arquivo, layout, sufixoConta, vencimento, resumo, cancellationToken),
             cancellationToken);
     }
 }

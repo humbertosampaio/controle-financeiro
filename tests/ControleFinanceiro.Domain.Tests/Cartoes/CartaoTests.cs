@@ -3,6 +3,7 @@ using ControleFinanceiro.Domain.Despesas;
 using ControleFinanceiro.Domain.Shared.ValueObjects;
 using ControleFinanceiro.Tests.Shared;
 using ControleFinanceiro.Tests.Shared.AutoFixture.Attributes;
+using CSharpFunctionalExtensions;
 
 namespace ControleFinanceiro.Domain.Tests.Cartoes;
 
@@ -21,44 +22,27 @@ public sealed class CartaoTests
     }
 
     [Theory]
-    // Vencimento depois do fechamento: a fatura vence no mês em que fecha.
-    [InlineDomainAutoData(10, 20, 2026, 3, 5, 3, 2026)]
-    [InlineDomainAutoData(10, 20, 2026, 3, 10, 3, 2026)]
-    [InlineDomainAutoData(10, 20, 2026, 3, 11, 4, 2026)]
-    [InlineDomainAutoData(10, 20, 2026, 3, 31, 4, 2026)]
-    [InlineDomainAutoData(10, 20, 2026, 12, 31, 1, 2027)]
-    // Vencimento antes do fechamento: a fatura vence no mês seguinte ao que fecha.
-    [InlineDomainAutoData(25, 5, 2026, 3, 5, 4, 2026)]
-    [InlineDomainAutoData(25, 5, 2026, 3, 25, 4, 2026)]
-    [InlineDomainAutoData(25, 5, 2026, 3, 26, 5, 2026)]
-    [InlineDomainAutoData(25, 5, 2026, 3, 31, 5, 2026)]
-    [InlineDomainAutoData(25, 5, 2026, 12, 26, 2, 2027)]
-    // Os dois dias iguais contam como vencimento no mês seguinte.
-    [InlineDomainAutoData(15, 15, 2026, 3, 15, 4, 2026)]
-    [InlineDomainAutoData(15, 15, 2026, 3, 16, 5, 2026)]
-    public void MesVencimento_Deve_SeguirOFechamentoEOVencimentoDoCartao(
-        int diaFechamento,
-        int diaVencimento,
-        int anoCompra,
-        int mesCompra,
-        int diaCompra,
-        int mesEsperado,
-        int anoEsperado,
-        Fixture fixture)
+    [InlineDomainAutoData(0)]
+    [InlineDomainAutoData(Cartao.ToleranciaDiasVencimento)]
+    public void ConferirVencimento_Quando_DoDiaCadastradoAteATolerancia_Deve_TerSucesso(int diasDepois, Cartao sut, MesReferencia mes)
     {
-        Cartao cartao = CartaoComDias(fixture, diaFechamento, diaVencimento);
+        DateOnly vencimento = mes.NoDia(sut.DiaVencimento).AddDays(diasDepois);
 
-        MesReferencia result = cartao.MesVencimento(new DateOnly(anoCompra, mesCompra, diaCompra));
+        Result result = sut.ConferirVencimento((VencimentoFatura)vencimento);
 
-        result.Should().Be((MesReferencia)(mesEsperado, anoEsperado));
+        result.Should().Succeed();
     }
 
-    [Theory, DomainAutoData]
-    public void VencimentoDaCompra_Deve_SerOMesDaFaturaNoDiaDeVencimentoDoCartao(Cartao sut, DateOnly dataCompra)
+    [Theory]
+    [InlineDomainAutoData(-1)]
+    [InlineDomainAutoData(Cartao.ToleranciaDiasVencimento + 1)]
+    public void ConferirVencimento_Quando_AntesDoDiaCadastradoOuDepoisDaTolerancia_Deve_FalharComOAviso(int diasDepois, Cartao sut, MesReferencia mes)
     {
-        VencimentoFatura result = sut.VencimentoDaCompra(dataCompra);
+        DateOnly vencimento = mes.NoDia(sut.DiaVencimento).AddDays(diasDepois);
 
-        result.Should().Be(new VencimentoFatura(sut.MesVencimento(dataCompra), sut.DiaVencimento));
+        Result result = sut.ConferirVencimento((VencimentoFatura)vencimento);
+
+        result.Should().FailWith("O vencimento da fatura não fecha com o dia de vencimento cadastrado no cartão: confira a data do vencimento e o ciclo do cartão.");
     }
 
     [Theory, DomainAutoData]
@@ -66,7 +50,7 @@ public sealed class CartaoTests
     {
         VencimentoFatura result = sut.VencimentoNoMes(mesVencimento);
 
-        result.Should().Be(new VencimentoFatura(mesVencimento, sut.DiaVencimento));
+        result.Should().Be(VencimentoFatura.Projetado(mesVencimento, sut.DiaVencimento));
     }
 
     [Theory]
@@ -98,17 +82,6 @@ public sealed class CartaoTests
             (DiaOcorrenciaRecorrente)dia);
 
         result.Should().Be(new DateOnly(anoEsperado, mesEsperado, dia));
-    }
-
-    [Theory, DomainAutoData]
-    public void DataOcorrenciaQueVenceEm_Deve_CairNaFaturaQueVenceNoMesPedido(
-        Cartao cartao,
-        MesReferencia mesVencimento,
-        DiaOcorrenciaRecorrente dia)
-    {
-        DateOnly dataOcorrencia = cartao.DataOcorrenciaQueVenceEm(mesVencimento, dia);
-
-        cartao.MesVencimento(dataOcorrencia).Should().Be(mesVencimento);
     }
 
     [Theory, DomainAutoData]

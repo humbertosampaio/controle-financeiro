@@ -54,28 +54,37 @@ public sealed class ImportarFaturaEndpoint : Endpoint<ImportarFaturaRequest, Imp
         IdUsuario idUsuario = _usuarioAtual.Id;
         LayoutArquivoImportacao layout = LayoutArquivoImportacao.FromValue(req.Layout);
 
-        await LerAsync(layout, req.Arquivo!, ct)
+        await LerAsync(layout, req, ct)
             .Bind(fatura => _importacaoFatura
                 .ImportarAsync(idUsuario, layout, fatura, ct)
                 .MapError(Falha.DeDominio))
             .Map(Responder)
             .Match(
                 resposta => Send.OkAsync(resposta, ct),
-                falha => EnviarFalhaAsync(falha, ct));
+                falha => EnviarFalhaAsync(layout, falha, ct));
     }
 
-    private async Task<Result<Fatura, Falha>> LerAsync(LayoutArquivoImportacao layout, IFormFile arquivo, CancellationToken ct)
+    private async Task<Result<Fatura, Falha>> LerAsync(LayoutArquivoImportacao layout, ImportarFaturaRequest req, CancellationToken ct)
     {
-        await using Stream conteudo = arquivo.OpenReadStream();
+        await using Stream conteudo = req.Arquivo!.OpenReadStream();
 
         return await _leituraFatura
-            .LerAsync(layout, conteudo, ct)
+            .LerAsync(layout, conteudo, VencimentoDoLayout(layout, req), ct)
             .MapError(Falha.ArquivoInvalido);
+    }
+
+    /// <summary>O validator já garantiu o vencimento no layout de vencimento informado; nos outros, ele não vale.</summary>
+    private static Maybe<VencimentoFatura> VencimentoDoLayout(LayoutArquivoImportacao layout, ImportarFaturaRequest req)
+    {
+        return LayoutArquivoImportacao.FaturasVencimentoInformado.Contains(layout)
+            ? (VencimentoFatura)req.DataVencimento!.Value
+            : Maybe<VencimentoFatura>.None;
     }
 
     private static ImportarFaturaResponse Responder(FaturaImportada importada)
     {
         return new ImportarFaturaResponse(
+            importada.Vencimento,
             importada.Cartoes
                 .Select(cartao => new ImportarFaturaResponse.CartaoImportado(
                     cartao.IdImportacao,
@@ -87,15 +96,26 @@ public sealed class ImportarFaturaEndpoint : Endpoint<ImportarFaturaRequest, Imp
                     cartao.DespesasParceladasCriadas,
                     cartao.DespesasAdiadasCriadas))
                 .ToArray(),
-            importada.PagamentoFaturaAnterior.IsFailure ? importada.PagamentoFaturaAnterior.Error : null);
+            importada.PagamentoFaturaAnterior.IsFailure ? importada.PagamentoFaturaAnterior.Error : null,
+            importada.VencimentoCicloCartoes.IsFailure ? importada.VencimentoCicloCartoes.Error : null);
     }
 
-    private async Task EnviarFalhaAsync(Falha falha, CancellationToken ct)
+    private async Task EnviarFalhaAsync(LayoutArquivoImportacao layout, Falha falha, CancellationToken ct)
     {
         switch (falha)
         {
             case Falha.Arquivo(string mensagem):
                 AddError(r => r.Arquivo, mensagem);
+                await Send.ErrorsAsync(StatusCodes.Status422UnprocessableEntity, ct);
+                break;
+
+            case Falha.Dominio(ErroVencimentoIncompativelComFatura erro) when LayoutArquivoImportacao.FaturasVencimentoInformado.Contains(layout):
+                AddError(r => r.DataVencimento, erro.Descricao);
+                await Send.ErrorsAsync(StatusCodes.Status422UnprocessableEntity, ct);
+                break;
+
+            case Falha.Dominio(ErroVencimentoIncompativelComFatura erro):
+                AddError(r => r.Arquivo, erro.Descricao);
                 await Send.ErrorsAsync(StatusCodes.Status422UnprocessableEntity, ct);
                 break;
 

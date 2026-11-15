@@ -63,12 +63,12 @@ public sealed class ImportacaoParaModeloTests
     [Theory, DomainAutoData]
     public void Serializar_Quando_Fatura_Deve_TerSomenteOsCamposPermitidos(Fatura fatura, FaturaImportada importada)
     {
-        FaturaImportada comPagamento = importada with { PagamentoFaturaAnterior = Result.Success() };
+        FaturaImportada semAvisos = importada with { PagamentoFaturaAnterior = Result.Success(), VencimentoCicloCartoes = Result.Success() };
 
-        JsonObject json = ImportacaoParaModelo.DaFatura(LayoutArquivoImportacao.C6CartaoCsv, fatura, comPagamento).Serializar();
+        JsonObject json = ImportacaoParaModelo.DaFatura(LayoutArquivoImportacao.C6CartaoCsv, fatura, semAvisos).Serializar();
 
         json.Select(campo => campo.Key).Should().BeEquivalentTo(
-            "layout", "banco", "periodo", "cartoes", "lidas", "novas", "ja_existentes", "resumo");
+            "layout", "banco", "periodo", "vencimento", "cartoes", "lidas", "novas", "ja_existentes", "resumo");
         json["cartoes"]!.AsArray().Should().OnlyContain(cartao => cartao!.AsObject().Select(campo => campo.Key).SequenceEqual(
             new[] { "final", "lidas", "novas", "ja_existentes", "despesas_parceladas", "despesas_adiadas" }));
     }
@@ -94,13 +94,59 @@ public sealed class ImportacaoParaModeloTests
     }
 
     [Theory, DomainAutoData]
-    public void Serializar_Quando_FaturaSemPagamentoAnterior_Deve_LevarOAvisoFixo(Fatura fatura, FaturaImportada importada, string erro)
+    public void Serializar_Quando_Fatura_Deve_LevarOVencimento(Fatura fatura, FaturaImportada importada)
     {
-        FaturaImportada semPagamento = importada with { PagamentoFaturaAnterior = Result.Failure(erro) };
+        JsonObject json = ImportacaoParaModelo.DaFatura(LayoutArquivoImportacao.C6CartaoCsv, fatura, importada).Serializar();
 
-        JsonObject json = ImportacaoParaModelo.DaFatura(LayoutArquivoImportacao.C6CartaoCsv, fatura, semPagamento).Serializar();
+        DateOnly.Parse(json.Texto("vencimento"), CultureInfo.InvariantCulture).Should().Be(importada.Vencimento);
+    }
 
-        json["avisos"]!.AsArray().Select(aviso => aviso!.GetValue<string>()).Should().Equal(Fatura.AvisoSemPagamentoAnterior);
+    [Theory, DomainAutoData]
+    public void Serializar_Quando_AvisosDaFatura_Deve_LevarOTextoDeCadaUmNaOrdem(Fatura fatura, FaturaImportada importada)
+    {
+        FaturaImportada comAvisos = importada with
+        {
+            PagamentoFaturaAnterior = Result.Failure("Aviso fixo do pagamento."),
+            VencimentoCicloCartoes = Result.Failure("Aviso fixo do ciclo."),
+        };
+
+        JsonObject json = ImportacaoParaModelo.DaFatura(LayoutArquivoImportacao.C6CartaoCsv, fatura, comAvisos).Serializar();
+
+        json["avisos"]!.AsArray().Select(aviso => aviso!.GetValue<string>()).Should().Equal("Aviso fixo do pagamento.", "Aviso fixo do ciclo.");
+    }
+
+    // Os avisos saem do Result do domínio: com faturas e cartões diferentes, o texto que vai ao modelo tem de ser o mesmo,
+    // sem nenhum dado da fatura, do cartão ou do vencimento.
+    [Theory, DomainAutoData]
+    public void Serializar_Quando_AvisosReaisDoDominio_Deve_LevarSempreOMesmoTextoFixo(
+        Fatura fatura,
+        Fatura outraFatura,
+        Cartao cartao,
+        Cartao outroCartao,
+        FaturaImportada importada)
+    {
+        string[] avisos = AvisosReais(fatura, cartao, importada);
+
+        string[] outrosAvisos = AvisosReais(outraFatura, outroCartao, importada);
+
+        avisos.Should().Equal(
+            "A fatura não traz o pagamento da fatura anterior: se não é a primeira fatura do cartão, confira se o layout do banco mudou.",
+            "O vencimento da fatura não fecha com o dia de vencimento cadastrado no cartão: confira a data do vencimento e o ciclo do cartão.");
+        outrosAvisos.Should().Equal(avisos);
+    }
+
+    [Theory, DomainAutoData]
+    public void Serializar_Quando_AvisoComDocumento_Deve_MascararODocumento(Fatura fatura, FaturaImportada importada, Cpf cpf)
+    {
+        FaturaImportada comAviso = importada with
+        {
+            PagamentoFaturaAnterior = Result.Failure($"Aviso com o CPF {cpf}."),
+            VencimentoCicloCartoes = Result.Success(),
+        };
+
+        JsonObject json = ImportacaoParaModelo.DaFatura(LayoutArquivoImportacao.C6CartaoCsv, fatura, comAviso).Serializar();
+
+        json["avisos"]!.AsArray().Select(aviso => aviso!.GetValue<string>()).Should().Equal("Aviso com o CPF [CPF].");
     }
 
     [Fact]
@@ -178,7 +224,7 @@ public sealed class ImportacaoParaModeloTests
 
         FaturaImportada.CartaoImportado cartao = importada.Cartoes[0];
         resumo.Should()
-            .StartWith($"Importa a fatura c6-cartao-csv do {importada.Banco.Name}, de ")
+            .StartWith($"Importa a fatura c6-cartao-csv do {importada.Banco.Name} com vencimento em {importada.Vencimento:dd/MM/yyyy}, de ")
             .And.Contain($"cartão final {cartao.Sufixo}, {cartao.Lidas} lidas, {cartao.Novas} novas e {cartao.JaExistentes} já existentes, ")
             .And.NotContain(cartao.IdImportacao.Value.ToString())
             .And.NotContain(cartao.IdCartao.Value.ToString());
@@ -212,6 +258,23 @@ public sealed class ImportacaoParaModeloTests
             importado with { Novas = 0, JaExistentes = importado.Lidas });
 
         repetida.ConfereResumo(resumo).Should().BeFalse();
+    }
+
+    /// <summary>
+    /// Os avisos que a fatura gerada e o cartão de fato produzem: a fatura gerada não traz o pagamento da anterior, e o
+    /// vencimento um dia antes do dia do cartão sai do ciclo.
+    /// </summary>
+    private static string[] AvisosReais(Fatura fatura, Cartao cartao, FaturaImportada importada)
+    {
+        VencimentoFatura foraCiclo = (VencimentoFatura)cartao.VencimentoNoMes(fatura.Vencimento.Mes).Value.AddDays(-1);
+        FaturaImportada comAvisos = importada with
+        {
+            PagamentoFaturaAnterior = fatura.ConferirPagamentoAnterior(),
+            VencimentoCicloCartoes = cartao.ConferirVencimento(foraCiclo),
+        };
+
+        JsonObject json = ImportacaoParaModelo.DaFatura(LayoutArquivoImportacao.C6CartaoCsv, fatura, comAvisos).Serializar();
+        return json["avisos"]!.AsArray().Select(aviso => aviso!.GetValue<string>()).ToArray();
     }
 
     private static (DateOnly Inicio, DateOnly Fim) Periodo(JsonObject json, string campo)

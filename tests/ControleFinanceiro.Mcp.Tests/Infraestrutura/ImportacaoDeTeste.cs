@@ -1,4 +1,3 @@
-using ControleFinanceiro.Application.Importacoes;
 using ControleFinanceiro.Domain.Beneficiarios;
 using ControleFinanceiro.Domain.Cartoes;
 using ControleFinanceiro.Domain.Categorias;
@@ -13,6 +12,7 @@ using ControleFinanceiro.Infrastructure.Importacao.MercadoPago;
 using ControleFinanceiro.Infrastructure.Persistence;
 using ControleFinanceiro.Tests.Shared;
 using Microsoft.EntityFrameworkCore;
+using System.Globalization;
 using System.Text;
 using System.Text.RegularExpressions;
 
@@ -34,6 +34,12 @@ internal sealed class ImportacaoDeTeste
     /// <summary>O sufixo que o usuário informa para o extrato do Mercado Pago, que não traz a conta.</summary>
     public const string SufixoContaMercadoPago = "5678";
 
+    /// <summary>
+    /// O vencimento que o usuário informa para a fatura do C6, que não o traz, coerente com as compras dela e com o ciclo
+    /// dos cartões cadastrados aqui.
+    /// </summary>
+    public const string VencimentoFaturaC6 = "2026-04-10";
+
     private static readonly DiaVencimentoCartao _diaVencimento = (DiaVencimentoCartao)10;
     private static readonly DiaFechamentoCartao _diaFechamento = (DiaFechamentoCartao)3;
 
@@ -43,6 +49,10 @@ internal sealed class ImportacaoDeTeste
     {
         _servidor = servidor;
     }
+
+    /// <summary>O vencimento que o usuário informa no layout de fatura sem o vencimento no arquivo; nulo nos outros.</summary>
+    public static string? VencimentoDoLayout(string layout) =>
+        layout == LayoutArquivoImportacao.C6CartaoCsv.Value ? VencimentoFaturaC6 : null;
 
     /// <summary>O caminho completo de um arquivo da pasta de origem, pelo caminho relativo que a ferramenta recebe.</summary>
     public static string Completo(string caminho) => Path.Combine(ServidorMcpFixture.RepositorioDeTeste, caminho);
@@ -66,8 +76,10 @@ internal sealed class ImportacaoDeTeste
     public static async Task<Fatura> LerFaturaAsync(LayoutArquivoImportacao layout, string caminho)
     {
         await using FileStream arquivo = File.OpenRead(Completo(caminho));
-        ILeitorFatura leitor = layout == LayoutArquivoImportacao.C6CartaoCsv ? new LeitorFaturaCartaoC6() : new LeitorFaturaCartaoMercadoPago();
-        return (await leitor.LerAsync(arquivo, CancellationToken.None)).Value;
+
+        return layout == LayoutArquivoImportacao.C6CartaoCsv
+            ? (await new LeitorFaturaCartaoC6().LerAsync(arquivo, (VencimentoFatura)DateOnly.Parse(VencimentoFaturaC6, CultureInfo.InvariantCulture), CancellationToken.None)).Value
+            : (await new LeitorFaturaCartaoMercadoPago().LerAsync(arquivo, CancellationToken.None)).Value;
     }
 
     /// <summary>Cadastra tudo o que o arquivo pede para ser importado: os cartões, os beneficiários e as categorias.</summary>

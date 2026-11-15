@@ -46,6 +46,8 @@ public sealed class ImportarFaturaEndpointTests : IAsyncLifetime
 
         resposta.StatusCode.Should().Be(HttpStatusCode.OK);
         ImportarFaturaResponse corpo = (await resposta.Content.ReadFromJsonAsync<ImportarFaturaResponse>())!;
+        corpo.DataVencimento.Should().Be(FaturaCartaoC6.Vencimento);
+        corpo.AvisoVencimentoForaCiclo.Should().BeNull();
         corpo.Cartoes.Select(c => (SufixoCartao)c.Sufixo).Should().Equal(FaturaCartaoC6.SufixoFisico, FaturaCartaoC6.SufixoVirtual);
         corpo.Cartoes.Should().AllSatisfy(c =>
         {
@@ -73,6 +75,8 @@ public sealed class ImportarFaturaEndpointTests : IAsyncLifetime
         importacaoFisico.Layout.Should().BeSameAs(LayoutArquivoImportacao.C6CartaoCsv);
         importacaoFisico.Periodo.Should().Be((PeriodoArquivo)(FaturaCartaoC6.PrimeiraCompraFisico, FaturaCartaoC6.UltimaCompraFisico));
         importacaoFisico.Lidas.Should().Be(FaturaCartaoC6.LancamentosPorCartao);
+        VencimentoFatura vencimento = (VencimentoFatura)FaturaCartaoC6.Vencimento;
+        importacoes.Should().OnlyContain(i => i.VencimentoFatura == vencimento);
 
         List<Transacao> transacoes = await _api.ObterTodosAsync(db => db.Transacoes);
         transacoes.Should().HaveCount(FaturaCartaoC6.QuantidadeLancamentos);
@@ -81,6 +85,7 @@ public sealed class ImportarFaturaEndpointTests : IAsyncLifetime
             t.IdUsuario.Should().Be(IdUsuario.From(idUsuario));
             t.IdImportacao.Should().Be(importacaoFisico.Id);
         });
+        transacoes.Should().OnlyContain(t => t.MesVencimentoFatura == FaturaCartaoC6.MesVencimento);
         transacoes.Sum(t => t.Valor).Should().Be(213.75m);
     }
 
@@ -94,7 +99,7 @@ public sealed class ImportarFaturaEndpointTests : IAsyncLifetime
 
         List<Transacao> transacoes = await _api.ObterTodosAsync(db => db.Transacoes);
         Transacao parcelada = transacoes.Should().ContainSingle(t => t.EhParcelada).Subject;
-        parcelada.Parcela.Should().Be((Parcela)(3, 10));
+        parcelada.Parcela.Should().Be((Parcela)(9, 10));
         parcelada.Data.Should().Be(FaturaCartaoC6.PrimeiraCompraFisico);
         parcelada.CategoriaBanco.Should().Be("Eletrônicos");
         transacoes.Should().ContainSingle(t => t.CategoriaBanco == null);
@@ -121,7 +126,7 @@ public sealed class ImportarFaturaEndpointTests : IAsyncLifetime
 
         ImportarFaturaResponse corpo = await ImportarComSucessoAsync(idUsuario, FaturaCartaoC6.SemPagamento());
 
-        corpo.AvisoPagamentoFaturaAnterior.Should().Be(Fatura.AvisoSemPagamentoAnterior);
+        corpo.AvisoPagamentoFaturaAnterior.Should().Be("A fatura não traz o pagamento da fatura anterior: se não é a primeira fatura do cartão, confira se o layout do banco mudou.");
         (await _api.ObterTodosAsync(db => db.Transacoes)).Should().HaveCount(FaturaCartaoC6.QuantidadeLancamentos)
             .And.NotContain(t => t.EhPagamentoFatura);
     }
@@ -170,6 +175,21 @@ public sealed class ImportarFaturaEndpointTests : IAsyncLifetime
         List<Cartao> cartoes = await _api.ObterTodosAsync(db => db.Cartoes);
         cartoes.Should().HaveCount(2);
         cartoes.Single(c => c.Id == IdCartao.From(idCartao)).DiaVencimento.Should().Be((DiaVencimentoCartao)15);
+    }
+
+    [Theory, ApiAutoData]
+    public async Task Post_Quando_CartaoComOutroDiaDeVencimento_Deve_GravarComOAvisoDoCiclo(
+        CadastrarUsuarioRequest cadastro,
+        AdicionarCartaoRequest cartao)
+    {
+        Guid idUsuario = await _api.CadastrarUsuarioAsync(cadastro);
+        await _api.AdicionarCartaoAsync(idUsuario, cartao with { Banco = Banco.C6, Sufixo = FaturaCartaoC6.SufixoFisico, DiaVencimento = 15 });
+        await ResolverPendenciasAsync(idUsuario, FaturaCartaoC6.Completo());
+
+        ImportarFaturaResponse corpo = await ImportarComSucessoAsync(idUsuario, FaturaCartaoC6.Completo());
+
+        corpo.AvisoVencimentoForaCiclo.Should().Be("O vencimento da fatura não fecha com o dia de vencimento cadastrado no cartão: confira a data do vencimento e o ciclo do cartão.");
+        (await _api.ObterTodosAsync(db => db.Transacoes)).Should().HaveCount(FaturaCartaoC6.QuantidadeLancamentos);
     }
 
     [Theory, ApiAutoData]
@@ -228,7 +248,7 @@ public sealed class ImportarFaturaEndpointTests : IAsyncLifetime
         corpo.Cartoes[1].Novas.Should().Be(0);
         List<Transacao> transacoes = await _api.ObterTodosAsync(db => db.Transacoes);
         transacoes.Should().HaveCount(FaturaCartaoC6.QuantidadeLancamentos + 1);
-        transacoes.Where(t => t.EhParcelada).Select(t => t.Parcela).Should().BeEquivalentTo([(Parcela)(3, 10), (Parcela)(4, 10)]);
+        transacoes.Where(t => t.EhParcelada).Select(t => t.Parcela).Should().BeEquivalentTo([(Parcela)(9, 10), (Parcela)(10, 10)]);
     }
 
     [Theory, ApiAutoData]
@@ -444,8 +464,8 @@ public sealed class ImportarFaturaEndpointTests : IAsyncLifetime
         parcelas[0].Pagamento.DataProjetada.Should().Be(new DateOnly(2025, 08, 10));
         parcelas[9].MesReferencia.Should().Be((MesReferencia)(05, 2026));
         parcelas.Should().OnlyContain(p => p.Pagamento.ValorProjetado == (ReaisPositivo)99.90m);
-        parcelas.Take(2).Should().OnlyContain(p => p.Pagamento.EstaPago);
-        parcelas.Skip(2).Should().OnlyContain(p => !p.Pagamento.EstaPago);
+        parcelas.Take(8).Should().OnlyContain(p => p.Pagamento.EstaPago);
+        parcelas.Skip(8).Should().OnlyContain(p => !p.Pagamento.EstaPago);
     }
 
     [Theory, ApiAutoData]
@@ -472,7 +492,7 @@ public sealed class ImportarFaturaEndpointTests : IAsyncLifetime
 
         corpo.Cartoes.Should().OnlyContain(c => c.DespesasParceladasCriadas == 0);
         DespesaParcelada despesa = (await _api.ObterParceladasAsync()).Should().ContainSingle().Subject;
-        despesa.Parcelas.Single(p => p.NumeroParcela == 3).Pagamento.EstaPago.Should().BeFalse();
+        despesa.Parcelas.Single(p => p.NumeroParcela == 9).Pagamento.EstaPago.Should().BeFalse();
     }
 
     [Theory, ApiAutoData]
@@ -485,7 +505,7 @@ public sealed class ImportarFaturaEndpointTests : IAsyncLifetime
         await ImportarComSucessoAsync(idUsuario, FaturaCartaoC6.Completo());
 
         DespesaParcelada despesa = (await _api.ObterParceladasAsync()).Should().ContainSingle().Subject;
-        despesa.Parcelas.Where(p => p.Pagamento.EstaPago).Select(p => p.NumeroParcela).Should().BeEquivalentTo([1, 2, 3]);
+        despesa.Parcelas.Where(p => p.Pagamento.EstaPago).Select(p => p.NumeroParcela).Should().BeEquivalentTo(Enumerable.Range(1, 9));
     }
 
     [Theory, ApiAutoData]
@@ -515,6 +535,52 @@ public sealed class ImportarFaturaEndpointTests : IAsyncLifetime
         (await _api.ObterParceladasAsync()).Select(d => d.IdUsuario).Should().BeEquivalentTo([IdUsuario.From(idUsuario), IdUsuario.From(idOutro)]);
     }
 
+    // Decisão 10 da #185: o mesmo arquivo reimportado com outro vencimento, como o C6 com a data digitada errada e depois
+    // corrigida, não muda nada do que foi gravado e só registra a importação nova, com a outra data.
+    [Theory, ApiAutoData]
+    public async Task Post_Quando_MesmoArquivoComOutroVencimento_Deve_ManterOQueJaFoiGravado(CadastrarUsuarioRequest cadastro)
+    {
+        Guid idUsuario = await _api.CadastrarUsuarioAsync(cadastro);
+        await ResolverPendenciasAsync(idUsuario, FaturaCartaoC6.Completo());
+        await ImportarComSucessoAsync(idUsuario, FaturaCartaoC6.Completo());
+        VencimentoFatura outroVencimento = (VencimentoFatura)new DateOnly(2026, 03, 24);
+
+        using HttpResponseMessage resposta = await _api.ImportarFaturaAsync(
+            idUsuario,
+            LayoutArquivoImportacao.C6CartaoCsv,
+            FaturaCartaoC6.Completo(),
+            outroVencimento);
+
+        resposta.StatusCode.Should().Be(HttpStatusCode.OK, await resposta.Content.ReadAsStringAsync());
+        ImportarFaturaResponse corpo = (await resposta.Content.ReadFromJsonAsync<ImportarFaturaResponse>())!;
+        corpo.Cartoes.Should().OnlyContain(c => c.Novas == 0 && c.DespesasParceladasCriadas == 0 && c.DespesasAdiadasCriadas == 0);
+        (await _api.ObterTodosAsync(db => db.Transacoes)).Should().OnlyContain(t => t.MesVencimentoFatura == FaturaCartaoC6.MesVencimento);
+        (await _api.ObterTodosAsync(db => db.Importacoes)).Count(i => i.VencimentoFatura == outroVencimento).Should().Be(2);
+    }
+
+    // O banco empurrou o vencimento do dia 10, o do cartão, para o dia 13: a adiada e a parcela do arquivo vencem nele, e as
+    // parcelas que não estão no arquivo, no dia do cartão.
+    [Theory, ApiAutoData]
+    public async Task Post_Quando_VencimentoEmpurrado_Deve_CriarAsDespesasDoArquivoNaDataExata(CadastrarUsuarioRequest cadastro)
+    {
+        Guid idUsuario = await _api.CadastrarUsuarioAsync(cadastro);
+        await ResolverPendenciasAsync(idUsuario, FaturaCartaoC6.Completo());
+        DateOnly vencimentoEmpurrado = FaturaCartaoC6.Vencimento.AddDays(3);
+
+        using HttpResponseMessage resposta = await _api.ImportarFaturaAsync(
+            idUsuario,
+            LayoutArquivoImportacao.C6CartaoCsv,
+            FaturaCartaoC6.Completo(),
+            vencimentoEmpurrado);
+
+        resposta.StatusCode.Should().Be(HttpStatusCode.OK, await resposta.Content.ReadAsStringAsync());
+        DespesaAdiada adiada = await _api.ObterAdiadaDaCompraAsync(idUsuario, VinculoExtensions.CompraAVista);
+        adiada.Pagamento.DataProjetada.Should().Be(vencimentoEmpurrado);
+        ParcelaDespesa[] parcelas = (await _api.ObterParceladasAsync()).Single().Parcelas.OrderBy(p => p.NumeroParcela).ToArray();
+        parcelas[8].Pagamento.DataProjetada.Should().Be(vencimentoEmpurrado);
+        parcelas[9].Pagamento.DataProjetada.Should().Be(new DateOnly(2026, 05, 10));
+    }
+
     [Theory, ApiAutoData]
     public async Task Post_Deve_CriarAAdiadaCobradaEPendenteDaCompraAVista(CadastrarUsuarioRequest cadastro)
     {
@@ -538,7 +604,7 @@ public sealed class ImportarFaturaEndpointTests : IAsyncLifetime
         despesa.IdCategoria.Should().Be(categoria.Id);
         despesa.IdDespesaRecorrente.Should().BeNull();
         despesa.DataOcorrencia.Should().Be(new DateOnly(2026, 03, 05));
-        despesa.MesReferencia.Should().Be(FaturaCartaoC6.VencimentoComprasDeMarco);
+        despesa.MesReferencia.Should().Be(FaturaCartaoC6.MesVencimento);
         despesa.Cobranca.Should().Be(new Cobranca(compra.Id, (ReaisPositivo)123.45m));
         despesa.Pagamento.Status.Should().Be(StatusPagamento.Pendente);
         despesa.Pagamento.ValorProjetado.Should().Be((ReaisPositivo)123.45m);
@@ -633,6 +699,40 @@ public sealed class ImportarFaturaEndpointTests : IAsyncLifetime
 
         resposta.StatusCode.Should().Be(HttpStatusCode.BadRequest);
         (await resposta.CamposComErroAsync()).Should().Equal("generalErrors");
+        await _api.DeveEstarSemImportacaoAsync();
+    }
+
+    [Theory, ApiAutoData]
+    public async Task Post_Quando_VencimentoAntesDasCompras_Deve_RetornarErroNoVencimentoSemGravar(CadastrarUsuarioRequest cadastro)
+    {
+        Guid idUsuario = await _api.CadastrarUsuarioAsync(cadastro);
+        await ResolverPendenciasAsync(idUsuario, FaturaCartaoC6.Completo());
+
+        using HttpResponseMessage resposta = await _api.ImportarFaturaAsync(
+            idUsuario,
+            LayoutArquivoImportacao.C6CartaoCsv,
+            FaturaCartaoC6.Completo(),
+            FaturaCartaoC6.UltimaCompraFisico);
+
+        resposta.StatusCode.Should().Be(HttpStatusCode.UnprocessableEntity);
+        (await resposta.CamposComErroAsync()).Should().Equal("dataVencimento");
+        await _api.DeveEstarSemImportacaoAsync();
+    }
+
+    [Theory, ApiAutoData]
+    public async Task Post_Quando_SemVencimentoNoLayoutQueOPede_Deve_RetornarErroNoVencimentoSemGravar(CadastrarUsuarioRequest cadastro)
+    {
+        Guid idUsuario = await _api.CadastrarUsuarioAsync(cadastro);
+        await ResolverPendenciasAsync(idUsuario, FaturaCartaoC6.Completo());
+
+        using HttpResponseMessage resposta = await _api.ImportarFaturaAsync(
+            idUsuario,
+            LayoutArquivoImportacao.C6CartaoCsv,
+            FaturaCartaoC6.Completo(),
+            dataVencimento: null);
+
+        resposta.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+        (await resposta.CamposComErroAsync()).Should().Equal("dataVencimento");
         await _api.DeveEstarSemImportacaoAsync();
     }
 

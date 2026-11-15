@@ -7,7 +7,9 @@ using FluentValidation;
 
 namespace ControleFinanceiro.WebApi.Endpoints.Importacoes.PreVisualizarFatura;
 
-/// <summary>As mesmas regras da importação da fatura para o layout e o arquivo, para a prévia aceitar o que ela aceita.</summary>
+/// <summary>
+/// As mesmas regras da importação da fatura para o layout, o arquivo e o vencimento, para a prévia aceitar o que ela aceita.
+/// </summary>
 public sealed class PreVisualizarFaturaValidator : Validator<PreVisualizarFaturaRequest>
 {
     public const long TamanhoMaximoArquivo = ImportarFaturaValidator.TamanhoMaximoArquivo;
@@ -28,5 +30,15 @@ public sealed class PreVisualizarFaturaValidator : Validator<PreVisualizarFatura
             .Must(arquivo => arquivo!.Length <= TamanhoMaximoArquivo)
             .WithMessage($"O arquivo da fatura deve ter no máximo {TamanhoMaximoArquivo / (1024 * 1024)} MB.")
             .When(x => x.Arquivo is not null);
+
+        RuleFor(x => x.DataVencimento)
+            .NotNull()
+            .WithMessage(ImportarFaturaValidator.MensagemVencimentoObrigatorio)
+            .When(x => ImportarFaturaValidator.EhVencimentoInformado(x.Layout));
+
+        RuleFor(x => x.DataVencimento)
+            .Null()
+            .WithMessage(ImportarFaturaValidator.MensagemVencimentoNoArquivo)
+            .When(x => ImportarFaturaValidator.EhVencimentoNoArquivo(x.Layout));
     }
 }

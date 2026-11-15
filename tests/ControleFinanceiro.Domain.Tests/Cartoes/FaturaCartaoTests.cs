@@ -38,25 +38,9 @@ public sealed class FaturaCartaoTests
     }
 
     [Theory, DomainAutoData]
-    public void DaCompra_Deve_VencerNoMesDaFaturaEmQueACompraCai(Cartao cartao, DateOnly dataCompra)
-    {
-        FaturaCartao result = FaturaCartao.DaCompra(cartao.Id, dataCompra, [cartao]);
-
-        result.Vencimento.Should().Be(cartao.VencimentoDaCompra(dataCompra));
-    }
-
-    [Theory, DomainAutoData]
     public void DoCartao_Quando_CartaoForaDaLista_Deve_LancarExcecao(Cartao cartao, MesReferencia mesVencimento)
     {
         Action act = () => FaturaCartao.DoCartao(cartao.Id, cartoesDoUsuario: [], mesVencimento);
-
-        act.Should().ThrowExactly<ArgumentException>().WithParameterName("cartoesDoUsuario");
-    }
-
-    [Theory, DomainAutoData]
-    public void DaCompra_Quando_CartaoForaDaLista_Deve_LancarExcecao(Cartao cartao, DateOnly dataCompra)
-    {
-        Action act = () => FaturaCartao.DaCompra(cartao.Id, dataCompra, cartoesDoUsuario: []);
 
         act.Should().ThrowExactly<ArgumentException>().WithParameterName("cartoesDoUsuario");
     }

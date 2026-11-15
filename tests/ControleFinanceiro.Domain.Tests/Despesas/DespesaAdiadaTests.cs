@@ -21,7 +21,7 @@ public sealed class DespesaAdiadaTests
     {
         DateOnly dataOcorrencia = new(2026, 02, 05);
         MesReferencia mesVencimento = (MesReferencia)(04, 2026);
-        VencimentoFatura vencimento = new(mesVencimento, (DiaVencimentoCartao)05);
+        VencimentoFatura vencimento = VencimentoFatura.Projetado(mesVencimento, (DiaVencimentoCartao)05);
         DateOnly dataProjetadaPagamentoEsperada = new(2026, 04, 05);
 
         DespesaAdiada result = DespesaAdiada.Criar(
@@ -68,7 +68,7 @@ public sealed class DespesaAdiadaTests
             new DateOnly(2026, 03, 05),
             valor,
             idCartao,
-            new VencimentoFatura((MesReferencia)(02, 2026), diaVencimento),
+            VencimentoFatura.Projetado((MesReferencia)(02, 2026), diaVencimento),
             idDespesaRecorrente: null);
 
         act.Should().ThrowExactly<ArgumentException>().WithParameterName("vencimento");
