@@ -48,7 +48,8 @@ Observado nas faturas com vencimento em 09/2026 e 10/2026, as primeiras exportad
 
 - O cabeçalho e a ordem das 19 colunas são os do prompt; todas as células vêm entre aspas, mesmo as vazias. O leitor recusa colunas a mais, a menos ou em outra ordem.
 - O fim de linha varia: uma fatura veio com CRLF, e a outra com LF. O leitor aceita os dois.
-- `mes_referencia` é o mês do vencimento, e não o do fechamento.
+- `vencimento` vem em toda linha, em `dd/MM/yyyy`, e é o mesmo em todas: é a data de vencimento que a importação grava. O leitor recusa a linha sem ele, com o número da linha, e o arquivo com mais de um. Por isso a importação do Mercado Pago não pede o vencimento, ao contrário da do C6.
+- `mes_referencia` é o mês do vencimento, e não o do fechamento, e por isso o leitor não o lê; o `fechamento` também não é lido.
 - `tipo_lancamento` é um código em minúsculas com `_` (ex.: `compra_a_vista`, `compra_parcelada`, `pagamento_debito_automatico_pos_fechamento`). A lista não é fechada: outro mês pode trazer tipos novos, como estorno, tarifa ou juros. O leitor só aceita os tipos que conhece e recusa o arquivo com o número da linha do tipo novo, que entra na lista do leitor, com teste, quando aparecer.
 - `status` é texto livre do Mago e não serve para regra.
 - Nas compras, `data_lancamento` costuma vir vazia; a data que importa é `data_compra`. No pagamento da fatura é o contrário: vem só a `data_lancamento`, sem cartão, produto nem pedido.
