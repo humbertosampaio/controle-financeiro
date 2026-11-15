@@ -25,20 +25,20 @@ public sealed class PreVisualizarFaturaEndpoint : Endpoint<PreVisualizarFaturaRe
     public const long TamanhoMaximoFormulario = PreVisualizarFaturaValidator.TamanhoMaximoArquivo + 1024 * 1024;
 
     private readonly IUsuarioAtual _usuarioAtual;
-    private readonly LeituraFaturaService _leituraFatura;
-    private readonly PendenciasImportacaoService _pendencias;
-    private readonly ImportacaoFaturaService _importacaoFatura;
+    private readonly LeituraFaturaAppService _leituraFaturaAppService;
+    private readonly PendenciasImportacaoAppService _pendenciasImportacaoAppService;
+    private readonly ImportacaoFaturaAppService _importacaoFaturaAppService;
 
     public PreVisualizarFaturaEndpoint(
         IUsuarioAtual usuarioAtual,
-        LeituraFaturaService leituraFatura,
-        PendenciasImportacaoService pendencias,
-        ImportacaoFaturaService importacaoFatura)
+        LeituraFaturaAppService leituraFaturaAppService,
+        PendenciasImportacaoAppService pendenciasImportacaoAppService,
+        ImportacaoFaturaAppService importacaoFaturaAppService)
     {
         _usuarioAtual = usuarioAtual;
-        _leituraFatura = leituraFatura;
-        _pendencias = pendencias;
-        _importacaoFatura = importacaoFatura;
+        _leituraFaturaAppService = leituraFaturaAppService;
+        _pendenciasImportacaoAppService = pendenciasImportacaoAppService;
+        _importacaoFaturaAppService = importacaoFaturaAppService;
     }
 
     public override void Configure()
@@ -70,7 +70,7 @@ public sealed class PreVisualizarFaturaEndpoint : Endpoint<PreVisualizarFaturaRe
     {
         await using Stream conteudo = req.Arquivo!.OpenReadStream();
 
-        return await _leituraFatura
+        return await _leituraFaturaAppService
             .LerAsync(layout, conteudo, VencimentoDoLayout(layout, req), ct)
             .MapError(Falha.ArquivoInvalido);
     }
@@ -93,7 +93,7 @@ public sealed class PreVisualizarFaturaEndpoint : Endpoint<PreVisualizarFaturaRe
 
     private async Task<Result<Fatura, Falha>> ConferirVencimentoImportadoAsync(IdUsuario idUsuario, Fatura fatura, CancellationToken ct)
     {
-        return await _importacaoFatura
+        return await _importacaoFaturaAppService
             .ConferirVencimentoImportadoAsync(idUsuario, fatura, ct)
             .Map(() => fatura)
             .MapError(Falha.DeDominio);
@@ -101,7 +101,7 @@ public sealed class PreVisualizarFaturaEndpoint : Endpoint<PreVisualizarFaturaRe
 
     private async Task<PreVisualizarFaturaResponse> PreVisualizarAsync(IdUsuario idUsuario, Fatura fatura, CancellationToken ct)
     {
-        PendenciasFatura pendencias = await _pendencias.ListarDaFaturaAsync(idUsuario, fatura, ct);
+        PendenciasFatura pendencias = await _pendenciasImportacaoAppService.ListarDaFaturaAsync(idUsuario, fatura, ct);
 
         return new PreVisualizarFaturaResponse(
             fatura.Vencimento,

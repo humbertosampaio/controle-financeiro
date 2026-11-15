@@ -19,7 +19,7 @@ namespace ControleFinanceiro.Application.Importacoes;
 /// no escopo sem gravar, para a prévia que descarta o escopo; o <see cref="ImportarAsync"/> grava num commit só. Nada é
 /// gravado quando o resultado é de erro.
 /// </summary>
-public sealed class ImportacaoExtratoService
+public sealed class ImportacaoExtratoAppService
 {
     private readonly IContaRepository _contaRepository;
     private readonly IBeneficiarioRepository _beneficiarioRepository;
@@ -29,7 +29,7 @@ public sealed class ImportacaoExtratoService
     private readonly TimeProvider _timeProvider;
     private readonly IUnitOfWork _unitOfWork;
 
-    public ImportacaoExtratoService(
+    public ImportacaoExtratoAppService(
         IContaRepository contaRepository,
         IBeneficiarioRepository beneficiarioRepository,
         ICategoriaDespesaRepository categoriaDespesaRepository,

@@ -8,12 +8,12 @@ namespace ControleFinanceiro.Application.Importacoes;
 /// Escolhe o leitor do extrato pelo layout, em qualquer rota: o layout cujo arquivo não traz a conta é lido com o
 /// sufixo que o usuário informou.
 /// </summary>
-public sealed class LeituraExtratoService
+public sealed class LeituraExtratoAppService
 {
     private readonly IEnumerable<ILeitorExtrato> _leitores;
     private readonly IEnumerable<ILeitorExtratoContaInformada> _leitoresContaInformada;
 
-    public LeituraExtratoService(IEnumerable<ILeitorExtrato> leitores, IEnumerable<ILeitorExtratoContaInformada> leitoresContaInformada)
+    public LeituraExtratoAppService(IEnumerable<ILeitorExtrato> leitores, IEnumerable<ILeitorExtratoContaInformada> leitoresContaInformada)
     {
         _leitores = leitores;
         _leitoresContaInformada = leitoresContaInformada;

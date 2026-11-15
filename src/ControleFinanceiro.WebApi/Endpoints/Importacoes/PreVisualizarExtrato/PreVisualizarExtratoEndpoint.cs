@@ -18,17 +18,17 @@ namespace ControleFinanceiro.WebApi.Endpoints.Importacoes.PreVisualizarExtrato;
 public sealed class PreVisualizarExtratoEndpoint : Endpoint<ImportarExtratoRequest, PreVisualizarExtratoResponse>
 {
     private readonly IUsuarioAtual _usuarioAtual;
-    private readonly LeituraExtratoService _leituraExtrato;
-    private readonly PendenciasImportacaoService _pendencias;
+    private readonly LeituraExtratoAppService _leituraExtratoAppService;
+    private readonly PendenciasImportacaoAppService _pendenciasImportacaoAppService;
 
     public PreVisualizarExtratoEndpoint(
         IUsuarioAtual usuarioAtual,
-        LeituraExtratoService leituraExtrato,
-        PendenciasImportacaoService pendencias)
+        LeituraExtratoAppService leituraExtratoAppService,
+        PendenciasImportacaoAppService pendenciasImportacaoAppService)
     {
         _usuarioAtual = usuarioAtual;
-        _leituraExtrato = leituraExtrato;
-        _pendencias = pendencias;
+        _leituraExtratoAppService = leituraExtratoAppService;
+        _pendenciasImportacaoAppService = pendenciasImportacaoAppService;
     }
 
     public override void Configure()
@@ -58,7 +58,7 @@ public sealed class PreVisualizarExtratoEndpoint : Endpoint<ImportarExtratoReque
     {
         await using Stream conteudo = req.Arquivo!.OpenReadStream();
 
-        return await _leituraExtrato
+        return await _leituraExtratoAppService
             .LerAsync(layout, conteudo, SufixoDoLayout(layout, req), ct)
             .MapError(Falha.ArquivoInvalido);
     }
@@ -73,7 +73,7 @@ public sealed class PreVisualizarExtratoEndpoint : Endpoint<ImportarExtratoReque
 
     private async Task<PreVisualizarExtratoResponse> PreVisualizarAsync(IdUsuario idUsuario, Extrato extrato, CancellationToken ct)
     {
-        IReadOnlyList<Alias> pendentes = await _pendencias.ListarDoExtratoAsync(idUsuario, extrato, ct);
+        IReadOnlyList<Alias> pendentes = await _pendenciasImportacaoAppService.ListarDoExtratoAsync(idUsuario, extrato, ct);
 
         return new PreVisualizarExtratoResponse(pendentes.Select(a => a.TextoOriginal).ToList());
     }

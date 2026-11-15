@@ -36,11 +36,11 @@ public static class DependencyInjection
                 .AddTransient<VinculoParaModeloService>()
                 .AddTransient<PagamentoFaturaParaModeloService>()
                 .AddTransient<ImportacaoParaModeloService>()
-                .AddTransient<LeituraExtratoService>()
-                .AddTransient<LeituraFaturaService>()
-                .AddTransient<ImportacaoExtratoService>()
-                .AddTransient<ImportacaoFaturaService>()
-                .AddTransient<PendenciasImportacaoService>()
+                .AddTransient<LeituraExtratoAppService>()
+                .AddTransient<LeituraFaturaAppService>()
+                .AddTransient<ImportacaoExtratoAppService>()
+                .AddTransient<ImportacaoFaturaAppService>()
+                .AddTransient<PendenciasImportacaoAppService>()
                 .AddSingleton(TimeProvider.System);
         }
     }

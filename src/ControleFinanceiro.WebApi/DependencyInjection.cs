@@ -19,11 +19,11 @@ public static class DependencyInjection
                 .AddSingleton(TimeProvider.System)
                 .AddHttpContextAccessor()
                 .AddTransient<IUsuarioAtual, UsuarioAtualRota>()
-                .AddTransient<ImportacaoExtratoService>()
-                .AddTransient<ImportacaoFaturaService>()
-                .AddTransient<LeituraExtratoService>()
-                .AddTransient<LeituraFaturaService>()
-                .AddTransient<PendenciasImportacaoService>();
+                .AddTransient<ImportacaoExtratoAppService>()
+                .AddTransient<ImportacaoFaturaAppService>()
+                .AddTransient<LeituraExtratoAppService>()
+                .AddTransient<LeituraFaturaAppService>()
+                .AddTransient<PendenciasImportacaoAppService>();
         }
     }
 }

@@ -14,7 +14,7 @@ using Microsoft.AspNetCore.Mvc;
 namespace ControleFinanceiro.WebApi.Endpoints.Importacoes.ImportarExtrato;
 
 /// <summary>
-/// Lê o extrato no layout da rota e o importa pelo <see cref="ImportacaoExtratoService"/>. O layout cujo arquivo não
+/// Lê o extrato no layout da rota e o importa pelo <see cref="ImportacaoExtratoAppService"/>. O layout cujo arquivo não
 /// traz a conta é lido com o sufixo que o usuário informou. Nada é gravado quando a resposta é de erro.
 /// </summary>
 public sealed class ImportarExtratoEndpoint : Endpoint<ImportarExtratoRequest, ImportarExtratoResponse>
@@ -26,17 +26,17 @@ public sealed class ImportarExtratoEndpoint : Endpoint<ImportarExtratoRequest, I
     public const long TamanhoMaximoFormulario = ImportarExtratoValidator.TamanhoMaximoArquivo + 1024 * 1024;
 
     private readonly IUsuarioAtual _usuarioAtual;
-    private readonly LeituraExtratoService _leituraExtrato;
-    private readonly ImportacaoExtratoService _importacaoExtrato;
+    private readonly LeituraExtratoAppService _leituraExtratoAppService;
+    private readonly ImportacaoExtratoAppService _importacaoExtratoAppService;
 
     public ImportarExtratoEndpoint(
         IUsuarioAtual usuarioAtual,
-        LeituraExtratoService leituraExtrato,
-        ImportacaoExtratoService importacaoExtrato)
+        LeituraExtratoAppService leituraExtratoAppService,
+        ImportacaoExtratoAppService importacaoExtratoAppService)
     {
         _usuarioAtual = usuarioAtual;
-        _leituraExtrato = leituraExtrato;
-        _importacaoExtrato = importacaoExtrato;
+        _leituraExtratoAppService = leituraExtratoAppService;
+        _importacaoExtratoAppService = importacaoExtratoAppService;
     }
 
     public override void Configure()
@@ -56,7 +56,7 @@ public sealed class ImportarExtratoEndpoint : Endpoint<ImportarExtratoRequest, I
         LayoutArquivoImportacao layout = LayoutArquivoImportacao.FromValue(req.Layout);
 
         await LerAsync(layout, req, ct)
-            .Bind(extrato => _importacaoExtrato
+            .Bind(extrato => _importacaoExtratoAppService
                 .ImportarAsync(idUsuario, layout, extrato, ct)
                 .MapError(Falha.DeDominio))
             .Map(Responder)
@@ -70,7 +70,7 @@ public sealed class ImportarExtratoEndpoint : Endpoint<ImportarExtratoRequest, I
     {
         await using Stream conteudo = req.Arquivo!.OpenReadStream();
 
-        return await _leituraExtrato
+        return await _leituraExtratoAppService
             .LerAsync(layout, conteudo, SufixoDoLayout(layout, req), ct)
             .MapError(Falha.ArquivoInvalido);
     }

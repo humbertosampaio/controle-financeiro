@@ -13,13 +13,13 @@ namespace ControleFinanceiro.Application.Importacoes;
 /// O que o usuário precisa resolver antes de importar um arquivo já lido, em qualquer rota: os beneficiários e as
 /// categorias do banco sem alias e, na fatura, os finais sem cartão. Nada é gravado.
 /// </summary>
-public sealed class PendenciasImportacaoService
+public sealed class PendenciasImportacaoAppService
 {
     private readonly ICartaoRepository _cartaoRepository;
     private readonly IBeneficiarioRepository _beneficiarioRepository;
     private readonly ICategoriaDespesaRepository _categoriaDespesaRepository;
 
-    public PendenciasImportacaoService(
+    public PendenciasImportacaoAppService(
         ICartaoRepository cartaoRepository,
         IBeneficiarioRepository beneficiarioRepository,
         ICategoriaDespesaRepository categoriaDespesaRepository)

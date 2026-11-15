@@ -13,7 +13,7 @@ using Microsoft.AspNetCore.Mvc;
 namespace ControleFinanceiro.WebApi.Endpoints.Importacoes.ImportarFatura;
 
 /// <summary>
-/// Lê a fatura no layout da rota e a importa pelo <see cref="ImportacaoFaturaService"/>. Nada é gravado quando a
+/// Lê a fatura no layout da rota e a importa pelo <see cref="ImportacaoFaturaAppService"/>. Nada é gravado quando a
 /// resposta é de erro.
 /// </summary>
 public sealed class ImportarFaturaEndpoint : Endpoint<ImportarFaturaRequest, ImportarFaturaResponse>
@@ -25,17 +25,17 @@ public sealed class ImportarFaturaEndpoint : Endpoint<ImportarFaturaRequest, Imp
     public const long TamanhoMaximoFormulario = ImportarFaturaValidator.TamanhoMaximoArquivo + 1024 * 1024;
 
     private readonly IUsuarioAtual _usuarioAtual;
-    private readonly LeituraFaturaService _leituraFatura;
-    private readonly ImportacaoFaturaService _importacaoFatura;
+    private readonly LeituraFaturaAppService _leituraFaturaAppService;
+    private readonly ImportacaoFaturaAppService _importacaoFaturaAppService;
 
     public ImportarFaturaEndpoint(
         IUsuarioAtual usuarioAtual,
-        LeituraFaturaService leituraFatura,
-        ImportacaoFaturaService importacaoFatura)
+        LeituraFaturaAppService leituraFaturaAppService,
+        ImportacaoFaturaAppService importacaoFaturaAppService)
     {
         _usuarioAtual = usuarioAtual;
-        _leituraFatura = leituraFatura;
-        _importacaoFatura = importacaoFatura;
+        _leituraFaturaAppService = leituraFaturaAppService;
+        _importacaoFaturaAppService = importacaoFaturaAppService;
     }
 
     public override void Configure()
@@ -55,7 +55,7 @@ public sealed class ImportarFaturaEndpoint : Endpoint<ImportarFaturaRequest, Imp
         LayoutArquivoImportacao layout = LayoutArquivoImportacao.FromValue(req.Layout);
 
         await LerAsync(layout, req, ct)
-            .Bind(fatura => _importacaoFatura
+            .Bind(fatura => _importacaoFaturaAppService
                 .ImportarAsync(idUsuario, layout, fatura, ct)
                 .MapError(Falha.DeDominio))
             .Map(Responder)
@@ -68,7 +68,7 @@ public sealed class ImportarFaturaEndpoint : Endpoint<ImportarFaturaRequest, Imp
     {
         await using Stream conteudo = req.Arquivo!.OpenReadStream();
 
-        return await _leituraFatura
+        return await _leituraFaturaAppService
             .LerAsync(layout, conteudo, VencimentoDoLayout(layout, req), ct)
             .MapError(Falha.ArquivoInvalido);
     }
