@@ -25,4 +25,15 @@ public sealed class ReaisExtensionsTests
 
         result.Should().Be((ReaisPositivo)100m);
     }
+
+    // Os valores são o assunto: a soma com sinal é calculada à mão.
+    [Fact]
+    public void Sum_Quando_ValoresComSinal_Deve_SomarSemPerderOSinal()
+    {
+        Reais[] valores = [-100.50m, 20.25m, -0.75m];
+
+        Reais result = valores.Sum(valor => valor);
+
+        result.Should().Be((Reais)(-81m));
+    }
 }

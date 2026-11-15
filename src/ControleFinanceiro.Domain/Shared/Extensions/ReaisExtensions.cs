@@ -11,5 +11,8 @@ public static class ReaisExtensions
         /// sempre positiva, e a sequência vazia soma zero.
         /// </summary>
         public ReaisPositivo Sum(Func<TSource, ReaisPositivo> selector) => (ReaisPositivo)Enumerable.Sum(source, item => selector(item));
+
+        /// <summary>Soma os valores com sinal da sequência, sem sair do <see cref="Reais"/>; a sequência vazia soma zero.</summary>
+        public Reais Sum(Func<TSource, Reais> selector) => Enumerable.Sum(source, item => selector(item));
     }
 }

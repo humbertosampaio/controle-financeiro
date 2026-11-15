@@ -1,10 +1,16 @@
+using AutoFixture.Xunit2;
 using ControleFinanceiro.Domain.Beneficiarios;
 using ControleFinanceiro.Domain.Cartoes;
 using ControleFinanceiro.Domain.Categorias;
 using ControleFinanceiro.Domain.Despesas;
+using ControleFinanceiro.Domain.Services;
 using ControleFinanceiro.Domain.Shared.ValueObjects;
+using ControleFinanceiro.Domain.Transacoes;
 using ControleFinanceiro.Domain.Usuarios;
+using ControleFinanceiro.Tests.Shared;
 using ControleFinanceiro.Tests.Shared.AutoFixture.Attributes;
+using CSharpFunctionalExtensions;
+using SaidaDeTeste = ControleFinanceiro.Domain.Tests.Services.VinculoTransacaoServiceTests.SaidaDeTeste;
 
 namespace ControleFinanceiro.Domain.Tests.Despesas;
 
@@ -72,5 +78,83 @@ public sealed class DespesaAdiadaTests
             idDespesaRecorrente: null);
 
         act.Should().ThrowExactly<ArgumentException>().WithParameterName("vencimento");
+    }
+
+    [Theory, PagaPelaFaturaAutoData]
+    public void EstaPagaPelaFatura_Quando_PagaPelaSaida_Deve_SerVerdadeiro(
+        [Frozen] Cartao cartao,
+        DespesaAdiada sut,
+        TransacoesDeTeste transacoes,
+        SaidaDeTeste compra,
+        SaidaDeTeste pagamento)
+    {
+        CobrarEPagar(sut, cartao, transacoes, compra, pagamento);
+
+        sut.EstaPagaPelaFatura(FaturaCartao.DoCartao(cartao.Id, [cartao], sut.MesReferencia)).Should().BeTrue();
+    }
+
+    [Theory, PagaPelaFaturaAutoData]
+    public void EstaPagaPelaFatura_Quando_CobradaEPendente_Deve_SerFalso(
+        [Frozen] Cartao cartao,
+        DespesaAdiada sut,
+        TransacoesDeTeste transacoes,
+        SaidaDeTeste compra)
+    {
+        Cobrar(sut, cartao, transacoes.DoCartao(cartao, compra.AVista()));
+
+        sut.EstaPagaPelaFatura(FaturaCartao.DoCartao(cartao.Id, [cartao], sut.MesReferencia)).Should().BeFalse();
+    }
+
+    [Theory, PagaPelaFaturaAutoData]
+    public void EstaPagaPelaFatura_Quando_FaturaDeOutroMes_Deve_SerFalso(
+        [Frozen] Cartao cartao,
+        DespesaAdiada sut,
+        TransacoesDeTeste transacoes,
+        SaidaDeTeste compra,
+        SaidaDeTeste pagamento)
+    {
+        CobrarEPagar(sut, cartao, transacoes, compra, pagamento);
+
+        sut.EstaPagaPelaFatura(FaturaCartao.DoCartao(cartao.Id, [cartao], sut.MesReferencia.Posterior())).Should().BeFalse();
+    }
+
+    [Theory, PagaPelaFaturaAutoData]
+    public void EstaPagaPelaFatura_Quando_FaturaDeOutroCartao_Deve_SerFalso(
+        [Frozen] Cartao cartao,
+        DespesaAdiada sut,
+        TransacoesDeTeste transacoes,
+        SaidaDeTeste compra,
+        SaidaDeTeste pagamento)
+    {
+        CobrarEPagar(sut, cartao, transacoes, compra, pagamento);
+        Cartao cartaoOutroBanco = cartao.EmOutroBanco();
+
+        sut.EstaPagaPelaFatura(FaturaCartao.DoCartao(cartaoOutroBanco.Id, [cartaoOutroBanco], sut.MesReferencia)).Should().BeFalse();
+    }
+
+    private static void CobrarEPagar(DespesaAdiada despesa, Cartao cartao, TransacoesDeTeste transacoes, SaidaDeTeste compra, SaidaDeTeste pagamento)
+    {
+        Cobrar(despesa, cartao, transacoes.DoCartao(cartao, compra.AVista()));
+        PagamentoFaturaService
+            .Pagar(transacoes.DaConta(pagamento.AVista()), cartao, despesa.MesReferencia, [cartao], [despesa], despesasPagasPelaSaida: [])
+            .Should().Succeed();
+    }
+
+    private static void Cobrar(DespesaAdiada despesa, Cartao cartao, Transacao compra)
+    {
+        VinculoTransacaoService.Vincular(compra, despesa, despesaQueUsaATransacao: Maybe<Despesa>.None, cartoesDoUsuario: [cartao]).Should().Succeed();
+    }
+
+    /// <summary>Tudo sai do mesmo usuário e na mesma data, para a compra cair no mês de vencimento da despesa.</summary>
+    private sealed class PagaPelaFaturaAutoDataAttribute : DomainAutoDataAttribute
+    {
+        public PagaPelaFaturaAutoDataAttribute()
+            : base(fixture =>
+            {
+                fixture.Freeze<IdUsuario>();
+                fixture.Freeze<DateOnly>();
+            })
+        {
+        }
     }
 }

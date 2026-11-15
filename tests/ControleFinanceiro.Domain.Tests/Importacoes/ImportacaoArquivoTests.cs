@@ -66,13 +66,13 @@ public sealed class ImportacaoArquivoTests
     [Theory, DomainAutoData]
     public void TemOutroVencimentoNoMesmoMes_Quando_Extrato_Deve_SerFalso(ImportacaoArquivo sut, Cartao cartao, VencimentoFatura vencimento)
     {
-        sut.TemOutroVencimentoNoMesmoMes(FaturaCartao.Importada([cartao], cartoesUsuario: [], vencimento)).Should().BeFalse();
+        sut.TemOutroVencimentoNoMesmoMes(FaturaCartao.Importada(cartao.Banco, [cartao], cartoesUsuario: [], vencimento)).Should().BeFalse();
     }
 
     [Theory, ImportacaoFaturaAutoData]
     public void TemOutroVencimentoNoMesmoMes_Quando_MesmoVencimento_Deve_SerFalso([Frozen] Cartao cartao, ImportacaoArquivo sut)
     {
-        FaturaCartao fatura = FaturaCartao.Importada([cartao], cartoesUsuario: [], sut.VencimentoFatura!);
+        FaturaCartao fatura = FaturaCartao.Importada(cartao.Banco, [cartao], cartoesUsuario: [], sut.VencimentoFatura!);
 
         sut.TemOutroVencimentoNoMesmoMes(fatura).Should().BeFalse();
     }
@@ -84,7 +84,7 @@ public sealed class ImportacaoArquivoTests
         ImportacaoArquivo sut,
         DiaVencimentoCartao outroDia)
     {
-        FaturaCartao fatura = FaturaCartao.Importada([cartao], cartoesUsuario: [], VencimentoFatura.Projetado(mes, outroDia));
+        FaturaCartao fatura = FaturaCartao.Importada(cartao.Banco, [cartao], cartoesUsuario: [], VencimentoFatura.Projetado(mes, outroDia));
 
         sut.TemOutroVencimentoNoMesmoMes(fatura).Should().BeTrue();
     }
@@ -96,7 +96,7 @@ public sealed class ImportacaoArquivoTests
         MesReferencia outroMes,
         DiaVencimentoCartao dia)
     {
-        FaturaCartao fatura = FaturaCartao.Importada([cartao], cartoesUsuario: [], VencimentoFatura.Projetado(outroMes, dia));
+        FaturaCartao fatura = FaturaCartao.Importada(cartao.Banco, [cartao], cartoesUsuario: [], VencimentoFatura.Projetado(outroMes, dia));
 
         sut.TemOutroVencimentoNoMesmoMes(fatura).Should().BeFalse();
     }
@@ -108,7 +108,8 @@ public sealed class ImportacaoArquivoTests
         ImportacaoArquivo sut,
         DiaVencimentoCartao outroDia)
     {
-        FaturaCartao fatura = FaturaCartao.Importada([cartao.EmOutroBanco()], cartoesUsuario: [], VencimentoFatura.Projetado(mes, outroDia));
+        Cartao cartaoOutroBanco = cartao.EmOutroBanco();
+        FaturaCartao fatura = FaturaCartao.Importada(cartaoOutroBanco.Banco, [cartaoOutroBanco], cartoesUsuario: [], VencimentoFatura.Projetado(mes, outroDia));
 
         sut.TemOutroVencimentoNoMesmoMes(fatura).Should().BeFalse();
     }

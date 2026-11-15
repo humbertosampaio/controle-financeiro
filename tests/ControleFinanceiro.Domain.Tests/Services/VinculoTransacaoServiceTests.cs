@@ -273,7 +273,7 @@ public sealed class VinculoTransacaoServiceTests
     {
         Action act = () => VinculoTransacaoService.Vincular(transacoes.DoCartao(cartao, saida.AVista()), despesa, despesaQueUsaATransacao: Maybe<Despesa>.None, cartoesDoUsuario: []);
 
-        act.Should().ThrowExactly<ArgumentException>().WithParameterName("cartoesDoUsuario");
+        act.Should().ThrowExactly<ArgumentException>().WithParameterName("cartoesUsuario");
     }
 
     [Theory, VinculoAutoData]

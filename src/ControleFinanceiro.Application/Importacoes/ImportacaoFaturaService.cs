@@ -126,6 +126,7 @@ public sealed class ImportacaoFaturaService
 
         return ImportacaoArquivoFactory.ConferirVencimentoFatura(
             idUsuario,
+            fatura.Banco,
             fatura.Vencimento,
             cartoesFatura,
             cartoesUsuario,

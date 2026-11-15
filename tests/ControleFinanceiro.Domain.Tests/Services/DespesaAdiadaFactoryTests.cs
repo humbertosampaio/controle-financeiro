@@ -259,7 +259,7 @@ public sealed class DespesaAdiadaFactoryTests
 
         Action act = () => fatura.CriarAdiadas(cartoesDoUsuario: [], adiadasDoUsuario: [], novas);
 
-        act.Should().ThrowExactly<ArgumentException>().WithParameterName("cartoesDoUsuario");
+        act.Should().ThrowExactly<ArgumentException>().WithParameterName("cartoesUsuario");
     }
 
     [Theory, CompraAutoData]

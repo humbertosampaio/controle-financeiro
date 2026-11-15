@@ -156,9 +156,11 @@ public sealed class DespesaAdiada : DespesaInteira, IDespesaDoCartao
         return fatura.Contem(IdCartao) && (Pagamento.IdTransacao != idSaida || MesReferencia == fatura.Vencimento.Mes);
     }
 
+    public bool EstaPagaPelaFatura(FaturaCartao fatura) => ConstaNaFatura(fatura) && Pagamento.FoiPagoPorTransacao;
+
     bool IDespesaDoCartao.PagarFatura(FaturaCartao fatura, IdTransacao idSaida, DateOnly dataPagamento)
     {
-        if (!fatura.Contem(IdCartao) || MesReferencia != fatura.Vencimento.Mes)
+        if (!ConstaNaFatura(fatura))
             return false;
 
         Maybe<Pagamento> pago = Pagamento.PagarPelaFatura(Cobranca, idSaida, dataPagamento);
@@ -170,6 +172,12 @@ public sealed class DespesaAdiada : DespesaInteira, IDespesaDoCartao
     }
 
     UnitResult<Erro> IDespesaDoCartao.DesfazerPagamento(IdTransacao idSaida) => Pagamento.Reabrir(idSaida).Map(p => Pagamento = p);
+
+    /// <summary>
+    /// Verdadeiro quando a despesa consta na <paramref name="fatura"/>: a compra foi num cartão dela e o pagamento
+    /// adiado vence no mês de vencimento dela.
+    /// </summary>
+    private bool ConstaNaFatura(FaturaCartao fatura) => fatura.Contem(IdCartao) && MesReferencia == fatura.Vencimento.Mes;
 
     public override Maybe<Pagamento> PagamentoCobradoPor(IdTransacao idTransacao) =>
         Cobranca?.IdTransacao == idTransacao ? Pagamento : Maybe<Pagamento>.None;

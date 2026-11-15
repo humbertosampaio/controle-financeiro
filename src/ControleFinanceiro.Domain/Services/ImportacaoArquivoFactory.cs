@@ -44,7 +44,7 @@ public static class ImportacaoArquivoFactory
         int lidas,
         DateTimeOffset importadaEm)
     {
-        return ConferirVencimentoFatura(cartao.IdUsuario, vencimento, cartoesFatura: [cartao], cartoesUsuario, importacoesFaturaMes)
+        return ConferirVencimentoFatura(cartao.IdUsuario, cartao.Banco, vencimento, cartoesFatura: [cartao], cartoesUsuario, importacoesFaturaMes)
             .Map(() => ImportacaoArquivo.RegistrarFatura(
                 cartao.IdUsuario,
                 OrigemTransacao.DoCartao(cartao.Id),
@@ -65,12 +65,14 @@ public static class ImportacaoArquivoFactory
     /// Sem índice único: a regra depende do ciclo atual dos cartões, que não é coluna da importação, e duas importações
     /// ao mesmo tempo podem passar.
     /// </remarks>
+    /// <param name="banco">O banco da fatura, que o layout do arquivo define.</param>
     /// <param name="cartoesFatura">Os cartões dos finais do arquivo.</param>
     /// <param name="cartoesUsuario">Todos os cartões do usuário, e só os dele.</param>
     /// <param name="importacoesFaturaMes">As importações de fatura do usuário com vencimento no mês do <paramref name="vencimento"/>.</param>
     /// <exception cref="ArgumentException">Quando um cartão ou uma importação é de outro usuário.</exception>
     public static UnitResult<Erro> ConferirVencimentoFatura(
         IdUsuario idUsuario,
+        Banco banco,
         VencimentoFatura vencimento,
         IReadOnlyCollection<Cartao> cartoesFatura,
         IReadOnlyCollection<Cartao> cartoesUsuario,
@@ -85,7 +87,7 @@ public static class ImportacaoArquivoFactory
         if (importacoesFaturaMes.Any(i => i.IdUsuario != idUsuario))
             throw new ArgumentException("A lista traz uma importação de outro usuário.", nameof(importacoesFaturaMes));
 
-        FaturaCartao fatura = FaturaCartao.Importada(cartoesFatura, cartoesUsuario, vencimento);
+        FaturaCartao fatura = FaturaCartao.Importada(banco, cartoesFatura, cartoesUsuario, vencimento);
 
         return UnitResult.FailureIf<Erro>(
             importacoesFaturaMes.Any(i => i.TemOutroVencimentoNoMesmoMes(fatura)),

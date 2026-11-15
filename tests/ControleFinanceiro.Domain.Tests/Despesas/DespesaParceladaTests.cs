@@ -8,6 +8,7 @@ using ControleFinanceiro.Domain.Usuarios;
 using ControleFinanceiro.Tests.Shared;
 using ControleFinanceiro.Tests.Shared.AutoFixture.Attributes;
 using CSharpFunctionalExtensions;
+using SaidaDeTeste = ControleFinanceiro.Domain.Tests.Services.VinculoTransacaoServiceTests.SaidaDeTeste;
 
 namespace ControleFinanceiro.Domain.Tests.Despesas;
 
@@ -215,6 +216,63 @@ public sealed class DespesaParceladaTests
         despesa.EhDaCompra(chave).Should().BeFalse();
     }
 
+    [Theory, PagaPelaFaturaAutoData]
+    public void EstaPagaPelaFatura_Quando_ParcelaDoMesPagaPelaSaida_Deve_SerVerdadeiro(
+        [Frozen] Cartao cartao,
+        DespesaParcelada sut,
+        TransacoesDeTeste transacoes,
+        SaidaDeTeste compra,
+        SaidaDeTeste pagamento)
+    {
+        CobrarEPagarPrimeira(sut, cartao, transacoes, compra, pagamento);
+
+        sut.EstaPagaPelaFatura(FaturaCartao.DoCartao(cartao.Id, [cartao], sut.Parcelas[0].MesReferencia)).Should().BeTrue();
+    }
+
+    [Theory, PagaPelaFaturaAutoData]
+    public void EstaPagaPelaFatura_Quando_ParcelaDoMesPendente_Deve_SerFalso(
+        [Frozen] Cartao cartao,
+        DespesaParcelada sut,
+        TransacoesDeTeste transacoes,
+        SaidaDeTeste compra,
+        SaidaDeTeste pagamento)
+    {
+        CobrarEPagarPrimeira(sut, cartao, transacoes, compra, pagamento);
+
+        sut.EstaPagaPelaFatura(FaturaCartao.DoCartao(cartao.Id, [cartao], sut.Parcelas[1].MesReferencia)).Should().BeFalse();
+    }
+
+    [Theory, DomainAutoData]
+    public void EstaPagaPelaFatura_Quando_ParcelaNascidaPaga_Deve_SerFalso([Frozen] IdUsuario idUsuario, Cartao cartao)
+    {
+        DespesaParcelada sut = Parcelar(idUsuario, cartao, numero: 3, total: 10);
+
+        sut.EstaPagaPelaFatura(FaturaCartao.DoCartao(cartao.Id, [cartao], sut.Parcelas[0].MesReferencia)).Should().BeFalse();
+    }
+
+    [Theory, PagaPelaFaturaAutoData]
+    public void EstaPagaPelaFatura_Quando_FaturaDeOutroCartao_Deve_SerFalso(
+        [Frozen] Cartao cartao,
+        DespesaParcelada sut,
+        TransacoesDeTeste transacoes,
+        SaidaDeTeste compra,
+        SaidaDeTeste pagamento)
+    {
+        CobrarEPagarPrimeira(sut, cartao, transacoes, compra, pagamento);
+        Cartao cartaoOutroBanco = cartao.EmOutroBanco();
+
+        sut.EstaPagaPelaFatura(FaturaCartao.DoCartao(cartaoOutroBanco.Id, [cartaoOutroBanco], sut.Parcelas[0].MesReferencia)).Should().BeFalse();
+    }
+
+    private static void CobrarEPagarPrimeira(DespesaParcelada despesa, Cartao cartao, TransacoesDeTeste transacoes, SaidaDeTeste compra, SaidaDeTeste pagamento)
+    {
+        Transacao parcela = transacoes.DoCartao(cartao, compra.DaCompra(despesa, numero: 1));
+        VinculoTransacaoService.Vincular(parcela, despesa, despesaQueUsaATransacao: Maybe<Despesa>.None, cartoesDoUsuario: [cartao]).Should().Succeed();
+        PagamentoFaturaService
+            .Pagar(transacoes.DaConta(pagamento.AVista()), cartao, despesa.Parcelas[0].MesReferencia, [cartao], [despesa], despesasPagasPelaSaida: [])
+            .Should().Succeed();
+    }
+
     /// <summary>O vencimento exato da fatura que traz a parcela de número <paramref name="numero"/>.</summary>
     private static DateOnly VencimentoInformado(int numero) => _vencimentoPrimeiraFatura.AddMonths(numero - 1);
 
@@ -239,5 +297,22 @@ public sealed class DespesaParceladaTests
                 cartao.FaturaCom((VencimentoFatura)VencimentoInformado(numero), compra),
                 parceladasDoUsuario: [])
             .Single();
+    }
+
+    /// <summary>
+    /// Tudo sai do mesmo usuário e na mesma data, para a compra cair no mês de vencimento da primeira parcela. A parcelada
+    /// nasce na primeira de 10 parcelas, com as outras pendentes depois.
+    /// </summary>
+    private sealed class PagaPelaFaturaAutoDataAttribute : DomainAutoDataAttribute
+    {
+        public PagaPelaFaturaAutoDataAttribute()
+            : base(fixture =>
+            {
+                fixture.Freeze<IdUsuario>();
+                fixture.Freeze<DateOnly>();
+                fixture.Register(() => (Parcela)(1, 10));
+            })
+        {
+        }
     }
 }
