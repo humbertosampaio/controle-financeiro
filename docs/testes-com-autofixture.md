@@ -74,6 +74,8 @@ DateOnly noPrimeiroMesPossivel = modelo.Vencimento.Value.AddMonths(-mesesDepoisP
 DateOnly dataCompra = noPrimeiroMesPossivel.AddMonths(-parcela.QuantidadeParcelasAnteriores);
 ```
 
+Vale também para o valor de um passo só que o caso escolhe, como a data na ponta da janela: ele vai numa variável cujo nome diz a intenção (`ultimoDiaJanela`), em vez de ficar escrito na chamada do método testado.
+
 ### Sinais de que o teste precisa de outra montagem
 
 Já decidido que o teste tem valor, o critério é a legibilidade: deve ser fácil entender o cenário e o que cada variável representa. Um AutoData privado declara só o cenário da classe, como congelar o usuário ou fixar a parcela. Um `Register` grande, com vários `fixture.Create<T>`, não deixa claro o que se quer representar. Três sinais pedem outra montagem:
