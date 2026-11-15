@@ -14,7 +14,7 @@ public sealed class ImportacaoArquivoTests
     [Theory, DomainAutoData]
     public void PeriodoNaoImportado_Quando_PrimeiraImportacao_Deve_RetornarNada(ImportacaoArquivo sut)
     {
-        Maybe<PeriodoArquivo> result = sut.PeriodoNaoImportado(Maybe.None);
+        Maybe<Periodo> result = sut.PeriodoNaoImportado(Maybe.None);
 
         result.Should().HaveNoValue();
     }
@@ -26,14 +26,14 @@ public sealed class ImportacaoArquivoTests
     public void PeriodoNaoImportado_Quando_PeriodoContiguoOuSobreposto_Deve_RetornarNada(
         int diasDoFimAnteriorAoInicio,
         ContaBancaria conta,
-        PeriodoArquivo periodoAnterior,
+        Periodo periodoAnterior,
         Fixture fixture)
     {
         ImportacaoArquivo ultima = Com(fixture, conta, periodoAnterior);
         DateOnly inicio = ultima.Periodo.Fim.AddDays(diasDoFimAnteriorAoInicio);
-        ImportacaoArquivo sut = Com(fixture, conta, PeriodoArquivo.Criar(inicio, inicio.AddDays(30)).Value);
+        ImportacaoArquivo sut = Com(fixture, conta, new Periodo(inicio, inicio.AddDays(30)));
 
-        Maybe<PeriodoArquivo> result = sut.PeriodoNaoImportado(ultima);
+        Maybe<Periodo> result = sut.PeriodoNaoImportado(ultima);
 
         result.Should().HaveNoValue();
     }
@@ -41,16 +41,16 @@ public sealed class ImportacaoArquivoTests
     [Theory, DomainAutoData]
     public void PeriodoNaoImportado_Quando_DiasEntreAsImportacoes_Deve_RetornarOsDiasFaltantes(
         ContaBancaria conta,
-        PeriodoArquivo periodoAnterior,
+        Periodo periodoAnterior,
         Fixture fixture)
     {
         ImportacaoArquivo ultima = Com(fixture, conta, periodoAnterior);
         DateOnly inicio = ultima.Periodo.Fim.AddDays(4);
-        ImportacaoArquivo sut = Com(fixture, conta, PeriodoArquivo.Criar(inicio, inicio.AddDays(30)).Value);
+        ImportacaoArquivo sut = Com(fixture, conta, new Periodo(inicio, inicio.AddDays(30)));
 
-        Maybe<PeriodoArquivo> result = sut.PeriodoNaoImportado(ultima);
+        Maybe<Periodo> result = sut.PeriodoNaoImportado(ultima);
 
-        result.Should().HaveValue(PeriodoArquivo.Criar(ultima.Periodo.Fim.AddDays(1), ultima.Periodo.Fim.AddDays(3)).Value);
+        result.Should().HaveValue(new Periodo(ultima.Periodo.Fim.AddDays(1), ultima.Periodo.Fim.AddDays(3)));
     }
 
     [Theory, DomainAutoData]
@@ -113,7 +113,7 @@ public sealed class ImportacaoArquivoTests
         sut.TemOutroVencimentoNoMesmoMes(fatura).Should().BeFalse();
     }
 
-    private static ImportacaoArquivo Com(Fixture fixture, ContaBancaria conta, PeriodoArquivo periodo)
+    private static ImportacaoArquivo Com(Fixture fixture, ContaBancaria conta, Periodo periodo)
     {
         fixture.Inject(conta);
         fixture.Inject(periodo);

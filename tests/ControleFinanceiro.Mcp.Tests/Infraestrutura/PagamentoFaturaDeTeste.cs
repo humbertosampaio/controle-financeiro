@@ -59,7 +59,7 @@ internal sealed class PagamentoFaturaDeTeste
                 cartoesUsuario: [cartao],
                 importacoesFaturaMes: [],
                 fixture.Create<LayoutArquivoImportacao>(),
-                fixture.Create<PeriodoArquivo>(),
+                fixture.Create<Periodo>(),
                 cartao.VencimentoNoMes(compra.Data),
                 lidas: 1,
                 fixture.Create<DateTimeOffset>().ToUniversalTime())

@@ -17,7 +17,7 @@ public sealed class ImportacaoParaModeloTests
     [Theory, DomainAutoData]
     public void Serializar_Quando_Extrato_Deve_TerSomenteOsCamposPermitidos(ExtratoImportado importado)
     {
-        ExtratoImportado semAvisos = importado with { PeriodoNaoImportado = Maybe<PeriodoArquivo>.None, SomaPeriodo = Result.Success() };
+        ExtratoImportado semAvisos = importado with { PeriodoNaoImportado = Maybe<Periodo>.None, SomaPeriodo = Result.Success() };
 
         JsonObject json = ImportacaoParaModelo.DoExtrato(LayoutArquivoImportacao.C6ContaCsv, semAvisos).Serializar();
 
@@ -40,7 +40,7 @@ public sealed class ImportacaoParaModeloTests
     }
 
     [Theory, DomainAutoData]
-    public void Serializar_Quando_ExtratoComPeriodoNaoImportado_Deve_LevarOPeriodo(ExtratoImportado importado, PeriodoArquivo naoImportado)
+    public void Serializar_Quando_ExtratoComPeriodoNaoImportado_Deve_LevarOPeriodo(ExtratoImportado importado, Periodo naoImportado)
     {
         JsonObject json = ImportacaoParaModelo
             .DoExtrato(LayoutArquivoImportacao.C6ContaCsv, importado with { PeriodoNaoImportado = naoImportado })

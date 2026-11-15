@@ -2,6 +2,7 @@ using AutoFixture.Kernel;
 using ControleFinanceiro.Domain.Cartoes;
 using ControleFinanceiro.Domain.Importacoes;
 using ControleFinanceiro.Domain.Services;
+using ControleFinanceiro.Domain.Shared.ValueObjects;
 
 namespace ControleFinanceiro.Tests.Shared.AutoFixture.SpecimenBuilders;
 
@@ -26,7 +27,7 @@ public sealed class ImportacaoFaturaGenerator : ISpecimenBuilder
                 cartoesUsuario: [cartao],
                 importacoesFaturaMes: [],
                 context.Create<LayoutArquivoImportacao>(),
-                context.Create<PeriodoArquivo>(),
+                context.Create<Periodo>(),
                 context.Create<VencimentoFatura>(),
                 context.Create<byte>(),
                 context.Create<DateTimeOffset>())

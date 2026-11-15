@@ -1,4 +1,4 @@
-using ControleFinanceiro.Domain.Importacoes;
+using ControleFinanceiro.Domain.Shared.ValueObjects;
 using System.Text.Json.Serialization;
 
 namespace ControleFinanceiro.Application.IA.Saida;
@@ -18,5 +18,5 @@ public sealed record PeriodoParaModelo : ISaidaModelo
         Fim = fim;
     }
 
-    public static PeriodoParaModelo De(PeriodoArquivo periodo) => new(periodo.Inicio, periodo.Fim);
+    public static PeriodoParaModelo De(Periodo periodo) => new(periodo.Inicio, periodo.Fim);
 }

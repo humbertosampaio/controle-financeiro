@@ -3,6 +3,7 @@ using ControleFinanceiro.Domain.Cartoes;
 using ControleFinanceiro.Domain.Contas;
 using ControleFinanceiro.Domain.Importacoes;
 using ControleFinanceiro.Domain.Services;
+using ControleFinanceiro.Domain.Shared.ValueObjects;
 using ControleFinanceiro.Domain.Transacoes;
 using ControleFinanceiro.Domain.Usuarios;
 
@@ -14,7 +15,7 @@ public sealed class TransacoesDeTeste
     private readonly IdUsuario _idUsuario;
     private readonly ContaBancaria _conta;
     private readonly LayoutArquivoImportacao _layout;
-    private readonly PeriodoArquivo _periodo;
+    private readonly Periodo _periodo;
     private readonly VencimentoFatura _vencimentoFatura;
     private readonly DateTimeOffset _importadaEm;
 
@@ -23,7 +24,7 @@ public sealed class TransacoesDeTeste
         IdUsuario idUsuario,
         ContaBancaria conta,
         LayoutArquivoImportacao layout,
-        PeriodoArquivo periodo,
+        Periodo periodo,
         VencimentoFatura vencimentoFatura,
         DateTimeOffset importadaEm)
     {

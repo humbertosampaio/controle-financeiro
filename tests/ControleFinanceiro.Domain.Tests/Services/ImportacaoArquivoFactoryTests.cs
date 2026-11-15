@@ -18,7 +18,7 @@ public sealed class ImportacaoArquivoFactoryTests
     public void Registrar_Quando_Conta_Deve_GuardarOsDadosDaImportacaoComOUsuarioEAOrigemDaConta(
         ContaBancaria conta,
         LayoutArquivoImportacao layout,
-        PeriodoArquivo periodo,
+        Periodo periodo,
         byte lidas,
         DateTimeOffset importadaEm)
     {
@@ -38,7 +38,7 @@ public sealed class ImportacaoArquivoFactoryTests
     public void Registrar_Quando_Cartao_Deve_GuardarOUsuarioAOrigemEOVencimentoDaFatura(
         Cartao cartao,
         LayoutArquivoImportacao layout,
-        PeriodoArquivo periodo,
+        Periodo periodo,
         VencimentoFatura vencimento,
         byte lidas,
         DateTimeOffset importadaEm)
@@ -57,7 +57,7 @@ public sealed class ImportacaoArquivoFactoryTests
     public void Registrar_Quando_CartaoComLidasNegativas_Deve_LancarExcecao(
         Cartao cartao,
         LayoutArquivoImportacao layout,
-        PeriodoArquivo periodo,
+        Periodo periodo,
         VencimentoFatura vencimento,
         DateTimeOffset importadaEm)
     {
@@ -78,7 +78,7 @@ public sealed class ImportacaoArquivoFactoryTests
     public void Registrar_Quando_LidasNegativas_Deve_LancarExcecao(
         ContaBancaria conta,
         LayoutArquivoImportacao layout,
-        PeriodoArquivo periodo,
+        Periodo periodo,
         DateTimeOffset importadaEm)
     {
         Action registrar = () => ImportacaoArquivoFactory.Registrar(conta, layout, periodo, lidas: -1, importadaEm);
@@ -257,7 +257,7 @@ public sealed class ImportacaoArquivoFactoryTests
     public void Registrar_Deve_GerarIdVersao7(
         ContaBancaria conta,
         LayoutArquivoImportacao layout,
-        PeriodoArquivo periodo,
+        Periodo periodo,
         byte lidas,
         DateTimeOffset importadaEm)
     {

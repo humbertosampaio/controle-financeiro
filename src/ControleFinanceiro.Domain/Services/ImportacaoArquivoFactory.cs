@@ -2,6 +2,7 @@ using ControleFinanceiro.Domain.Cartoes;
 using ControleFinanceiro.Domain.Contas;
 using ControleFinanceiro.Domain.Importacoes;
 using ControleFinanceiro.Domain.Shared;
+using ControleFinanceiro.Domain.Shared.ValueObjects;
 using ControleFinanceiro.Domain.Transacoes;
 using ControleFinanceiro.Domain.Usuarios;
 
@@ -17,7 +18,7 @@ public static class ImportacaoArquivoFactory
     public static ImportacaoArquivo Registrar(
         ContaBancaria conta,
         LayoutArquivoImportacao layout,
-        PeriodoArquivo periodo,
+        Periodo periodo,
         int lidas,
         DateTimeOffset importadaEm)
     {
@@ -38,7 +39,7 @@ public static class ImportacaoArquivoFactory
         IReadOnlyCollection<Cartao> cartoesUsuario,
         IReadOnlyCollection<ImportacaoArquivo> importacoesFaturaMes,
         LayoutArquivoImportacao layout,
-        PeriodoArquivo periodo,
+        Periodo periodo,
         VencimentoFatura vencimento,
         int lidas,
         DateTimeOffset importadaEm)

@@ -142,7 +142,7 @@ public sealed partial class LeitorExtratoContaMercadoPago : ILeitorExtratoContaI
             .GroupBy(l => l.Lancamento.DataContabil)
             .Select(dia => SaldoDiario.Criar(dia.Key, dia.Last().SaldoParcial));
 
-        return PeriodoArquivo
+        return Periodo
             .Criar(datas.Min(), datas.Max())
             .Bind(periodo => Extrato.Criar(
                 Banco.MercadoPago,

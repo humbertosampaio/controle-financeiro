@@ -123,15 +123,15 @@ public sealed class Fatura : ValueObject
     }
 
     /// <summary>Da menor à maior data de compra de todos os cartões.</summary>
-    public PeriodoArquivo Periodo => PeriodoDe(_lancamentos.Select(l => l.Lancamento).ToList());
+    public Periodo Periodo => PeriodoDe(_lancamentos.Select(l => l.Lancamento).ToList());
 
     /// <summary>Da menor à maior data de compra do cartão.</summary>
     /// <exception cref="ArgumentException">Quando o final não está na fatura.</exception>
-    public PeriodoArquivo PeriodoCartao(SufixoCartao sufixo) => PeriodoDe(LancamentosCartao(sufixo));
+    public Periodo PeriodoCartao(SufixoCartao sufixo) => PeriodoDe(LancamentosCartao(sufixo));
 
     /// <param name="lancamentos">Pelo menos um.</param>
-    private static PeriodoArquivo PeriodoDe(IReadOnlyList<Lancamento> lancamentos) =>
-        (PeriodoArquivo)(lancamentos.Min(l => l.Data), lancamentos.Max(l => l.Data));
+    private static Periodo PeriodoDe(IReadOnlyList<Lancamento> lancamentos) =>
+        new Periodo(lancamentos.Min(l => l.Data), lancamentos.Max(l => l.Data));
 
     private void GarantirSufixo(SufixoCartao sufixo)
     {

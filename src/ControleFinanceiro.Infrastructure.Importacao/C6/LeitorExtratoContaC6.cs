@@ -7,7 +7,7 @@ using CsvHelper;
 using System.Globalization;
 using System.Text;
 using System.Text.RegularExpressions;
-using ContaEPeriodo = (ControleFinanceiro.Domain.Contas.SufixoConta Sufixo, ControleFinanceiro.Domain.Importacoes.PeriodoArquivo Periodo);
+using ContaEPeriodo = (ControleFinanceiro.Domain.Contas.SufixoConta Sufixo, ControleFinanceiro.Domain.Shared.ValueObjects.Periodo Periodo);
 using DatasPeriodo = (System.DateOnly Inicio, System.DateOnly Fim);
 using LancamentoComSaldo = (ControleFinanceiro.Domain.Importacoes.LancamentoContabilizado Lancamento, ControleFinanceiro.Domain.Importacoes.SaldoDiario Saldo);
 
@@ -102,14 +102,14 @@ public sealed partial class LeitorExtratoContaC6 : ILeitorExtrato
             .Bind(numero => SufixoConta.Criar(numero[^SufixoConta.QuantidadeCaracteres..]));
     }
 
-    private static Result<PeriodoArquivo> LerPeriodo(IEnumerable<string> cabecalho)
+    private static Result<Periodo> LerPeriodo(IEnumerable<string> cabecalho)
     {
         return cabecalho
-            .Select(l => Periodo().Match(l))
+            .Select(l => PeriodoCabecalho().Match(l))
             .TryFirst(m => m.Success)
             .ToResult("O cabeçalho do arquivo não traz o período do extrato.")
             .Bind(LerDatasPeriodo)
-            .Bind(datas => PeriodoArquivo.Criar(datas.Inicio, datas.Fim));
+            .Bind(datas => Periodo.Criar(datas.Inicio, datas.Fim));
     }
 
     private static Result<DatasPeriodo> LerDatasPeriodo(Match periodo)
@@ -129,7 +129,7 @@ public sealed partial class LeitorExtratoContaC6 : ILeitorExtrato
     private static async Task<Result<Extrato, FalhaLeituraArquivo>> LerExtratoAsync(
         StreamReader leitor,
         SufixoConta sufixo,
-        PeriodoArquivo periodo,
+        Periodo periodo,
         CancellationToken cancellationToken)
     {
         // Um saldo por dia contábil: o C6 repete o saldo em toda linha do dia. Se as linhas de um dia trouxerem
@@ -282,7 +282,7 @@ public sealed partial class LeitorExtratoContaC6 : ILeitorExtrato
     private static partial Regex NumeroContaComDigitoColado();
 
     [GeneratedRegex(@"Extrato de (?<inicio>\d{2}/\d{2}/\d{4}) a (?<fim>\d{2}/\d{2}/\d{4})")]
-    private static partial Regex Periodo();
+    private static partial Regex PeriodoCabecalho();
 
     [CsvRecord]
     internal sealed partial class LinhaExtratoC6

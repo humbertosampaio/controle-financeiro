@@ -37,7 +37,7 @@ public class DomainFixture : Fixture
             .Customize(new LancamentoCustomization())
             .Customize(new IdentidadeLancamentoCustomization())
             .Customize(new OrigemTransacaoCustomization())
-            .Customize(new PeriodoArquivoCustomization())
+            .Customize(new PeriodoCustomization())
             .Customize(new ExtratoCustomization())
             .Customize(new FaturaCustomization())
             .Customize(new ImportacaoArquivoCustomization())

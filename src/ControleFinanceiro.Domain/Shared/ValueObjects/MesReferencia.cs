@@ -96,7 +96,10 @@ public sealed class MesReferencia : ComparableValueObject
     /// <param name="dia">O componente dia da data, que existe em todo mês</param>
     public DateOnly NoDia(DiaValidoEmTodoMes dia) => new(Ano, Mes, dia);
 
-    public bool Contem(DateOnly data) => data >= Inicio && data <= Fim;
+    /// <summary>Os dias do mês, do primeiro ao último.</summary>
+    public Periodo Periodo => new Periodo(Inicio, Fim);
+
+    public bool Contem(DateOnly data) => Periodo.Contem(data);
     public bool Contem(DateTimeOffset data) => Contem(data.ToDateOnly());
 
     public override string ToString() => $"{Mes:00}/{Ano}";

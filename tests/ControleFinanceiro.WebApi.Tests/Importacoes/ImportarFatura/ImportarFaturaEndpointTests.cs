@@ -73,7 +73,7 @@ public sealed class ImportarFaturaEndpointTests : IAsyncLifetime
         ImportacaoArquivo importacaoFisico = importacoes.Single(i => i.Origem == OrigemTransacao.DoCartao(fisico.Id));
         ((Guid)importacaoFisico.Id).Should().Be(linhaFisico.IdImportacao);
         importacaoFisico.Layout.Should().BeSameAs(LayoutArquivoImportacao.C6CartaoCsv);
-        importacaoFisico.Periodo.Should().Be((PeriodoArquivo)(FaturaCartaoC6.PrimeiraCompraFisico, FaturaCartaoC6.UltimaCompraFisico));
+        importacaoFisico.Periodo.Should().Be(new Periodo(FaturaCartaoC6.PrimeiraCompraFisico, FaturaCartaoC6.UltimaCompraFisico));
         importacaoFisico.Lidas.Should().Be(FaturaCartaoC6.LancamentosPorCartao);
         VencimentoFatura vencimento = (VencimentoFatura)FaturaCartaoC6.Vencimento;
         importacoes.Should().OnlyContain(i => i.VencimentoFatura == vencimento);

@@ -1,5 +1,4 @@
 using ControleFinanceiro.Domain.Contas;
-using ControleFinanceiro.Domain.Importacoes;
 using ControleFinanceiro.Domain.Shared.ValueObjects;
 using ControleFinanceiro.Domain.Transacoes;
 using CSharpFunctionalExtensions;
@@ -49,7 +48,7 @@ internal sealed class TransacaoRepository : ITransacaoRepository
 
     public async Task<IReadOnlyList<Transacao>> ListarNoPeriodoAsync(
         OrigemTransacao origem,
-        PeriodoArquivo periodo,
+        Periodo periodo,
         CancellationToken cancellationToken)
     {
         return await DaOrigem(origem)

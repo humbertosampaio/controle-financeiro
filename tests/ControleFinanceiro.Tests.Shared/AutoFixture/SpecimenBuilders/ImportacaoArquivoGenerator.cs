@@ -2,6 +2,7 @@ using AutoFixture.Kernel;
 using ControleFinanceiro.Domain.Contas;
 using ControleFinanceiro.Domain.Importacoes;
 using ControleFinanceiro.Domain.Services;
+using ControleFinanceiro.Domain.Shared.ValueObjects;
 
 namespace ControleFinanceiro.Tests.Shared.AutoFixture.SpecimenBuilders;
 
@@ -19,7 +20,7 @@ public sealed class ImportacaoArquivoGenerator : ISpecimenBuilder
         return ImportacaoArquivoFactory.Registrar(
             context.Create<ContaBancaria>(),
             context.Create<LayoutArquivoImportacao>(),
-            context.Create<PeriodoArquivo>(),
+            context.Create<Periodo>(),
             context.Create<byte>(),
             context.Create<DateTimeOffset>());
     }

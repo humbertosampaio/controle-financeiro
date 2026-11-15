@@ -19,7 +19,7 @@ using DiaFechamentoCartao = ControleFinanceiro.Domain.Cartoes.DiaFechamentoCarta
 using DiaOcorrenciaRecorrente = ControleFinanceiro.Domain.Despesas.DiaOcorrenciaRecorrente;
 using DiaVencimentoCartao = ControleFinanceiro.Domain.Cartoes.DiaVencimentoCartao;
 using IdTransacao = ControleFinanceiro.Domain.Transacoes.IdTransacao;
-using PeriodoArquivo = ControleFinanceiro.Domain.Importacoes.PeriodoArquivo;
+using Periodo = ControleFinanceiro.Domain.Shared.ValueObjects.Periodo;
 using SufixoCartao = ControleFinanceiro.Domain.Cartoes.SufixoCartao;
 using SufixoConta = ControleFinanceiro.Domain.Contas.SufixoConta;
 
@@ -70,7 +70,7 @@ public sealed class SaidaModeloArquiteturaTests
         typeof(DocumentoMascarado),
         typeof(Reais),
         typeof(MesReferencia),
-        typeof(PeriodoArquivo),
+        typeof(Periodo),
         typeof(DiaOcorrenciaRecorrente),
         typeof(DiaFechamentoCartao),
         typeof(DiaVencimentoCartao),

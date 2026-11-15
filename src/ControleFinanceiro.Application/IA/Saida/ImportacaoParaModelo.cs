@@ -79,7 +79,7 @@ public sealed record ImportacaoParaModelo : ISaidaModelo
         Banco banco,
         TipoConta tipoConta,
         SufixoConta finalConta,
-        PeriodoArquivo periodo,
+        Periodo periodo,
         bool contaNova,
         int lidas,
         int novas,
@@ -109,7 +109,7 @@ public sealed record ImportacaoParaModelo : ISaidaModelo
     private ImportacaoParaModelo(
         LayoutArquivoImportacao layout,
         Banco banco,
-        PeriodoArquivo periodo,
+        Periodo periodo,
         DateOnly vencimento,
         IReadOnlyList<CartaoImportadoParaModelo> cartoes,
         IReadOnlyList<DocumentoMascarado> avisos)
@@ -188,7 +188,7 @@ public sealed record ImportacaoParaModelo : ISaidaModelo
 
     private static string Contagens(int lidas, int novas, int jaExistentes) => $"{lidas} lidas, {novas} novas e {jaExistentes} já existentes";
 
-    private static string Datas(PeriodoArquivo periodo) => $"de {Data(periodo.Inicio)} a {Data(periodo.Fim)}";
+    private static string Datas(Periodo periodo) => $"de {Data(periodo.Inicio)} a {Data(periodo.Fim)}";
 
     private static string Data(DateOnly data) => data.ToString("dd/MM/yyyy", CultureInfo.InvariantCulture);
 

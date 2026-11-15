@@ -22,7 +22,7 @@ public sealed class ExtratoTests
 
         Result<Extrato> result = Criar(
             arquivo,
-            Periodo(dia, diaSeguinte),
+            new Periodo(dia, diaSeguinte),
             [LancamentoContabilizado.Criar(primeiro, dia), LancamentoContabilizado.Criar(segundo, diaSeguinte), LancamentoContabilizado.Criar(terceiro, diaSeguinte)],
             [SaldoDiario.Criar(dia, saldoBase), SaldoDiario.Criar(diaSeguinte, saldoBase + segundo.Valor + terceiro.Valor)]);
 
@@ -41,7 +41,7 @@ public sealed class ExtratoTests
 
         Result<Extrato> result = Criar(
             arquivo,
-            Periodo(dia, diaSeguinte),
+            new Periodo(dia, diaSeguinte),
             [LancamentoContabilizado.Criar(primeiro, dia), LancamentoContabilizado.Criar(segundo, diaSeguinte)],
             [SaldoDiario.Criar(dia, saldoBase), SaldoDiario.Criar(diaSeguinte, saldoBase + segundo.Valor + 0.01m)]);
 
@@ -69,7 +69,7 @@ public sealed class ExtratoTests
 
         Result<Extrato> result = Criar(
             arquivo,
-            Periodo(sexta, segunda),
+            new Periodo(sexta, segunda),
             [LancamentoContabilizado.Criar(anterior, sexta), LancamentoContabilizado.Criar(pix, segunda)],
             [SaldoDiario.Criar(sexta, saldoBase), SaldoDiario.Criar(segunda, saldoBase + pix.Valor)]);
 
@@ -85,7 +85,7 @@ public sealed class ExtratoTests
     {
         Result<Extrato> result = Criar(
             arquivo,
-            Periodo(dia, dia),
+            new Periodo(dia, dia),
             [LancamentoContabilizado.Criar(lancamento, dia)],
             [SaldoDiario.Criar(dia, saldo)]);
 
@@ -104,7 +104,7 @@ public sealed class ExtratoTests
 
         Result<Extrato> result = Criar(
             arquivo,
-            Periodo(fim, fim),
+            new Periodo(fim, fim),
             [LancamentoContabilizado.Criar(noFim, fim), LancamentoContabilizado.Criar(depoisDoFim, diaUtilSeguinte)],
             [SaldoDiario.Criar(fim, saldoBase), SaldoDiario.Criar(diaUtilSeguinte, saldoBase + depoisDoFim.Valor + 0.01m)]);
 
@@ -123,7 +123,7 @@ public sealed class ExtratoTests
 
         Result<Extrato> result = Criar(
             arquivo,
-            Periodo(dia, diaSeguinte),
+            new Periodo(dia, diaSeguinte),
             [LancamentoContabilizado.Criar(primeiro, dia), LancamentoContabilizado.Criar(segundo, diaSeguinte)],
             [SaldoDiario.Criar(dia, saldoBase)]);
 
@@ -142,7 +142,7 @@ public sealed class ExtratoTests
 
         Result<Extrato> result = Criar(
             arquivo,
-            Periodo(dia, diaSeguinte),
+            new Periodo(dia, diaSeguinte),
             [LancamentoContabilizado.Criar(primeiro, dia), LancamentoContabilizado.Criar(segundo, diaSeguinte)],
             [SaldoDiario.Criar(diaSeguinte, saldo)]);
 
@@ -162,7 +162,7 @@ public sealed class ExtratoTests
 
         Result<Extrato> result = Criar(
             arquivo,
-            Periodo(dia, outroDia),
+            new Periodo(dia, outroDia),
             [LancamentoContabilizado.Criar(lancamento, dia)],
             [
                 SaldoDiario.Criar(outroDia, saldo),
@@ -186,14 +186,12 @@ public sealed class ExtratoTests
 
     private static Result<Extrato> Criar(
         Extrato arquivo,
-        PeriodoArquivo periodo,
+        Periodo periodo,
         IEnumerable<LancamentoContabilizado> lancamentos,
         IEnumerable<SaldoDiario> saldos)
     {
         return Extrato.Criar(arquivo.Banco, arquivo.TipoConta, arquivo.SufixoConta, periodo, lancamentos, saldos);
     }
-
-    private static PeriodoArquivo Periodo(DateOnly inicio, DateOnly fim) => PeriodoArquivo.Criar(inicio, fim).Value;
 
     private static string Formatar(DateOnly data) => data.ToString("dd/MM/yyyy", CultureInfo.InvariantCulture);
 }

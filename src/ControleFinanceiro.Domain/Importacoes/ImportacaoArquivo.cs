@@ -25,7 +25,7 @@ public sealed class ImportacaoArquivo : AggregateRoot<IdImportacao>, IPertenceAo
     public IdUsuario IdUsuario { get; private set; }
     public OrigemTransacao Origem { get; private set; } = null!;
     public LayoutArquivoImportacao Layout { get; private set; } = null!;
-    public PeriodoArquivo Periodo { get; private set; } = null!;
+    public Periodo Periodo { get; private set; } = null!;
     public int Lidas { get; private set; }
     public DateTimeOffset ImportadaEm { get; private set; }
 
@@ -56,7 +56,7 @@ public sealed class ImportacaoArquivo : AggregateRoot<IdImportacao>, IPertenceAo
         IdUsuario idUsuario,
         OrigemTransacao origem,
         LayoutArquivoImportacao layout,
-        PeriodoArquivo periodo,
+        Periodo periodo,
         int lidas,
         DateTimeOffset importadaEm,
         VencimentoFatura? vencimentoFatura)
@@ -81,7 +81,7 @@ public sealed class ImportacaoArquivo : AggregateRoot<IdImportacao>, IPertenceAo
         IdUsuario idUsuario,
         OrigemTransacao origem,
         LayoutArquivoImportacao layout,
-        PeriodoArquivo periodo,
+        Periodo periodo,
         int lidas,
         DateTimeOffset importadaEm)
     {
@@ -99,7 +99,7 @@ public sealed class ImportacaoArquivo : AggregateRoot<IdImportacao>, IPertenceAo
         IdUsuario idUsuario,
         OrigemTransacao origem,
         LayoutArquivoImportacao layout,
-        PeriodoArquivo periodo,
+        Periodo periodo,
         VencimentoFatura vencimento,
         int lidas,
         DateTimeOffset importadaEm)
@@ -113,7 +113,7 @@ public sealed class ImportacaoArquivo : AggregateRoot<IdImportacao>, IPertenceAo
     /// arquivo cobriu. Nada quando é a primeira importação ou quando os períodos se tocam ou se sobrepõem.
     /// </summary>
     /// <param name="ultima">A importação mais recente da mesma origem, antes desta.</param>
-    public Maybe<PeriodoArquivo> PeriodoNaoImportado(Maybe<ImportacaoArquivo> ultima)
+    public Maybe<Periodo> PeriodoNaoImportado(Maybe<ImportacaoArquivo> ultima)
     {
         if (ultima.HasNoValue)
             return Maybe.None;
@@ -123,7 +123,7 @@ public sealed class ImportacaoArquivo : AggregateRoot<IdImportacao>, IPertenceAo
 
         // O período entre as duas só existe quando sobra pelo menos um dia: com os períodos se tocando ou se
         // sobrepondo, o início fica depois do fim, o Criar falha, e não há período não importado.
-        return PeriodoArquivo
+        return Periodo
             .Criar(ultima.Value.Periodo.Fim.AddDays(1), Periodo.Inicio.AddDays(-1))
             .AsMaybe();
     }

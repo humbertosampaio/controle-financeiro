@@ -37,7 +37,7 @@ public sealed class LeitorExtratoContaC6Tests
     {
         Extrato extrato = await LerFixtureAsync();
 
-        extrato.Periodo.Should().Be(PeriodoArquivo.Criar(new DateOnly(2026, 3, 2), new DateOnly(2026, 3, 9)).Value);
+        extrato.Periodo.Should().Be(new Periodo(new DateOnly(2026, 3, 2), new DateOnly(2026, 3, 9)));
     }
 
     [Fact]

@@ -15,7 +15,7 @@ public sealed class Extrato : ValueObject
     public Banco Banco { get; }
     public TipoConta TipoConta { get; }
     public SufixoConta SufixoConta { get; }
-    public PeriodoArquivo Periodo { get; }
+    public Periodo Periodo { get; }
     public IReadOnlyList<LancamentoContabilizado> LancamentosContabilizados { get; }
     public IReadOnlyList<SaldoDiario> Saldos { get; }
 
@@ -26,7 +26,7 @@ public sealed class Extrato : ValueObject
         Banco banco,
         TipoConta tipoConta,
         SufixoConta sufixoConta,
-        PeriodoArquivo periodo,
+        Periodo periodo,
         List<LancamentoContabilizado> lancamentosContabilizados,
         List<SaldoDiario> saldos)
     {
@@ -63,7 +63,7 @@ public sealed class Extrato : ValueObject
         Banco banco,
         TipoConta tipoConta,
         SufixoConta sufixoConta,
-        PeriodoArquivo periodo,
+        Periodo periodo,
         IEnumerable<LancamentoContabilizado> lancamentosContabilizados,
         IEnumerable<SaldoDiario> saldos)
     {
@@ -75,7 +75,7 @@ public sealed class Extrato : ValueObject
     }
 
     private static Result ConferirSaldos(
-        PeriodoArquivo periodo,
+        Periodo periodo,
         IEnumerable<LancamentoContabilizado> lancamentos,
         IEnumerable<SaldoDiario> saldos)
     {

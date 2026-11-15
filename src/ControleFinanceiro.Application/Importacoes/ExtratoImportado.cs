@@ -19,9 +19,9 @@ public sealed record ExtratoImportado(
     Banco Banco,
     TipoConta TipoConta,
     SufixoConta SufixoConta,
-    PeriodoArquivo Periodo,
+    Periodo Periodo,
     int Lidas,
     int Novas,
     int JaExistentes,
-    Maybe<PeriodoArquivo> PeriodoNaoImportado,
+    Maybe<Periodo> PeriodoNaoImportado,
     Result SomaPeriodo);

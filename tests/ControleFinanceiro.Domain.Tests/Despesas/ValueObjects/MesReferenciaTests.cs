@@ -333,4 +333,10 @@ public sealed class MesReferenciaTests
 
         act.Should().ThrowExactly<InvalidOperationException>().WithMessage("Não há mês de referência 3 meses antes de '03/1'");
     }
+
+    [Theory, DomainAutoData]
+    public void Periodo_Deve_IrDoPrimeiroAoUltimoDiaDoMes(MesReferencia sut)
+    {
+        sut.Periodo.Should().Be(new Periodo(sut.Inicio, sut.Fim));
+    }
 }
