@@ -1,8 +1,10 @@
 using ControleFinanceiro.Application.Abstractions;
+using ControleFinanceiro.Application.Despesas;
 using ControleFinanceiro.Application.Importacoes;
 using ControleFinanceiro.Domain.Beneficiarios;
 using ControleFinanceiro.Domain.Categorias;
 using ControleFinanceiro.Domain.Contas;
+using ControleFinanceiro.Domain.Despesas;
 using ControleFinanceiro.Domain.Importacoes;
 using ControleFinanceiro.Domain.Shared;
 using ControleFinanceiro.Domain.Transacoes;
@@ -28,15 +30,18 @@ public sealed class ImportarExtratoEndpoint : Endpoint<ImportarExtratoRequest, I
     private readonly IUsuarioAtual _usuarioAtual;
     private readonly LeituraExtratoAppService _leituraExtratoAppService;
     private readonly ImportacaoExtratoAppService _importacaoExtratoAppService;
+    private readonly CandidatosPagamentoFaturaAppService _candidatosPagamentoFaturaAppService;
 
     public ImportarExtratoEndpoint(
         IUsuarioAtual usuarioAtual,
         LeituraExtratoAppService leituraExtratoAppService,
-        ImportacaoExtratoAppService importacaoExtratoAppService)
+        ImportacaoExtratoAppService importacaoExtratoAppService,
+        CandidatosPagamentoFaturaAppService candidatosPagamentoFaturaAppService)
     {
         _usuarioAtual = usuarioAtual;
         _leituraExtratoAppService = leituraExtratoAppService;
         _importacaoExtratoAppService = importacaoExtratoAppService;
+        _candidatosPagamentoFaturaAppService = candidatosPagamentoFaturaAppService;
     }
 
     public override void Configure()
@@ -59,7 +64,7 @@ public sealed class ImportarExtratoEndpoint : Endpoint<ImportarExtratoRequest, I
             .Bind(extrato => _importacaoExtratoAppService
                 .ImportarAsync(idUsuario, layout, extrato, ct)
                 .MapError(Falha.DeDominio))
-            .Map(Responder)
+            .Map(importado => ResponderAsync(importado, ct))
             .Match(
                 resposta => Send.OkAsync(resposta, ct),
                 falha => EnviarFalhaAsync(layout, falha, ct));
@@ -83,8 +88,11 @@ public sealed class ImportarExtratoEndpoint : Endpoint<ImportarExtratoRequest, I
             : Maybe<SufixoConta>.None;
     }
 
-    private static ImportarExtratoResponse Responder(ExtratoImportadoDto importado)
+    /// <summary>Os candidatos saem depois do commit, que o <see cref="ImportacaoExtratoAppService.ImportarAsync"/> já fez.</summary>
+    private async Task<ImportarExtratoResponse> ResponderAsync(ExtratoImportadoDto importado, CancellationToken ct)
     {
+        IReadOnlyList<CandidatoPagamentoFaturaDto> candidatos = await _candidatosPagamentoFaturaAppService.ListarCandidatosExtratoAsync(importado, ct);
+
         return new ImportarExtratoResponse(
             importado.IdImportacao,
             importado.IdConta,
@@ -92,7 +100,23 @@ public sealed class ImportarExtratoEndpoint : Endpoint<ImportarExtratoRequest, I
             importado.Novas,
             importado.JaExistentes,
             importado.PeriodoNaoImportado.Map(p => new ImportarExtratoResponse.Periodo(p.Inicio, p.Fim)).GetValueOrDefault(),
-            importado.SomaPeriodo.IsFailure ? importado.SomaPeriodo.Error : null);
+            importado.SomaPeriodo.IsFailure ? importado.SomaPeriodo.Error : null,
+            candidatos.Select(Responder).ToArray());
+    }
+
+    private static ImportarExtratoResponse.CandidatoPagamentoFaturaResponse Responder(CandidatoPagamentoFaturaDto candidatoDto)
+    {
+        CandidatoPagamentoFatura candidato = candidatoDto.Candidato;
+
+        return new ImportarExtratoResponse.CandidatoPagamentoFaturaResponse(
+            candidato.IdSaida.Value,
+            candidatoDto.Saida.Data,
+            candidato.IdCartao.Value,
+            candidato.FaturaCartaoAberta.Fatura.Banco.Name,
+            candidato.FaturaCartaoAberta.Vencimento.Mes.Ano,
+            candidato.FaturaCartaoAberta.Vencimento.Mes.Mes,
+            candidato.FaturaCartaoAberta.Vencimento,
+            candidato.FaturaCartaoAberta.Total);
     }
 
     private async Task EnviarFalhaAsync(LayoutArquivoImportacao layout, Falha falha, CancellationToken ct)

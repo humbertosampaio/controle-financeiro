@@ -1,8 +1,10 @@
 using ControleFinanceiro.Application.Abstractions;
+using ControleFinanceiro.Application.Despesas;
 using ControleFinanceiro.Application.Importacoes;
 using ControleFinanceiro.Domain.Beneficiarios;
 using ControleFinanceiro.Domain.Cartoes;
 using ControleFinanceiro.Domain.Categorias;
+using ControleFinanceiro.Domain.Despesas;
 using ControleFinanceiro.Domain.Importacoes;
 using ControleFinanceiro.Domain.Shared;
 using ControleFinanceiro.Domain.Usuarios;
@@ -27,15 +29,18 @@ public sealed class ImportarFaturaEndpoint : Endpoint<ImportarFaturaRequest, Imp
     private readonly IUsuarioAtual _usuarioAtual;
     private readonly LeituraFaturaAppService _leituraFaturaAppService;
     private readonly ImportacaoFaturaAppService _importacaoFaturaAppService;
+    private readonly CandidatosPagamentoFaturaAppService _candidatosPagamentoFaturaAppService;
 
     public ImportarFaturaEndpoint(
         IUsuarioAtual usuarioAtual,
         LeituraFaturaAppService leituraFaturaAppService,
-        ImportacaoFaturaAppService importacaoFaturaAppService)
+        ImportacaoFaturaAppService importacaoFaturaAppService,
+        CandidatosPagamentoFaturaAppService candidatosPagamentoFaturaAppService)
     {
         _usuarioAtual = usuarioAtual;
         _leituraFaturaAppService = leituraFaturaAppService;
         _importacaoFaturaAppService = importacaoFaturaAppService;
+        _candidatosPagamentoFaturaAppService = candidatosPagamentoFaturaAppService;
     }
 
     public override void Configure()
@@ -58,7 +63,7 @@ public sealed class ImportarFaturaEndpoint : Endpoint<ImportarFaturaRequest, Imp
             .Bind(fatura => _importacaoFaturaAppService
                 .ImportarAsync(idUsuario, layout, fatura, ct)
                 .MapError(Falha.DeDominio))
-            .Map(Responder)
+            .Map(importado => ResponderAsync(importado, ct))
             .Match(
                 resposta => Send.OkAsync(resposta, ct),
                 falha => EnviarFalhaAsync(layout, falha, ct));
@@ -81,8 +86,11 @@ public sealed class ImportarFaturaEndpoint : Endpoint<ImportarFaturaRequest, Imp
             : Maybe<VencimentoFatura>.None;
     }
 
-    private static ImportarFaturaResponse Responder(FaturaImportadaDto importada)
+    /// <summary>Os candidatos saem depois do commit, que o <see cref="ImportacaoFaturaAppService.ImportarAsync"/> já fez.</summary>
+    private async Task<ImportarFaturaResponse> ResponderAsync(FaturaImportadaDto importada, CancellationToken ct)
     {
+        IReadOnlyList<CandidatoPagamentoFaturaDto> candidatos = await _candidatosPagamentoFaturaAppService.ListarCandidatosFaturaImportadaAsync(importada, ct);
+
         return new ImportarFaturaResponse(
             importada.Vencimento,
             importada.Cartoes
@@ -97,7 +105,23 @@ public sealed class ImportarFaturaEndpoint : Endpoint<ImportarFaturaRequest, Imp
                     cartao.DespesasAdiadasCriadas))
                 .ToArray(),
             importada.PagamentoFaturaAnterior.IsFailure ? importada.PagamentoFaturaAnterior.Error : null,
-            importada.VencimentoCicloCartoes.IsFailure ? importada.VencimentoCicloCartoes.Error : null);
+            importada.VencimentoCicloCartoes.IsFailure ? importada.VencimentoCicloCartoes.Error : null,
+            candidatos.Select(Responder).ToArray());
+    }
+
+    private static ImportarFaturaResponse.CandidatoPagamentoFaturaResponse Responder(CandidatoPagamentoFaturaDto candidatoDto)
+    {
+        CandidatoPagamentoFatura candidato = candidatoDto.Candidato;
+
+        return new ImportarFaturaResponse.CandidatoPagamentoFaturaResponse(
+            candidato.IdSaida.Value,
+            candidatoDto.Saida.Data,
+            candidato.IdCartao.Value,
+            candidato.FaturaCartaoAberta.Fatura.Banco.Name,
+            candidato.FaturaCartaoAberta.Vencimento.Mes.Ano,
+            candidato.FaturaCartaoAberta.Vencimento.Mes.Mes,
+            candidato.FaturaCartaoAberta.Vencimento,
+            candidato.FaturaCartaoAberta.Total);
     }
 
     private async Task EnviarFalhaAsync(LayoutArquivoImportacao layout, Falha falha, CancellationToken ct)

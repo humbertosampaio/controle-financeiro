@@ -1,4 +1,5 @@
 using ControleFinanceiro.Application.Abstractions;
+using ControleFinanceiro.Application.Despesas;
 using ControleFinanceiro.Application.Importacoes;
 using ControleFinanceiro.WebApi.Autenticacao;
 using FastEndpoints;
@@ -19,6 +20,7 @@ public static class DependencyInjection
                 .AddSingleton(TimeProvider.System)
                 .AddHttpContextAccessor()
                 .AddTransient<IUsuarioAtual, UsuarioAtualRota>()
+                .AddTransient<CandidatosPagamentoFaturaAppService>()
                 .AddTransient<ImportacaoExtratoAppService>()
                 .AddTransient<ImportacaoFaturaAppService>()
                 .AddTransient<LeituraExtratoAppService>()
