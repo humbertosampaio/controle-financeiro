@@ -44,3 +44,10 @@ Este catálogo é a fonte do texto das regras que têm gate: o `src/CLAUDE.md` e
 
 - Só em `src/`: vem desligado e o `.editorconfig` o liga na seção `[src/**/*.cs]`. Nos testes, as duas conversões ficam quando o assunto é a passagem pelo tipo do meio, como num teste que monta um `TextoObrigatorio` de um literal.
 - Por quê: a conversão pelo tipo do meio repete em cada lugar o caminho que o operador direto diria uma vez.
+
+## CF0009
+
+**Nome de teste no formato `Metodo_Quando_Cenario_Deve_Resultado`**, ou `Metodo_Deve_Resultado` quando não há cenário. Vale para todo método com `[Fact]`, `[Theory]` ou um atributo que derive deles, e confere o nome com `^[A-Z][A-Za-z0-9]*(_Quando_[A-Za-z0-9]+)?_Deve_[A-Za-z0-9]+$`.
+
+- O resto da regra (um comportamento por teste, sem relógio real) está no [guia de testes](../../docs/testes-com-autofixture.md#nome-do-teste).
+- Por quê: o formato fixo deixa ler o método, o cenário e o resultado na lista de testes, sem abrir o código.

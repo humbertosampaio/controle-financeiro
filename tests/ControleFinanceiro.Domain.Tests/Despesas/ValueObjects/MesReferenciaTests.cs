@@ -70,7 +70,7 @@ public sealed class MesReferenciaTests
     }
 
     [Theory, DomainAutoData]
-    public void ConversaoImplicita_De_DateOnly_Deve_UtilizarMesEAno(TimeProvider timeProvider)
+    public void ConversaoImplicitaDateOnly_Deve_UtilizarMesEAno(TimeProvider timeProvider)
     {
         DateTimeOffset agora = timeProvider.GetLocalNow();
         DateOnly dateOnly = DateOnly.FromDateTime(agora.LocalDateTime);
@@ -210,7 +210,7 @@ public sealed class MesReferenciaTests
     }
 
     [Theory, DomainAutoData]
-    public void ConversaoImplicita_De_DateTimeOffset_Deve_UtilizarMesEAno(TimeProvider timeProvider)
+    public void ConversaoImplicitaDateTimeOffset_Deve_UtilizarMesEAno(TimeProvider timeProvider)
     {
         DateTimeOffset agora = timeProvider.GetLocalNow();
 
