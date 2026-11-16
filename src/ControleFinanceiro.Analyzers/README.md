@@ -51,3 +51,10 @@ Este catálogo é a fonte do texto das regras que têm gate: o `src/CLAUDE.md` e
 
 - O resto da regra (um comportamento por teste, sem relógio real) está no [guia de testes](../../docs/testes-com-autofixture.md#nome-do-teste).
 - Por quê: o formato fixo deixa ler o método, o cenário e o resultado na lista de testes, sem abrir o código.
+
+## CF0009b
+
+**Nada de `Result` como sufixo de tipo**, que se confunde com o do CSharpFunctionalExtensions. O sufixo diz a camada: `Dto` na Application, `Request` e `Response` na WebApi, `ParaModelo` na fronteira com o modelo, e nenhum no domínio (`src/CLAUDE.md`, "Nomes").
+
+- Vale para classe, struct, record, interface, enum e delegate; o tipo chamado só `Result` fica de fora.
+- Por quê: o `NomesCamadaTests` confere os sufixos só na Application e no Domain, e não alcança a WebApi.
