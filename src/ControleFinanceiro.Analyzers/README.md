@@ -16,3 +16,10 @@ Este catálogo é a fonte do texto das regras que têm gate: o `src/CLAUDE.md` e
 **Sem ternário com ramo de mais de uma linha.** Quando um ramo do `? :` quebra em várias linhas, use `if`. Ramos de uma linha cada podem ficar no ternário, mesmo com a expressão inteira em três linhas.
 
 - Por quê: com um ramo quebrado, o `?` e o `:` se perdem no meio das linhas, e o leitor não vê onde um ramo acaba e o outro começa.
+
+## CF0003
+
+**Sem construtor primário em classe nem em struct.** A dependência vai para um campo `private readonly` (`_fixture`), atribuído num construtor comum; vale também para a classe de teste que recebe a fixture e para o value object que repassa o valor à base, como o `Reais`.
+
+- Fora: records posicionais, cujo construtor primário declara as propriedades.
+- Por quê: o parâmetro do construtor primário fica visível na classe inteira, sem `readonly` e sem o `_` que diz que é campo. O IDE0290 do Roslyn só sugere o construtor primário, e não aponta o que já existe.
