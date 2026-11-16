@@ -1,6 +1,6 @@
+using ModelContextProtocol.Server;
 using System.Reflection;
 using System.Text.Json.Nodes;
-using ModelContextProtocol.Server;
 using DependencyInjectionMcp = ControleFinanceiro.Mcp.DependencyInjection;
 
 namespace ControleFinanceiro.SaidaModelo.Tests.Arquitetura;

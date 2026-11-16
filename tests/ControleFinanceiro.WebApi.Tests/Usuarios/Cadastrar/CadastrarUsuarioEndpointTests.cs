@@ -1,5 +1,3 @@
-using System.Net;
-using System.Net.Http.Json;
 using AutoFixture.Xunit2;
 using ControleFinanceiro.Domain.Categorias;
 using ControleFinanceiro.Domain.Usuarios;
@@ -7,6 +5,8 @@ using ControleFinanceiro.WebApi.Endpoints.Usuarios.Cadastrar;
 using ControleFinanceiro.WebApi.Tests.AutoFixture;
 using ControleFinanceiro.WebApi.Tests.Infraestrutura;
 using Microsoft.EntityFrameworkCore;
+using System.Net;
+using System.Net.Http.Json;
 
 namespace ControleFinanceiro.WebApi.Tests.Usuarios.Cadastrar;
 

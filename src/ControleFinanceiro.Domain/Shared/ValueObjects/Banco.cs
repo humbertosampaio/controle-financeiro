@@ -1,5 +1,5 @@
-using System.Diagnostics.CodeAnalysis;
 using Ardalis.SmartEnum;
+using System.Diagnostics.CodeAnalysis;
 
 namespace ControleFinanceiro.Domain.Shared.ValueObjects;
 

@@ -1,5 +1,5 @@
-using System.Globalization;
 using ControleFinanceiro.Domain.Cartoes;
+using System.Globalization;
 
 namespace ControleFinanceiro.Tests.Shared.AutoFixture.Customizations.Domain.Shared;
 

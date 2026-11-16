@@ -1,6 +1,6 @@
+using ControleFinanceiro.Domain.Shared;
 using System.Globalization;
 using System.Runtime.CompilerServices;
-using ControleFinanceiro.Domain.Shared;
 
 namespace ControleFinanceiro.Tests;
 
