@@ -85,7 +85,27 @@ Com todos os passos implementados, rode a `revisar-mudanca`. Todo achado, de qua
 
 ## 6. Refinar o harness
 
-Antes de registrar os desvios e de abrir o PR, faça a análise do [refino contínuo](../../../docs/harness.md#refino-contínuo) para cada correção do dono e cada sugestão dele que você aceitou durante a sessão, inclusive as que viraram desvio do plano e as que vieram como comentário numa linha de código. No chat, liste cada uma com a causa e a proposta de texto e de lugar, ou com a linha que diz que as instruções já davam o critério. Com o ok do dono, cada mudança vira um commit `docs(harness)` próprio na branch da issue. Este passo entra na lista de tarefas desde o primeiro `update_plan` da implementação, para não depender de o dono lembrar.
+Antes de registrar os desvios e de abrir o PR, faça a análise do [refino contínuo](../../../docs/harness.md#refino-contínuo) para cada correção do dono e cada sugestão dele que você aceitou durante a sessão, inclusive as que viraram desvio do plano e as que vieram como comentário numa linha de código. No chat, liste cada uma com a causa e a proposta de texto e de lugar, ou com a linha que diz que as instruções já davam o critério. Com o ok do dono, cada mudança vira um commit `docs(harness)` próprio na branch da issue.
+
+### Revisão das instruções
+
+Depois do refino, revise as instruções que valem para o diff ([por quê](../../../docs/harness.md#revisão-das-instruções)):
+
+```bash
+git diff --name-only origin/main...HEAD | node scripts/harness/claude-md-aplicaveis.mjs
+```
+
+Leia cada `CLAUDE.md` listado e os guias, agentes e skills que o diff alterou. Se o `instrucoes.test.mjs` acusar um teto estourado, a revisão cobre todos os `CLAUDE.md` da cadeia que estourou, e não só os do diff. Confira:
+
+- regras parecidas que podem virar uma só, mais geral;
+- regras obsoletas e as que viraram gate, que saem;
+- exemplos citados que não existem mais ou não dizem o que a regra diz;
+- regra com mais de uma fonte, ou lugar antigo sem o ponteiro;
+- regra que só está na memória de uma sessão e cabe numa dessas instruções.
+
+No chat, proponha o que juntar, tirar ou corrigir, ou diga em uma linha que nada mudou. Com o ok do dono, a mudança vira um commit `docs(harness)` na branch da issue, no mesmo PR, sem issue própria.
+
+Este passo, com a revisão, entra na lista de tarefas desde o primeiro `update_plan` da implementação, para não depender de o dono lembrar.
 
 ## 7. Registrar os desvios do plano
 

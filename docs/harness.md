@@ -139,7 +139,7 @@ O `.github/dependabot.yml` abre PRs de atualização de pacotes. Eles não nasce
 
 ## Manutenção
 
-- **Regra nova do projeto?** Atualize o agente que a revisa. Se ela é verificável mecanicamente, prefira um gate a um parágrafo.
+- **Regra nova do projeto?** Ponha-a num lugar só, pela ordem de destino do [refino contínuo](#refino-contínuo), e deixe o agente que a revisa com o ponteiro e o critério de achado. Se ela é verificável mecanicamente, prefira um gate a um parágrafo.
 - **Achado repetido nas revisões?** Vira dívida conhecida no agente (para ele parar de repetir) e uma issue `tipo:tech` (para alguém corrigir).
 - **O guardrail bloqueou algo legítimo?** Primeiro acrescente o caso em `guardrail.test.mjs` e veja o teste falhar; depois ajuste o padrão. Nunca contorne com `--no-verify`.
 - **O dono corrigiu a IA, ou sugeriu algo com que ela concordou?** Ver [refino contínuo](#refino-contínuo).
@@ -150,8 +150,14 @@ Cada correção do dono é uma chance de o harness ensinar o que faltou, para a 
 
 1. **Quando**: o dono corrige a IA, ou sugere algo e a IA concorda (se ela discorda, conversa, como em qualquer regra).
 2. **A pergunta**: *algo nas instruções que eu segui poderia ser diferente para eu ter acertado logo de cara?* Procure a regra que faltou, a que existia mas não dava o critério, ou a que estava num lugar que a tarefa não leva a ler.
-3. **Se sim**: antes de propor texto novo, procure a regra existente que cobre o caso: prefira deixá-la mais geral, ou trocá-la, a acrescentar outra. Uma regra que virou gate sai do texto. Depois, avise no chat, diga a causa e proponha o texto e o lugar. Prefira, nesta ordem, um gate (verificável mecanicamente), o guia que a tarefa já manda ler (`padroes-de-dominio.md`, `testes-com-autofixture.md`), o passo da skill em que a decisão é tomada e o item do revisor que cobra. Um exemplo real do repositório vale mais que uma regra abstrata.
+3. **Se sim**: antes de propor texto novo, procure a regra existente que cobre o caso: prefira deixá-la mais geral, ou trocá-la, a acrescentar outra. Uma regra que virou gate sai do texto. Depois, avise no chat, diga a causa e proponha o texto e o lugar. Prefira, nesta ordem: um gate (verificável mecanicamente); o `CLAUDE.md` da pasta a que a regra se aplica; o guia que a tarefa já manda ler (`padroes-de-dominio.md`, `testes-com-autofixture.md`); o passo da skill em que a decisão é tomada; o item do revisor que cobra. O `CLAUDE.md` da raiz só recebe regra que vale no repositório inteiro. Um exemplo real do repositório vale mais que uma regra abstrata.
 4. **Com o ok do dono**: faça a mudança num commit próprio, `docs(harness)` ou `docs(<escopo>)`, separado dos commits da issue, na branch da issue em andamento: ela vai no mesmo PR, sem issue nem PR próprios. Só pede branch (`docs/<n>-<slug>`) e PR próprios a mudança que não é simples, como uma regra nova no guardrail ou num gate, ou a que surge sem issue em andamento.
 5. **Se não**: diga em uma linha que as instruções já davam o critério, para o dono saber que a análise foi feita.
 
 Exemplo: no desfazer do pagamento da fatura (#149), a entidade devolvia `bool` e o serviço escrevia o motivo da falha. O dono apontou; a causa foi copiar o análogo pela vizinhança do fluxo. Daí vieram o item "filtro ou falha" da seção 5 do guia de domínio, o passo na `implementar-issue` e o achado no `revisor-dominio`.
+
+### Revisão das instruções
+
+As regras crescem uma de cada vez, e cada uma cabe sozinha; juntas, repetem-se, envelhecem e deixam de caber. O `instrucoes.test.mjs` põe teto no tamanho dos `CLAUDE.md` (12 KB na raiz e no `src/CLAUDE.md`, 4 KB nos outros, 24 KB na cadeia que uma pasta carrega) e confere que links, âncoras, `@imports` e caminhos citados existem.
+
+Por isso, ao fim de cada issue, antes do PR, a `implementar-issue` revisa as instruções que valem para o diff, e não todas: limitada ao diff, a revisão fica barata e acompanha cada regra nova. O escopo, o caso do teto estourado e o que conferir estão no [passo dela](../.claude/skills/implementar-issue/SKILL.md#revisão-das-instruções). O que mudar vira um commit `docs(harness)` na branch da issue, sem issue própria.
