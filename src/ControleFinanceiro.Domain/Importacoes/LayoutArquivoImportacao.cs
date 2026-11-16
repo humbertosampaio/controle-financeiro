@@ -13,8 +13,11 @@ public sealed class LayoutArquivoImportacao : SmartEnum<LayoutArquivoImportacao,
     public static readonly LayoutArquivoImportacao MercadoPagoContaCsv = new("mercado-pago-conta-csv", "Extrato CSV da conta do Mercado Pago");
     public static readonly LayoutArquivoImportacao MercadoPagoCartaoCsv = new("mercado-pago-cartao-csv", "Fatura CSV do cartão do Mercado Pago");
 
+    /// <summary>Os layouts de extrato de conta, que a importação do extrato aceita.</summary>
+    public static readonly IReadOnlyCollection<LayoutArquivoImportacao> Extratos = [C6ContaCsv, MercadoPagoContaCsv];
+
     /// <summary>Os layouts de extrato de conta que trazem a conta no arquivo.</summary>
-    public static readonly IReadOnlyCollection<LayoutArquivoImportacao> Extratos = [C6ContaCsv];
+    public static readonly IReadOnlyCollection<LayoutArquivoImportacao> ExtratosContaNoArquivo = [C6ContaCsv];
 
     /// <summary>Os layouts de extrato de conta sem a conta no arquivo: o usuário informa o sufixo ao importar.</summary>
     public static readonly IReadOnlyCollection<LayoutArquivoImportacao> ExtratosContaInformada = [MercadoPagoContaCsv];
@@ -24,6 +27,9 @@ public sealed class LayoutArquivoImportacao : SmartEnum<LayoutArquivoImportacao,
 
     /// <summary>Os layouts de fatura sem o vencimento no arquivo: o usuário informa a data ao importar.</summary>
     public static readonly IReadOnlyCollection<LayoutArquivoImportacao> FaturasVencimentoInformado = [C6CartaoCsv];
+
+    /// <summary>Os layouts de fatura que trazem o vencimento no arquivo.</summary>
+    public static readonly IReadOnlyCollection<LayoutArquivoImportacao> FaturasVencimentoNoArquivo = [MercadoPagoCartaoCsv];
 
     private LayoutArquivoImportacao(string codigo, string name) : base(name, codigo)
     {

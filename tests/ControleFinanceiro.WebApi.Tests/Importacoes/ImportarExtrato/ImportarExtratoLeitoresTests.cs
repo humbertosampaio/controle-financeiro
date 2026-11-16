@@ -5,9 +5,10 @@ using ControleFinanceiro.WebApi.Tests.Infraestrutura;
 namespace ControleFinanceiro.WebApi.Tests.Importacoes.ImportarExtrato;
 
 /// <summary>
-/// Cada endpoint escolhe o leitor pelo layout da rota: o validator aceita os layouts do seu tipo (extrato ou fatura), e o
-/// extrato de conta informada vai ao leitor que recebe o sufixo, e a fatura de vencimento informado, ao que recebe o
-/// vencimento. Um layout sem leitor no container da API daria 500.
+/// Cada endpoint escolhe o leitor pelo layout da rota: o validator aceita os layouts do seu tipo (extrato ou fatura), e
+/// cada subgrupo do tipo tem o seu leitor: o extrato com a conta no arquivo e a fatura com o vencimento no arquivo vão ao
+/// leitor que só recebe o arquivo, o extrato de conta informada, ao que recebe o sufixo, e a fatura de vencimento
+/// informado, ao que recebe o vencimento. Um layout sem leitor no container da API daria 500.
 /// </summary>
 [Collection(ApiCollection.Nome)]
 public sealed class ImportarExtratoLeitoresTests
@@ -20,11 +21,11 @@ public sealed class ImportarExtratoLeitoresTests
     }
 
     [Fact]
-    public void Api_Deve_RegistrarUmLeitorDeExtratoParaCadaLayoutDeExtrato()
+    public void Api_Deve_RegistrarUmLeitorDeExtratoParaCadaLayoutComContaNoArquivo()
     {
         IReadOnlyList<ILeitorExtrato> leitores = _api.ObterServicos<ILeitorExtrato>();
 
-        leitores.Select(l => l.Layout).Should().BeEquivalentTo(LayoutArquivoImportacao.Extratos);
+        leitores.Select(l => l.Layout).Should().BeEquivalentTo(LayoutArquivoImportacao.ExtratosContaNoArquivo);
     }
 
     [Fact]
@@ -36,11 +37,11 @@ public sealed class ImportarExtratoLeitoresTests
     }
 
     [Fact]
-    public void Api_Deve_RegistrarUmLeitorDeFaturaParaCadaLayoutDeFatura()
+    public void Api_Deve_RegistrarUmLeitorDeFaturaParaCadaLayoutComVencimentoNoArquivo()
     {
         IReadOnlyList<ILeitorFatura> leitores = _api.ObterServicos<ILeitorFatura>();
 
-        leitores.Select(l => l.Layout).Should().BeEquivalentTo(LayoutArquivoImportacao.Faturas.Except(LayoutArquivoImportacao.FaturasVencimentoInformado));
+        leitores.Select(l => l.Layout).Should().BeEquivalentTo(LayoutArquivoImportacao.FaturasVencimentoNoArquivo);
     }
 
     [Fact]

@@ -26,9 +26,7 @@ public sealed class ImportacaoExtratoParaModeloService
     /// informado, nos layouts sem a conta no arquivo, e nenhum, nos que a trazem.
     /// </summary>
     private static readonly Dictionary<LayoutArquivoImportacao, Func<ParametrosImportacaoExtratoDto, Result<Maybe<SufixoConta>, ImportacaoParaModelo>>> _sufixoPorLayout =
-        LayoutArquivoImportacao.Extratos
-            .Concat(LayoutArquivoImportacao.ExtratosContaInformada)
-            .ToDictionary(layout => layout, LeituraSufixo);
+        LayoutArquivoImportacao.Extratos.ToDictionary(layout => layout, LeituraSufixo);
 
     private readonly IUsuarioAtual _usuarioAtual;
     private readonly IUsuarioRepository _usuarios;
@@ -120,13 +118,8 @@ public sealed class ImportacaoExtratoParaModeloService
         return ImportacaoParaModelo.Falha(erro, PendenciasImportacaoParaModelo.DoExtrato(beneficiarios));
     }
 
-    private static Func<ParametrosImportacaoExtratoDto, Result<Maybe<SufixoConta>, ImportacaoParaModelo>> LeituraSufixo(LayoutArquivoImportacao layout)
-    {
-        if (LayoutArquivoImportacao.ExtratosContaInformada.Contains(layout))
-            return LerSufixoInformado;
-
-        return SemSufixoInformado;
-    }
+    private static Func<ParametrosImportacaoExtratoDto, Result<Maybe<SufixoConta>, ImportacaoParaModelo>> LeituraSufixo(LayoutArquivoImportacao layout) =>
+        LayoutArquivoImportacao.ExtratosContaInformada.Contains(layout) ? LerSufixoInformado : SemSufixoInformado;
 
     /// <summary>Nenhum sufixo, no layout que traz a conta no arquivo.</summary>
     private static Result<Maybe<SufixoConta>, ImportacaoParaModelo> SemSufixoInformado(ParametrosImportacaoExtratoDto _) => Maybe<SufixoConta>.None;
