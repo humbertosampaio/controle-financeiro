@@ -50,6 +50,10 @@ const afetamMcp = [
   "Directory.Packages.props",
 ];
 
+// As instruções do Claude Code (o CLAUDE.md de cada pasta) não mudam o que o código faz: não acionam
+// nenhuma suíte, mesmo dentro de uma pasta que aciona todas.
+const ehInstrucao = (arquivo) => arquivo === "CLAUDE.md" || arquivo.endsWith("/CLAUDE.md");
+
 /**
  * @param {string[]} arquivos caminhos relativos à raiz do repositório
  * @returns {boolean} se a suíte do servidor MCP precisa rodar
@@ -57,7 +61,7 @@ const afetamMcp = [
 export function mcpAfetado(arquivos) {
   return arquivos
     .map((bruto) => bruto.trim().replaceAll("\\", "/"))
-    .some((arquivo) => afetamMcp.some((prefixo) => arquivo.startsWith(prefixo)));
+    .some((arquivo) => !ehInstrucao(arquivo) && afetamMcp.some((prefixo) => arquivo.startsWith(prefixo)));
 }
 
 /**
@@ -70,7 +74,7 @@ export function testesAfetados(arquivos) {
 
   for (const bruto of arquivos) {
     const arquivo = bruto.trim().replaceAll("\\", "/");
-    if (!arquivo) continue;
+    if (!arquivo || ehInstrucao(arquivo)) continue;
 
     const espelho = espelhadas
       .map((pasta) => arquivo.startsWith(pasta) && arquivo.slice(pasta.length).split("/"))

@@ -122,9 +122,9 @@ A suíte de integração sobe um Postgres no Docker, então o `pre-push` não a 
 |---|---|
 | `src/ControleFinanceiro.WebApi/Endpoints/<Area>/<Acao>/` ou `tests/ControleFinanceiro.WebApi.Tests/<Area>/<Acao>/` | só os de `ControleFinanceiro.WebApi.Tests.<Area>.<Acao>` |
 | Domain e Application (regras de value object e validators compartilhados mudam a resposta dos endpoints), Importacao (o leitor de cada layout decide o que a importação grava), Persistence (migrations incluídas), o resto da WebApi, a imagem do Postgres, a infraestrutura dos testes, `Directory.Packages.props` | todos |
-| qualquer outro (testes de unidade, servidor MCP, docs, harness) | nenhum |
+| qualquer outro (testes de unidade, servidor MCP, docs, harness, o `CLAUDE.md` de qualquer pasta) | nenhum |
 
-A suíte do servidor MCP não tem espelho e roda inteira ou não roda. Com `--mcp`, o script imprime `todos` quando o diff toca o próprio servidor ou os testes dele, Domain, Application, Persistence, a imagem do Postgres, `tests/ControleFinanceiro.Tests.Shared`, `tests/Directory.Build.props` ou `Directory.Packages.props`, e nada nos demais casos.
+A suíte do servidor MCP não tem espelho e roda inteira ou não roda. Com `--mcp`, o script imprime `todos` quando o diff toca o próprio servidor ou os testes dele, Domain, Application, Persistence, a imagem do Postgres, `tests/ControleFinanceiro.Tests.Shared`, `tests/Directory.Build.props` ou `Directory.Packages.props`, e nada nos demais casos. O `CLAUDE.md` de uma pasta não aciona nenhuma das duas, mesmo numa pasta que aciona tudo: é instrução, não código.
 
 O `pre-push` compara com o que o remoto já tem ou, numa branch nova, com a `origin/main`. Sem base para comparar, roda todos, nas duas suítes. Se for preciso rodar uma delas e o Docker estiver parado, o push falha avisando. O CI roda as duas suítes inteiras em todo PR.
 
