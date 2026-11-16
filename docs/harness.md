@@ -47,7 +47,7 @@ Hook `PreToolUse` do Claude Code em `Bash`, `PowerShell`, `Write`, `Edit` e `Not
 O guardrail não olha as ferramentas MCP. Quem pede a aprovação do usuário antes de uma ferramenta do `controle-financeiro` gravar são duas travas, e uma ferramenta que grava (`ReadOnly = false`) precisa das duas:
 
 - **a meta `anthropic/requiresUserInteraction`** na própria ferramenta (`[McpMeta(...)]`), que o Claude Code no terminal honra em todos os modos, inclusive no auto e no de ignorar permissões;
-- **uma regra `ask`** em `permissions` do `.claude/settings.json`, como `mcp__controle-financeiro__confirmar_vinculo`, `mcp__controle-financeiro__confirmar_pagamento_fatura` e `mcp__controle-financeiro__confirmar_importacao`. O Claude Code do app desktop ignora a meta no modo auto e só pergunta por causa dela.
+- **uma regra `ask`** em `permissions` do `.claude/settings.json`, como `mcp__controle-financeiro__confirmar_vinculo`, `mcp__controle-financeiro__confirmar_pagamento_fatura` e as 4 confirmações da importação, como `mcp__controle-financeiro__confirmar_importacao_c6_conta_csv`. O Claude Code do app desktop ignora a meta no modo auto e só pergunta por causa dela.
 
 Nenhum `allow` do projeto pode cobrir essas ferramentas, nem pelo servidor inteiro (`mcp__controle-financeiro`) nem com curinga. O `FerramentasQueGravamTests` (`tests/ControleFinanceiro.SaidaModelo.Tests/Arquitetura/`) confere as três coisas a partir do `.mcp.json` e do `.claude/settings.json`.
 
@@ -153,7 +153,7 @@ Cada correção do dono é uma chance de o harness ensinar o que faltou, para a 
 
 1. **Quando**: o dono corrige a IA, ou sugere algo e a IA concorda (se ela discorda, conversa, como em qualquer regra).
 2. **A pergunta**: *algo nas instruções que eu segui poderia ser diferente para eu ter acertado logo de cara?* Procure a regra que faltou, a que existia mas não dava o critério, ou a que estava num lugar que a tarefa não leva a ler.
-3. **Se sim**: avise no chat, diga a causa e proponha o texto e o lugar. Prefira, nesta ordem, um gate (verificável mecanicamente), o guia que a tarefa já manda ler (`padroes-de-dominio.md`, `testes-com-autofixture.md`), o passo da skill em que a decisão é tomada e o item do revisor que cobra. Um exemplo real do repositório vale mais que uma regra abstrata.
+3. **Se sim**: antes de propor texto novo, procure a regra existente que cobre o caso: prefira deixá-la mais geral, ou trocá-la, a acrescentar outra. Uma regra que virou gate sai do texto. Depois, avise no chat, diga a causa e proponha o texto e o lugar. Prefira, nesta ordem, um gate (verificável mecanicamente), o guia que a tarefa já manda ler (`padroes-de-dominio.md`, `testes-com-autofixture.md`), o passo da skill em que a decisão é tomada e o item do revisor que cobra. Um exemplo real do repositório vale mais que uma regra abstrata.
 4. **Com o ok do dono**: faça a mudança num commit próprio, `docs(harness)` ou `docs(<escopo>)`, separado dos commits da issue, na branch da issue em andamento: ela vai no mesmo PR, sem issue nem PR próprios. Só pede branch (`docs/<n>-<slug>`) e PR próprios a mudança que não é simples, como uma regra nova no guardrail ou num gate, ou a que surge sem issue em andamento.
 5. **Se não**: diga em uma linha que as instruções já davam o critério, para o dono saber que a análise foi feita.
 

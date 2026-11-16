@@ -69,13 +69,9 @@ public static class ErrosParaModelo
 
         public static readonly ErroParaModelo ArquivoGrandeDemais = Fixo("O arquivo passa de 5 MB, o tamanho máximo da importação.");
 
-        public static readonly ErroParaModelo LayoutInvalido = Fixo("Layout inválido: use um dos códigos de layout da descrição da ferramenta.");
-
         public static readonly ErroParaModelo SufixoContaInvalido = Fixo($"O layout {LayoutArquivoImportacao.MercadoPagoContaCsv.Value} pede o sufixo da conta: os 4 últimos caracteres do número da conta, que o usuário informa.");
 
         public static readonly ErroParaModelo VencimentoObrigatorio = Fixo($"O layout {LayoutArquivoImportacao.C6CartaoCsv.Value} pede o vencimento da fatura: a data em AAAA-MM-DD, que o usuário informa.");
-
-        public static readonly ErroParaModelo VencimentoNoArquivo = Fixo($"O layout {LayoutArquivoImportacao.MercadoPagoCartaoCsv.Value} traz o vencimento no arquivo: chame a ferramenta de novo sem o vencimento.");
 
         public static readonly ErroParaModelo VencimentoIncompativel = Fixo($"O vencimento da fatura não fecha com as datas das compras do arquivo, e nada foi importado: no layout {LayoutArquivoImportacao.C6CartaoCsv.Value}, confira com o usuário a data de vencimento informada; nos outros, peça a ele para conferir o arquivo.");
 
@@ -91,7 +87,14 @@ public static class ErrosParaModelo
 
         public static readonly ErroParaModelo IdentificadorRepetido = Fixo("O arquivo repete o identificador de um lançamento, e nada foi importado: peça ao usuário para conferir o arquivo.");
 
-        public static readonly ErroParaModelo ResumoDivergente = Fixo($"O resumo não corresponde à importação desse arquivo, e nada foi gravado: o arquivo mudou ou já foi importado. Chame {Tools.PreverImportacao} de novo, mostre o novo resumo ao usuário e confirme com ele sem alteração.");
+        /// <summary>A ferramenta de prévia de cada layout, que o resumo divergente manda chamar de novo.</summary>
+        private static readonly Dictionary<LayoutArquivoImportacao, string> _previaPorLayout = new()
+        {
+            [LayoutArquivoImportacao.C6ContaCsv] = Tools.PreverImportacaoC6ContaCsv,
+            [LayoutArquivoImportacao.MercadoPagoContaCsv] = Tools.PreverImportacaoMercadoPagoContaCsv,
+            [LayoutArquivoImportacao.C6CartaoCsv] = Tools.PreverImportacaoC6CartaoCsv,
+            [LayoutArquivoImportacao.MercadoPagoCartaoCsv] = Tools.PreverImportacaoMercadoPagoCartaoCsv,
+        };
 
         private static readonly Dictionary<FalhaOrigemArquivoImportacao, ErroParaModelo> _porFalhaOrigem = new()
         {
@@ -110,6 +113,14 @@ public static class ErrosParaModelo
             [TipoFalhaLeituraArquivo.LancamentoInvalido] = "traz um lançamento que a importação não aceita, e nada foi importado: peça ao usuário para conferir essa linha.",
             [TipoFalhaLeituraArquivo.ConteudoInvalido] = "não fecha com o layout escolhido, no cabeçalho, nos saldos ou nos lançamentos, e nada foi importado: peça ao usuário para importar pela API, que mostra o motivo.",
         };
+
+        /// <summary>A mensagem fixa de quando o resumo da confirmação não é o da importação recalculada, com a prévia do layout.</summary>
+        public static ErroParaModelo ResumoDivergente(LayoutArquivoImportacao layout) =>
+            Fixo($"O resumo não corresponde à importação desse arquivo, e nada foi gravado: o arquivo mudou ou já foi importado. Chame {_previaPorLayout[layout]} de novo, mostre o novo resumo ao usuário e confirme com ele sem alteração.");
+
+        /// <summary>Os erros da importação que o usuário resolve cadastrando o que falta pela API, e que levam as pendências.</summary>
+        public static bool PedePendencias(Erro erro) =>
+            erro is ErroCartoesNaoResolvidos or ErroBeneficiariosNaoResolvidos or ErroCategoriasBancoNaoResolvidas;
 
         /// <summary>A mensagem fixa de quando a origem não abriu o arquivo, sem repetir o caminho.</summary>
         public static ErroParaModelo De(FalhaOrigemArquivoImportacao falha) => _porFalhaOrigem[falha];

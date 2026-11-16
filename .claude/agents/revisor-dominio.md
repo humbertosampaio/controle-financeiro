@@ -65,6 +65,7 @@ Os arquivos `.Designer.cs` e `ModelSnapshot.cs` são gerados pelo EF: não leia.
     - uma regra de negócio que só o comentário explica, feita com aritmética ou condições sem nome num método privado, quando cada condição poderia ser um membro com nome no tipo dono do dado (seção 7 do guia, "a regra aparece no código").
 
     Ter seguido o plano não dispensa o achado: a forma só é decisão do dono quando está em "Decisões fechadas".
+18. **Quem define o comportamento é o domínio** (seção 7 do guia, "quem define o comportamento é o domínio"). É achado MÉDIO uma camada fora do Domain que guarda uma cópia própria do que um tipo do domínio já define (a classificação dos casos, que pode sair de sincronia com ele), em vez de ler a definição do tipo. Ler a definição do domínio, para decidir, validar a entrada ou recusar o caso, não é achado.
 
 ## Dívidas conhecidas — não reportar
 

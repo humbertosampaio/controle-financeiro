@@ -12,17 +12,13 @@ public sealed class ImportarExtratoValidator : Validator<ImportarExtratoRequest>
     /// <summary>O maior arquivo aceito (D11 da #6): um extrato de um ano inteiro tem uma fração disso.</summary>
     public const long TamanhoMaximoArquivo = 5 * 1024 * 1024;
 
-    /// <summary>Os layouts de extrato, com a conta no arquivo ou informada pelo usuário.</summary>
-    public static readonly IReadOnlyCollection<LayoutArquivoImportacao> Layouts =
-        [.. LayoutArquivoImportacao.Extratos, .. LayoutArquivoImportacao.ExtratosContaInformada];
-
     public ImportarExtratoValidator()
     {
         RuleFor(x => x.IdUsuario)
             .MustBeId(IdUsuario.TryFrom);
 
         RuleFor(x => x.Layout)
-            .MustBeSmartEnum(Layouts);
+            .MustBeSmartEnum(LayoutArquivoImportacao.Extratos);
 
         RuleFor(x => x.Arquivo)
             .NotNull()

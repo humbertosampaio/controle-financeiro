@@ -21,6 +21,7 @@ using DependencyInjectionPersistence = ControleFinanceiro.Infrastructure.Persist
 using DiaFechamentoCartao = ControleFinanceiro.Domain.Cartoes.DiaFechamentoCartao;
 using DiaOcorrenciaRecorrente = ControleFinanceiro.Domain.Despesas.DiaOcorrenciaRecorrente;
 using DiaVencimentoCartao = ControleFinanceiro.Domain.Cartoes.DiaVencimentoCartao;
+using LayoutArquivoImportacao = ControleFinanceiro.Domain.Importacoes.LayoutArquivoImportacao;
 using Periodo = ControleFinanceiro.Domain.Shared.ValueObjects.Periodo;
 using SufixoCartao = ControleFinanceiro.Domain.Cartoes.SufixoCartao;
 using SufixoConta = ControleFinanceiro.Domain.Contas.SufixoConta;
@@ -91,10 +92,16 @@ public sealed class SaidaModeloArquiteturaTests
             .Should().NotContain(assembly);
     }
 
+    /// <remarks>
+    /// O <see cref="LayoutArquivoImportacao"/> é a exceção: cada ferramenta de importação passa o seu layout fixo ao
+    /// serviço. É um SmartEnum de valores fixos, sem dado do usuário, e o código dele já vai ao modelo na saída.
+    /// </remarks>
     [Fact]
-    public void QuemFalaComOModelo_Deve_UsarDoDomainSoIdsVogen()
+    public void QuemFalaComOModelo_Deve_UsarDoDomainSoIdsVogenEOLayoutImportacao()
     {
-        Type[] proibidos = TiposDe(_domain).Where(tipo => !EhIdVogen(tipo)).ToArray();
+        Type[] proibidos = TiposDe(_domain)
+            .Where(tipo => !EhIdVogen(tipo) && tipo != typeof(LayoutArquivoImportacao))
+            .ToArray();
 
         TiposDeQuemFala().Should().NotDependOnAny(proibidos).Check(_arquitetura);
     }

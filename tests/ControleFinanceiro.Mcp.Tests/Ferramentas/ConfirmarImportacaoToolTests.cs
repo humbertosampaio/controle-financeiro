@@ -1,5 +1,4 @@
 using AutoFixture;
-using ControleFinanceiro.Application.IA;
 using ControleFinanceiro.Application.IA.Saida;
 using ControleFinanceiro.Domain.Cartoes;
 using ControleFinanceiro.Domain.Importacoes;
@@ -13,8 +12,8 @@ using System.Text.Json;
 namespace ControleFinanceiro.Mcp.Tests.Ferramentas;
 
 /// <summary>
-/// A confirmação da importação pelo processo real, chamada como o cliente a envia depois que o usuário aprova: lê o
-/// arquivo de novo e grava só quando o resumo é o da prévia.
+/// As confirmações da importação, uma por layout, pelo processo real, chamadas como o cliente as envia depois que o
+/// usuário aprova: leem o arquivo de novo e gravam só quando o resumo é o da prévia.
 /// </summary>
 [Collection(ServidorMcpCollection.Nome)]
 public sealed class ConfirmarImportacaoToolTests : IAsyncLifetime
@@ -39,36 +38,32 @@ public sealed class ConfirmarImportacaoToolTests : IAsyncLifetime
 
     public Task DisposeAsync() => Task.CompletedTask;
 
-    // O resumo vem primeiro, para ser o que o usuário lê primeiro no pedido de aprovação.
-    [Fact]
-    public async Task Esquema_Deve_TerOResumoOCaminhoOLayoutEOSufixo()
-    {
-        McpClientTool ferramenta = await _servidor.ClienteMcp.ObterFerramentaAsync(Tools.ConfirmarImportacao);
-
-        ferramenta.ProtocolTool.InputSchema
-            .GetProperty("properties")
-            .EnumerateObject()
-            .Select(p => p.Name)
-            .Should().Equal("resumo", "caminho", "layout", "sufixoConta", "vencimento");
-    }
-
-    // Sem o tipo, o cliente manda o sufixo e o vencimento como número, e o SDK não os converte para texto.
+    // O resumo vem primeiro, para ser o que o usuário lê primeiro no pedido de aprovação. Sem o tipo, o cliente manda o
+    // sufixo e o vencimento como número, e o SDK não os converte para texto.
     [Theory]
-    [InlineData("sufixoConta")]
-    [InlineData("vencimento")]
-    public async Task Esquema_Deve_TerOParametroComoTextoOpcional(string parametro)
+    [InlineData("confirmar_importacao_c6_conta_csv", new[] { "resumo", "caminho" })]
+    [InlineData("confirmar_importacao_mercado_pago_conta_csv", new[] { "resumo", "caminho", "sufixoConta" })]
+    [InlineData("confirmar_importacao_c6_cartao_csv", new[] { "resumo", "caminho", "vencimento" })]
+    [InlineData("confirmar_importacao_mercado_pago_cartao_csv", new[] { "resumo", "caminho" })]
+    public async Task Esquema_Deve_TerOResumoEOsParametrosDoLayoutComoTextoObrigatorio(string nome, string[] parametros)
     {
-        McpClientTool ferramenta = await _servidor.ClienteMcp.ObterFerramentaAsync(Tools.ConfirmarImportacao);
+        McpClientTool ferramenta = await _servidor.ClienteMcp.ObterFerramentaAsync(nome);
 
         JsonElement esquema = ferramenta.ProtocolTool.InputSchema;
-        esquema.GetProperty("properties").GetProperty(parametro).GetProperty("type").GetString().Should().Be("string");
-        esquema.GetProperty("required").EnumerateArray().Select(obrigatorio => obrigatorio.GetString()).Should().NotContain(parametro);
+        JsonProperty[] propriedades = esquema.GetProperty("properties").EnumerateObject().ToArray();
+        propriedades.Select(propriedade => propriedade.Name).Should().Equal(parametros);
+        propriedades.Select(propriedade => propriedade.Value.GetProperty("type").GetString()).Should().AllBe("string");
+        esquema.GetProperty("required").EnumerateArray().Select(obrigatorio => obrigatorio.GetString()).Should().BeEquivalentTo(parametros);
     }
 
-    [Fact]
-    public async Task Meta_Deve_PedirAInteracaoDoUsuario()
+    [Theory]
+    [InlineData("confirmar_importacao_c6_conta_csv")]
+    [InlineData("confirmar_importacao_mercado_pago_conta_csv")]
+    [InlineData("confirmar_importacao_c6_cartao_csv")]
+    [InlineData("confirmar_importacao_mercado_pago_cartao_csv")]
+    public async Task Meta_Deve_PedirAInteracaoDoUsuario(string nome)
     {
-        McpClientTool ferramenta = await _servidor.ClienteMcp.ObterFerramentaAsync(Tools.ConfirmarImportacao);
+        McpClientTool ferramenta = await _servidor.ClienteMcp.ObterFerramentaAsync(nome);
 
         ferramenta.ProtocolTool.Meta![ServidorMcpFixture.MetaInteracaoDoUsuario]!.GetValue<bool>().Should().BeTrue();
     }
@@ -77,9 +72,9 @@ public sealed class ConfirmarImportacaoToolTests : IAsyncLifetime
     public async Task Confirmar_Quando_ExtratoComOResumoDaPrevia_Deve_GravarAContaAImportacaoEAsTransacoes()
     {
         await _importacao.ResolverAsync(LayoutArquivoImportacao.C6ContaCsv, ImportacaoDeTeste.ExtratoC6);
-        string resumo = await PreverAsync(ImportacaoDeTeste.ExtratoC6, "c6-conta-csv");
+        string resumo = await PreverAsync(LayoutArquivoImportacao.C6ContaCsv, ImportacaoDeTeste.ExtratoC6);
 
-        CallToolResult resultado = await _servidor.ClienteMcp.ConfirmarImportacaoAsync(resumo, ImportacaoDeTeste.ExtratoC6, "c6-conta-csv");
+        CallToolResult resultado = await _servidor.ClienteMcp.ConfirmarImportacaoAsync(LayoutArquivoImportacao.C6ContaCsv, resumo, ImportacaoDeTeste.ExtratoC6);
 
         ImportacaoLida importacao = new(resultado.Json);
         importacao.Resumo.Should().Be(resumo);
@@ -91,12 +86,12 @@ public sealed class ConfirmarImportacaoToolTests : IAsyncLifetime
     public async Task Confirmar_Quando_ExtratoDoMercadoPago_Deve_GravarComOSufixoInformado()
     {
         await _importacao.ResolverAsync(LayoutArquivoImportacao.MercadoPagoContaCsv, ImportacaoDeTeste.ExtratoMercadoPago);
-        string resumo = await PreverAsync(ImportacaoDeTeste.ExtratoMercadoPago, "mercado-pago-conta-csv", ImportacaoDeTeste.SufixoContaMercadoPago);
+        string resumo = await PreverAsync(LayoutArquivoImportacao.MercadoPagoContaCsv, ImportacaoDeTeste.ExtratoMercadoPago);
 
         CallToolResult resultado = await _servidor.ClienteMcp.ConfirmarImportacaoAsync(
+            LayoutArquivoImportacao.MercadoPagoContaCsv,
             resumo,
             ImportacaoDeTeste.ExtratoMercadoPago,
-            "mercado-pago-conta-csv",
             ImportacaoDeTeste.SufixoContaMercadoPago);
 
         resultado.Json.Should().NotContainKey("erro");
@@ -107,28 +102,28 @@ public sealed class ConfirmarImportacaoToolTests : IAsyncLifetime
     public async Task Confirmar_Quando_OutroSufixoDaConta_Deve_DevolverResumoDivergenteSemGravar()
     {
         await _importacao.ResolverAsync(LayoutArquivoImportacao.MercadoPagoContaCsv, ImportacaoDeTeste.ExtratoMercadoPago);
-        string resumo = await PreverAsync(ImportacaoDeTeste.ExtratoMercadoPago, "mercado-pago-conta-csv", ImportacaoDeTeste.SufixoContaMercadoPago);
+        string resumo = await PreverAsync(LayoutArquivoImportacao.MercadoPagoContaCsv, ImportacaoDeTeste.ExtratoMercadoPago);
 
         CallToolResult resultado = await _servidor.ClienteMcp.ConfirmarImportacaoAsync(
+            LayoutArquivoImportacao.MercadoPagoContaCsv,
             resumo,
             ImportacaoDeTeste.ExtratoMercadoPago,
-            "mercado-pago-conta-csv",
             sufixoConta: "9999");
 
-        ErroLido.DoEnvelope(resultado.Json).Mensagem.Should().Be(ErrosParaModelo.Importacao.ResumoDivergente.Mensagem);
+        ErroLido.DoEnvelope(resultado.Json).Mensagem.Should().Be(ErrosParaModelo.Importacao.ResumoDivergente(LayoutArquivoImportacao.MercadoPagoContaCsv).Mensagem);
         (await _importacao.LerGravadoAsync()).Should().Be(Gravado.Nada);
     }
 
     [Theory]
     [InlineData("c6-cartao-csv", ImportacaoDeTeste.FaturaC6)]
     [InlineData("mercado-pago-cartao-csv", ImportacaoDeTeste.FaturaMercadoPago)]
-    public async Task Confirmar_Quando_Fatura_Deve_GravarAsTransacoesEAsDespesasParceladasEAdiadas(string layout, string caminho)
+    public async Task Confirmar_Quando_Fatura_Deve_GravarAsTransacoesEAsDespesasParceladasEAdiadas(string codigoLayout, string caminho)
     {
-        await _importacao.ResolverAsync(LayoutArquivoImportacao.FromValue(layout), caminho);
-        string? vencimento = ImportacaoDeTeste.VencimentoDoLayout(layout);
-        string resumo = await PreverAsync(caminho, layout, vencimento: vencimento);
+        LayoutArquivoImportacao layout = LayoutArquivoImportacao.FromValue(codigoLayout);
+        await _importacao.ResolverAsync(layout, caminho);
+        string resumo = await PreverAsync(layout, caminho);
 
-        CallToolResult resultado = await _servidor.ClienteMcp.ConfirmarImportacaoAsync(resumo, caminho, layout, vencimento: vencimento);
+        CallToolResult resultado = await _servidor.ClienteMcp.ConfirmarImportacaoAsync(layout, resumo, caminho);
 
         ImportacaoLida importacao = new(resultado.Json);
         importacao.DespesasParceladas.Should().BePositive();
@@ -149,13 +144,9 @@ public sealed class ConfirmarImportacaoToolTests : IAsyncLifetime
             numero: 6,
             "02/03/2026;FULANA DE TAL FICTICIA;1111;-;CREDITO FICTICIO;Única;0;0;-500.00");
         await _importacao.ResolverAsync(LayoutArquivoImportacao.C6CartaoCsv, caminho);
-        string resumo = await PreverAsync(caminho, "c6-cartao-csv", vencimento: ImportacaoDeTeste.VencimentoFaturaC6);
+        string resumo = await PreverAsync(LayoutArquivoImportacao.C6CartaoCsv, caminho);
 
-        CallToolResult resultado = await _servidor.ClienteMcp.ConfirmarImportacaoAsync(
-            resumo,
-            caminho,
-            "c6-cartao-csv",
-            vencimento: ImportacaoDeTeste.VencimentoFaturaC6);
+        CallToolResult resultado = await _servidor.ClienteMcp.ConfirmarImportacaoAsync(LayoutArquivoImportacao.C6CartaoCsv, resumo, caminho);
 
         ImportacaoLida importacao = new(resultado.Json);
         importacao.Avisos.Should().Equal("A fatura não traz o pagamento da fatura anterior: se não é a primeira fatura do cartão, confira se o layout do banco mudou.");
@@ -166,15 +157,15 @@ public sealed class ConfirmarImportacaoToolTests : IAsyncLifetime
     public async Task Confirmar_Quando_OutroVencimento_Deve_DevolverResumoDivergenteSemGravar()
     {
         await _importacao.ResolverAsync(LayoutArquivoImportacao.C6CartaoCsv, ImportacaoDeTeste.FaturaC6);
-        string resumo = await PreverAsync(ImportacaoDeTeste.FaturaC6, "c6-cartao-csv", vencimento: ImportacaoDeTeste.VencimentoFaturaC6);
+        string resumo = await PreverAsync(LayoutArquivoImportacao.C6CartaoCsv, ImportacaoDeTeste.FaturaC6);
 
         CallToolResult resultado = await _servidor.ClienteMcp.ConfirmarImportacaoAsync(
+            LayoutArquivoImportacao.C6CartaoCsv,
             resumo,
             ImportacaoDeTeste.FaturaC6,
-            "c6-cartao-csv",
             vencimento: "2026-04-12");
 
-        ErroLido.DoEnvelope(resultado.Json).Mensagem.Should().Be(ErrosParaModelo.Importacao.ResumoDivergente.Mensagem);
+        ErroLido.DoEnvelope(resultado.Json).Mensagem.Should().Be(ErrosParaModelo.Importacao.ResumoDivergente(LayoutArquivoImportacao.C6CartaoCsv).Mensagem);
         (await _importacao.LerGravadoAsync()).Should().Be(Gravado.Nada);
     }
 
@@ -182,14 +173,14 @@ public sealed class ConfirmarImportacaoToolTests : IAsyncLifetime
     public async Task Confirmar_Quando_FaturaJaImportadaComOutroVencimentoNoMesmoMes_Deve_DevolverFaturaJaImportadaSemGravar()
     {
         await _importacao.ResolverAsync(LayoutArquivoImportacao.C6CartaoCsv, ImportacaoDeTeste.FaturaC6);
-        string resumo = await PreverAsync(ImportacaoDeTeste.FaturaC6, "c6-cartao-csv", vencimento: ImportacaoDeTeste.VencimentoFaturaC6);
-        await _servidor.ClienteMcp.ConfirmarImportacaoAsync(resumo, ImportacaoDeTeste.FaturaC6, "c6-cartao-csv", vencimento: ImportacaoDeTeste.VencimentoFaturaC6);
+        string resumo = await PreverAsync(LayoutArquivoImportacao.C6CartaoCsv, ImportacaoDeTeste.FaturaC6);
+        await _servidor.ClienteMcp.ConfirmarImportacaoAsync(LayoutArquivoImportacao.C6CartaoCsv, resumo, ImportacaoDeTeste.FaturaC6);
         Gravado gravadoAposPrimeira = await _importacao.LerGravadoAsync();
 
         CallToolResult resultado = await _servidor.ClienteMcp.ConfirmarImportacaoAsync(
+            LayoutArquivoImportacao.C6CartaoCsv,
             resumo,
             ImportacaoDeTeste.FaturaC6,
-            "c6-cartao-csv",
             vencimento: "2026-04-13");
 
         ErroLido.DoEnvelope(resultado.Json).Mensagem.Should().Be(ErrosParaModelo.Importacao.FaturaJaImportadaComOutroVencimento.Mensagem);
@@ -200,14 +191,14 @@ public sealed class ConfirmarImportacaoToolTests : IAsyncLifetime
     public async Task Confirmar_Quando_ResumoAlterado_Deve_DevolverResumoDivergenteSemGravar()
     {
         await _importacao.ResolverAsync(LayoutArquivoImportacao.C6ContaCsv, ImportacaoDeTeste.ExtratoC6);
-        string resumo = await PreverAsync(ImportacaoDeTeste.ExtratoC6, "c6-conta-csv");
+        string resumo = await PreverAsync(LayoutArquivoImportacao.C6ContaCsv, ImportacaoDeTeste.ExtratoC6);
 
         CallToolResult resultado = await _servidor.ClienteMcp.ConfirmarImportacaoAsync(
+            LayoutArquivoImportacao.C6ContaCsv,
             resumo.Replace("lidas", "lidos", StringComparison.Ordinal),
-            ImportacaoDeTeste.ExtratoC6,
-            "c6-conta-csv");
+            ImportacaoDeTeste.ExtratoC6);
 
-        ErroLido.DoEnvelope(resultado.Json).Mensagem.Should().Be(ErrosParaModelo.Importacao.ResumoDivergente.Mensagem);
+        ErroLido.DoEnvelope(resultado.Json).Mensagem.Should().Be(ErrosParaModelo.Importacao.ResumoDivergente(LayoutArquivoImportacao.C6ContaCsv).Mensagem);
         (await _importacao.LerGravadoAsync()).Should().Be(Gravado.Nada);
     }
 
@@ -215,13 +206,13 @@ public sealed class ConfirmarImportacaoToolTests : IAsyncLifetime
     public async Task Confirmar_Quando_Repetida_Deve_DevolverResumoDivergenteSemGravarDeNovo()
     {
         await _importacao.ResolverAsync(LayoutArquivoImportacao.C6ContaCsv, ImportacaoDeTeste.ExtratoC6);
-        string resumo = await PreverAsync(ImportacaoDeTeste.ExtratoC6, "c6-conta-csv");
-        await _servidor.ClienteMcp.ConfirmarImportacaoAsync(resumo, ImportacaoDeTeste.ExtratoC6, "c6-conta-csv");
+        string resumo = await PreverAsync(LayoutArquivoImportacao.C6ContaCsv, ImportacaoDeTeste.ExtratoC6);
+        await _servidor.ClienteMcp.ConfirmarImportacaoAsync(LayoutArquivoImportacao.C6ContaCsv, resumo, ImportacaoDeTeste.ExtratoC6);
         Gravado depoisDaPrimeira = await _importacao.LerGravadoAsync();
 
-        CallToolResult resultado = await _servidor.ClienteMcp.ConfirmarImportacaoAsync(resumo, ImportacaoDeTeste.ExtratoC6, "c6-conta-csv");
+        CallToolResult resultado = await _servidor.ClienteMcp.ConfirmarImportacaoAsync(LayoutArquivoImportacao.C6ContaCsv, resumo, ImportacaoDeTeste.ExtratoC6);
 
-        ErroLido.DoEnvelope(resultado.Json).Mensagem.Should().Be(ErrosParaModelo.Importacao.ResumoDivergente.Mensagem);
+        ErroLido.DoEnvelope(resultado.Json).Mensagem.Should().Be(ErrosParaModelo.Importacao.ResumoDivergente(LayoutArquivoImportacao.C6ContaCsv).Mensagem);
         (await _importacao.LerGravadoAsync()).Should().Be(depoisDaPrimeira);
     }
 
@@ -229,10 +220,10 @@ public sealed class ConfirmarImportacaoToolTests : IAsyncLifetime
     public async Task Prever_Quando_ArquivoJaImportado_Deve_ContarTodasComoJaExistentes()
     {
         await _importacao.ResolverAsync(LayoutArquivoImportacao.C6ContaCsv, ImportacaoDeTeste.ExtratoC6);
-        string resumo = await PreverAsync(ImportacaoDeTeste.ExtratoC6, "c6-conta-csv");
-        await _servidor.ClienteMcp.ConfirmarImportacaoAsync(resumo, ImportacaoDeTeste.ExtratoC6, "c6-conta-csv");
+        string resumo = await PreverAsync(LayoutArquivoImportacao.C6ContaCsv, ImportacaoDeTeste.ExtratoC6);
+        await _servidor.ClienteMcp.ConfirmarImportacaoAsync(LayoutArquivoImportacao.C6ContaCsv, resumo, ImportacaoDeTeste.ExtratoC6);
 
-        CallToolResult resultado = await _servidor.ClienteMcp.PreverImportacaoAsync(ImportacaoDeTeste.ExtratoC6, "c6-conta-csv");
+        CallToolResult resultado = await _servidor.ClienteMcp.PreverImportacaoAsync(LayoutArquivoImportacao.C6ContaCsv, ImportacaoDeTeste.ExtratoC6);
 
         ImportacaoLida importacao = new(resultado.Json);
         importacao.Novas.Should().Be(0);
@@ -245,9 +236,9 @@ public sealed class ConfirmarImportacaoToolTests : IAsyncLifetime
     {
         Cartao cartao = await GravarFaturaPagaPeloBoletoAsync(fixture);
         await _importacao.ResolverAsync(LayoutArquivoImportacao.C6ContaCsv, ImportacaoDeTeste.ExtratoC6);
-        string resumo = await PreverAsync(ImportacaoDeTeste.ExtratoC6, "c6-conta-csv");
+        string resumo = await PreverAsync(LayoutArquivoImportacao.C6ContaCsv, ImportacaoDeTeste.ExtratoC6);
 
-        CallToolResult resultado = await _servidor.ClienteMcp.ConfirmarImportacaoAsync(resumo, ImportacaoDeTeste.ExtratoC6, "c6-conta-csv");
+        CallToolResult resultado = await _servidor.ClienteMcp.ConfirmarImportacaoAsync(LayoutArquivoImportacao.C6ContaCsv, resumo, ImportacaoDeTeste.ExtratoC6);
 
         CandidatoPagamentoFaturaLido candidato = new ImportacaoLida(resultado.Json).CandidatosPagamentoFatura.Should().ContainSingle().Subject;
         candidato.Transacao.Data.Should().Be(DiaBoleto);
@@ -263,7 +254,7 @@ public sealed class ConfirmarImportacaoToolTests : IAsyncLifetime
         await GravarFaturaPagaPeloBoletoAsync(fixture);
         await _importacao.ResolverAsync(LayoutArquivoImportacao.C6ContaCsv, ImportacaoDeTeste.ExtratoC6);
 
-        CallToolResult previa = await _servidor.ClienteMcp.PreverImportacaoAsync(ImportacaoDeTeste.ExtratoC6, "c6-conta-csv");
+        CallToolResult previa = await _servidor.ClienteMcp.PreverImportacaoAsync(LayoutArquivoImportacao.C6ContaCsv, ImportacaoDeTeste.ExtratoC6);
 
         previa.Json.Should().NotContainKey("candidatos_pagamento_fatura");
     }
@@ -280,9 +271,9 @@ public sealed class ConfirmarImportacaoToolTests : IAsyncLifetime
         return cartao;
     }
 
-    private async Task<string> PreverAsync(string caminho, string layout, string? sufixoConta = null, string? vencimento = null)
+    private async Task<string> PreverAsync(LayoutArquivoImportacao layout, string caminho)
     {
-        CallToolResult previa = await _servidor.ClienteMcp.PreverImportacaoAsync(caminho, layout, sufixoConta, vencimento);
+        CallToolResult previa = await _servidor.ClienteMcp.PreverImportacaoAsync(layout, caminho);
         return new ImportacaoLida(previa.Json).Resumo;
     }
 }

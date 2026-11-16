@@ -1,4 +1,5 @@
 using ControleFinanceiro.Application.IA;
+using ControleFinanceiro.Domain.Importacoes;
 using ControleFinanceiro.Domain.Shared.ValueObjects;
 using ModelContextProtocol.Client;
 using ModelContextProtocol.Protocol;
@@ -66,36 +67,66 @@ internal static class ClienteMcpExtensions
 
     extension(McpClient clienteMcp)
     {
-        /// <param name="sufixoConta">Só no extrato sem a conta no arquivo; nulo, o argumento não vai.</param>
-        public ValueTask<CallToolResult> PreverImportacaoAsync(string caminho, string layout, string? sufixoConta = null, string? vencimento = null)
+        /// <summary>
+        /// Chama a prévia do layout só com os argumentos dele. O sufixo e o vencimento vão só no layout que os pede, com o
+        /// valor das fixtures quando nulos.
+        /// </summary>
+        public ValueTask<CallToolResult> PreverImportacaoAsync(
+            LayoutArquivoImportacao layout,
+            string caminho,
+            string? sufixoConta = null,
+            string? vencimento = null)
         {
-            return clienteMcp.CallToolAsync(Tools.PreverImportacao, ArgumentosDaImportacao(caminho, layout, sufixoConta, vencimento));
+            return clienteMcp.CallToolAsync(_previaPorLayout[layout], ArgumentosImportacao(layout, caminho, sufixoConta, vencimento));
         }
 
-        /// <summary>Chama a confirmação como o cliente a envia depois que o usuário aprova a chamada, com o resumo primeiro.</summary>
+        /// <summary>
+        /// Chama a confirmação do layout como o cliente a envia depois que o usuário aprova a chamada, com o resumo
+        /// primeiro, pela regra dos argumentos do <see cref="PreverImportacaoAsync(McpClient, LayoutArquivoImportacao, string, string?, string?)"/>.
+        /// </summary>
         public ValueTask<CallToolResult> ConfirmarImportacaoAsync(
+            LayoutArquivoImportacao layout,
             string resumo,
             string caminho,
-            string layout,
             string? sufixoConta = null,
             string? vencimento = null)
         {
             Dictionary<string, object?> argumentos = new() { ["resumo"] = resumo };
-            foreach ((string nome, object? valor) in ArgumentosDaImportacao(caminho, layout, sufixoConta, vencimento))
+            foreach ((string nome, object? valor) in ArgumentosImportacao(layout, caminho, sufixoConta, vencimento))
                 argumentos[nome] = valor;
 
-            return clienteMcp.CallToolAsync(Tools.ConfirmarImportacao, argumentos);
+            return clienteMcp.CallToolAsync(_confirmacaoPorLayout[layout], argumentos);
         }
     }
 
-    private static Dictionary<string, object?> ArgumentosDaImportacao(string caminho, string layout, string? sufixoConta, string? vencimento)
+    private static readonly Dictionary<LayoutArquivoImportacao, string> _previaPorLayout = new()
     {
-        Dictionary<string, object?> argumentos = new() { ["caminho"] = caminho, ["layout"] = layout };
-        if (sufixoConta is not null)
-            argumentos["sufixoConta"] = sufixoConta;
+        [LayoutArquivoImportacao.C6ContaCsv] = Tools.PreverImportacaoC6ContaCsv,
+        [LayoutArquivoImportacao.MercadoPagoContaCsv] = Tools.PreverImportacaoMercadoPagoContaCsv,
+        [LayoutArquivoImportacao.C6CartaoCsv] = Tools.PreverImportacaoC6CartaoCsv,
+        [LayoutArquivoImportacao.MercadoPagoCartaoCsv] = Tools.PreverImportacaoMercadoPagoCartaoCsv,
+    };
 
-        if (vencimento is not null)
-            argumentos["vencimento"] = vencimento;
+    private static readonly Dictionary<LayoutArquivoImportacao, string> _confirmacaoPorLayout = new()
+    {
+        [LayoutArquivoImportacao.C6ContaCsv] = Tools.ConfirmarImportacaoC6ContaCsv,
+        [LayoutArquivoImportacao.MercadoPagoContaCsv] = Tools.ConfirmarImportacaoMercadoPagoContaCsv,
+        [LayoutArquivoImportacao.C6CartaoCsv] = Tools.ConfirmarImportacaoC6CartaoCsv,
+        [LayoutArquivoImportacao.MercadoPagoCartaoCsv] = Tools.ConfirmarImportacaoMercadoPagoCartaoCsv,
+    };
+
+    private static Dictionary<string, object?> ArgumentosImportacao(
+        LayoutArquivoImportacao layout,
+        string caminho,
+        string? sufixoConta,
+        string? vencimento)
+    {
+        Dictionary<string, object?> argumentos = new() { ["caminho"] = caminho };
+        if (LayoutArquivoImportacao.ExtratosContaInformada.Contains(layout))
+            argumentos["sufixoConta"] = sufixoConta ?? ImportacaoDeTeste.SufixoContaMercadoPago;
+
+        if (LayoutArquivoImportacao.FaturasVencimentoInformado.Contains(layout))
+            argumentos["vencimento"] = vencimento ?? ImportacaoDeTeste.VencimentoFaturaC6;
 
         return argumentos;
     }

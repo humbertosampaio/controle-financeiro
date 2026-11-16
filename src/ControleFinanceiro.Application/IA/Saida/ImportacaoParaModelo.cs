@@ -19,7 +19,7 @@ public sealed record ImportacaoParaModelo : ISaidaModelo
     private const string AvisoSomaPeriodo =
         "A soma das transações gravadas no período não fecha com a do arquivo: confira o extrato pela API.";
 
-    /// <summary>O código do layout, como o modelo o informou.</summary>
+    /// <summary>O código do layout da ferramenta chamada.</summary>
     [JsonPropertyName("layout")]
     public string? Layout { get; }
 
