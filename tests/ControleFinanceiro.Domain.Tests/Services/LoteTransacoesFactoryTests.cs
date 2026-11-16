@@ -156,7 +156,7 @@ public sealed class LoteTransacoesFactoryTests
 
         Transacao transacao = result.Should().Succeed().Which.Should().ContainSingle().Subject;
         transacao.Origem.Should().Be(origem);
-        transacao.Chave.Should().Be(ChaveDeduplicacao.Calcular(cartao.Banco, origem, lancamento.Identidade, 1));
+        transacao.Chave.Should().Be(ChaveDeduplicacao.Calcular(cartao.Banco, origem, lancamento.Identidade, ordinal: 1));
     }
 
     [Theory, ImportacaoDoCartaoAutoData]
@@ -705,7 +705,7 @@ public sealed class LoteTransacoesFactoryTests
             : base(fixture =>
             {
                 fixture.Inject(TipoOrigem.Cartao);
-                fixture.Customizations.Insert(0, new ImportacaoFaturaGenerator());
+                fixture.Customizations.Insert(index: 0, new ImportacaoFaturaGenerator());
             })
         {
         }

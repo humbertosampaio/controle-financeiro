@@ -40,7 +40,7 @@ public sealed class DespesaParceladaTests
     {
         DespesaParcelada result = Parcelar(idUsuario, cartao, numero: 3, total: 10);
 
-        result.Parcelas.Select(p => p.NumeroParcela).Should().Equal(Enumerable.Range(1, 10));
+        result.Parcelas.Select(p => p.NumeroParcela).Should().Equal(Enumerable.Range(start: 1, count: 10));
     }
 
     [Theory, DomainAutoData]

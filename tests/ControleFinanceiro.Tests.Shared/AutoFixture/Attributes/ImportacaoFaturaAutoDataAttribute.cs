@@ -16,7 +16,7 @@ public sealed class ImportacaoFaturaAutoDataAttribute : DomainAutoDataAttribute
     public ImportacaoFaturaAutoDataAttribute()
         : base(fixture =>
         {
-            fixture.Customizations.Insert(0, new ImportacaoFaturaGenerator());
+            fixture.Customizations.Insert(index: 0, new ImportacaoFaturaGenerator());
             fixture.Register((MesReferencia mes, DiaVencimentoCartao dia) => VencimentoFatura.Projetado(mes, dia));
         })
     {

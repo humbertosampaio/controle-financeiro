@@ -65,3 +65,11 @@ Este catálogo é a fonte do texto das regras que têm gate: o `src/CLAUDE.md` e
 
 - A lista conta como quebrada quando algum argumento começa fora da linha do `(`. O argumento que só se estende por várias linhas, como uma lambda com bloco ou uma coleção, não a quebra; o que vem depois dele numa linha nova, sim.
 - Por quê: com os argumentos em graus diferentes, o leitor não vê quais são irmãos e quais pertencem a uma chamada de dentro.
+
+## CF0011
+
+**Argumento literal vai nomeado.** Numa chamada de mais de um argumento, o `null`, o booleano, o número (com sinal ou não) e a coleção vazia `[]` levam o nome do parâmetro: `parceladas: []`, `cartao: null`, `ordinal: 1`. Vale para método, construtor, `base(...)` e `this(...)`, inclusive a chamada que vai dentro de uma asserção. Variável e texto vão sem nome.
+
+- Fora: a chamada de um argumento só (`AddDays(1)`, `IsRequired(false)`), os construtores de `DateOnly`, `DateTime`, `DateTimeOffset` e `TimeOnly`, os `Throw*` das `Argument*Exception` (`ThrowIfLessThan(ordinal, 1)`), a lista de um `params`, o `TheoryData.Add`, a criação de um SmartEnum, os atributos, a chamada pendurada numa cadeia com `Should()` (`Should().Be(850m)`) e a chamada de um delegate, cujos parâmetros não têm nome que diga o papel.
+- O argumento único cujo papel o nome do método não diz, como `Pagar(true)`, escapa do analisador e fica com o `revisor-convencoes`.
+- Por quê: o literal sozinho não diz o que representa, e o nome do parâmetro diz.

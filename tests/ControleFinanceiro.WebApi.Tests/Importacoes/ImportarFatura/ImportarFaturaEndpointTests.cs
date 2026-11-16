@@ -480,7 +480,7 @@ public sealed class ImportarFaturaEndpointTests : IAsyncLifetime
 
         // O cartão vence no dia 10 e fecha no dia 3: a compra de 15/07/2025 cai na fatura de 08/2025.
         ParcelaDespesa[] parcelas = despesa.Parcelas.OrderBy(p => p.NumeroParcela).ToArray();
-        parcelas.Select(p => p.NumeroParcela).Should().Equal(Enumerable.Range(1, 10));
+        parcelas.Select(p => p.NumeroParcela).Should().Equal(Enumerable.Range(start: 1, count: 10));
         parcelas[0].MesReferencia.Should().Be((MesReferencia)(08, 2025));
         parcelas[0].Pagamento.DataProjetada.Should().Be(new DateOnly(2025, 08, 10));
         parcelas[9].MesReferencia.Should().Be((MesReferencia)(05, 2026));
@@ -526,7 +526,7 @@ public sealed class ImportarFaturaEndpointTests : IAsyncLifetime
         await ImportarComSucessoAsync(idUsuario, FaturaCartaoC6.Completo());
 
         DespesaParcelada despesa = (await _api.ObterParceladasAsync()).Should().ContainSingle().Subject;
-        despesa.Parcelas.Where(p => p.Pagamento.EstaPago).Select(p => p.NumeroParcela).Should().BeEquivalentTo(Enumerable.Range(1, 9));
+        despesa.Parcelas.Where(p => p.Pagamento.EstaPago).Select(p => p.NumeroParcela).Should().BeEquivalentTo(Enumerable.Range(start: 1, count: 9));
     }
 
     [Theory, ApiAutoData]
