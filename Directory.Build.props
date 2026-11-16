@@ -2,4 +2,17 @@
   <PropertyGroup>
     <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
   </PropertyGroup>
+
+  <!--
+    Os analisadores das convenções (src/ControleFinanceiro.Analyzers/README.md) rodam no build de todo
+    projeto, menos no deles e no dos testes deles. O IsAspireProjectResource="false" impede o AppHost de
+    tratá-los como um recurso a subir.
+  -->
+  <ItemGroup Condition="'$(MSBuildProjectName)' != 'ControleFinanceiro.Analyzers' and '$(MSBuildProjectName)' != 'ControleFinanceiro.Analyzers.Tests'">
+    <ProjectReference Include="$(MSBuildThisFileDirectory)src/ControleFinanceiro.Analyzers/ControleFinanceiro.Analyzers.csproj"
+                      OutputItemType="Analyzer"
+                      ReferenceOutputAssembly="false"
+                      PrivateAssets="all"
+                      IsAspireProjectResource="false" />
+  </ItemGroup>
 </Project>
