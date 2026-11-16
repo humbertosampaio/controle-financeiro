@@ -48,7 +48,7 @@ internal static class ImportacaoFaturaExtensions
         {
             using MultipartFormDataContent formulario = FormularioFatura(arquivo, dataVencimento);
 
-            return await api.Client.PostAsync(RotaFatura(idUsuario, layout.Value), formulario);
+            return await api.Client.PostAsync(RotaFatura(idUsuario, layout), formulario);
         }
 
         public async Task<ImportarFaturaResponse> ImportarFaturaComSucessoAsync(Guid idUsuario, LayoutArquivoImportacao layout, byte[] arquivo)

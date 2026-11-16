@@ -32,12 +32,12 @@ public sealed class CadastrarDespesaRecorrenteValidator : Validator<CadastrarDes
         RuleFor(x => x.IdCartao)
             .NotNull()
             .WithMessage("Informe o cartão da despesa no crédito")
-            .When(x => x.FormaPagamento == FormaPagamento.Credito.Value);
+            .When(x => x.FormaPagamento == FormaPagamento.Credito);
 
         RuleFor(x => x.IdCartao)
             .Null()
             .WithMessage("Só a despesa no crédito tem cartão")
-            .When(x => x.FormaPagamento != FormaPagamento.Credito.Value);
+            .When(x => x.FormaPagamento != FormaPagamento.Credito);
 
         RuleFor(x => x.IdCartao)
             .MustBeId(IdCartao.TryFrom);

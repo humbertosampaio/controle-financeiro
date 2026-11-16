@@ -18,7 +18,7 @@ internal sealed class ImportarFaturaRequestCustomization : ICustomization
             new ImportarFaturaRequest
             {
                 IdUsuario = idUsuario,
-                Layout = LayoutArquivoImportacao.C6CartaoCsv.Value,
+                Layout = LayoutArquivoImportacao.C6CartaoCsv,
                 Arquivo = ArquivoFormulario.ComTamanho(tamanho: 1),
                 DataVencimento = dataVencimento,
             });

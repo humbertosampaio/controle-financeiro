@@ -51,7 +51,7 @@ public sealed class DocumentoTests
     [Theory, DomainAutoData]
     public void Criar_Quando_CpfGerado_Deve_ReconhecerOCpf(Cpf cpf)
     {
-        Result<Documento> result = Documento.Criar(cpf.Value);
+        Result<Documento> result = Documento.Criar(cpf);
 
         result.Should().Succeed().Which.Should().Be(cpf);
     }
@@ -59,7 +59,7 @@ public sealed class DocumentoTests
     [Theory, DomainAutoData]
     public void Criar_Quando_CnpjGerado_Deve_ReconhecerOCnpj(Cnpj cnpj)
     {
-        Result<Documento> result = Documento.Criar(cnpj.Value);
+        Result<Documento> result = Documento.Criar(cnpj);
 
         result.Should().Succeed().Which.Should().Be(cnpj);
     }

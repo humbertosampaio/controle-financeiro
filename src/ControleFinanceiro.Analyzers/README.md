@@ -73,3 +73,19 @@ Este catálogo é a fonte do texto das regras que têm gate: o `src/CLAUDE.md` e
 - Fora: a chamada de um argumento só (`AddDays(1)`, `IsRequired(false)`), os construtores de `DateOnly`, `DateTime`, `DateTimeOffset` e `TimeOnly`, os `Throw*` das `Argument*Exception` (`ThrowIfLessThan(ordinal, 1)`), a lista de um `params`, o `TheoryData.Add`, a criação de um SmartEnum, os atributos, a chamada pendurada numa cadeia com `Should()` (`Should().Be(850m)`) e a chamada de um delegate, cujos parâmetros não têm nome que diga o papel.
 - O argumento único cujo papel o nome do método não diz, como `Pagar(true)`, escapa do analisador e fica com o `revisor-convencoes`.
 - Por quê: o literal sozinho não diz o que representa, e o nome do parâmetro diz.
+
+## CF0012
+
+**Para desembrulhar nullable, o tipo no padrão**: `x is IdCartao idCartao`, e não `x is { } idCartao`. Vale para o `is` e para o `switch`.
+
+- Fora: o `{ }` sem variável (`x is { }`) e o padrão com propriedades.
+- Por quê: o tipo no padrão diz o que sai dele, e o `{ }` obriga o leitor a deduzi-lo.
+
+## CF0013
+
+**Sem `.Value` onde o operador implícito já basta.** O `SimpleValueObject<T>` e o SmartEnum têm operador implícito para o valor, e o `x` sozinho serve onde o `x.Value` daria o mesmo resultado: `quantidade + 2`, `int codigo = tipo;`, `Rota(idUsuario, layout)`, `Layout = layout`.
+
+- Para saber se o resultado é o mesmo, o analisador troca o `x.Value` pelo `x` e confere se o compilador escolhe o mesmo método ou operador e chega ao mesmo tipo. Por isso o `.Value` fica no `var`, no `object`, no genérico que inferiria o value object e no `"Tipo " + tipo.Value`, em que o `x` sozinho iria como `object`.
+- Na interpolação, que chama o `ToString()`, só o `SimpleValueObject<T>` dispensa o `.Value` (`{sufixo}`). O `ToString()` do SmartEnum devolve o `Name`: o SmartEnum sem `.Value` serve para citá-lo pelo nome, e o `{layout.Value}`, para citar o valor.
+- Fora: o `x.Value` que é a origem de outro acesso (`sufixo.Value.Length`), o que está numa expression tree, porque o EF não traduz a chamada ao operador implícito numa query nem no `HasConversion`, e o do corpo de um operador de conversão, onde a conversão implícita se define.
+- Por quê: o `.Value` abre o value object sem necessidade, e o leitor procura um motivo que não existe.

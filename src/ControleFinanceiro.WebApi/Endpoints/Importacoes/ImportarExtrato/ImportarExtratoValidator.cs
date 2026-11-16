@@ -31,6 +31,6 @@ public sealed class ImportarExtratoValidator : Validator<ImportarExtratoRequest>
 
         RuleFor(x => x.SufixoConta)
             .MustBeValueObject(SufixoConta.Criar)
-            .When(x => LayoutArquivoImportacao.ExtratosContaInformada.Any(l => l.Value == x.Layout));
+            .When(x => LayoutArquivoImportacao.ExtratosContaInformada.Any(l => l == x.Layout));
     }
 }

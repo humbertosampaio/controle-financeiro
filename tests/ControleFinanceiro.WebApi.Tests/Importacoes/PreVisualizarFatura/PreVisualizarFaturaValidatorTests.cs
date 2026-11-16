@@ -35,7 +35,7 @@ public sealed class PreVisualizarFaturaValidatorTests
     public void Validate_Quando_LayoutDaFaturaDoMercadoPago_Deve_Passar(PreVisualizarFaturaRequest requisicao)
     {
         TestValidationResult<PreVisualizarFaturaRequest> resultado = _sut.TestValidate(
-            requisicao with { Layout = LayoutArquivoImportacao.MercadoPagoCartaoCsv.Value, DataVencimento = null });
+            requisicao with { Layout = LayoutArquivoImportacao.MercadoPagoCartaoCsv, DataVencimento = null });
 
         resultado.ShouldNotHaveAnyValidationErrors();
     }
@@ -53,7 +53,7 @@ public sealed class PreVisualizarFaturaValidatorTests
     public void Validate_Quando_LayoutComVencimentoNoArquivoEComVencimento_Deve_RetornarErroNoVencimento(PreVisualizarFaturaRequest requisicao)
     {
         TestValidationResult<PreVisualizarFaturaRequest> resultado = _sut.TestValidate(
-            requisicao with { Layout = LayoutArquivoImportacao.MercadoPagoCartaoCsv.Value });
+            requisicao with { Layout = LayoutArquivoImportacao.MercadoPagoCartaoCsv });
 
         resultado.ShouldHaveValidationErrorFor(r => r.DataVencimento)
             .WithErrorMessage(ImportarFaturaValidator.MensagemVencimentoNoArquivo);

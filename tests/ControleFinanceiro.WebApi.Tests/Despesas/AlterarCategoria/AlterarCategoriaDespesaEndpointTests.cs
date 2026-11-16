@@ -42,7 +42,7 @@ public sealed class AlterarCategoriaDespesaEndpointTests : IAsyncLifetime
         Guid idOutros = (await _api.ObterTodosAsync(db => db.Categorias)).Single().Id.Value;
         await _api.CadastrarDespesaRecorrenteAsync(
             idUsuario,
-            recorrente with { IdBeneficiario = idsBeneficiarios[0], IdCategoria = idOutros, FormaPagamento = FormaPagamento.Pix.Value, IdCartao = null });
+            recorrente with { IdBeneficiario = idsBeneficiarios[0], IdCategoria = idOutros, FormaPagamento = FormaPagamento.Pix, IdCartao = null });
         using HttpResponseMessage gerada = await _api.Client.PostAsJsonAsync(
             new Uri($"/api/usuarios/{idUsuario}/despesas/geracoes", UriKind.Relative),
             geracao);

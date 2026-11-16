@@ -236,7 +236,7 @@ public sealed class LeitorFaturaCartaoC6Tests
         fatura.Lancamentos.Should().AllSatisfy(l =>
         {
             Lancamento lancamento = l.Lancamento;
-            string?[] textos = [lancamento.Descricao.Value, lancamento.Contraparte, lancamento.CategoriaBanco, .. lancamento.Identidade.Campos];
+            string?[] textos = [lancamento.Descricao, lancamento.Contraparte, lancamento.CategoriaBanco, .. lancamento.Identidade.Campos];
             textos.Should().NotContain(t => t != null && t.Contains("FULANA", StringComparison.OrdinalIgnoreCase));
         });
     }

@@ -63,7 +63,7 @@ internal static class VinculoExtensions
             CadastrarDespesaRecorrenteRequest recorrente,
             GerarDespesasDoMesRequest geracao)
         {
-            await api.CadastrarRecorrenteEGerarAsync(idUsuario, beneficiarios, recorrente with { FormaPagamento = FormaPagamento.Pix.Value, IdCartao = null }, geracao);
+            await api.CadastrarRecorrenteEGerarAsync(idUsuario, beneficiarios, recorrente with { FormaPagamento = FormaPagamento.Pix, IdCartao = null }, geracao);
 
             return (await api.ObterTodosAsync(db => db.Despesas.OfType<DespesaSimples>()))
                 .Single(d => d.IdUsuario == IdUsuario.From(idUsuario));
@@ -88,7 +88,7 @@ internal static class VinculoExtensions
             Guid idCategoria = (await api.ObterTodosAsync(db => db.Categorias))
                 .First(c => c.IdUsuario == IdUsuario.From(idUsuario))
                 .Id.Value;
-            CadastrarDespesaRecorrenteRequest noCredito = recorrente with { FormaPagamento = FormaPagamento.Credito.Value, IdCategoria = idCategoria };
+            CadastrarDespesaRecorrenteRequest noCredito = recorrente with { FormaPagamento = FormaPagamento.Credito, IdCategoria = idCategoria };
             await api.CadastrarDespesaRecorrenteAsync(idUsuario, noCredito with { IdBeneficiario = idsBeneficiarios[0], IdCartao = fisico.Id.Value });
             await api.CadastrarDespesaRecorrenteAsync(idUsuario, noCredito with { IdBeneficiario = idsBeneficiarios[1], IdCartao = @virtual.Id.Value });
             await api.GerarDoMesAsync(idUsuario, geracao);
@@ -126,7 +126,7 @@ internal static class VinculoExtensions
                 .Id.Value;
             await api.CadastrarDespesaRecorrenteAsync(idUsuario, recorrente with
             {
-                FormaPagamento = FormaPagamento.Credito.Value,
+                FormaPagamento = FormaPagamento.Credito,
                 IdCartao = fisico.Id.Value,
                 IdBeneficiario = beneficiario.Id.Value,
                 IdCategoria = idCategoria,

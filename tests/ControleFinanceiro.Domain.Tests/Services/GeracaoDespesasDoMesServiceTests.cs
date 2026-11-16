@@ -215,7 +215,7 @@ public sealed class GeracaoDespesasDoMesServiceTests
         Fixture fixture)
     {
         MesReferencia mesReferencia = MesReferencia.Criar(mes: 03, ano: 2026).Value;
-        DateOnly vencimentoEsperado = new DateOnly(2026, 03, diaVencimento.Value);
+        DateOnly vencimentoEsperado = new DateOnly(2026, 03, diaVencimento);
         fixture.Inject(FormaPagamento.Credito);
         DespesaRecorrente despesaRecorrente = fixture.Create<DespesaRecorrente>();
 
@@ -292,7 +292,7 @@ public sealed class GeracaoDespesasDoMesServiceTests
         Fixture fixture)
     {
         MesReferencia mesReferencia = MesReferencia.Criar(mes: 03, ano: 2026).Value;
-        DateOnly dataOcorrenciaEsperada = new DateOnly(2026, 03, diaOcorrencia.Value);
+        DateOnly dataOcorrenciaEsperada = new DateOnly(2026, 03, diaOcorrencia);
         fixture.Inject(FormaPagamento.Pix);
         DespesaRecorrente despesaRecorrente = fixture.Create<DespesaRecorrente>();
 
@@ -310,7 +310,7 @@ public sealed class GeracaoDespesasDoMesServiceTests
         Fixture fixture)
     {
         MesReferencia mesReferencia = MesReferencia.Criar(mes: 03, ano: 2026).Value;
-        DateOnly dataOcorrenciaEsperada = new DateOnly(2026, 03, diaOcorrencia.Value);
+        DateOnly dataOcorrenciaEsperada = new DateOnly(2026, 03, diaOcorrencia);
         fixture.Inject(FormaPagamento.Boleto);
         DespesaRecorrente despesaRecorrente = fixture.Create<DespesaRecorrente>();
 

@@ -39,7 +39,7 @@ public sealed class CadastrarDespesaRecorrenteEndpointTests : IAsyncLifetime
         ItensDoUsuario itens = await CadastrarUsuarioComItensAsync(cadastro, beneficiarios, cartao);
         CadastrarDespesaRecorrenteRequest noCredito = itens.Aplicar(requisicao) with
         {
-            FormaPagamento = FormaPagamento.Credito.Value,
+            FormaPagamento = FormaPagamento.Credito,
             IdCartao = itens.IdCartao,
         };
 
@@ -69,7 +69,7 @@ public sealed class CadastrarDespesaRecorrenteEndpointTests : IAsyncLifetime
         ItensDoUsuario itens = await CadastrarUsuarioComItensAsync(cadastro, beneficiarios, cartao);
         CadastrarDespesaRecorrenteRequest noPix = itens.Aplicar(requisicao) with
         {
-            FormaPagamento = FormaPagamento.Pix.Value,
+            FormaPagamento = FormaPagamento.Pix,
             IdCartao = null,
         };
 
@@ -92,7 +92,7 @@ public sealed class CadastrarDespesaRecorrenteEndpointTests : IAsyncLifetime
         CadastrarDespesaRecorrenteRequest primeira = itens.Aplicar(requisicao) with
         {
             Descricao = "Condomínio",
-            FormaPagamento = FormaPagamento.Boleto.Value,
+            FormaPagamento = FormaPagamento.Boleto,
             IdCartao = null,
         };
         using HttpResponseMessage criada = await CadastrarAsync(itens.IdUsuario, primeira);
@@ -117,7 +117,7 @@ public sealed class CadastrarDespesaRecorrenteEndpointTests : IAsyncLifetime
         Guid idUsuario = await _api.CadastrarUsuarioAsync(cadastro);
         CadastrarDespesaRecorrenteRequest comItensDoOutro = doOutro.Aplicar(requisicao) with
         {
-            FormaPagamento = FormaPagamento.Credito.Value,
+            FormaPagamento = FormaPagamento.Credito,
             IdCartao = doOutro.IdCartao,
         };
 
@@ -147,7 +147,7 @@ public sealed class CadastrarDespesaRecorrenteEndpointTests : IAsyncLifetime
             IdBeneficiario = Guid.Empty,
             Descricao = " ",
             IdCategoria = Guid.Empty,
-            FormaPagamento = FormaPagamento.Credito.Value,
+            FormaPagamento = FormaPagamento.Credito,
             IdCartao = null,
             Valor = -0.01m,
             DiaOcorrencia = 29,

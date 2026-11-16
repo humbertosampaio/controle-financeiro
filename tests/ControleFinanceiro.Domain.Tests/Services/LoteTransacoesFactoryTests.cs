@@ -290,7 +290,7 @@ public sealed class LoteTransacoesFactoryTests
         TextoObrigatorio descricao,
         string contraparte)
     {
-        Lancamento saida = Lancamento.DaConta(data, hora: null, -valor.Value, descricao, contraparte, categoriaBanco: null, identidade);
+        Lancamento saida = Lancamento.DaConta(data, hora: null, -valor, descricao, contraparte, categoriaBanco: null, identidade);
 
         Result<IReadOnlyList<Transacao>, Erro> result = CriarComAliasesResolvidos(idUsuario, conta, importacao, [saida]);
 
@@ -309,7 +309,7 @@ public sealed class LoteTransacoesFactoryTests
         ReaisPositivo valor,
         TextoObrigatorio descricao)
     {
-        Lancamento boleto = Lancamento.DaConta(data, hora: null, -valor.Value, descricao, contraparte: null, categoriaBanco: null, identidade);
+        Lancamento boleto = Lancamento.DaConta(data, hora: null, -valor, descricao, contraparte: null, categoriaBanco: null, identidade);
 
         Result<IReadOnlyList<Transacao>, Erro> result = CriarComAliasesResolvidos(idUsuario, conta, importacao, [boleto]);
 
@@ -413,13 +413,13 @@ public sealed class LoteTransacoesFactoryTests
         ReaisPositivo valor,
         TextoObrigatorio estabelecimento)
     {
-        Lancamento compra = Lancamento.DoCartao(data, hora: null, -valor.Value, estabelecimento, contraparte: null, parcela: null, categoriaBanco: null, identidade);
+        Lancamento compra = Lancamento.DoCartao(data, hora: null, -valor, estabelecimento, contraparte: null, parcela: null, categoriaBanco: null, identidade);
 
         Result<IReadOnlyList<Transacao>, Erro> result = CriarComAliasesResolvidos(idUsuario, cartao, importacao, [compra]);
 
         result.Should().Succeed()
             .Which.Should().ContainSingle()
-            .Which.TextoBeneficiario.Should().Be(estabelecimento.Value);
+            .Which.TextoBeneficiario.Should().Be(estabelecimento);
     }
 
     /// <remarks>O estorno e o pagamento da fatura entram no cartão com valor positivo.</remarks>
@@ -456,8 +456,8 @@ public sealed class LoteTransacoesFactoryTests
         TextoObrigatorio descricao,
         string semAlias)
     {
-        Lancamento resolvida = Lancamento.DaConta(data, hora: null, -valor.Value, descricao, alias.TextoOriginal, categoriaBanco: null, identidade);
-        Lancamento pendente = Lancamento.DaConta(data, hora: null, -valor.Value, descricao, semAlias, categoriaBanco: null, outraIdentidade);
+        Lancamento resolvida = Lancamento.DaConta(data, hora: null, -valor, descricao, alias.TextoOriginal, categoriaBanco: null, identidade);
+        Lancamento pendente = Lancamento.DaConta(data, hora: null, -valor, descricao, semAlias, categoriaBanco: null, outraIdentidade);
 
         Result<IReadOnlyList<Transacao>, Erro> result = LoteTransacoesFactory.Criar(
             idUsuario,
@@ -480,7 +480,7 @@ public sealed class LoteTransacoesFactoryTests
         ReaisPositivo valor,
         TextoObrigatorio estabelecimento)
     {
-        Lancamento compra = Lancamento.DoCartao(data, hora: null, -valor.Value, estabelecimento, contraparte: null, parcela: null, categoriaBanco: null, identidade);
+        Lancamento compra = Lancamento.DoCartao(data, hora: null, -valor, estabelecimento, contraparte: null, parcela: null, categoriaBanco: null, identidade);
 
         Result<IReadOnlyList<Transacao>, Erro> result = LoteTransacoesFactory.Criar(
             idUsuario,
@@ -504,7 +504,7 @@ public sealed class LoteTransacoesFactoryTests
         TextoObrigatorio descricao,
         string semAlias)
     {
-        Lancamento saida = Lancamento.DaConta(data, hora: null, -valor.Value, descricao, semAlias, categoriaBanco: null, identidade);
+        Lancamento saida = Lancamento.DaConta(data, hora: null, -valor, descricao, semAlias, categoriaBanco: null, identidade);
 
         Result<IReadOnlyList<Transacao>, Erro> result = LoteTransacoesFactory.Criar(
             idUsuario,
@@ -567,7 +567,7 @@ public sealed class LoteTransacoesFactoryTests
         string semAlias,
         string categoriaBanco)
     {
-        Lancamento saida = Lancamento.DaConta(data, hora: null, -valor.Value, descricao, semAlias, categoriaBanco, identidade);
+        Lancamento saida = Lancamento.DaConta(data, hora: null, -valor, descricao, semAlias, categoriaBanco, identidade);
 
         Result<IReadOnlyList<Transacao>, Erro> result = LoteTransacoesFactory.Criar(
             idUsuario,

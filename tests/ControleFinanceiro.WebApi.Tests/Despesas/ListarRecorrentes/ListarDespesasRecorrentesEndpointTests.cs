@@ -82,7 +82,7 @@ public sealed class ListarDespesasRecorrentesEndpointTests : IAsyncLifetime
         {
             IdBeneficiario = idsBeneficiarios[0],
             IdCategoria = idOutros,
-            FormaPagamento = FormaPagamento.Pix.Value,
+            FormaPagamento = FormaPagamento.Pix,
             IdCartao = null,
         };
     }

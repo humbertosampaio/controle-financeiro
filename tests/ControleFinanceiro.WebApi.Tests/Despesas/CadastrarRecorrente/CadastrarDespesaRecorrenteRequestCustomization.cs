@@ -17,7 +17,7 @@ internal sealed class CadastrarDespesaRecorrenteRequestCustomization : ICustomiz
             IdBeneficiario = despesaRecorrente.IdBeneficiario,
             Descricao = despesaRecorrente.Descricao,
             IdCategoria = despesaRecorrente.IdCategoria,
-            FormaPagamento = despesaRecorrente.FormaPagamento.Value,
+            FormaPagamento = despesaRecorrente.FormaPagamento,
             IdCartao = despesaRecorrente.IdCartao,
             Valor = despesaRecorrente.Valor,
             DiaOcorrencia = despesaRecorrente.DiaOcorrencia,

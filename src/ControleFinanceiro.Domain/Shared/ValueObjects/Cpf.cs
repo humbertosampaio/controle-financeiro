@@ -21,8 +21,8 @@ public sealed class Cpf : Documento
             .SuccessIf(
                 numero.Value.Length == QuantidadeCaracteresCpf
                     && numero.Value.All(char.IsAsciiDigit)
-                    && !TodosIguais(numero.Value)
-                    && VerificadoresConferem(numero.Value, PesoMaximo),
+                    && !TodosIguais(numero)
+                    && VerificadoresConferem(numero, PesoMaximo),
                 numero.Value,
                 "O documento não é um CPF válido")
             .Map(v => new Cpf(v));
