@@ -139,6 +139,10 @@ git diff --name-only origin/main...HEAD | node scripts/harness/testes-afetados.m
 node scripts/harness/testes-afetados.test.mjs
 ```
 
+## Dependabot
+
+O `.github/dependabot.yml` abre PRs de atualização de pacotes. Eles não nascem de issue nem seguem o nome de branch `<tipo>/<issue>-<slug>`; o `pre-push` aceita `dependabot/...` para quem precisar ajustar um deles. O CI roda neles como em qualquer PR, e o changelog dos pacotes é revisado antes do merge. As atualizações bloqueadas de propósito (FluentAssertions 8+, que é pago; MessagePack 3+) estão justificadas no próprio arquivo.
+
 ## Manutenção
 
 - **Regra nova do projeto?** Atualize o agente que a revisa. Se ela é verificável mecanicamente, prefira um gate a um parágrafo.
