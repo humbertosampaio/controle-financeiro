@@ -61,6 +61,8 @@ Antes de criar um tipo no Domain, confira a forma dele com as perguntas de [a fo
 
 Num passo que cria serviço de domínio, depois de os testes passarem e antes de mostrar o passo, releia cada método privado do serviço com o critério de [o serviço de domínio só orquestra](../../../docs/padroes-de-dominio.md#3-regras-que-cruzam-agregados): se ele lê dados de um agregado só ou mostra um dos sinais listados lá, leve a lógica para o agregado, a entidade, o value object ou um tipo próprio. Um membro que o plano não previa entra na lista de desvios.
 
+Num passo que cria um serviço, de qualquer camada, ou que acrescenta algo a ele, releia-o antes de mostrar o passo e conte as responsabilidades dele: cada motivo diferente para o serviço mudar é uma. Com mais de uma, proponha ao dono um serviço por responsabilidade, mesmo que o plano tenha previsto um só, como na seção 4. Na #186, o serviço da importação para o modelo recebia a entrada, aplicava o extrato, aplicava a fatura e gravava a confirmação: virou um serviço para o extrato, um para a fatura e um para a confirmação, que os dois usam.
+
 ## 4. Quando o plano não fecha com o código
 
 O plano pode errar: um arquivo que não é como ele supôs, uma decisão que o código torna impossível, um caso que ele não previu. Nesses casos, **pergunte no chat, não improvise**:
