@@ -37,3 +37,10 @@ Este catálogo é a fonte do texto das regras que têm gate: o `src/CLAUDE.md` e
 
 - Fora: a expressão de coleção que junta mais de um elemento, como `[.. a, .. b]` ou `[.. a, novo]`.
 - Por quê: o spread sozinho só copia, e o `.ToArray()` diz o tipo da cópia no nome. O IDE0305, que pediria o spread, está desligado no `.editorconfig`.
+
+## CF0006
+
+**Duas conversões explícitas seguidas pedem uma forma melhor.** Um `(X)(string)y` costuma revelar o `explicit operator` direto de `Y` para `X` que falta, como o de `TextoObrigatorio` para `DocumentoMascarado`: crie-o.
+
+- Só em `src/`: vem desligado e o `.editorconfig` o liga na seção `[src/**/*.cs]`. Nos testes, as duas conversões ficam quando o assunto é a passagem pelo tipo do meio, como num teste que monta um `TextoObrigatorio` de um literal.
+- Por quê: a conversão pelo tipo do meio repete em cada lugar o caminho que o operador direto diria uma vez.
