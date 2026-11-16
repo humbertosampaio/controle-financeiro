@@ -15,7 +15,7 @@ public interface IDespesaDoCartao
     /// <summary>
     /// Verdadeiro quando a despesa é de um cartão da fatura e a saída só pagou dela pagamentos que vencem no mês da fatura.
     /// </summary>
-    bool FoiPagaSoPelaFatura(FaturaCartao fatura, IdTransacao idSaida);
+    bool FoiPagaApenasPelaFatura(FaturaCartao fatura, IdTransacao idSaida);
 
     /// <summary>
     /// Verdadeiro quando a despesa é de um cartão da fatura e o pagamento que vence no mês dela foi pago por uma saída, a
