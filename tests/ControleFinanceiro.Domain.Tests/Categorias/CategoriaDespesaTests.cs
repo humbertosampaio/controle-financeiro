@@ -38,7 +38,7 @@ public sealed class CategoriaDespesaTests
     [Theory, DomainAutoData]
     public void RemoverAlias_Quando_NaoPossuiOAlias_Deve_ManterOsAliases(CategoriaDespesa categoria, Alias outroAlias)
     {
-        IReadOnlyList<AliasCategoria> antes = [.. categoria.Aliases];
+        IReadOnlyList<AliasCategoria> antes = categoria.Aliases.ToArray();
 
         categoria.RemoverAlias(outroAlias);
 

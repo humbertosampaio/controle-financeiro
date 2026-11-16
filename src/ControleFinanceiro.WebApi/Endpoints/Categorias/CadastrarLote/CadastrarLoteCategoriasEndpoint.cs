@@ -43,7 +43,7 @@ public sealed class CadastrarLoteCategoriasEndpoint : Endpoint<CadastrarLoteCate
             .Bind(Resolver)
             .Tap(resolvido => GravarAsync(resolvido.Novas, ct))
             .Match(
-                resolvido => Send.OkAsync(new CadastrarLoteCategoriasResponse([.. resolvido.Destinos.Select(c => (Guid)c.Id)]), ct),
+                resolvido => Send.OkAsync(new CadastrarLoteCategoriasResponse(resolvido.Destinos.Select(c => (Guid)c.Id).ToArray()), ct),
                 falha => EnviarFalhaAsync(falha, ct));
     }
 

@@ -30,3 +30,10 @@ Este catálogo é a fonte do texto das regras que têm gate: o `src/CLAUDE.md` e
 
 - Vale também para o `ServiceDefaults/Extensions.cs`, que veio do template do Aspire: uma exceção a menos para lembrar.
 - Por quê: o bloco junta as extensões do mesmo tipo e declara o receptor uma vez só, e o C# 14 permite nele propriedades de extensão, que o `this` não permite.
+
+## CF0005
+
+**`.ToArray()` ou `.ToList()` em vez de spread** para materializar uma sequência: `numeros.ToArray()`, e não `[.. numeros]`.
+
+- Fora: a expressão de coleção que junta mais de um elemento, como `[.. a, .. b]` ou `[.. a, novo]`.
+- Por quê: o spread sozinho só copia, e o `.ToArray()` diz o tipo da cópia no nome. O IDE0305, que pediria o spread, está desligado no `.editorconfig`.
