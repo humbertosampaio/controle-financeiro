@@ -8,3 +8,4 @@ Rule ID | Category | Severity | Notes
 CF0001 | Convencoes | Warning | MultilineExpressionBodyAnalyzer
 CF0002 | Convencoes | Warning | MultilineConditionalBranchAnalyzer
 CF0003 | Convencoes | Warning | PrimaryConstructorAnalyzer
+CF0004 | Convencoes | Warning | ThisExtensionParameterAnalyzer

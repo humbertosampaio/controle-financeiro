@@ -23,3 +23,10 @@ Este catálogo é a fonte do texto das regras que têm gate: o `src/CLAUDE.md` e
 
 - Fora: records posicionais, cujo construtor primário declara as propriedades.
 - Por quê: o parâmetro do construtor primário fica visível na classe inteira, sem `readonly` e sem o `_` que diz que é campo. O IDE0290 do Roslyn só sugere o construtor primário, e não aponta o que já existe.
+
+## CF0004
+
+**Extensões no bloco `extension` do C# 14**, e não com `this` no primeiro parâmetro. O helper privado que só as extensões usam fica no mesmo bloco.
+
+- Vale também para o `ServiceDefaults/Extensions.cs`, que veio do template do Aspire: uma exceção a menos para lembrar.
+- Por quê: o bloco junta as extensões do mesmo tipo e declara o receptor uma vez só, e o C# 14 permite nele propriedades de extensão, que o `this` não permite.
