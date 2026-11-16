@@ -98,14 +98,18 @@ public sealed class ImportacaoFaturaAppService
                 layout,
                 fatura,
                 cartoes))
-            .Map(lotes => AcrescentarAsync(fatura, lotes, novas => DespesaAdiadaFactory.CriarDaFatura(
-                idUsuario,
-                beneficiariosDoUsuario,
-                categoriasDoUsuario,
-                cartoesDoUsuario,
-                adiadasDoUsuario,
-                fatura.Vencimento,
-                novas), ct));
+            .Map(lotes => AcrescentarAsync(
+                fatura,
+                lotes,
+                novas => DespesaAdiadaFactory.CriarDaFatura(
+                    idUsuario,
+                    beneficiariosDoUsuario,
+                    categoriasDoUsuario,
+                    cartoesDoUsuario,
+                    adiadasDoUsuario,
+                    fatura.Vencimento,
+                    novas),
+                ct));
     }
 
     /// <summary>

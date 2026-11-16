@@ -42,14 +42,13 @@ public sealed class FaturaTests
         SufixoCartao virtualCartao)
     {
         Fatura sut = Fatura.Criar(
-                modelo.Banco,
-                modelo.Vencimento,
-                [
-                    LancamentoFatura.Criar(lancamento, virtualCartao),
-                    LancamentoFatura.Criar(lancamento, fisico),
-                    LancamentoFatura.Criar(lancamento, virtualCartao),
-                ])
-            .Value;
+            modelo.Banco,
+            modelo.Vencimento,
+            [
+                LancamentoFatura.Criar(lancamento, virtualCartao),
+                LancamentoFatura.Criar(lancamento, fisico),
+                LancamentoFatura.Criar(lancamento, virtualCartao),
+            ]).Value;
 
         sut.Sufixos.Should().Equal(virtualCartao, fisico);
     }
@@ -64,14 +63,13 @@ public sealed class FaturaTests
         SufixoCartao outroSufixo)
     {
         Fatura sut = Fatura.Criar(
-                modelo.Banco,
-                modelo.Vencimento,
-                [
-                    LancamentoFatura.Criar(primeiro, sufixo),
-                    LancamentoFatura.Criar(doOutroCartao, outroSufixo),
-                    LancamentoFatura.Criar(segundo, sufixo),
-                ])
-            .Value;
+            modelo.Banco,
+            modelo.Vencimento,
+            [
+                LancamentoFatura.Criar(primeiro, sufixo),
+                LancamentoFatura.Criar(doOutroCartao, outroSufixo),
+                LancamentoFatura.Criar(segundo, sufixo),
+            ]).Value;
 
         sut.LancamentosCartao(sufixo).Should().Equal(primeiro, segundo);
     }
@@ -85,16 +83,15 @@ public sealed class FaturaTests
         SufixoCartao outroSufixo)
     {
         Fatura sut = Fatura.Criar(
-                modelo.Banco,
-                modelo.Vencimento,
-                [
-                    LancamentoFatura.Criar(NaData(lancamento, dia), sufixo),
-                    LancamentoFatura.Criar(NaData(lancamento, dia.AddDays(-270)), sufixo),
-                    LancamentoFatura.Criar(NaData(lancamento, dia.AddDays(-400)), outroSufixo),
-                    LancamentoFatura.Criar(NaData(lancamento, dia.AddDays(-10)), sufixo),
-                    LancamentoFatura.Criar(NaData(lancamento, dia.AddDays(5)), outroSufixo),
-                ])
-            .Value;
+            modelo.Banco,
+            modelo.Vencimento,
+            [
+                LancamentoFatura.Criar(NaData(lancamento, dia), sufixo),
+                LancamentoFatura.Criar(NaData(lancamento, dia.AddDays(-270)), sufixo),
+                LancamentoFatura.Criar(NaData(lancamento, dia.AddDays(-400)), outroSufixo),
+                LancamentoFatura.Criar(NaData(lancamento, dia.AddDays(-10)), sufixo),
+                LancamentoFatura.Criar(NaData(lancamento, dia.AddDays(5)), outroSufixo),
+            ]).Value;
 
         sut.PeriodoCartao(sufixo).Should().Be(new Periodo(dia.AddDays(-270), dia));
     }
@@ -108,15 +105,14 @@ public sealed class FaturaTests
         SufixoCartao outroSufixo)
     {
         Fatura sut = Fatura.Criar(
-                modelo.Banco,
-                modelo.Vencimento,
-                [
-                    LancamentoFatura.Criar(NaData(lancamento, dia), sufixo),
-                    LancamentoFatura.Criar(NaData(lancamento, dia.AddDays(-400)), outroSufixo),
-                    LancamentoFatura.Criar(NaData(lancamento, dia.AddDays(-10)), sufixo),
-                    LancamentoFatura.Criar(NaData(lancamento, dia.AddDays(5)), outroSufixo),
-                ])
-            .Value;
+            modelo.Banco,
+            modelo.Vencimento,
+            [
+                LancamentoFatura.Criar(NaData(lancamento, dia), sufixo),
+                LancamentoFatura.Criar(NaData(lancamento, dia.AddDays(-400)), outroSufixo),
+                LancamentoFatura.Criar(NaData(lancamento, dia.AddDays(-10)), sufixo),
+                LancamentoFatura.Criar(NaData(lancamento, dia.AddDays(5)), outroSufixo),
+            ]).Value;
 
         sut.Periodo.Should().Be(new Periodo(dia.AddDays(-400), dia.AddDays(5)));
     }

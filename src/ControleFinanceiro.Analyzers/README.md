@@ -58,3 +58,10 @@ Este catálogo é a fonte do texto das regras que têm gate: o `src/CLAUDE.md` e
 
 - Vale para classe, struct, record, interface, enum e delegate; o tipo chamado só `Result` fica de fora.
 - Por quê: o `NomesCamadaTests` confere os sufixos só na Application e no Domain, e não alcança a WebApi.
+
+## CF0007
+
+**Argumentos irmãos no mesmo grau.** Quando uma chamada quebra os argumentos em linhas, nenhum fica na linha dela, e eles vão todos juntos numa linha só ou cada um numa linha própria, na mesma coluna, um nível (4 espaços) abaixo da linha da chamada. O `.Select` de um argumento vai mais um nível abaixo dele, e isso o analisador não confere.
+
+- A lista conta como quebrada quando algum argumento começa fora da linha do `(`. O argumento que só se estende por várias linhas, como uma lambda com bloco ou uma coleção, não a quebra; o que vem depois dele numa linha nova, sim.
+- Por quê: com os argumentos em graus diferentes, o leitor não vê quais são irmãos e quais pertencem a uma chamada de dentro.
