@@ -126,10 +126,10 @@ A suíte de integração sobe um Postgres no Docker, então o `pre-push` não a 
 
 A suíte do servidor MCP não tem espelho e roda inteira ou não roda. Com `--mcp`, o script imprime `todos` quando o diff toca o próprio servidor ou os testes dele, Domain, Application, Persistence, a imagem do Postgres, `tests/ControleFinanceiro.Tests.Shared`, `tests/Directory.Build.props` ou `Directory.Packages.props`, e nada nos demais casos. O `CLAUDE.md` de uma pasta não aciona nenhuma das duas, mesmo numa pasta que aciona tudo: é instrução, não código.
 
-O `pre-push` compara com o que o remoto já tem ou, numa branch nova, com a `origin/main`. Sem base para comparar, roda todos, nas duas suítes. Se for preciso rodar uma delas e o Docker estiver parado, o push falha avisando. O CI roda as duas suítes inteiras em todo PR.
+O `pre-push` compara com o que o remoto já tem ou, numa branch nova, com a `origin/main`. A lista vem com `--no-renames`, para um arquivo renomeado aparecer também pelo caminho antigo: um `.cs` do Domain renomeado para fora das pastas que acionam testes continua acionando a suíte. Sem base para comparar, roda todos, nas duas suítes. Se for preciso rodar uma delas e o Docker estiver parado, o push falha avisando. O CI roda as duas suítes inteiras em todo PR.
 
 ```bash
-git diff --name-only origin/main...HEAD | node scripts/harness/testes-afetados.mjs
+git diff --name-only --no-renames origin/main...HEAD | node scripts/harness/testes-afetados.mjs
 node scripts/harness/testes-afetados.test.mjs
 ```
 
