@@ -32,6 +32,7 @@ Lembretes que costumam faltar:
 - Entidade nova persistida precisa de `IEntityTypeConfiguration`, `DbSet` e migration.
 - Endpoint FastEndpoints é descoberto sozinho, mas o repositório precisa ser registrado em `DependencyInjection.cs`.
 - Serviço de domínio novo só orquestra (seção 3 do guia): a tabela lista, além do arquivo do serviço, cada entidade e value object que muda, com os membros novos por nome, e os tipos novos que ele chama. Um serviço sem nenhum membro novo fora dele é sinal para rever o desenho.
+- Quando o MCP passa a usar um tipo do Domain, da Persistence ou da Importação, confira as regras do `SaidaModeloArquiteturaTests`: ele só aceita os ids Vogen do Domain e o `LayoutArquivoImportacao`, e o tipo novo pede uma exceção, que é decisão do dono.
 - Cada serviço novo, ou que cresce, tem uma responsabilidade só (um motivo para mudar). Quando o desenho juntar mais de uma, a tabela já o divide, um arquivo por responsabilidade.
 
 ### 3. Decisões
