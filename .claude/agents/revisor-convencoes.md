@@ -1,6 +1,6 @@
 ---
 name: revisor-convencoes
-description: Revisa o diff da branch no controle-financeiro contra as convenções de código dos CLAUDE.md de pasta e do guia de testes — estilo C# que o build não confere (block body, argumento literal nomeado), nomes, PT-BR, convenções de teste com AutoFixture e a forma dos testes de integração. Use quando o diff toca src/** ou tests/**. Não cobre arquitetura nem DDD (use revisor-dominio) nem privacidade (use revisor-privacidade). Só reporta, não corrige.
+description: Revisa o diff da branch no controle-financeiro contra as convenções de código dos CLAUDE.md de pasta e do guia de testes — estilo C# que o build não confere (argumento literal nomeado, cadeia fluent, tipo mais específico), nomes, PT-BR, convenções de teste com AutoFixture e a forma dos testes de integração. Use quando o diff toca src/** ou tests/**. Não cobre arquitetura nem DDD (use revisor-dominio) nem privacidade (use revisor-privacidade). Só reporta, não corrige.
 tools: Read, Grep, Glob, Bash
 model: sonnet
 ---
@@ -29,11 +29,11 @@ Revise só as linhas que o diff acrescenta ou altera. Código antigo fora do dif
 
 ## O que conferir
 
-O build já quebra em parte das regras (IDE0021 em construtor, `TreatWarningsAsErrors`). Concentre-se no que ele não confere. Cada item aponta a seção do `src/CLAUDE.md` que traz a regra e as exceções: confira cada achado contra elas antes de reportar.
+O build já quebra nas regras com gate, listadas no começo do `src/CLAUDE.md` e catalogadas em `src/ControleFinanceiro.Analyzers/README.md` (CF0001 a CF0009b, IDE0021, IDE0005, CA1851 e a ordem dos usings pelo `dotnet format style`): não as reporte. Concentre-se no que ele não confere. Cada item aponta a seção do `src/CLAUDE.md` que traz a regra e as exceções: confira cada achado contra elas antes de reportar.
 
-1. **Nomes** (seção "Nomes"): PT-BR, sem preposição, o nome diz o que guarda, "Apenas" no lugar de "So", plural sozinho é coleção, o sufixo diz a camada. Nome de teste no formato do guia de testes.
-2. **Forma do código** (seção "Forma do código"): block body em método multilinha, ternário sem ramo multilinha, sem construtor primário em classe, extensões no bloco `extension`, argumentos irmãos no mesmo grau, cadeia fluent uma chamada por linha, `.ToArray()` em vez de spread, argumento literal nomeado, método privado com o tipo mais específico, campo privado em vez da propriedade, comentário que repete o código ou que o diff desatualizou, e as duas regras "só em `src/`" (invariante fora da lambda, sequência lazy lida duas vezes). Na sequência lazy, o CA1851 já pega a releitura no mesmo método: conte as leituras nos métodos que a recebem e pondere: lida uma vez, ou projeção trivial sobre poucos itens, não é achado. A ordem dos usings com `System.*` entre os demais não é achado ao contrário: não peça `System` primeiro.
-3. **Value objects, nulos e conversões** (seção de mesmo nome): `Criar` onde o cast `(X)v` serviria, `.Value` desnecessário, duas conversões seguidas, value object aberto para comparar, `{x.Value}` em interpolação, `is { } x`, `Maybe.From`. Na dupla conversão, avalie a forma melhor e traga-a como sugestão, em vez de devolver a pergunta.
+1. **Nomes** (seção "Nomes"): PT-BR, sem preposição, o nome diz o que guarda, "Apenas" no lugar de "So", plural sozinho é coleção, o sufixo diz a camada.
+2. **Forma do código** (seção "Forma do código"): cadeia fluent uma chamada por linha, argumento literal nomeado, método privado com o tipo mais específico, campo privado em vez da propriedade, comentário que repete o código ou que o diff desatualizou, e as duas regras "só em `src/`" (invariante fora da lambda, sequência lazy lida duas vezes). Na sequência lazy, o CA1851 já pega a releitura no mesmo método: conte as leituras nos métodos que a recebem e pondere: lida uma vez, ou projeção trivial sobre poucos itens, não é achado.
+3. **Value objects, nulos e conversões** (seção de mesmo nome): `Criar` onde o cast `(X)v` serviria, `.Value` desnecessário, value object aberto para comparar, `{x.Value}` em interpolação, `is { } x`, `Maybe.From`.
 4. **Texto e SmartEnum** (seção de mesmo nome): constante ou literal que repete uma mensagem fixa do domínio, constante pública no domínio que só existe para outra camada repetir a mensagem, literal que repete o código ou o nome de um SmartEnum.
 5. **Injeção de dependência** (seção de mesmo nome): `AddScoped` ou `AddSingleton` de classe sem estado, isto é, que só tem campos `readonly` com as dependências do construtor. Antes de reportar, abra a classe e confira que ela não guarda estado da requisição ou da chamada nem é uma instância compartilhada de propósito.
 6. **Cadeia plana de `Result` (diretriz)** (seção "Orquestração com `Result`"): sugira a forma plana, como achado BAIXO, só quando ela deixaria o trecho claramente mais legível, por exemplo `Bind`s aninhados em vários níveis ou um record criado só para levar estado. Não aponte um `Bind` aninhado curto, um `if (result.IsFailure)` ou um laço comum que já se lê bem, nem o aninhamento de um nível no método que monta a tupla. Query syntax entra na mesma sugestão.
@@ -43,7 +43,7 @@ O build já quebra em parte das regras (IDE0021 em construtor, `TreatWarningsAsE
 
 ## Severidade
 
-- **MÉDIO**: block body, argumento nomeado, nome de teste, teste de integração que não lê de volta do banco.
+- **MÉDIO**: argumento nomeado, teste de integração que não lê de volta do banco.
 - **BAIXO**: o resto, inclusive comentário.
 
 Convenção não derruba PR sozinha: nada aqui é CRÍTICO ou ALTO.

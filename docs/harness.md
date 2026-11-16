@@ -160,6 +160,6 @@ Exemplo: no desfazer do pagamento da fatura (#149), a entidade devolvia `bool` e
 
 ### Revisão das instruções
 
-As regras crescem uma de cada vez, e cada uma cabe sozinha; juntas, repetem-se, envelhecem e deixam de caber. O `instrucoes.test.mjs` põe teto no tamanho dos `CLAUDE.md` (12 KB na raiz, 10 KB no `src/CLAUDE.md`, 4 KB nos outros, 24 KB na cadeia que uma pasta carrega) e confere que links, âncoras, `@imports` e caminhos citados existem.
+As regras crescem uma de cada vez, e cada uma cabe sozinha; juntas, repetem-se, envelhecem e deixam de caber. O `instrucoes.test.mjs` põe teto no tamanho dos `CLAUDE.md` (12 KB na raiz, 9 KB no `src/CLAUDE.md`, 4 KB nos outros, 24 KB na cadeia que uma pasta carrega) e confere que links, âncoras, `@imports` e caminhos citados existem.
 
 Por isso, ao fim de cada issue, antes do PR, a `implementar-issue` revisa as instruções que valem para o diff, e não todas: limitada ao diff, a revisão fica barata e acompanha cada regra nova. O escopo, o caso do teto estourado e o que conferir estão no [passo dela](../.claude/skills/implementar-issue/SKILL.md#revisão-das-instruções). O que mudar vira um commit `docs(harness)` na branch da issue, sem issue própria.

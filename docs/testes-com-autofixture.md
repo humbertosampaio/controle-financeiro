@@ -145,7 +145,7 @@ Use `ThrowExactly<T>()`, e não `Throw<T>()`, que também passa com uma exceçã
 
 ## Nome do teste
 
-`Metodo_Quando_Cenario_Deve_Resultado`, com `[Theory, DomainAutoData]` para gerar as entradas. Um comportamento por teste, e sem relógio real: a data vem do `TimeProvider` fake ou do AutoFixture, nunca de `DateTime.Now`. Quando não há cenário, porque o comportamento vale sempre, o `Quando` sai em vez de ganhar um cenário vazio: `Criar_Deve_GerarIdVersao7ParaCadaTransacao`, e não `Criar_Quando_Chamado_Deve_GerarIdVersao7ParaCadaTransacao`.
+`Metodo_Quando_Cenario_Deve_Resultado`, com `[Theory, DomainAutoData]` para gerar as entradas; o formato o build confere ([CF0009](../src/ControleFinanceiro.Analyzers/README.md#cf0009)). Um comportamento por teste, e sem relógio real: a data vem do `TimeProvider` fake ou do AutoFixture, nunca de `DateTime.Now`. Quando não há cenário, porque o comportamento vale sempre, o `Quando` sai em vez de ganhar um cenário vazio: `Criar_Deve_GerarIdVersao7ParaCadaTransacao`, e não `Criar_Quando_Chamado_Deve_GerarIdVersao7ParaCadaTransacao`.
 
 ## Customizações realistas (só na integração)
 
