@@ -1,6 +1,5 @@
 using ControleFinanceiro.Application.IA;
 using ControleFinanceiro.Infrastructure.Persistence;
-using Microsoft.EntityFrameworkCore;
 using ModelContextProtocol.Server;
 using System.ComponentModel;
 

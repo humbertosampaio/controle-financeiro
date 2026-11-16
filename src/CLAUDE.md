@@ -1,6 +1,6 @@
 # Convenções de C#
 
-Valem para todo o código de `src/` e, salvo onde está escrito "só em `src/`", também para o de `tests/`. O build confere poucas delas (IDE0021 e `TreatWarningsAsErrors`); o resto o `revisor-convencoes` cobra. Código novo segue as regras, e o existente só muda quando for tocado. As regras mecânicas viram analisadores nas #200 a #202 e saem deste arquivo quando o gate entrar.
+Valem para todo o código de `src/` e, salvo onde está escrito "só em `src/`", também para o de `tests/`. O build confere algumas (IDE0021 em construtor; IDE0005, using sem uso, e CA1851, enumeração múltipla no mesmo método, só em `src/`); o resto o `revisor-convencoes` cobra. Código novo segue as regras, e o existente só muda quando for tocado. As regras mecânicas viram analisadores na #201 e na #202 e saem deste arquivo quando o gate entrar.
 
 ## Nomes
 
@@ -24,11 +24,11 @@ Valem para todo o código de `src/` e, salvo onde está escrito "só em `src/`",
 - **Dentro da própria classe, o campo privado** (`_cartoes.Exists(...)`), e não a propriedade exposta.
 - **Comentário que repete o código, ou que o diff desatualizou**, sai.
 - Só em `src/`: **valor que não depende do elemento da lambda ou do laço é calculado antes dela** (`IdBeneficiario idBeneficiario = IdBeneficiario.From(guid);` e depois `FirstOrDefault(b => b.Id == idBeneficiario)`). Nos testes, a conversão pode ficar dentro da lambda.
-- Só em `src/`: **sequência lazy lida mais de uma vez é materializada antes** com `.ToArray()`, contando as leituras no método e nos que a recebem. Lida uma vez, pode ficar lazy.
+- Só em `src/`: **sequência lazy lida mais de uma vez é materializada antes** com `.ToArray()`. O CA1851 pega a releitura no mesmo método; conte também as leituras nos métodos que a recebem. Lida uma vez, pode ficar lazy.
 
 ## Value objects, nulos e conversões
 
-- **Cast ou `Criar`.** Todo `SimpleValueObject<T>` concreto tem `explicit operator` do primitivo ([padrões de domínio, §7](../docs/padroes-de-dominio.md#7-value-objects-e-ids)). O cast serve onde o valor já é sabidamente válido (teste, generator, conversão EF) e onde o `Criar` nunca falha; com entrada do usuário ou do arquivo, use o `Criar` e trate o `Result`. A volta para o primitivo é implícita: `string descricao = (DocumentoMascarado)transacao.Descricao;`, sem `.Value`.
+- **Cast ou `Criar`.** O `explicit operator` do primitivo ([padrões de domínio, §7](../docs/padroes-de-dominio.md#7-value-objects-e-ids)) serve onde o valor já é sabidamente válido (teste, generator, conversão EF) e onde o `Criar` nunca falha; com entrada do usuário ou do arquivo, use o `Criar` e trate o `Result`. A volta para o primitivo é implícita: `string descricao = (DocumentoMascarado)transacao.Descricao;`, sem `.Value`.
 - **Duas conversões explícitas seguidas pedem uma forma melhor.** Um `(X)(string)y` costuma revelar o `explicit operator` direto de `Y` para `X` que falta, como o de `TextoObrigatorio` para `DocumentoMascarado`; resolva sem perguntar ao dono. As duas ficam só quando o assunto é a passagem pelo tipo do meio, como num teste que monta um `TextoObrigatorio` de um literal.
 - **Value object se compara, ordena e agrupa inteiro** (`OrderBy(p => p.Key)`, `c.Sufixo == sufixo`), sem abrir o `.Value`: quem decide a comparação é o `GetEqualityComponents`. Para comparar com um primitivo, converta o primitivo para o value object (`b.Id == IdBeneficiario.From(guid)`), e não o contrário.
 - **Em interpolação, `{sufixo}` direto**, sem `.Value`: o `ToString()` do `SimpleValueObject` já devolve o valor.

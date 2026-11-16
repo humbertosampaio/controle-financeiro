@@ -2,7 +2,8 @@
 # Na ordem, parando no primeiro que falhar: os checks baratos vêm antes dos caros.
 #   1. nada vai direto para a main (tudo entra por PR)
 #   2. nome da branch no padrão <tipo>/<issue>-<slug> (ou dependabot/..., para ajustar um PR dele)
-#   3. o guardrail e os scripts do harness continuam íntegros, e as instruções cabem no teto
+#   3. o guardrail e os scripts do harness continuam íntegros, cada endpoint tem o teste espelhado e as
+#      instruções cabem no teto
 #   4. build e testes de unidade
 #   5. testes de integração dos endpoints afetados pelo push e do servidor MCP, se afetado (precisam do Docker)
 
@@ -67,6 +68,9 @@ node "$raiz/scripts/harness/testes-afetados.test.mjs" >"$log" 2>&1 ||
 
 node "$raiz/scripts/harness/claude-md-aplicaveis.test.mjs" >"$log" 2>&1 ||
   falhou "Os testes do script dos CLAUDE.md de pasta falharam: rode node scripts/harness/claude-md-aplicaveis.test.mjs"
+
+node "$raiz/scripts/harness/espelho-endpoints.test.mjs" >"$log" 2>&1 ||
+  falhou "Falta o teste de integração espelhado de um endpoint: rode node scripts/harness/espelho-endpoints.test.mjs"
 
 # Tetos dos CLAUDE.md e referências das instruções: duas branches podem caber no teto sozinhas e
 # estourá-lo juntas na main, e o CI confere de novo.

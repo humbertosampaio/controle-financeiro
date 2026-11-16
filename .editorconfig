@@ -284,3 +284,10 @@ dotnet_diagnostic.S107.severity = none
 
 [**/Migrations/*.cs]
 generated_code = true
+
+# Só em src/: using sem uso e sequência lazy enumerada mais de uma vez no mesmo método. Nos testes, a
+# enumeração múltipla é comum nas asserções e não custa nada.
+
+[src/**/*.cs]
+dotnet_diagnostic.IDE0005.severity = warning
+dotnet_diagnostic.CA1851.severity = warning

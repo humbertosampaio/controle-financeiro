@@ -85,7 +85,6 @@ Mesmo com tudo verde, ler o diff.
 **Backend**
 - [ ] `dotnet build ControleFinanceiro.slnx` sem avisos
 - [ ] `dotnet test ControleFinanceiro.slnx` verde
-- [ ] Domain sem `using` de EF Core, ASP.NET ou Npgsql
 - [ ] Regra nova com teste, como no [guia de testes](testes-com-autofixture.md#o-que-cobrir)
 - [ ] Migration nova revisada à mão (`Up` e `Down`), sem operação destrutiva não combinada
 - [ ] Adaptador externo trata timeout e erro com `Result`, sem exceção para falha previsível
