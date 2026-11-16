@@ -1,0 +1,13 @@
+<Project>
+  <Import Project="$([MSBuild]::GetPathOfFileAbove('Directory.Build.props', '$(MSBuildThisFileDirectory)../'))" />
+
+  <!--
+    Vale para todo projeto sob src/. O IDE0005 (using sem uso) só é calculado com o GenerateDocumentationFile
+    ligado. Ficam de fora o CS1591 (membro público sem comentário XML) e o CS1573 (parâmetro sem <param> quando
+    outro do método tem), porque o comentário só entra onde diz algo.
+  -->
+  <PropertyGroup>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <NoWarn>$(NoWarn);CS1591;CS1573</NoWarn>
+  </PropertyGroup>
+</Project>
