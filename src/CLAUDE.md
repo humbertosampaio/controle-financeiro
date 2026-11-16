@@ -48,7 +48,7 @@ O resto o `revisor-convencoes` cobra.
 ## Texto e SmartEnum
 
 - **Texto fixo num lugar só.** A mensagem fixa que o domínio define chega às outras camadas pelo `Result` ou pelo `Erro` que a carrega, e nenhuma camada a redefine nem a guarda numa constante para repetir: o `ConferirPagamentoAnterior` da `Fatura` e o `ConferirVencimento` do `Cartao` falham com o próprio texto, a API lê o `.Error`, e a saída para o modelo o recebe como `DocumentoMascarado`. Só tem texto próprio a saída cuja mensagem de domínio traz valores, como a da soma do período. Nos testes, o assert copia o texto literal, para não conferir o resultado com o mesmo código que o produziu.
-- **Código e nome de SmartEnum vêm do SmartEnum.** O texto que cita um SmartEnum usa o `.Value` ou o `.Name` (`$"O layout {LayoutArquivoImportacao.C6CartaoCsv.Value} pede..."`), e nunca o literal, inclusive no comentário XML, que usa `<see cref>`. Ficam de fora o atributo, que exige constante, e o assert de teste.
+- **Código e nome de SmartEnum vêm do SmartEnum.** O texto que cita um SmartEnum usa o `.Value` para o código (`$"O layout {LayoutArquivoImportacao.C6CartaoCsv.Value} pede..."`) e o próprio SmartEnum, sem `.Value`, para o nome, e nunca o literal, inclusive no comentário XML, que usa `<see cref>`. Ficam de fora o atributo, que exige constante, e o assert de teste.
 
 ## Injeção de dependência
 
