@@ -67,7 +67,7 @@ O plano pode errar: um arquivo que não é como ele supôs, uma decisão que o c
 
 - diga o que o plano previa, o que o código mostra e as alternativas, com a sua recomendação;
 - espere a decisão do dono e implemente como ele disser;
-- anote o desvio (o que o plano dizia, o que ficou, por quê e quem decidiu) para o passo 6.
+- anote o desvio (o que o plano dizia, o que ficou, por quê e quem decidiu) para o passo 7.
 
 As "Decisões fechadas" do plano valem como decididas: só se reabrem com o dono, nunca por iniciativa da sessão. Desvio pequeno e sem escolha (um nome de arquivo diferente do previsto, um passo dividido em dois commits) não precisa de pergunta, mas entra na lista.
 
@@ -77,7 +77,11 @@ O comentário do plano não é editado: ele registra o que foi combinado antes d
 
 Com todos os passos implementados, rode a `revisar-mudanca`. Todo achado, de qualquer severidade, se corrige antes de seguir, a não ser que o dono decida ignorá-lo depois de ouvir o achado e o motivo; se a correção mudar algo do plano, ela também entra na lista de desvios.
 
-## 6. Registrar os desvios do plano
+## 6. Refinar o harness
+
+Antes de registrar os desvios e de abrir o PR, faça a análise do [refino contínuo](../../../docs/harness.md#refino-contínuo) para cada correção do dono e cada sugestão dele que você aceitou durante a sessão, inclusive as que viraram desvio do plano e as que vieram como comentário numa linha de código. No chat, liste cada uma com a causa e a proposta de texto e de lugar, ou com a linha que diz que as instruções já davam o critério. Com o ok do dono, cada mudança vira um commit `docs(harness)` próprio na branch da issue. Este passo entra na lista de tarefas desde o primeiro `update_plan` da implementação, para não depender de o dono lembrar.
+
+## 7. Registrar os desvios do plano
 
 Se houve desvio, publique um comentário na issue implementada (a sub-issue, quando for o caso), começando com `<!-- desvios -->`:
 
@@ -96,7 +100,7 @@ gh issue comment <n> --body-file <arquivo-dos-desvios.md>
 
 Escreva o arquivo no diretório temporário da sessão. Sem desvio, não há comentário. Quando o desvio veio de um layout visto em `dados/`, descreva só a estrutura (colunas, formatos): o comentário não cita valores, descrições nem nomes de arquivos reais.
 
-## 7. Abrir o PR
+## 8. Abrir o PR
 
 Rode a `abrir-pr`. O corpo do PR aponta para o comentário de desvios, quando ele existir.
 
