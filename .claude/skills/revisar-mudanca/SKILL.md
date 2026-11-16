@@ -14,7 +14,7 @@ git fetch origin main --quiet
 git diff origin/main...HEAD --stat
 ```
 
-Decida os revisores pelo diff:
+Decida os revisores pelo diff (esta tabela é a fonte de quando cada agente roda):
 
 | O diff toca | Agente |
 |---|---|
@@ -64,7 +64,6 @@ Algum vermelho: **pare e corrija antes de seguir.**
 git diff origin/main...HEAD -- src/ControleFinanceiro.Domain | grep -nE '^\+.*using (Microsoft\.EntityFrameworkCore|Microsoft\.AspNetCore|Npgsql)'
 git diff origin/main...HEAD | grep -nE '^\+.*(TODO|FIXME|Console\.Write)'
 git diff origin/main...HEAD --name-only | grep -E '\.(ofx|csv|xlsx)$' | grep -v '/Fixtures/'
-git log origin/main..HEAD --format='%s' | grep -vE '^(feat|fix|chore|docs|refactor|test|perf|build|ci)(\([a-z0-9-]+\))?!?: [A-ZÁÉÍÓÚÂÊÔÃÕÇ]'
 ```
 
 Qualquer saída é achado.

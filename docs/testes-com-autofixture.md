@@ -135,6 +135,10 @@ Cinco caminhos, do mais geral para o mais local:
 
 Valor fixo direto no teste (`(TextoObrigatorio)"INSS"`) só quando o próprio valor é o assunto, como num teste de soma com o resultado calculado à mão.
 
+## O que cobrir
+
+Regra nova tem teste no mesmo commit (ou no seguinte, quando o plano separa): o caminho válido, cada invariante rejeitando a entrada inválida e as bordas (zero, negativo, vazio, limite de dia ou mês, virada de ano). Regra sem esses testes não está pronta. O que vai para a integração está [mais abaixo](#o-que-vai-para-a-integração); os leitores de extrato têm a lista própria no `tests/ControleFinanceiro.Infrastructure.Importacao.Tests/CLAUDE.md`.
+
 ## Exceção esperada
 
 Use `ThrowExactly<T>()`, e não `Throw<T>()`, que também passa com uma exceção derivada de `T`: `registrar.Should().ThrowExactly<ArgumentOutOfRangeException>().WithParameterName("lidas")`.

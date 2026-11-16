@@ -25,7 +25,11 @@ Não leia os demais comentários: a discussão do planejamento já está consoli
 
 Sem comentário de plano e com tarefa não trivial (mais de 2 arquivos, classe, endpoint ou migration nova, integração externa), pare e sugira a `planejar-issue`.
 
-Leia também os arquivos-âncora que o plano cita antes de escrever qualquer coisa, e o `docs/testes-com-autofixture.md` antes de escrever teste.
+Leia também os arquivos-âncora que o plano cita antes de escrever qualquer coisa, e o `docs/testes-com-autofixture.md` antes de escrever teste. Passe ao script os caminhos da tabela de Arquivos e leia cada `CLAUDE.md` que ele listar, com as regras das pastas que a issue toca:
+
+```bash
+node scripts/harness/claude-md-aplicaveis.mjs <caminho>...
+```
 
 ## 2. Preparar a branch
 
@@ -61,7 +65,7 @@ Antes de criar um tipo no Domain, confira a forma dele com as perguntas de [a fo
 
 Num passo que cria serviço de domínio, depois de os testes passarem e antes de mostrar o passo, releia cada método privado do serviço com o critério de [o serviço de domínio só orquestra](../../../docs/padroes-de-dominio.md#3-regras-que-cruzam-agregados): se ele lê dados de um agregado só ou mostra um dos sinais listados lá, leve a lógica para o agregado, a entidade, o value object ou um tipo próprio. Um membro que o plano não previa entra na lista de desvios.
 
-Num passo que cria um serviço, de qualquer camada, ou que acrescenta algo a ele, releia-o antes de mostrar o passo e conte as responsabilidades dele: cada motivo diferente para o serviço mudar é uma. Com mais de uma, proponha ao dono um serviço por responsabilidade, mesmo que o plano tenha previsto um só, como na seção 4. Na #186, o serviço da importação para o modelo recebia a entrada, aplicava o extrato, aplicava a fatura e gravava a confirmação: virou um serviço para o extrato, um para a fatura e um para a confirmação, que os dois usam.
+Num passo que cria um serviço, de qualquer camada, ou que acrescenta algo a ele, releia-o antes de mostrar o passo e conte as responsabilidades dele com o critério de [cada serviço tem uma responsabilidade só](../../../docs/padroes-de-dominio.md#3-regras-que-cruzam-agregados). Com mais de uma, proponha ao dono um serviço por responsabilidade, mesmo que o plano tenha previsto um só, como na seção 4.
 
 ## 4. Quando o plano não fecha com o código
 

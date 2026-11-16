@@ -7,6 +7,7 @@ Discordar de um padrão é motivo para conversar, não para contorná-lo no cód
 ## 1. Fronteiras do agregado
 
 - A raiz é a única entrada do agregado. Entidade interna (`DescontoSalarial` no `Usuario`, `ParcelaDespesa` na `DespesaParcelada`) só é criada, alterada e lida pela raiz.
+- **O agregado protege as próprias regras**: construtor privado, fábrica estática `Criar` que valida e devolve `Result<T>` quando pode falhar, setters privados e coleções expostas como `IReadOnlyList`. Regra de negócio não mora em endpoint, mapper nem repositório.
 - Entre agregados, a referência é **pelo id da raiz**. Nenhum agregado guarda outra raiz, nem uma entidade de outro agregado, nem uma coleção delas. A `DespesaRecorrente` guarda o `IdCartao`, não o `Cartao`; a `OrigemTransacao` guarda o `IdConta` ou o `IdCartao`.
 - Um conceito que outro agregado precisa referenciar de fora é uma raiz, não uma entidade interna. Foi o motivo da #50: o `Cartao` e a `ContaBancaria` eram internos do `Usuario`, mas a `Transacao` e a `ImportacaoArquivo` já chegavam a eles de fora.
 - Todo agregado que pertence a um usuário tem `IdUsuario` e implementa `IPertenceAoUsuario` (`Cartao`, `ContaBancaria`, `DespesaRecorrente`, `Despesa`, `Transacao`, `ImportacaoArquivo`, `Beneficiario`, `CategoriaDespesa`), mesmo quando o dono já é alcançável por outro id, como a origem da transação. Toda consulta dele fica restrita ao usuário atual (seção 8); sem a interface, o filtro some em silêncio, e o `PertenceAoUsuarioTests` é o que avisa. O `Usuario` é o dono e não a implementa.
@@ -57,6 +58,8 @@ Sinais de que a lógica está no lugar errado, para conferir em cada método do 
 - o mesmo cálculo repetido em dois serviços.
 
 Exemplo: a conciliação das parcelas da fatura (#116). O serviço confere o dono das listas, separa as candidatas, agrupa e vincula; se a transação é parcela paga no cartão e se a despesa é daquela compra são perguntas à transação e à despesa parcelada, a chave da compra é um tipo com nome e o emparelhamento é um tipo próprio. Um análogo que ainda concentra essa lógica não é motivo para repeti-la.
+
+**Cada serviço tem uma responsabilidade só**, de qualquer camada: cada motivo diferente para ele mudar é uma responsabilidade, e o serviço que junta mais de uma vira um serviço por responsabilidade. Na #186, o serviço da importação para o modelo recebia a entrada, aplicava o extrato, aplicava a fatura e gravava a confirmação: virou um serviço para o extrato, um para a fatura e um para a confirmação, que os dois usam.
 
 Concorrência: a unicidade garantida pela factory tem um índice único no banco como rede. Duas requisições ao mesmo tempo dão 500 na segunda, e isso é aceito até haver motivo para tratar. A exceção é a `DespesaRecorrente` repetida (mesmo beneficiário e mesma descrição, sem contar caixa, acentos e espaços repetidos): só a factory a recusa, sem índice, e duas requisições ao mesmo tempo podem gravar as duas. O mesmo vale para a `DespesaParcelada` da mesma compra, recusada só pela `DespesaParceladaFactory`, porque a chave depende de texto normalizado, que não é coluna, e para a fatura importada com outro vencimento no mesmo mês, recusada só pela `ImportacaoArquivoFactory`, porque a regra depende do ciclo atual dos cartões.
 
@@ -134,7 +137,7 @@ Responda no plano, para cada conceito novo ou alterado:
 3. Que regra depende de mais de um agregado, e em que factory ou serviço ela mora? O `Criar` precisa ser `internal`? (seção 3)
 4. Que caso de uso altera agregados de mais de um tipo? Se algum, qual evento substitui a alteração do segundo tipo? (seções 2 e 6)
 5. Que repositório o caso de uso usa, e que consulta não é "me dê o agregado"? (seção 4)
-6. Que falhas são situações de negócio com nome próprio, e quais são entrada inválida? (seção 5)
-7. Que forma tem cada tipo novo do Domain, inclusive o que só é devolvido por um serviço? Responda numa tabela "Tipo | Forma | Por quê", com a forma escolhida pelas perguntas da seção 7 (entidade, SmartEnum, value object ou `record`) e a pasta. Que primitivos com regra viram value object? (seção 7)
+6. Que falhas são situações de negócio com nome próprio, e quais são entrada inválida? Todas devolvem `Result`, e não exceção? (seção 5)
+7. Que forma tem cada tipo novo do Domain, inclusive o que só é devolvido por um serviço? Responda numa tabela "Tipo | Forma | Por quê", com a forma escolhida pelas perguntas da seção 7 (entidade, SmartEnum, value object ou `record`) e a pasta. Que primitivos com regra viram value object, e o dinheiro é `Reais` ou `ReaisPositivo`? (seção 7)
 8. Como fica a FK entre os agregados? (seção 8)
 9. Para cada método privado do serviço planejado: ele lê dados de um agregado só? Se lê, por que não mora lá? (seção 3)

@@ -16,7 +16,14 @@ Se a tarefa for trivial (até 2 arquivos, sem classe, endpoint ou migration nova
 1. Leia o `CLAUDE.md` e a issue inteira (`gh issue view <n> --comments`), não só o título.
 2. Localize a área: domínio, importação, persistência, API, MCP, agente, avaliação ou frontend. Se a tarefa cria ou muda agregado, entidade, value object ou regra de domínio, leia o `docs/padroes-de-dominio.md` e o `docs/modelo-de-dominio.md`.
 3. **Ache o análogo mais próximo que já existe e leia.** O plano cita arquivos reais. Exemplos de âncora: `Despesas/Despesa.cs` para agregado, `Shared/ValueObjects/ReaisPositivo.cs` para value object, `Services/CartaoFactory.cs` para regra que cruza agregados, `Cartoes/CartaoConfiguration.cs` para mapeamento EF, `Endpoints/Usuarios/Cadastrar/` para endpoint.
-4. Se a tarefa envolve um formato de arquivo de banco, leia a fixture fictícia em `tests/**/Fixtures/`. Se precisar olhar `dados/`, descreva só a estrutura, nunca valores.
+4. Leia as regras das pastas que a tarefa toca, passando ao script os arquivos da tabela de Arquivos (ou as pastas da área):
+
+   ```bash
+   node scripts/harness/claude-md-aplicaveis.mjs <arquivo-ou-pasta>...
+   ```
+
+   Leia cada `CLAUDE.md` listado: eles trazem os lembretes de cada camada (conversor do id Vogen, `DbSet` e migration na Persistence; as regras do `SaidaModeloArquiteturaTests` na saída para o modelo e no MCP; o espelho dos testes na WebApi).
+5. Se a tarefa envolve um formato de arquivo de banco, leia a fixture fictícia em `tests/**/Fixtures/`. Se precisar olhar `dados/`, descreva só a estrutura, nunca valores.
 
 ## Formato
 
@@ -26,26 +33,21 @@ Duas ou três frases na linguagem do domínio. Se algo ambíguo muda o desenho, 
 ### 2. Arquivos
 Tabela `caminho | novo ou alterado | o que muda`, na ordem das dependências: Domain → Application → Persistence → WebApi/MCP → testes.
 
-Lembretes que costumam faltar:
-- Id Vogen novo precisa de conversor EF (`VogenEfCoreConverters.cs`).
-- Value object novo persistido precisa de `ValueConverter` em `ValueConverters/ValueObjects/`.
-- Entidade nova persistida precisa de `IEntityTypeConfiguration`, `DbSet` e migration.
-- Endpoint FastEndpoints é descoberto sozinho, mas o repositório precisa ser registrado em `DependencyInjection.cs`.
+Os lembretes de cada camada estão nos `CLAUDE.md` que o passo 4 listou. Dois que valem para qualquer serviço:
 - Serviço de domínio novo só orquestra (seção 3 do guia): a tabela lista, além do arquivo do serviço, cada entidade e value object que muda, com os membros novos por nome, e os tipos novos que ele chama. Um serviço sem nenhum membro novo fora dele é sinal para rever o desenho.
-- Quando o MCP passa a usar um tipo do Domain, da Persistence ou da Importação, confira as regras do `SaidaModeloArquiteturaTests`: ele só aceita os ids Vogen do Domain e o `LayoutArquivoImportacao`, e o tipo novo pede uma exceção, que é decisão do dono.
-- Cada serviço novo, ou que cresce, tem uma responsabilidade só (um motivo para mudar). Quando o desenho juntar mais de uma, a tabela já o divide, um arquivo por responsabilidade.
+- Cada serviço novo, ou que cresce, tem uma responsabilidade só (seção 3 do guia, "Cada serviço tem uma responsabilidade só"): quando o desenho juntar mais de uma, a tabela já o divide, um arquivo por responsabilidade.
 
 ### 3. Decisões
-Onde cada peça mora e por quê, citando a seção do `docs/padroes-de-dominio.md` que cada decisão segue. Quando a tarefa toca o domínio, responda o checklist da seção 9 do guia. Lembre também: `Result` para falha previsível, `Reais`/`ReaisPositivo` para dinheiro, porta + adaptador para cada fonte externa (cada formato de extrato é um adaptador da mesma porta), idempotência na importação.
+Onde cada peça mora e por quê, citando a seção do `docs/padroes-de-dominio.md` que cada decisão segue. Quando a tarefa toca o domínio, responda o checklist da seção 9 do guia, que cobre `Result`, value objects e dinheiro; a importação segue o `src/ControleFinanceiro.Infrastructure.Importacao/CLAUDE.md` (um adaptador por layout, idempotência).
 
 ### 4. Privacidade
-Que dado sai da máquina, se algum. Se o plano manda transações ao modelo (MCP ou agente), liste os campos exatos e justifique cada um além de descrição, valor e data.
+Que dado sai da máquina, se algum. Se o plano manda transações ao modelo (MCP ou agente), liste os campos exatos e justifique cada um além de descrição, valor e data, conforme o `src/ControleFinanceiro.Application/IA/CLAUDE.md`.
 
 ### 5. Migration
-Se houver: o que muda no schema e se algo é destrutivo. Apagar ou renomear coluna ou tabela é ponto de decisão (seção 7), porque o banco local tem dados reais.
+Se houver: o que muda no schema e se algo é destrutivo. Apagar ou renomear coluna ou tabela é ponto de decisão (inviolável 8 do `CLAUDE.md`), porque o banco local tem dados reais.
 
 ### 6. Testes
-O que cobrir e onde. Domínio: caminho válido, cada invariante, bordas (zero, negativo, vazio, limite). Importação: fixture fictícia com o mesmo layout do banco, reimportação sem duplicar, linha malformada. Endpoint novo ou alterado: teste de integração em `tests/ControleFinanceiro.WebApi.Tests/<Area>/<Acao>/`, na pasta que espelha a do endpoint, com a customização do request e um 400 por regra do validator. Diga o que a infraestrutura atual não cobre.
+O que cobrir e onde, conforme o `tests/CLAUDE.md` e o `docs/testes-com-autofixture.md` ("O que cobrir" e "O que vai para a integração"). Endpoint novo ou alterado: teste de integração na pasta que espelha a do endpoint, com a customização do request e **um** 400 com todos os campos inválidos; a regra que o validator acrescenta vai para o `<Acao>ValidatorTests`. Leitor: a lista do `tests/ControleFinanceiro.Infrastructure.Importacao.Tests/CLAUDE.md`. Diga o que a infraestrutura atual não cobre.
 
 ### 7. Riscos e decisões pendentes
 O que exige confirmação (pacote novo, migration destrutiva, campo novo indo ao modelo) e o que você não conseguiu determinar lendo o código.
