@@ -34,6 +34,8 @@ filtro=$(git diff --name-only origin/main...HEAD | node scripts/harness/testes-a
 filtro_mcp=$(git diff --name-only origin/main...HEAD | node scripts/harness/testes-afetados.mjs --mcp); echo "servidor MCP: ${filtro_mcp:-nenhum}"
 node scripts/harness/guardrail.test.mjs
 node scripts/harness/testes-afetados.test.mjs
+node scripts/harness/claude-md-aplicaveis.test.mjs
+node scripts/harness/instrucoes.test.mjs
 sh .githooks/scan-staged.sh --branch origin/main
 ```
 

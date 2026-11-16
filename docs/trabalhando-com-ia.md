@@ -103,6 +103,6 @@ Mesmo com tudo verde, ler o diff.
 | Regras de pasta | `src/CLAUDE.md`, `tests/CLAUDE.md` e um por projeto que tenha regra própria | Convenções de C#, testes, domínio, saída para o modelo, MCP, endpoints, leitores, persistência. Carregados quando a sessão lê um arquivo da pasta, e lidos pelos agentes pelo `claude-md-aplicaveis.mjs` | Quando uma regra da pasta muda |
 | Guias | `docs/padroes-de-dominio.md`, `docs/testes-com-autofixture.md` | Como modelar e como testar, com os exemplos do repositório | Quando um padrão muda |
 | Manual | `docs/trabalhando-com-ia.md`, `docs/harness.md` | Como conduzir o trabalho e como o harness funciona | Quando uma prática evolui |
-| Decisões | `docs/decisoes/` (ADRs, quando surgirem) | Por que algo é como é | A cada decisão de arquitetura |
+| Decisões | ADRs, numa pasta própria em `docs/` quando surgirem | Por que algo é como é | A cada decisão de arquitetura |
 
 A memória pessoal do Claude Code guarda preferências de quem usa, não regras do projeto. Regra do projeto mora no repositório.
