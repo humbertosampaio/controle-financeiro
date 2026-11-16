@@ -33,7 +33,7 @@ O resto o `revisor-convencoes` cobra. As regras mecânicas que faltam viram anal
 - **Método privado usa o tipo mais específico** que quem chama tem, mesmo concreto: `T[]` quando o método só lê a coleção, `List<T>` quando o `Add`, o `RemoveAll` ou o `Find` deixam o código melhor. `IReadOnlyList<T>` e `IReadOnlyCollection<T>` ficam para a API pública e para o parâmetro que já chega assim dela.
 - **Dentro da própria classe, o campo privado** (`_cartoes.Exists(...)`), e não a propriedade exposta.
 - **Comentário que repete o código, ou que o diff desatualizou**, sai.
-- Só em `src/`: **valor que não depende do elemento da lambda ou do laço é calculado antes dela** (`IdBeneficiario idBeneficiario = IdBeneficiario.From(guid);` e depois `FirstOrDefault(b => b.Id == idBeneficiario)`). Nos testes, a conversão pode ficar dentro da lambda.
+- Só em `src/`: **chamada que não depende do elemento da lambda ou do laço é feita antes dela**, para não se repetir a cada iteração (`IdBeneficiario idBeneficiario = IdBeneficiario.From(guid);` e depois `FirstOrDefault(b => b.Id == idBeneficiario)`). Vale para método e conversão; ler dentro da lambda uma propriedade ou um índice já calculados não custa nada e fica. Nos testes, a conversão pode ficar dentro da lambda.
 - Só em `src/`: **sequência lazy lida mais de uma vez é materializada antes** com `.ToArray()`. O CA1851 pega a releitura no mesmo método; conte também as leituras nos métodos que a recebem. Lida uma vez, pode ficar lazy.
 
 ## Value objects, nulos e conversões
