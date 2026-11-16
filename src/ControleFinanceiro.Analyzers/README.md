@@ -10,3 +10,9 @@ Este catálogo é a fonte do texto das regras que têm gate: o `src/CLAUDE.md` e
 
 - Fora: lambdas e propriedades. O construtor usa sempre block body, mesmo de uma linha, pelo IDE0021.
 - Por quê: o `=>` esconde o começo e o fim do corpo quando a expressão quebra, e o IDE0022 do Roslyn só sabe exigir ou proibir o `=>`, sem olhar o número de linhas.
+
+## CF0002
+
+**Sem ternário com ramo de mais de uma linha.** Quando um ramo do `? :` quebra em várias linhas, use `if`. Ramos de uma linha cada podem ficar no ternário, mesmo com a expressão inteira em três linhas.
+
+- Por quê: com um ramo quebrado, o `?` e o `:` se perdem no meio das linhas, e o leitor não vê onde um ramo acaba e o outro começa.

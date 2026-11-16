@@ -266,24 +266,27 @@ public sealed partial class LeitorFaturaCartaoMercadoPago : ILeitorFatura
     {
         DateOnly data = linha.DataCompra ?? linha.DataLancamento.GetValueOrDefault();
 
-        return tipoValorSufixoEParcela.Tipo.PagamentoFatura
-            ? Lancamento.PagamentoFaturaCartao(
+        if (tipoValorSufixoEParcela.Tipo.PagamentoFatura)
+        {
+            return Lancamento.PagamentoFaturaCartao(
                 data,
                 hora: null,
                 (ReaisPositivo)tipoValorSufixoEParcela.Valor.Value,
                 (TextoObrigatorio)descricao,
                 linha.Vendedor,
                 categoriaBanco: null,
-                identidade)
-            : Lancamento.DoCartao(
-                data,
-                hora: null,
-                tipoValorSufixoEParcela.Valor,
-                (TextoObrigatorio)descricao,
-                linha.Vendedor,
-                tipoValorSufixoEParcela.Parcela,
-                categoriaBanco: null,
                 identidade);
+        }
+
+        return Lancamento.DoCartao(
+            data,
+            hora: null,
+            tipoValorSufixoEParcela.Valor,
+            (TextoObrigatorio)descricao,
+            linha.Vendedor,
+            tipoValorSufixoEParcela.Parcela,
+            categoriaBanco: null,
+            identidade);
     }
 
     private static Result<VencimentoELancamentos> LerVencimentoELancamentos(IReadOnlyList<LancamentoLido> lidos)

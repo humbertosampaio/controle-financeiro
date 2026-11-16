@@ -28,10 +28,13 @@ public sealed class LeituraExtratoAppService
         Maybe<SufixoConta> sufixoConta,
         CancellationToken ct)
     {
-        return LayoutArquivoImportacao.ExtratosContaInformada.Contains(layout)
-            ? _leitoresContaInformada
+        if (LayoutArquivoImportacao.ExtratosContaInformada.Contains(layout))
+        {
+            return _leitoresContaInformada
                 .Single(l => l.Layout == layout)
-                .LerAsync(arquivo, sufixoConta.GetValueOrThrow($"O layout {layout.Value} pede o sufixo da conta."), ct)
-            : _leitores.Single(l => l.Layout == layout).LerAsync(arquivo, ct);
+                .LerAsync(arquivo, sufixoConta.GetValueOrThrow($"O layout {layout.Value} pede o sufixo da conta."), ct);
+        }
+
+        return _leitores.Single(l => l.Layout == layout).LerAsync(arquivo, ct);
     }
 }
