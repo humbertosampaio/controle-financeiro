@@ -31,7 +31,7 @@ while read -r local_ref local_sha remote_ref remote_sha; do
   fi
   if [ -n "$base" ]; then
     alterados="$alterados
-$(git diff --name-only "$base" "$local_sha")"
+$(git diff --name-only --no-renames "$base" "$local_sha")"
   else
     # Sem base para comparar (sem origin/main local, por exemplo): na dúvida, roda tudo.
     sem_base=1

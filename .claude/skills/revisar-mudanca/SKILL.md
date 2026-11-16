@@ -30,8 +30,8 @@ Rode todos, inclusive os que "com certeza passam":
 ```bash
 dotnet build ControleFinanceiro.slnx
 dotnet test ControleFinanceiro.slnx --no-build --filter "FullyQualifiedName!~ControleFinanceiro.WebApi.Tests&FullyQualifiedName!~ControleFinanceiro.Mcp.Tests"
-filtro=$(git diff --name-only origin/main...HEAD | node scripts/harness/testes-afetados.mjs); echo "integração: ${filtro:-nenhum}"
-filtro_mcp=$(git diff --name-only origin/main...HEAD | node scripts/harness/testes-afetados.mjs --mcp); echo "servidor MCP: ${filtro_mcp:-nenhum}"
+filtro=$(git diff --name-only --no-renames origin/main...HEAD | node scripts/harness/testes-afetados.mjs); echo "integração: ${filtro:-nenhum}"
+filtro_mcp=$(git diff --name-only --no-renames origin/main...HEAD | node scripts/harness/testes-afetados.mjs --mcp); echo "servidor MCP: ${filtro_mcp:-nenhum}"
 node scripts/harness/guardrail.test.mjs
 node scripts/harness/testes-afetados.test.mjs
 node scripts/harness/claude-md-aplicaveis.test.mjs

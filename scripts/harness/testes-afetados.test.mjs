@@ -40,6 +40,10 @@ const casos = [
   [["tests/ControleFinanceiro.Domain.Tests/Usuarios/UsuarioTests.cs"], "nenhum"],
   [["tests/ControleFinanceiro.Infrastructure.Importacao.Tests/C6/LeitorExtratoContaC6Tests.cs"], "nenhum"],
   [["docs/harness.md", "CLAUDE.md", ".githooks/pre-push"], "nenhum"],
+  // CLAUDE.md de pasta é instrução, não código: nada, mesmo numa pasta que aciona tudo
+  [["src/CLAUDE.md", "src/ControleFinanceiro.Domain/CLAUDE.md", "tests/CLAUDE.md"], "nenhum"],
+  [["src\\ControleFinanceiro.Infrastructure.Persistence\\CLAUDE.md"], "nenhum"],
+  [["src/ControleFinanceiro.WebApi/CLAUDE.md", "src/ControleFinanceiro.Domain/Shared/ValueObjects/SufixoCartao.cs"], "todos"],
   // o servidor MCP tem suíte própria: não aciona a da WebApi
   [["src/ControleFinanceiro.Mcp/Program.cs"], "nenhum"],
   [["tests/ControleFinanceiro.Mcp.Tests/Servidor/ServidorMcpTests.cs"], "nenhum"],
@@ -80,6 +84,8 @@ test("arquivos alterados → suíte do servidor MCP", () => {
     "src/ControleFinanceiro.WebApi/Program.cs",
     "tests/ControleFinanceiro.WebApi.Tests/Infraestrutura/ApiComPostgresFixture.cs",
     "docs/harness.md",
+    "src/ControleFinanceiro.Mcp/CLAUDE.md",
+    "src/ControleFinanceiro.Application/IA/CLAUDE.md",
     "",
   ];
   for (const arquivo of naoAcionam) assert.equal(mcpAfetado([arquivo]), false, arquivo);
