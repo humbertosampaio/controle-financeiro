@@ -35,6 +35,7 @@ filtro_mcp=$(git diff --name-only --no-renames origin/main...HEAD | node scripts
 node scripts/harness/guardrail.test.mjs
 node scripts/harness/testes-afetados.test.mjs
 node scripts/harness/claude-md-aplicaveis.test.mjs
+node scripts/harness/espelho-endpoints.test.mjs
 node scripts/harness/instrucoes.test.mjs
 sh .githooks/scan-staged.sh --branch origin/main
 ```
@@ -69,6 +70,14 @@ git diff origin/main...HEAD --name-only | grep -E '\.(ofx|csv|xlsx)$' | grep -v 
 ```
 
 Qualquer saída é achado.
+
+Migration que apaga ou renomeia coluna ou tabela pede confirmação do dono (inviolável 8 do `CLAUDE.md` da raiz):
+
+```bash
+git diff origin/main...HEAD -- '**/Migrations/*.cs' | grep -nE '^\+.*(DropColumn|DropTable|RenameColumn|RenameTable|AlterColumn|\.Sql\()'
+```
+
+No `Up()`, sem a decisão do dono registrada na issue (no plano ou num comentário dele), é achado: `Drop*` e `Rename*`; `AlterColumn` que perde dado (tipo menor, menos precisão, `NOT NULL` sem valor padrão); `Sql` com `DROP`, `DELETE`, `TRUNCATE` ou `UPDATE` que sobrescreve. Leia cada `AlterColumn` e `Sql` da saída para decidir. As linhas do `Down()` desfazem o que o `Up()` criou e não contam.
 
 ## 4. Agentes
 
