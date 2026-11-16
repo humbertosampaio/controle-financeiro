@@ -161,7 +161,7 @@ Use `ThrowExactly<T>()`, e não `Throw<T>()`, que também passa com uma exceçã
 
 `tests/ControleFinanceiro.WebApi.Tests` sobe a API em memória (`WebApplicationFactory`) contra um Postgres do Testcontainers. **Precisa do Docker rodando**: sem ele, os testes falham, não são pulados.
 
-- **Pastas espelhadas.** O teste de `src/ControleFinanceiro.WebApi/Endpoints/<Area>/<Acao>/` mora em `tests/ControleFinanceiro.WebApi.Tests/<Area>/<Acao>/`. O `pre-push` usa esse espelho para rodar só os testes afetados (ver [harness.md](harness.md#testes-de-integração-afetados)).
+- **Pastas espelhadas.** O teste de `src/ControleFinanceiro.WebApi/Endpoints/<Area>/<Acao>/` mora em `tests/ControleFinanceiro.WebApi.Tests/<Area>/<Acao>/`. O `pre-push` usa esse espelho para rodar só os testes afetados (ver [harness.md](harness.md#testes-de-integração-afetados)), e o `scripts/harness/espelho-endpoints.test.mjs` confere, no CI e no `pre-push`, que toda pasta com um `*Endpoint.cs` tem o seu `*Tests.cs`.
 - **`[ApiAutoData]`**, ou `[InlineApiAutoData(...)]`, é o `DomainFixture` com as customizações realistas e as de request.
 - **Customização de request.** Cada endpoint tem uma customização na própria pasta, como `CadastrarUsuarioRequestCustomization`, que monta o DTO a partir da entidade do fixture: `fixture.Register((Usuario u) => new CadastrarUsuarioRequest { ... })`. Todo teste que pede o request recebe um válido, e nenhum teste repete o mapeamento.
 - **Um container para a suíte.** A `ApiComPostgresFixture` fica na collection `ApiCollection`. Cada classe chama `ResetarBancoAsync()` no `InitializeAsync`, antes de cada teste, para o que um teste que falhou gravou ficar no banco para depuração.

@@ -64,7 +64,6 @@ Algum vermelho: **pare e corrija antes de seguir.**
 ## 3. Checagens rápidas no diff
 
 ```bash
-git diff origin/main...HEAD -- src/ControleFinanceiro.Domain | grep -nE '^\+.*using (Microsoft\.EntityFrameworkCore|Microsoft\.AspNetCore|Npgsql)'
 git diff origin/main...HEAD | grep -nE '^\+.*(TODO|FIXME|Console\.Write)'
 git diff origin/main...HEAD --name-only | grep -E '\.(ofx|csv|xlsx)$' | grep -v '/Fixtures/'
 ```

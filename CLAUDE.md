@@ -22,7 +22,7 @@ Organizador financeiro pessoal: importa extratos e faturas de vários bancos, ca
 | `tests/ControleFinanceiro.Infrastructure.Importacao.Tests` | Testes dos leitores de extrato com arquivos fictícios em `Fixtures/` | Importacao, Tests.Shared |
 | `tests/ControleFinanceiro.WebApi.Tests` | Testes de integração dos endpoints: API em memória + Postgres do Testcontainers (precisa do Docker) | WebApi, Tests.Shared |
 | `tests/ControleFinanceiro.Mcp.Tests` | Testes do servidor MCP: processo real + Postgres do Testcontainers (precisa do Docker) | Mcp, Tests.Shared |
-| `tests/ControleFinanceiro.SaidaModelo.Tests` | Payload dos tipos de saída para o modelo e regras de arquitetura da fronteira (ArchUnitNET); sem Docker | Mcp, Importacao, Tests.Shared |
+| `tests/ControleFinanceiro.SaidaModelo.Tests` | Payload dos tipos de saída para o modelo, regras de arquitetura da fronteira (ArchUnitNET) e dependências entre camadas; sem Docker | Mcp, Importacao, Tests.Shared |
 | `tests/ControleFinanceiro.Tests.Shared` | Customizações do AutoFixture compartilhadas | Domain |
 
 ## Regras invioláveis
@@ -32,11 +32,11 @@ Discordar de uma regra é motivo para conversar, não para contorná-la no códi
 1. **Dados financeiros reais nunca entram no git.** Extratos e faturas ficam em `dados/` (ignorada), assim como `*.ofx`, `*.csv`, `*.xlsx` e bancos locais. Teste usa arquivo fictício em `tests/**/Fixtures/`, com o mesmo layout e nenhum dado real. Não copie trechos de `dados/` para código, teste, issue, PR ou commit.
 2. **Secrets ficam em User Secrets**, nunca em `appsettings*.json`, código ou docs. Isso vale para a senha do Postgres, a chave da Anthropic e as credenciais da Pluggy.
 3. **O modelo recebe o mínimo.** Das transações vão ao Claude só descrição, valor e data (e o indispensável, justificado no PR), sempre por um tipo de `Application/IA/Saida` (`ISaidaModelo`), que mascara os documentos; número de conta e agência nunca saem. O detalhe, a exceção e o risco aceito estão em `src/ControleFinanceiro.Application/IA/CLAUDE.md`.
-4. **O domínio não conhece infraestrutura.** `ControleFinanceiro.Domain` não referencia EF Core, ASP.NET nem Npgsql. Mapeamento fica em `IEntityTypeConfiguration` na Persistence.
+4. **O domínio não conhece infraestrutura.** `ControleFinanceiro.Domain` não referencia EF Core, ASP.NET nem Npgsql (o `DependenciasCamadasTests` confere). Mapeamento fica em `IEntityTypeConfiguration` na Persistence.
 5. **Falha previsível é `Result`, não exceção** (CSharpFunctionalExtensions). Exceção fica para erro de sistema ([padrões de domínio, §5](docs/padroes-de-dominio.md#5-falhas)).
 6. **Ids fortemente tipados** com Vogen, gerados no domínio (`FromNewVersion7Guid`), sem `Guid` solto na API pública do domínio ([§7](docs/padroes-de-dominio.md#7-value-objects-e-ids)).
 7. **Integração externa entra por porta + adaptador**: a porta mora no Domain ou na Application, o adaptador na infraestrutura. Cada formato de extrato é um adaptador da mesma porta de importação.
-8. **Migration que apaga ou renomeia coluna ou tabela pede confirmação** antes de ser gerada.
+8. **Migration que apaga ou renomeia coluna ou tabela pede confirmação** antes de ser gerada (a `revisar-mudanca` procura no diff).
 
 ## Fluxo de trabalho
 
