@@ -5,3 +5,4 @@
 
 Rule ID | Category | Severity | Notes
 --------|----------|----------|-------
+CF0001 | Convencoes | Warning | MultilineExpressionBodyAnalyzer
