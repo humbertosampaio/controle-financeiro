@@ -67,6 +67,9 @@ jobs:
       - name: Testes do script dos CLAUDE.md de pasta
         run: node --test scripts/harness/claude-md-aplicaveis.test.mjs
 
+      - name: Espelho dos testes de integração dos endpoints
+        run: node --test scripts/harness/espelho-endpoints.test.mjs
+
       - name: Tamanho e referências das instruções
         run: node --test scripts/harness/instrucoes.test.mjs
 
