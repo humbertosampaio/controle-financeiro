@@ -24,6 +24,11 @@ jobs:
       - name: Build
         run: dotnet build ControleFinanceiro.slnx --nologo
 
+      # A ordem dos usings, que o build não confere. Só o style: o whitespace, e o dotnet format sem
+      # subcomando, também acusariam a quebra de linha final, que o repositório não padroniza.
+      - name: Estilo do código (dotnet format style)
+        run: dotnet format style ControleFinanceiro.slnx --verify-no-changes --no-restore
+
       # Sai com código 1 se o modelo do EF mudou sem migration. O dotnet-ef vem de
       # dotnet-tools.json, na mesma versão do EF do projeto, e não precisa de banco.
       - name: Modelo do EF sem migration pendente

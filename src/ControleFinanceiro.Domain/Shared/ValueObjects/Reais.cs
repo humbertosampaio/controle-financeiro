@@ -7,11 +7,15 @@ namespace ControleFinanceiro.Domain.Shared.ValueObjects;
 /// arredondamento comercial (meio centavo sobe). O zero fica sempre sem sinal: o <see cref="decimal"/> guarda o
 /// sinal do zero (<c>0m - 0.00m</c> é negativo), e o valor zero não tem sentido de entrada nem de saída.
 /// </summary>
-public class Reais(decimal valor) : SimpleValueObject<decimal>(Arredondar(valor))
+public class Reais : SimpleValueObject<decimal>
 {
     public const int CasasDecimais = 2;
 
     internal static readonly ReaisFormatProvider FormatProvider = new();
+
+    public Reais(decimal valor) : base(Arredondar(valor))
+    {
+    }
 
     internal static decimal Arredondar(decimal valor)
     {

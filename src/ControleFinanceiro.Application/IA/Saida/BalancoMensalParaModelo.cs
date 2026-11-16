@@ -1,5 +1,5 @@
-using System.Text.Json.Serialization;
 using ControleFinanceiro.Domain.Shared.ValueObjects;
+using System.Text.Json.Serialization;
 
 namespace ControleFinanceiro.Application.IA.Saida;
 

@@ -1,4 +1,3 @@
-using System.Text.Json.Nodes;
 using AutoFixture.Xunit2;
 using ControleFinanceiro.Application.IA.Saida;
 using ControleFinanceiro.Domain.Cartoes;
@@ -10,6 +9,7 @@ using ControleFinanceiro.Tests.Shared;
 using ControleFinanceiro.Tests.Shared.AutoFixture.Attributes;
 using ControleFinanceiro.Tests.Shared.Respostas;
 using CSharpFunctionalExtensions;
+using System.Text.Json.Nodes;
 
 namespace ControleFinanceiro.SaidaModelo.Tests.Tipos;
 

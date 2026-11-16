@@ -213,16 +213,21 @@ public sealed partial class LeitorFaturaCartaoC6 : ILeitorFaturaVencimentoInform
 
         string? categoriaBanco = linha.Categoria.Trim() == SemCategoria ? null : linha.Categoria;
 
-        Lancamento lancamento = EhPagamentoFatura(linha, valor, sufixoEParcela.Parcela)
-            ? Lancamento.PagamentoFaturaCartao(
+        Lancamento lancamento;
+        if (EhPagamentoFatura(linha, valor, sufixoEParcela.Parcela))
+        {
+            lancamento = Lancamento.PagamentoFaturaCartao(
                 linha.DataCompra,
                 hora: null,
                 (ReaisPositivo)valor.Value,
                 (TextoObrigatorio)linha.Descricao,
                 contraparte: null,
                 categoriaBanco,
-                identidade)
-            : Lancamento.DoCartao(
+                identidade);
+        }
+        else
+        {
+            lancamento = Lancamento.DoCartao(
                 linha.DataCompra,
                 hora: null,
                 valor,
@@ -231,6 +236,7 @@ public sealed partial class LeitorFaturaCartaoC6 : ILeitorFaturaVencimentoInform
                 sufixoEParcela.Parcela,
                 categoriaBanco,
                 identidade);
+        }
 
         return LancamentoFatura.Criar(lancamento, sufixoEParcela.Sufixo);
     }

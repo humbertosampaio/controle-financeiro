@@ -208,7 +208,7 @@ public sealed class CategoriaDespesaFactoryTests
     [Theory, DomainAutoData]
     public void Renomear_Quando_NomeLivre_Deve_TrocarONomeSemMudarOsAliases(CategoriaDespesa categoria, TextoObrigatorio nome)
     {
-        IReadOnlyList<AliasCategoria> antes = [.. categoria.Aliases];
+        IReadOnlyList<AliasCategoria> antes = categoria.Aliases.ToArray();
 
         UnitResult<Erro> result = CategoriaDespesaFactory.Renomear([categoria], categoria, nome);
 

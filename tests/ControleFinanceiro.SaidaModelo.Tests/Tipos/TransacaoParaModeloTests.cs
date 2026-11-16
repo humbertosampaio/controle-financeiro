@@ -1,11 +1,11 @@
-using System.Reflection;
-using System.Text.Json.Nodes;
 using ControleFinanceiro.Application.IA.Saida;
 using ControleFinanceiro.Domain.Shared.ValueObjects;
 using ControleFinanceiro.Domain.Transacoes;
 using ControleFinanceiro.Tests.Shared;
 using ControleFinanceiro.Tests.Shared.AutoFixture.Attributes;
 using ControleFinanceiro.Tests.Shared.Respostas;
+using System.Reflection;
+using System.Text.Json.Nodes;
 using Xunit.Sdk;
 
 namespace ControleFinanceiro.SaidaModelo.Tests.Tipos;

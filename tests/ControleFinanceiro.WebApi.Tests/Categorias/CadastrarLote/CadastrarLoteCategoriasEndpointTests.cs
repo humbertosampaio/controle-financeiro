@@ -35,7 +35,7 @@ public sealed class CadastrarLoteCategoriasEndpointTests : IAsyncLifetime
 
         resposta.StatusCode.Should().Be(HttpStatusCode.OK);
         CadastrarLoteCategoriasResponse? corpo = await resposta.Content.ReadFromJsonAsync<CadastrarLoteCategoriasResponse>();
-        List<CategoriaDespesa> novas = [.. (await LerCategoriasAsync()).Where(c => !c.EhOutros)];
+        List<CategoriaDespesa> novas = (await LerCategoriasAsync()).Where(c => !c.EhOutros).ToList();
         novas.Should().OnlyContain(c => c.IdUsuario == IdUsuario.From(idUsuario));
         novas.Select(c => ((Guid)c.Id, c.Nome.Value, c.Aliases.Single().Alias.TextoOriginal))
             .Should().BeEquivalentTo(requisicao.Itens.Select((item, i) => (corpo!.IdsCategorias[i], item.Nome, item.Alias)));

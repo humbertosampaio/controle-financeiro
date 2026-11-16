@@ -55,6 +55,7 @@ public sealed class SaidaModeloArquiteturaTests
 
     private static readonly string[] _naoFalamComOModelo =
     [
+        "ControleFinanceiro.Analyzers",
         "ControleFinanceiro.AppHost",
         "ControleFinanceiro.Application",
         "ControleFinanceiro.Domain",

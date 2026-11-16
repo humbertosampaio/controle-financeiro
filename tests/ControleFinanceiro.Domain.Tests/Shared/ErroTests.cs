@@ -32,7 +32,17 @@ public sealed class ErroTests
         erro.Should().NotBe(outro);
     }
 
-    private sealed class UmErro(string codigo, string descricao) : Erro(codigo, descricao);
+    private sealed class UmErro : Erro
+    {
+        public UmErro(string codigo, string descricao) : base(codigo, descricao)
+        {
+        }
+    }
 
-    private sealed class OutroErro(string codigo, string descricao) : Erro(codigo, descricao);
+    private sealed class OutroErro : Erro
+    {
+        public OutroErro(string codigo, string descricao) : base(codigo, descricao)
+        {
+        }
+    }
 }

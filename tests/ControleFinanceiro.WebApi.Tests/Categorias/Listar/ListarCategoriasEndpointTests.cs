@@ -38,10 +38,10 @@ public sealed class ListarCategoriasEndpointTests : IAsyncLifetime
         ListarCategoriasResponse? corpo = await resposta.Content.ReadFromJsonAsync<ListarCategoriasResponse>();
         corpo!.Categorias.Select(c => c.Nome).Should().BeInAscendingOrder(StringComparer.CurrentCultureIgnoreCase);
         corpo.Categorias.Should().BeEquivalentTo(
-        [
-            new ListarCategoriasResponse.Categoria(idOutros, CategoriaDespesa.NomeOutros, Aliases: []),
-            .. categorias.Itens.Select((item, i) => new ListarCategoriasResponse.Categoria(ids[i], item.Nome!, [item.Alias!])),
-        ]);
+            [
+                new ListarCategoriasResponse.Categoria(idOutros, CategoriaDespesa.NomeOutros, Aliases: []),
+                .. categorias.Itens.Select((item, i) => new ListarCategoriasResponse.Categoria(ids[i], item.Nome!, [item.Alias!])),
+            ]);
     }
 
     [Theory, ApiAutoData]

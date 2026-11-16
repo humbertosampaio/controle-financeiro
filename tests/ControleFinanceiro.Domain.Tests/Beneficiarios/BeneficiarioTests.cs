@@ -36,7 +36,7 @@ public sealed class BeneficiarioTests
     [Theory, DomainAutoData]
     public void RemoverAlias_Quando_NaoPossuiOAlias_Deve_ManterOsAliases(Beneficiario beneficiario, Alias outroAlias)
     {
-        IReadOnlyList<AliasBeneficiario> antes = [.. beneficiario.Aliases];
+        IReadOnlyList<AliasBeneficiario> antes = beneficiario.Aliases.ToArray();
 
         beneficiario.RemoverAlias(outroAlias);
 
@@ -46,7 +46,7 @@ public sealed class BeneficiarioTests
     [Theory, DomainAutoData]
     public void Renomear_Deve_TrocarONomeSemMudarOsAliases(Beneficiario beneficiario, TextoObrigatorio nome)
     {
-        IReadOnlyList<AliasBeneficiario> antes = [.. beneficiario.Aliases];
+        IReadOnlyList<AliasBeneficiario> antes = beneficiario.Aliases.ToArray();
 
         beneficiario.Renomear(nome);
 

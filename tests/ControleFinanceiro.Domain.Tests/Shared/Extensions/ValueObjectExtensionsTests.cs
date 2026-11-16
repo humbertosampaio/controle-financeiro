@@ -8,7 +8,7 @@ namespace ControleFinanceiro.Domain.Tests.Shared.Extensions;
 public sealed class ValueObjectExtensionsTests
 {
     [Theory, AutoData]
-    public void ToId_Quando_ValidacaoSuceder_DeveConverterTipoPrimitivoParaId(Guid guid)
+    public void ToId_Quando_ValidacaoSuceder_Deve_ConverterTipoPrimitivoParaId(Guid guid)
     {
         IdUsuario result = guid.ToId<Guid, IdUsuario>();
 
@@ -26,7 +26,7 @@ public sealed class ValueObjectExtensionsTests
     }
 
     [Theory, AutoData]
-    public void ToIdGuid_Quando_ValidacaoSuceder_DeveConverterTipoPrimitivoParaId(Guid guid)
+    public void ToIdGuid_Quando_ValidacaoSuceder_Deve_ConverterTipoPrimitivoParaId(Guid guid)
     {
         IdUsuario result = guid.ToId<IdUsuario>();
 

@@ -1,4 +1,3 @@
-using System.Text.Json.Nodes;
 using AutoFixture.Xunit2;
 using ControleFinanceiro.Application.IA.Saida;
 using ControleFinanceiro.Domain.Despesas;
@@ -7,6 +6,7 @@ using ControleFinanceiro.Domain.Shared.ValueObjects;
 using ControleFinanceiro.Tests.Shared;
 using ControleFinanceiro.Tests.Shared.AutoFixture.Attributes;
 using ControleFinanceiro.Tests.Shared.Respostas;
+using System.Text.Json.Nodes;
 
 namespace ControleFinanceiro.SaidaModelo.Tests.Tipos;
 
