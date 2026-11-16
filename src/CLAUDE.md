@@ -13,15 +13,18 @@ O build confere as regras com gate, e o texto delas fica no [catálogo dos anali
 - CF0007: argumentos irmãos no mesmo grau;
 - CF0009: nome de teste;
 - CF0009b: sufixo `Result`;
+- CF0011: argumento literal nomeado;
+- CF0012: `is T x`, e não `is { } x`, para desembrulhar nullable;
+- CF0013: sem `.Value` onde o operador implícito já basta;
 - IDE0021: block body em construtor;
 - `dotnet format style`: ordem dos usings, com os `System.*` entre os demais;
 - só em `src/`, IDE0005 (using sem uso) e CA1851 (enumeração múltipla no mesmo método).
 
-O resto o `revisor-convencoes` cobra. As regras mecânicas que faltam viram analisadores na #202 e saem deste arquivo quando o gate entrar.
+O resto o `revisor-convencoes` cobra.
 
 ## Nomes
 
-- **Sem preposição.** Identificador de tipo, membro, parâmetro ou variável junta os substantivos direto, sem "do", "da", "de", "dos" ou "das": `PagamentoFaturaCartao`, `VencimentosCartoesNovos`. O cenário e o resultado no nome de teste ficam de fora, porque são uma frase (`Quando_SemCategoria_Deve_...`). "Em" e "Por" ficam quando dizem o papel do argumento e tirá-los deixaria o nome ambíguo: `ListarTransacoesFaturaEmAsync(mes)`, `ListarPagasPorAsync(ids)`, e não `ListarMesVencimentoFaturaAsync`, que parece listar meses.
+- **Sem preposição (preferência, sem gate).** Identificador de tipo, membro, parâmetro ou variável junta os substantivos direto, sem "do", "da", "de", "dos" ou "das": `PagamentoFaturaCartao`, `VencimentosCartoesNovos`. O cenário e o resultado no nome de teste ficam de fora, porque são uma frase (`Quando_SemCategoria_Deve_...`). "Em" e "Por" ficam quando dizem o papel do argumento e tirá-los deixaria o nome ambíguo: `ListarTransacoesFaturaEmAsync(mes)`, `ListarPagasPorAsync(ids)`, e não `ListarMesVencimentoFaturaAsync`, que parece listar meses.
 - **O nome diz o que guarda.** Quando o nome de uma variável ou parâmetro qualifica um objeto, o tipo vai no nome: `cartaoOutroUsuario`, e não `outroUsuario`, que parece um `Usuario`. Método e tipo levam o conceito inteiro, e não só o papel: `CandidatoPagamentoFaturaUnico`, e não `CandidatoUnico`. O "só" vira "Apenas" (`ApenasLinhasFinal`), porque `So` se confunde com o inglês.
 - **Plural sozinho é coleção.** O membro que conta leva `Quantidade`: `Parcela.QuantidadeParcelasAnteriores`, e não `Anteriores`. Fica de fora o `int` cujo tipo já diz que é contagem, como o `meses` de `MesReferencia.Anterior(int meses)`.
 - **O sufixo diz a camada.** Serviço de domínio termina em `Service` (`PagamentoFaturaService`) e o que ele devolve não leva sufixo (`CandidatoPagamentoFatura`). Serviço da Application termina em `AppService` (`ImportacaoExtratoAppService`), e o que ele devolve, em `Dto` (`ExtratoImportadoDto`); o campo e o parâmetro que o recebem por DI levam o mesmo sufixo (`_importacaoExtratoAppService`). A WebApi usa `Request` e `Response`, e a fronteira com o modelo, `ParaModeloService` e `ParaModelo`. O `NomesCamadaTests` confere os sufixos dos serviços, e o CF0009b, o `Result`.
@@ -29,7 +32,7 @@ O resto o `revisor-convencoes` cobra. As regras mecânicas que faltam viram anal
 ## Forma do código
 
 - **Cadeia fluent que deixaria a linha longa quebra uma chamada por linha**, cada uma começando pelo `.` e um nível abaixo da origem (`pendentes` / `.Select(...)` / `.ToArray()`). Cadeia curta fica numa linha.
-- **Argumento literal vai nomeado.** Coleção vazia, `null`, booleano ou número passado direto numa chamada leva o nome do parâmetro (`parceladas: []`, `cartao: null`, `ordinal: 1`), porque o literal sozinho não diz o que representa. Variável cujo nome já diz o que é vai sem nome. Ficam de fora o argumento único cujo papel o nome do método já diz (`AddDays(1)`, `ReaisPositivo.Criar(-0.004m)`), datas e horas (`new DateOnly(2026, 3, 5)`), guard clauses (`ThrowIfLessThan(ordinal, 1)`), a lista de um `params` ou de um `TheoryData`, a declaração de um SmartEnum, atributos, asserções (`Should().Be(850m)`) e lambdas.
+- **O literal único cujo papel o nome do método não diz vai nomeado** (`Pagar(pago: true)`). O CF0011 deixa todo argumento único de fora, e o `AddDays(1)` fica como está.
 - **Método privado usa o tipo mais específico** que quem chama tem, mesmo concreto: `T[]` quando o método só lê a coleção, `List<T>` quando o `Add`, o `RemoveAll` ou o `Find` deixam o código melhor. `IReadOnlyList<T>` e `IReadOnlyCollection<T>` ficam para a API pública e para o parâmetro que já chega assim dela.
 - **Dentro da própria classe, o campo privado** (`_cartoes.Exists(...)`), e não a propriedade exposta.
 - **Comentário que repete o código, ou que o diff desatualizou**, sai.
@@ -38,10 +41,8 @@ O resto o `revisor-convencoes` cobra. As regras mecânicas que faltam viram anal
 
 ## Value objects, nulos e conversões
 
-- **Cast ou `Criar`.** O `explicit operator` do primitivo ([padrões de domínio, §7](../docs/padroes-de-dominio.md#7-value-objects-e-ids)) serve onde o valor já é sabidamente válido (teste, generator, conversão EF) e onde o `Criar` nunca falha; com entrada do usuário ou do arquivo, use o `Criar` e trate o `Result`. A volta para o primitivo é implícita: `string descricao = (DocumentoMascarado)transacao.Descricao;`, sem `.Value`.
+- **Cast ou `Criar`.** O `explicit operator` do primitivo ([padrões de domínio, §7](../docs/padroes-de-dominio.md#7-value-objects-e-ids)) serve onde o valor já é sabidamente válido (teste, generator, conversão EF) e onde o `Criar` nunca falha; com entrada do usuário ou do arquivo, use o `Criar` e trate o `Result`.
 - **Value object se compara, ordena e agrupa inteiro** (`OrderBy(p => p.Key)`, `c.Sufixo == sufixo`), sem abrir o `.Value`: quem decide a comparação é o `GetEqualityComponents`. Para comparar com um primitivo, converta o primitivo para o value object (`b.Id == IdBeneficiario.From(guid)`), e não o contrário.
-- **Em interpolação, `{sufixo}` direto**, sem `.Value`: o `ToString()` do `SimpleValueObject` já devolve o valor.
-- **Para desembrulhar nullable, `x is IdCartao idCartao`**, e não `x is { } idCartao`.
 - **O `Maybe<T>` tem conversão implícita de `T?`**: devolva o valor direto, sem `Maybe.From`.
 
 ## Texto e SmartEnum
