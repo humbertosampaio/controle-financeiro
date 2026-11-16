@@ -14,7 +14,7 @@ git fetch origin main --quiet
 git diff origin/main...HEAD --stat
 ```
 
-Decida os revisores pelo diff:
+Decida os revisores pelo diff (esta tabela é a fonte de quando cada agente roda):
 
 | O diff toca | Agente |
 |---|---|
@@ -34,6 +34,8 @@ filtro=$(git diff --name-only origin/main...HEAD | node scripts/harness/testes-a
 filtro_mcp=$(git diff --name-only origin/main...HEAD | node scripts/harness/testes-afetados.mjs --mcp); echo "servidor MCP: ${filtro_mcp:-nenhum}"
 node scripts/harness/guardrail.test.mjs
 node scripts/harness/testes-afetados.test.mjs
+node scripts/harness/claude-md-aplicaveis.test.mjs
+node scripts/harness/instrucoes.test.mjs
 sh .githooks/scan-staged.sh --branch origin/main
 ```
 
@@ -64,7 +66,6 @@ Algum vermelho: **pare e corrija antes de seguir.**
 git diff origin/main...HEAD -- src/ControleFinanceiro.Domain | grep -nE '^\+.*using (Microsoft\.EntityFrameworkCore|Microsoft\.AspNetCore|Npgsql)'
 git diff origin/main...HEAD | grep -nE '^\+.*(TODO|FIXME|Console\.Write)'
 git diff origin/main...HEAD --name-only | grep -E '\.(ofx|csv|xlsx)$' | grep -v '/Fixtures/'
-git log origin/main..HEAD --format='%s' | grep -vE '^(feat|fix|chore|docs|refactor|test|perf|build|ci)(\([a-z0-9-]+\))?!?: [A-ZÁÉÍÓÚÂÊÔÃÕÇ]'
 ```
 
 Qualquer saída é achado.

@@ -1,0 +1,57 @@
+# Convenções de C#
+
+Valem para todo o código de `src/` e, salvo onde está escrito "só em `src/`", também para o de `tests/`. O build confere poucas delas (IDE0021 e `TreatWarningsAsErrors`); o resto o `revisor-convencoes` cobra. Código novo segue as regras, e o existente só muda quando for tocado. As regras mecânicas viram analisadores nas #200 a #202 e saem deste arquivo quando o gate entrar.
+
+## Nomes
+
+- **Sem preposição.** Identificador de tipo, membro, parâmetro ou variável junta os substantivos direto, sem "do", "da", "de", "dos" ou "das": `PagamentoFaturaCartao`, `VencimentosCartoesNovos`. O cenário e o resultado no nome de teste ficam de fora, porque são uma frase (`Quando_SemCategoria_Deve_...`). "Em" e "Por" ficam quando dizem o papel do argumento e tirá-los deixaria o nome ambíguo: `ListarTransacoesFaturaEmAsync(mes)`, `ListarPagasPorAsync(ids)`, e não `ListarMesVencimentoFaturaAsync`, que parece listar meses.
+- **O nome diz o que guarda.** Quando o nome de uma variável ou parâmetro qualifica um objeto, o tipo vai no nome: `cartaoOutroUsuario`, e não `outroUsuario`, que parece um `Usuario`. Método e tipo levam o conceito inteiro, e não só o papel: `CandidatoPagamentoFaturaUnico`, e não `CandidatoUnico`. O "só" vira "Apenas" (`ApenasLinhasFinal`), porque `So` se confunde com o inglês.
+- **Plural sozinho é coleção.** O membro que conta leva `Quantidade`: `Parcela.QuantidadeParcelasAnteriores`, e não `Anteriores`. Fica de fora o `int` cujo tipo já diz que é contagem, como o `meses` de `MesReferencia.Anterior(int meses)`.
+- **O sufixo diz a camada.** Serviço de domínio termina em `Service` (`PagamentoFaturaService`) e o que ele devolve não leva sufixo (`CandidatoPagamentoFatura`). Serviço da Application termina em `AppService` (`ImportacaoExtratoAppService`), e o que ele devolve, em `Dto` (`ExtratoImportadoDto`); o campo e o parâmetro que o recebem por DI levam o mesmo sufixo (`_importacaoExtratoAppService`). A WebApi usa `Request` e `Response`, e a fronteira com o modelo, `ParaModeloService` e `ParaModelo`. Nada de `Result` como sufixo, que se confunde com o do CSharpFunctionalExtensions. O `NomesCamadaTests` confere os sufixos dos serviços.
+
+## Forma do código
+
+- **Block body em construtor e em método multilinha.** Construtor usa sempre block body (o build quebra, IDE0021). Método, operador ou função local cujo corpo passa de uma linha também, inclusive uma instrução única quebrada em várias linhas; o `=>` serve quando a expressão ocupa uma linha só, na linha da assinatura ou logo abaixo. Lambdas ficam de fora.
+- **Sem ternário com ramo de mais de uma linha.** Quando um ramo do `? :` quebra em várias linhas, use `if`. Ramos de uma linha cada podem ficar no ternário, mesmo com a expressão inteira em três linhas.
+- **Sem construtor primário em classe.** A dependência vai para um campo `private readonly` (`_fixture`), atribuído num construtor comum; vale também para a classe de teste que recebe a fixture. Records posicionais ficam de fora.
+- **Extensões no bloco `extension` do C# 14**, e não com `this` no primeiro parâmetro; o helper privado que só as extensões usam fica no mesmo bloco.
+- **Argumentos irmãos no mesmo grau.** Quando uma chamada quebra os argumentos em linhas, cada um começa numa linha própria, todos na mesma coluna, um nível abaixo da chamada, e nenhum fica na linha dela; o `.Select` de um argumento vai mais um nível abaixo dele.
+- **Cadeia fluent que deixaria a linha longa quebra uma chamada por linha**, cada uma começando pelo `.` e um nível abaixo da origem (`pendentes` / `.Select(...)` / `.ToArray()`). Cadeia curta fica numa linha.
+- **`.ToArray()`/`.ToList()` em vez de spread** (`[.. colecao]`) para materializar uma sequência.
+- **Argumento literal vai nomeado.** Coleção vazia, `null`, booleano ou número passado direto numa chamada leva o nome do parâmetro (`parceladas: []`, `cartao: null`, `ordinal: 1`), porque o literal sozinho não diz o que representa. Variável cujo nome já diz o que é vai sem nome. Ficam de fora o argumento único cujo papel o nome do método já diz (`AddDays(1)`, `ReaisPositivo.Criar(-0.004m)`), datas e horas (`new DateOnly(2026, 3, 5)`), guard clauses (`ThrowIfLessThan(ordinal, 1)`), a lista de um `params` ou de um `TheoryData`, a declaração de um SmartEnum, atributos, asserções (`Should().Be(850m)`) e lambdas.
+- **Usings em ordem alfabética**, com os `System.*` entre os demais, e não no topo (`dotnet_sort_system_directives_first = false` no `.editorconfig`).
+- **Método privado usa o tipo mais específico** que quem chama tem, mesmo concreto: `T[]` quando o método só lê a coleção, `List<T>` quando o `Add`, o `RemoveAll` ou o `Find` deixam o código melhor. `IReadOnlyList<T>` e `IReadOnlyCollection<T>` ficam para a API pública e para o parâmetro que já chega assim dela.
+- **Dentro da própria classe, o campo privado** (`_cartoes.Exists(...)`), e não a propriedade exposta.
+- **Comentário que repete o código, ou que o diff desatualizou**, sai.
+- Só em `src/`: **valor que não depende do elemento da lambda ou do laço é calculado antes dela** (`IdBeneficiario idBeneficiario = IdBeneficiario.From(guid);` e depois `FirstOrDefault(b => b.Id == idBeneficiario)`). Nos testes, a conversão pode ficar dentro da lambda.
+- Só em `src/`: **sequência lazy lida mais de uma vez é materializada antes** com `.ToArray()`, contando as leituras no método e nos que a recebem. Lida uma vez, pode ficar lazy.
+
+## Value objects, nulos e conversões
+
+- **Cast ou `Criar`.** Todo `SimpleValueObject<T>` concreto tem `explicit operator` do primitivo ([padrões de domínio, §7](../docs/padroes-de-dominio.md#7-value-objects-e-ids)). O cast serve onde o valor já é sabidamente válido (teste, generator, conversão EF) e onde o `Criar` nunca falha; com entrada do usuário ou do arquivo, use o `Criar` e trate o `Result`. A volta para o primitivo é implícita: `string descricao = (DocumentoMascarado)transacao.Descricao;`, sem `.Value`.
+- **Duas conversões explícitas seguidas pedem uma forma melhor.** Um `(X)(string)y` costuma revelar o `explicit operator` direto de `Y` para `X` que falta, como o de `TextoObrigatorio` para `DocumentoMascarado`; resolva sem perguntar ao dono. As duas ficam só quando o assunto é a passagem pelo tipo do meio, como num teste que monta um `TextoObrigatorio` de um literal.
+- **Value object se compara, ordena e agrupa inteiro** (`OrderBy(p => p.Key)`, `c.Sufixo == sufixo`), sem abrir o `.Value`: quem decide a comparação é o `GetEqualityComponents`. Para comparar com um primitivo, converta o primitivo para o value object (`b.Id == IdBeneficiario.From(guid)`), e não o contrário.
+- **Em interpolação, `{sufixo}` direto**, sem `.Value`: o `ToString()` do `SimpleValueObject` já devolve o valor.
+- **Para desembrulhar nullable, `x is IdCartao idCartao`**, e não `x is { } idCartao`.
+- **O `Maybe<T>` tem conversão implícita de `T?`**: devolva o valor direto, sem `Maybe.From`.
+
+## Texto e SmartEnum
+
+- **Texto fixo num lugar só.** A mensagem fixa que o domínio define chega às outras camadas pelo `Result` ou pelo `Erro` que a carrega, e nenhuma camada a redefine nem a guarda numa constante para repetir: o `ConferirPagamentoAnterior` da `Fatura` e o `ConferirVencimento` do `Cartao` falham com o próprio texto, a API lê o `.Error`, e a saída para o modelo o recebe como `DocumentoMascarado`. Só tem texto próprio a saída cuja mensagem de domínio traz valores, como a da soma do período. Nos testes, o assert copia o texto literal, para não conferir o resultado com o mesmo código que o produziu.
+- **Código e nome de SmartEnum vêm do SmartEnum.** O texto que cita um SmartEnum usa o `.Value` ou o `.Name` (`$"O layout {LayoutArquivoImportacao.C6CartaoCsv.Value} pede..."`), e nunca o literal, inclusive no comentário XML, que usa `<see cref>`. Ficam de fora o atributo, que exige constante, e o assert de teste.
+
+## Injeção de dependência
+
+**Transiente, depois scoped, depois singleton.** Serviço sem estado é transiente, mesmo que dependa de algo scoped. Scoped só quando a instância guarda estado de uma requisição ou chamada (o `DbContext`); singleton só para instância compartilhada sem estado mutável (o `TimeProvider.System`). O tempo de vida decide quanto dura a instância, e não o valor que ela devolve: o `IUsuarioAtual` que lê a configuração ou a rota a cada acesso é transiente.
+
+## Orquestração com `Result` (diretriz, não regra)
+
+Prefira uma cadeia plana de métodos ao encadear etapas que devolvem `Result` ou `Maybe`, mas a legibilidade decide: quando a forma plana ficar mais difícil de ler que um `Bind` aninhado curto, um `if (result.IsFailure) return ...` ou um laço comum, use a alternativa. A forma preferida:
+
+- as etapas se encadeiam com `Bind`, `Map`, `Ensure`, `MapError` e `Match` no mesmo nível, sem `Bind` dentro do lambda de outro e sem query syntax;
+- cada etapa é um método privado que recebe só o que a anterior produziu, como method group quando a assinatura bate (`.Bind(LerContaEPeriodo)`);
+- quando a etapa seguinte precisa de mais de um valor, a anterior devolve uma tupla nomeada com alias no topo do arquivo, com namespace completo (`using ContaEPeriodo = (ControleFinanceiro.Domain.Contas.SufixoConta Sufixo, ...);`), em vez de record auxiliar ou closure;
+- o método que monta a tupla pode aninhar um nível: `LerSufixoConta(c).Bind(sufixo => LerPeriodo(c).Map(periodo => (sufixo, periodo)))`. O `Result.Combine` só serve quando todas as falhas devem aparecer juntas;
+- laço sobre I/O pode ser imperativo, dentro de um método que devolve `Result`.
+
+Exemplo: `LeitorExtratoContaC6.LerAsync`.

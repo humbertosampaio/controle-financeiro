@@ -64,6 +64,12 @@ jobs:
       - name: Testes do script de testes afetados
         run: node --test scripts/harness/testes-afetados.test.mjs
 
+      - name: Testes do script dos CLAUDE.md de pasta
+        run: node --test scripts/harness/claude-md-aplicaveis.test.mjs
+
+      - name: Tamanho e referências das instruções
+        run: node --test scripts/harness/instrucoes.test.mjs
+
       - name: Varredura de dados financeiros e secrets
         if: github.event_name == 'pull_request'
         run: sh .githooks/scan-staged.sh --branch "origin/${{ github.base_ref }}"

@@ -1,0 +1,10 @@
+# Saída para o modelo
+
+Esta pasta é a fronteira com o Claude: o que o MCP e o agente mandam ao modelo nasce aqui. É a fonte do detalhe da inviolável 3 do `CLAUDE.md` da raiz.
+
+- **O modelo recebe o mínimo.** De uma transação vão só descrição, valor e data, e o que mais for indispensável, justificado no PR. Número de conta e agência em campo próprio nunca saem, nem saldo total da conta (a não ser numa ferramenta de saldo decidida), `FITID`/`REFNUM` crus ou a chave de deduplicação.
+- **Tudo que sai é um tipo de `Saida/` (`ISaidaModelo`)**, que só aceita texto mascarado. A exceção é o estado do banco na `VerificacaoServidor`, que não traz dado do usuário. O `SaidaModeloArquiteturaTests` impede quem fala com o modelo de devolver agregado, response da WebApi ou outro tipo: ele só aceita os ids Vogen do Domain e o `LayoutArquivoImportacao`, e um tipo novo do Domain, da Persistence ou da Importação pede uma exceção, que é decisão do dono. Confira essas regras já no plano.
+- **O `DocumentoMascarado` troca os CPF e CNPJ de verificadores válidos.** O banco e a tela guardam os documentos que vêm na descrição e na contraparte da transação, nos aliases, na descrição da despesa e, às vezes, no nome do beneficiário: todo campo desses passa pela máscara ao sair. No texto livre, outras formas de documento, conta, telefone ou e-mail podem sair; é um risco aceito na #114, por ser uma ferramenta de um usuário só. O nome do titular e os de terceiros também não são protegidos (mesma decisão).
+- **Nomes.** O serviço que monta a saída termina em `ParaModeloService` (`Escritas/`, `Leituras/`) e o tipo de saída, em `ParaModelo`. A mensagem de falha do domínio chega pelo `Result` ou pelo `Erro`, como `DocumentoMascarado`, sem texto próprio (`src/CLAUDE.md`, "Texto fixo num lugar só").
+- **Teste de quem fala com o modelo (ferramenta MCP ou agente) confere o que ele devolve e, principalmente, o que ele não devolve**: nenhum campo além da projeção mínima.
+- **O nome publicado de cada ferramenta fica no `Tools`.** É contrato: mudá-lo quebra o cliente MCP e as regras `ask` do `.claude/settings.json`.

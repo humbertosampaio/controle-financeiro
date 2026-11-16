@@ -59,17 +59,11 @@ node scripts/harness/guardrail.test.mjs
 
 ## Camada 2: agentes
 
-Todos respondem em PT-BR e citam `arquivo:linha`. Os revisores só leem.
+Todos respondem em PT-BR e citam `arquivo:linha`. Os revisores só leem. O `planejador` roda antes do código, em tarefa não trivial; o `autor-de-testes` escreve os testes que faltam; quando cada revisor roda está na tabela da [`revisar-mudanca`](../.claude/skills/revisar-mudanca/SKILL.md#1-o-que-mudou).
 
-| Agente | Quando |
-|---|---|
-| `planejador` | antes do código, em tarefa não trivial |
-| `autor-de-testes` | código novo sem teste; escreve, não é só leitura |
-| `revisor-dominio` | diff em `src/**`: camadas, agregados, `Result`, Vogen, primitivo com regra em value object, importação idempotente, migrations |
-| `revisor-privacidade` | antes de todo PR: dado real ou secret no repositório, dado demais indo para o modelo |
-| `revisor-convencoes` | diff em `src/**` ou `tests/**`: convenções do `CLAUDE.md` que o build não confere e as do guia de testes |
+As regras que os agentes cobram moram nos `CLAUDE.md` de pasta e nos guias, não no texto deles. Como não se sabe se o carregamento automático dos `CLAUDE.md` de pasta vale para um subagente, o `revisor-convencoes`, o `revisor-dominio`, o `autor-de-testes`, o `planejador` e a `implementar-issue` passam os arquivos do diff (ou da tabela de Arquivos do plano) ao `scripts/harness/claude-md-aplicaveis.mjs` e leem os que ele lista.
 
-Os revisores leem o `--stat` antes do diff. Até ~800 linhas, leem tudo; acima disso, vão arquivo por arquivo em ordem de risco e **dizem o que não leram**. Revisão que para no meio sem avisar passa a impressão de que tudo foi revisado.
+Cada revisor diz até quanto do diff lê inteiro e em que ordem vai acima disso, e **diz o que não leu**: revisão que para no meio sem avisar passa a impressão de que tudo foi revisado.
 
 Cada revisor carrega uma lista de **dívidas conhecidas** que não deve reportar. Revisor que repete os mesmos achados a cada PR passa a ser ignorado.
 
@@ -87,9 +81,9 @@ git config core.hooksPath .githooks
 |---|---|
 | `pre-commit` | `scan-staged.sh`: arquivo de `dados/`, log do servidor (`*.log` ou pasta `logs/`), extrato fora de Fixtures, chave da Anthropic, token do GitHub, chave privada, senha em appsettings ou `.mcp.json` |
 | `commit-msg` | Conventional Commits em PT-BR, descrição com maiúscula e sem ponto final |
-| `pre-push` | nada vai para a `main`; branch `<tipo>/<issue>-<slug>` ou `dependabot/...` (para ajustar um PR do Dependabot, como acompanhar no código a versão que ele subiu); testes do guardrail e de `testes-afetados.mjs`; build; testes de unidade; testes de integração dos endpoints afetados e do servidor MCP, se afetado (precisam do Docker) |
+| `pre-push` | nada vai para a `main`; branch `<tipo>/<issue>-<slug>` ou `dependabot/...` (para ajustar um PR do Dependabot, como acompanhar no código a versão que ele subiu); testes do guardrail, de `testes-afetados.mjs` e de `claude-md-aplicaveis.mjs`; tetos e referências das instruções (`instrucoes.test.mjs`); build; testes de unidade; testes de integração dos endpoints afetados e do servidor MCP, se afetado (precisam do Docker) |
 | Teste de arquitetura (`SaidaModeloArquiteturaTests`) | quem fala com o modelo só devolve `ISaidaModelo` (a exceção é a `VerificacaoServidor`, só com o estado do banco), não usa agregados, responses da WebApi, SQL direto, prompts, resources nem os outros canais do SDK, e projeto novo em `src/` precisa ser classificado; roda na suíte de unidade, no `pre-push` e no CI |
-| CI (`ci.yml`) | build; modelo do EF sem migration pendente; testes de unidade; cobertura mínima do domínio; suíte de integração completa; suíte do servidor MCP; testes do guardrail e de `testes-afetados.mjs`; varredura dos arquivos do PR |
+| CI (`ci.yml`) | build; modelo do EF sem migration pendente; testes de unidade; cobertura mínima do domínio; suíte de integração completa; suíte do servidor MCP; testes do guardrail e dos scripts do harness; tetos e referências das instruções; varredura dos arquivos do PR |
 
 O `pre-push` não imprime nada quando passa. A saída de cada etapa vai para um log temporário (`%TEMP%\pre-push.XXXXXX`), apagado no sucesso. Na falha, o hook diz qual etapa falhou e mostra no stderr cada teste que falhou com a mensagem do erro (ou as últimas 30 linhas do log, num erro de build, por exemplo), além do caminho do log completo, que fica guardado até ser apagado à mão. Assim uma falha intermitente deixa rastro mesmo que a próxima rodada passe.
 
@@ -139,13 +133,16 @@ git diff --name-only origin/main...HEAD | node scripts/harness/testes-afetados.m
 node scripts/harness/testes-afetados.test.mjs
 ```
 
+## Dependabot
+
+O `.github/dependabot.yml` abre PRs de atualização de pacotes. Eles não nascem de issue nem seguem o nome de branch `<tipo>/<issue>-<slug>`; o `pre-push` aceita `dependabot/...` para quem precisar ajustar um deles. O CI roda neles como em qualquer PR, e o changelog dos pacotes é revisado antes do merge. As atualizações bloqueadas de propósito (FluentAssertions 8+, que é pago; MessagePack 3+) estão justificadas no próprio arquivo.
+
 ## Manutenção
 
-- **Regra nova do projeto?** Atualize o agente que a revisa. Se ela é verificável mecanicamente, prefira um gate a um parágrafo.
+- **Regra nova do projeto?** Ponha-a num lugar só, pela ordem de destino do [refino contínuo](#refino-contínuo), e deixe o agente que a revisa com o ponteiro e o critério de achado. Se ela é verificável mecanicamente, prefira um gate a um parágrafo.
 - **Achado repetido nas revisões?** Vira dívida conhecida no agente (para ele parar de repetir) e uma issue `tipo:tech` (para alguém corrigir).
 - **O guardrail bloqueou algo legítimo?** Primeiro acrescente o caso em `guardrail.test.mjs` e veja o teste falhar; depois ajuste o padrão. Nunca contorne com `--no-verify`.
 - **O dono corrigiu a IA, ou sugeriu algo com que ela concordou?** Ver [refino contínuo](#refino-contínuo).
-- **A IA errou a mesma coisa duas vezes?** Vira antipadrão em [trabalhando-com-ia.md](trabalhando-com-ia.md#antipadrões) e, se der, uma regra no guardrail.
 
 ## Refino contínuo
 
@@ -153,8 +150,14 @@ Cada correção do dono é uma chance de o harness ensinar o que faltou, para a 
 
 1. **Quando**: o dono corrige a IA, ou sugere algo e a IA concorda (se ela discorda, conversa, como em qualquer regra).
 2. **A pergunta**: *algo nas instruções que eu segui poderia ser diferente para eu ter acertado logo de cara?* Procure a regra que faltou, a que existia mas não dava o critério, ou a que estava num lugar que a tarefa não leva a ler.
-3. **Se sim**: antes de propor texto novo, procure a regra existente que cobre o caso: prefira deixá-la mais geral, ou trocá-la, a acrescentar outra. Uma regra que virou gate sai do texto. Depois, avise no chat, diga a causa e proponha o texto e o lugar. Prefira, nesta ordem, um gate (verificável mecanicamente), o guia que a tarefa já manda ler (`padroes-de-dominio.md`, `testes-com-autofixture.md`), o passo da skill em que a decisão é tomada e o item do revisor que cobra. Um exemplo real do repositório vale mais que uma regra abstrata.
+3. **Se sim**: antes de propor texto novo, procure a regra existente que cobre o caso: prefira deixá-la mais geral, ou trocá-la, a acrescentar outra. Uma regra que virou gate sai do texto. Depois, avise no chat, diga a causa e proponha o texto e o lugar. Prefira, nesta ordem: um gate (verificável mecanicamente); o `CLAUDE.md` da pasta a que a regra se aplica; o guia que a tarefa já manda ler (`padroes-de-dominio.md`, `testes-com-autofixture.md`); o passo da skill em que a decisão é tomada; o item do revisor que cobra. O `CLAUDE.md` da raiz só recebe regra que vale no repositório inteiro. A regra fica num lugar só, e os outros ficam com o ponteiro. O passo de uma skill é a fonte do que a sessão faz naquele passo: o `docs/harness.md` diz o porquê e aponta para ele, sem repetir o escopo nem a lista. Um exemplo real do repositório vale mais que uma regra abstrata.
 4. **Com o ok do dono**: faça a mudança num commit próprio, `docs(harness)` ou `docs(<escopo>)`, separado dos commits da issue, na branch da issue em andamento: ela vai no mesmo PR, sem issue nem PR próprios. Só pede branch (`docs/<n>-<slug>`) e PR próprios a mudança que não é simples, como uma regra nova no guardrail ou num gate, ou a que surge sem issue em andamento.
 5. **Se não**: diga em uma linha que as instruções já davam o critério, para o dono saber que a análise foi feita.
 
 Exemplo: no desfazer do pagamento da fatura (#149), a entidade devolvia `bool` e o serviço escrevia o motivo da falha. O dono apontou; a causa foi copiar o análogo pela vizinhança do fluxo. Daí vieram o item "filtro ou falha" da seção 5 do guia de domínio, o passo na `implementar-issue` e o achado no `revisor-dominio`.
+
+### Revisão das instruções
+
+As regras crescem uma de cada vez, e cada uma cabe sozinha; juntas, repetem-se, envelhecem e deixam de caber. O `instrucoes.test.mjs` põe teto no tamanho dos `CLAUDE.md` (12 KB na raiz e no `src/CLAUDE.md`, 4 KB nos outros, 24 KB na cadeia que uma pasta carrega) e confere que links, âncoras, `@imports` e caminhos citados existem.
+
+Por isso, ao fim de cada issue, antes do PR, a `implementar-issue` revisa as instruções que valem para o diff, e não todas: limitada ao diff, a revisão fica barata e acompanha cada regra nova. O escopo, o caso do teto estourado e o que conferir estão no [passo dela](../.claude/skills/implementar-issue/SKILL.md#revisão-das-instruções). O que mudar vira um commit `docs(harness)` na branch da issue, sem issue própria.

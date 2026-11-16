@@ -7,7 +7,7 @@ O [CLAUDE.md](../CLAUDE.md) é carregado sempre e traz só as regras. Este docum
 1. **A IA executa; o dono do repositório decide.** Em tarefa não trivial, o plano é aprovado antes de virar código. Ajustar um plano custa uma mensagem; desfazer código construído sobre uma premissa errada custa muitas.
 2. **Partir do que já existe.** Antes de criar uma classe, ler a mais parecida que já existe e seguir o padrão dela. Convenção inventada é retrabalho.
 3. **Pronto quer dizer verificado.** Build, testes e diff relido. Quem entrega diz também o que *não* conseguiu verificar.
-4. **Todo erro repetido vira registro.** Quando a IA comete o mesmo erro duas vezes, ele entra em [Antipadrões](#antipadrões) e, se der para checar automaticamente, vira gate.
+4. **Toda correção vira instrução.** Quando o dono corrige a IA, a regra que faltou entra no lugar que a tarefa leva a ler, ou vira gate se der para checar automaticamente ([refino contínuo](harness.md#refino-contínuo)).
 5. **Na dúvida, perguntar.** Escopo ambíguo se resolve perguntando. Ação destrutiva, dependência nova e mudança em dado real só com confirmação explícita.
 
 ## Ciclo de uma issue
@@ -20,7 +20,7 @@ O [CLAUDE.md](../CLAUDE.md) é carregado sempre e traz só as regras. Este docum
 | 4 | Gates mecânicos + revisores conforme o diff | `revisar-mudanca` |
 | 5 | Push, PR com `Closes #n` e, com o CI verde, merge com merge commit, sem esperar revisão do PR | `abrir-pr` |
 
-**Quando a tarefa é não trivial:** toca mais de 2 arquivos, ou cria classe, endpoint ou migration, ou integra algo externo. Abaixo disso, não há plano: basta criar a branch e seguir as convenções do CLAUDE.md, na mesma sessão.
+**Quando a tarefa é não trivial:** toca mais de 2 arquivos, ou cria classe, endpoint ou migration, ou integra algo externo. Abaixo disso, não há plano: basta criar a branch e seguir as convenções dos `CLAUDE.md`, na mesma sessão.
 
 ### Do plano à implementação
 
@@ -70,9 +70,7 @@ O guardrail (`scripts/harness/guardrail.mjs`) transforma a maior parte dessa tab
 
 ## Privacidade dos dados financeiros
 
-- Os arquivos reais ficam em `dados/`. A IA pode ler esses arquivos para entender um layout, mas, ao reportar, descreve **estrutura** (colunas, formatos, contagens), nunca valores, nomes ou números de conta.
-- Fixture de teste é fictícia: mesmo cabeçalho, mesmos formatos de data e número, mesmo encoding, conteúdo inventado.
-- O que vai para o modelo em produção (MCP e agente) passa por uma projeção explícita, com os campos mínimos. Campo novo nessa projeção é decisão de PR, revisada pelo `revisor-privacidade`.
+As regras são as invioláveis 1 e 3 do [CLAUDE.md](../CLAUDE.md), com o detalhe da saída para o modelo no `src/ControleFinanceiro.Application/IA/CLAUDE.md`. Na prática: a IA pode ler `dados/` para entender um layout, mas, ao reportar, descreve **estrutura** (colunas, formatos, contagens), nunca valores, nomes ou números de conta; e campo novo na saída para o modelo é decisão de PR, revisada pelo `revisor-privacidade`.
 
 ## Checklist depois da IA
 
@@ -88,7 +86,7 @@ Mesmo com tudo verde, ler o diff.
 - [ ] `dotnet build ControleFinanceiro.slnx` sem avisos
 - [ ] `dotnet test ControleFinanceiro.slnx` verde
 - [ ] Domain sem `using` de EF Core, ASP.NET ou Npgsql
-- [ ] Regra nova com teste do caminho válido e de cada invariante
+- [ ] Regra nova com teste, como no [guia de testes](testes-com-autofixture.md#o-que-cobrir)
 - [ ] Migration nova revisada à mão (`Up` e `Down`), sem operação destrutiva não combinada
 - [ ] Adaptador externo trata timeout e erro com `Result`, sem exceção para falha previsível
 
@@ -101,21 +99,10 @@ Mesmo com tudo verde, ler o diff.
 
 | Camada | Onde | O que guarda | Quando muda |
 |---|---|---|---|
-| Regras | `CLAUDE.md` | Regras invioláveis, fluxo, convenções. Curto, porque é carregado sempre | Quando uma regra muda |
-| Manual | `docs/trabalhando-com-ia.md`, `docs/harness.md` | Como conduzir o trabalho, antipadrões | Quando uma prática evolui |
-| Decisões | `docs/decisoes/` (ADRs, quando surgirem) | Por que algo é como é | A cada decisão de arquitetura |
+| Regras do repositório | `CLAUDE.md` da raiz | Regras invioláveis, fluxo, o mapa de onde estão as outras regras. Curto, porque é carregado sempre (teto de 12 KB) | Quando uma regra muda |
+| Regras de pasta | `src/CLAUDE.md`, `tests/CLAUDE.md` e um por projeto que tenha regra própria | Convenções de C#, testes, domínio, saída para o modelo, MCP, endpoints, leitores, persistência. Carregados quando a sessão lê um arquivo da pasta, e lidos pelos agentes pelo `claude-md-aplicaveis.mjs` | Quando uma regra da pasta muda |
+| Guias | `docs/padroes-de-dominio.md`, `docs/testes-com-autofixture.md` | Como modelar e como testar, com os exemplos do repositório | Quando um padrão muda |
+| Manual | `docs/trabalhando-com-ia.md`, `docs/harness.md` | Como conduzir o trabalho e como o harness funciona | Quando uma prática evolui |
+| Decisões | ADRs, numa pasta própria em `docs/` quando surgirem | Por que algo é como é | A cada decisão de arquitetura |
 
 A memória pessoal do Claude Code guarda preferências de quem usa, não regras do projeto. Regra do projeto mora no repositório.
-
-## Antipadrões
-
-Catálogo vivo: cada item tem sintoma, por que é errado e como corrigir. Entra aqui o que realmente aconteceu neste repositório, não regra genérica.
-
-<!-- Formato:
-**❌ Título curto**
-- Sintoma: o que a IA fez
-- Por que é errado: qual regra quebra
-- Como corrigir: o que fazer no lugar
--->
-
-_Nenhum registrado ainda._
