@@ -29,6 +29,7 @@ Rode todos, inclusive os que "com certeza passam":
 
 ```bash
 dotnet build ControleFinanceiro.slnx
+dotnet format style ControleFinanceiro.slnx --verify-no-changes --no-restore
 dotnet test ControleFinanceiro.slnx --no-build --filter "FullyQualifiedName!~ControleFinanceiro.WebApi.Tests&FullyQualifiedName!~ControleFinanceiro.Mcp.Tests"
 filtro=$(git diff --name-only --no-renames origin/main...HEAD | node scripts/harness/testes-afetados.mjs); echo "integração: ${filtro:-nenhum}"
 filtro_mcp=$(git diff --name-only --no-renames origin/main...HEAD | node scripts/harness/testes-afetados.mjs --mcp); echo "servidor MCP: ${filtro_mcp:-nenhum}"

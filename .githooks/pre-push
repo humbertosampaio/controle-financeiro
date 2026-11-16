@@ -4,7 +4,7 @@
 #   2. nome da branch no padrão <tipo>/<issue>-<slug> (ou dependabot/..., para ajustar um PR dele)
 #   3. o guardrail e os scripts do harness continuam íntegros, cada endpoint tem o teste espelhado e as
 #      instruções cabem no teto
-#   4. build e testes de unidade
+#   4. build, estilo (dotnet format style) e testes de unidade
 #   5. testes de integração dos endpoints afetados pelo push e do servidor MCP, se afetado (precisam do Docker)
 
 raiz=$(git rev-parse --show-toplevel)
@@ -79,6 +79,10 @@ node "$raiz/scripts/harness/instrucoes.test.mjs" >"$log" 2>&1 ||
 
 dotnet build "$raiz/ControleFinanceiro.slnx" --nologo -v q >"$log" 2>&1 ||
   falhou "O build falhou: rode dotnet build ControleFinanceiro.slnx"
+
+# A ordem dos usings, que o build não confere: dotnet format style ControleFinanceiro.slnx corrige.
+dotnet format style "$raiz/ControleFinanceiro.slnx" --verify-no-changes --no-restore >"$log" 2>&1 ||
+  falhou "O estilo do código não confere: rode dotnet format style ControleFinanceiro.slnx"
 
 # O logger em minimal imprime cada teste que falhou com a mensagem; o -v q sozinho só daria o nome.
 dotnet test "$raiz/ControleFinanceiro.slnx" --no-build --nologo -v q --logger "console;verbosity=minimal" \
