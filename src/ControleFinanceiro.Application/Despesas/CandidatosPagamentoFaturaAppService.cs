@@ -18,20 +18,20 @@ public sealed class CandidatosPagamentoFaturaAppService
 {
     private readonly IUsuarioAtual _usuarioAtual;
     private readonly ICartaoRepository _cartaoRepository;
-    private readonly IImportacaoRepository _importacaoRepository;
+    private readonly IImportacaoFaturaRepository _importacaoFaturaRepository;
     private readonly ITransacaoRepository _transacaoRepository;
     private readonly IDespesaRepository _despesaRepository;
 
     public CandidatosPagamentoFaturaAppService(
         IUsuarioAtual usuarioAtual,
         ICartaoRepository cartaoRepository,
-        IImportacaoRepository importacaoRepository,
+        IImportacaoFaturaRepository importacaoFaturaRepository,
         ITransacaoRepository transacaoRepository,
         IDespesaRepository despesaRepository)
     {
         _usuarioAtual = usuarioAtual;
         _cartaoRepository = cartaoRepository;
-        _importacaoRepository = importacaoRepository;
+        _importacaoFaturaRepository = importacaoFaturaRepository;
         _transacaoRepository = transacaoRepository;
         _despesaRepository = despesaRepository;
     }
@@ -66,14 +66,14 @@ public sealed class CandidatosPagamentoFaturaAppService
     private async Task<CandidatoPagamentoFaturaDto[]> ApontarAsync(IReadOnlyList<MesReferencia> mesesVencimento, CancellationToken ct)
     {
         IReadOnlyList<Cartao> cartoes = await _cartaoRepository.ListarAsync(ct);
-        List<ImportacaoArquivo> importacoes = [];
+        List<ImportacaoFatura> importacoes = [];
         List<Transacao> transacoes = [];
         List<Despesa> despesasMeses = [];
 
         // As faturas dos meses vizinhos competem pelas mesmas saídas, e o par único confere também a elas.
         foreach (MesReferencia mes in CandidatosPagamentoFaturaService.MesesConferidos(mesesVencimento))
         {
-            importacoes.AddRange(await _importacaoRepository.ListarImportacoesFaturaEmAsync(mes, ct));
+            importacoes.AddRange(await _importacaoFaturaRepository.ListarEmAsync(mes, ct));
             transacoes.AddRange(await _transacaoRepository.ListarTransacoesFaturaEmAsync(mes, ct));
             despesasMeses.AddRange(await _despesaRepository.ListarDoMesAsync(mes, ct));
         }

@@ -20,7 +20,7 @@ public sealed class ConferenciaSomaPeriodoTests
     public void Conferir_Quando_PrimeiraImportacao_Deve_RetornarSucesso(
         Extrato extrato,
         [Frozen] ContaBancaria conta,
-        ImportacaoArquivo importacao)
+        ImportacaoExtrato importacao)
     {
         Result result = ConferenciaSomaPeriodo.Conferir(extrato, gravadasNoPeriodo: [], Lote(conta, importacao, extrato.Lancamentos));
 
@@ -31,9 +31,9 @@ public sealed class ConferenciaSomaPeriodoTests
     public void Conferir_Quando_ParteDoPeriodoJaGravada_Deve_SomarAsGravadasEAsNovas(
         Extrato extrato,
         [Frozen] ContaBancaria conta,
-        ImportacaoArquivo importacao)
+        ImportacaoExtrato importacao)
     {
-        IReadOnlyList<Transacao> lote = Lote(conta, importacao, extrato.Lancamentos);
+        Transacao[] lote = Lote(conta, importacao, extrato.Lancamentos);
 
         Result result = ConferenciaSomaPeriodo.Conferir(extrato, lote.Take(1), lote.Skip(1));
 
@@ -45,10 +45,10 @@ public sealed class ConferenciaSomaPeriodoTests
         [Frozen] Periodo periodo,
         Extrato extrato,
         [Frozen] ContaBancaria conta,
-        ImportacaoArquivo importacao,
+        ImportacaoExtrato importacao,
         Lancamento naoReconhecido)
     {
-        IReadOnlyList<Transacao> gravadas = Lote(conta, importacao, [.. extrato.Lancamentos, naoReconhecido]);
+        Transacao[] gravadas = Lote(conta, importacao, [.. extrato.Lancamentos, naoReconhecido]);
 
         Result result = ConferenciaSomaPeriodo.Conferir(extrato, gravadas, novas: []);
 
@@ -61,7 +61,7 @@ public sealed class ConferenciaSomaPeriodoTests
         [Frozen] Periodo periodo,
         Extrato arquivo,
         [Frozen] ContaBancaria conta,
-        ImportacaoArquivo importacao,
+        ImportacaoExtrato importacao,
         Reais valor,
         TextoObrigatorio descricao)
     {
@@ -81,11 +81,11 @@ public sealed class ConferenciaSomaPeriodoTests
         result.Should().Fail();
     }
 
-    private static IReadOnlyList<Transacao> Lote(ContaBancaria conta, ImportacaoArquivo importacao, IReadOnlyList<Lancamento> lancamentos)
+    private static Transacao[] Lote(ContaBancaria conta, ImportacaoExtrato importacao, IReadOnlyList<Lancamento> lancamentos)
     {
         IReadOnlyList<Beneficiario> beneficiarios = BeneficiariosResolvidos.Dos(conta.IdUsuario, lancamentos);
         IReadOnlyList<CategoriaDespesa> categorias = CategoriasResolvidas.Dos(conta.IdUsuario, lancamentos);
-        return LoteTransacoesFactory.Criar(conta.IdUsuario, beneficiarios, categorias, conta, importacao, lancamentos).Value;
+        return LoteTransacoesContaFactory.Criar(conta.IdUsuario, beneficiarios, categorias, conta, importacao, lancamentos).Value.ToArray();
     }
 
     private static string Formatar(DateOnly data) => data.ToString("dd/MM/yyyy", CultureInfo.InvariantCulture);

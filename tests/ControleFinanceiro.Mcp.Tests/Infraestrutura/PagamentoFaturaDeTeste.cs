@@ -53,7 +53,7 @@ internal sealed class PagamentoFaturaDeTeste
         Lancamento compra = fixture.Create<Lancamento>().SemCategoria().ComoSaida().NaOrigem(TipoOrigem.Cartao);
 
         // O Postgres só grava o instante em UTC, como o TimeProvider da aplicação o dá.
-        ImportacaoArquivo importacao = ImportacaoArquivoFactory
+        ImportacaoFatura importacao = ImportacaoArquivoFactory
             .Registrar(
                 cartao,
                 cartoesUsuario: [cartao],
@@ -107,7 +107,7 @@ internal sealed class PagamentoFaturaDeTeste
     public async Task GravarFaturaImportadaAsync(IFixture fixture, Cartao cartao, VencimentoFatura vencimento, decimal valorCompra)
     {
         // O Postgres só grava o instante em UTC, como o TimeProvider da aplicação o dá.
-        ImportacaoArquivo importacao = ImportacaoArquivoFactory
+        ImportacaoFatura importacao = ImportacaoArquivoFactory
             .Registrar(
                 cartao,
                 cartoesUsuario: [cartao],

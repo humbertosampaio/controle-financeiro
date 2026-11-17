@@ -395,7 +395,7 @@ public sealed class DespesaAdiadaFactoryTests
     }
 
     /// <summary>
-    /// A fatura importada no teste: grava as compras de cada cartão pela <see cref="LoteTransacoesFactory"/> e guarda os
+    /// A fatura importada no teste: grava as compras de cada cartão pela <see cref="LoteTransacoesCartaoFactory"/> e guarda os
     /// beneficiários e as categorias delas, os mesmos que a <see cref="DespesaAdiadaFactory"/> e a previsão recebem.
     /// </summary>
     public sealed class FaturaDeTeste
@@ -424,11 +424,11 @@ public sealed class DespesaAdiadaFactoryTests
         public IReadOnlyList<Transacao> Importar(Cartao cartao, VencimentoFatura vencimento, params Lancamento[] compras)
         {
             Resolver(compras);
-            ImportacaoArquivo importacao = ImportacaoArquivoFactory
+            ImportacaoFatura importacao = ImportacaoArquivoFactory
                 .Registrar(cartao, cartoesUsuario: [cartao], importacoesFaturaMes: [], _layout, _periodo, vencimento, compras.Length, _importadaEm)
                 .Value;
 
-            return LoteTransacoesFactory.Criar(_idUsuario, _beneficiarios, _categorias, cartao, importacao, compras).Value;
+            return LoteTransacoesCartaoFactory.Criar(_idUsuario, _beneficiarios, _categorias, cartao, importacao, compras).Value;
         }
 
         /// <summary>As adiadas da fatura que vence em <see cref="_vencimento"/>.</summary>

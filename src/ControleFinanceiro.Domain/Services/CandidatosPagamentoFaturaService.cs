@@ -49,7 +49,7 @@ public static class CandidatosPagamentoFaturaService
         IdUsuario idUsuario,
         IReadOnlyCollection<MesReferencia> mesesVencimento,
         IReadOnlyCollection<Cartao> cartoesUsuario,
-        IReadOnlyCollection<ImportacaoArquivo> importacoesFaturas,
+        IReadOnlyCollection<ImportacaoFatura> importacoesFaturas,
         IReadOnlyCollection<Transacao> transacoes,
         IReadOnlyCollection<Despesa> despesasMeses,
         IReadOnlyCollection<Despesa> despesasPagasSaidas)
@@ -81,7 +81,7 @@ public static class CandidatosPagamentoFaturaService
     /// </summary>
     private static Maybe<FaturaCartaoAberta> Abrir(
         FaturaCartao fatura,
-        IReadOnlyCollection<ImportacaoArquivo> importacoesFaturas,
+        IReadOnlyCollection<ImportacaoFatura> importacoesFaturas,
         IReadOnlyCollection<Transacao> transacoes)
     {
         return importacoesFaturas

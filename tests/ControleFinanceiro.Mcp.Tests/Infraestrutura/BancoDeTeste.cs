@@ -42,11 +42,11 @@ internal sealed class BancoDeTeste
     /// <param name="importacao">A importação da mesma conta.</param>
     public async Task<IReadOnlyList<Transacao>> GravarExtratoAsync(
         ContaBancaria conta,
-        ImportacaoArquivo importacao,
+        ImportacaoExtrato importacao,
         IReadOnlyList<Lancamento> lancamentos)
     {
         IReadOnlyList<Beneficiario> beneficiarios = BeneficiariosResolvidos.Dos(conta.IdUsuario, lancamentos);
-        IReadOnlyList<Transacao> transacoes = LoteTransacoesFactory
+        IReadOnlyList<Transacao> transacoes = LoteTransacoesContaFactory
             .Criar(conta.IdUsuario, beneficiarios, categoriasDoUsuario: [], conta, importacao, lancamentos)
             .Value;
 
@@ -75,11 +75,11 @@ internal sealed class BancoDeTeste
     /// <param name="importacao">A importação do mesmo cartão.</param>
     public async Task<IReadOnlyList<Transacao>> GravarFaturaAsync(
         Cartao cartao,
-        ImportacaoArquivo importacao,
+        ImportacaoFatura importacao,
         IReadOnlyList<Lancamento> lancamentos)
     {
         IReadOnlyList<Beneficiario> beneficiarios = BeneficiariosResolvidos.Dos(cartao.IdUsuario, lancamentos);
-        IReadOnlyList<Transacao> transacoes = LoteTransacoesFactory
+        IReadOnlyList<Transacao> transacoes = LoteTransacoesCartaoFactory
             .Criar(cartao.IdUsuario, beneficiarios, categoriasDoUsuario: [], cartao, importacao, lancamentos)
             .Value;
 

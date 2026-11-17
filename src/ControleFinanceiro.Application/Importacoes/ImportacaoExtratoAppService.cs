@@ -8,7 +8,7 @@ using ControleFinanceiro.Domain.Shared;
 using ControleFinanceiro.Domain.Transacoes;
 using ControleFinanceiro.Domain.Usuarios;
 using CSharpFunctionalExtensions;
-using LoteConta = (ControleFinanceiro.Domain.Contas.ContaBancaria Conta, ControleFinanceiro.Domain.Importacoes.ImportacaoArquivo Importacao, System.Collections.Generic.IReadOnlyList<ControleFinanceiro.Domain.Transacoes.Transacao> Transacoes);
+using LoteConta = (ControleFinanceiro.Domain.Contas.ContaBancaria Conta, ControleFinanceiro.Domain.Importacoes.ImportacaoExtrato Importacao, System.Collections.Generic.IReadOnlyList<ControleFinanceiro.Domain.Transacoes.Transacao> Transacoes);
 
 namespace ControleFinanceiro.Application.Importacoes;
 
@@ -25,7 +25,7 @@ public sealed class ImportacaoExtratoAppService
     private readonly IBeneficiarioRepository _beneficiarioRepository;
     private readonly ICategoriaDespesaRepository _categoriaDespesaRepository;
     private readonly ITransacaoRepository _transacaoRepository;
-    private readonly IImportacaoRepository _importacaoRepository;
+    private readonly IImportacaoExtratoRepository _importacaoExtratoRepository;
     private readonly TimeProvider _timeProvider;
     private readonly IUnitOfWork _unitOfWork;
 
@@ -34,7 +34,7 @@ public sealed class ImportacaoExtratoAppService
         IBeneficiarioRepository beneficiarioRepository,
         ICategoriaDespesaRepository categoriaDespesaRepository,
         ITransacaoRepository transacaoRepository,
-        IImportacaoRepository importacaoRepository,
+        IImportacaoExtratoRepository importacaoExtratoRepository,
         TimeProvider timeProvider,
         IUnitOfWork unitOfWork)
     {
@@ -42,7 +42,7 @@ public sealed class ImportacaoExtratoAppService
         _beneficiarioRepository = beneficiarioRepository;
         _categoriaDespesaRepository = categoriaDespesaRepository;
         _transacaoRepository = transacaoRepository;
-        _importacaoRepository = importacaoRepository;
+        _importacaoExtratoRepository = importacaoExtratoRepository;
         _timeProvider = timeProvider;
         _unitOfWork = unitOfWork;
     }
@@ -88,14 +88,14 @@ public sealed class ImportacaoExtratoAppService
         Extrato extrato,
         ContaBancaria conta)
     {
-        ImportacaoArquivo importacao = ImportacaoArquivoFactory.Registrar(
+        ImportacaoExtrato importacao = ImportacaoArquivoFactory.Registrar(
             conta,
             layout,
             extrato.Periodo,
             extrato.LancamentosContabilizados.Count,
             _timeProvider.GetUtcNow());
 
-        return LoteTransacoesFactory
+        return LoteTransacoesContaFactory
             .Criar(idUsuario, beneficiariosDoUsuario, categoriasDoUsuario, conta, importacao, extrato.Lancamentos)
             .Map(transacoes => (conta, importacao, transacoes));
     }
@@ -106,10 +106,10 @@ public sealed class ImportacaoExtratoAppService
         LoteConta lote,
         CancellationToken ct)
     {
-        (ContaBancaria conta, ImportacaoArquivo importacao, IReadOnlyList<Transacao> transacoes) = lote;
-        OrigemTransacao origem = importacao.Origem;
+        (ContaBancaria conta, ImportacaoExtrato importacao, IReadOnlyList<Transacao> transacoes) = lote;
+        OrigemTransacao origem = OrigemTransacao.DaConta(importacao.IdConta);
 
-        Maybe<ImportacaoArquivo> importacaoAnterior = await _importacaoRepository.ObterMaisRecenteAsync(origem, ct);
+        Maybe<ImportacaoExtrato> importacaoAnterior = await _importacaoExtratoRepository.ObterMaisRecenteAsync(importacao.IdConta, ct);
 
         // Lidas antes de adicionar as novas: a consulta só traz o que já estava gravado.
         IReadOnlyList<Transacao> transacoesPeriodo = await _transacaoRepository.ListarNoPeriodoAsync(origem, extrato.Periodo, ct);
@@ -118,7 +118,7 @@ public sealed class ImportacaoExtratoAppService
         if (contaNova)
             await _contaRepository.AdicionarAsync(conta, ct);
 
-        await _importacaoRepository.AdicionarAsync(importacao, ct);
+        await _importacaoExtratoRepository.AdicionarAsync(importacao, ct);
         IReadOnlyList<Transacao> novas = await _transacaoRepository.AdicionarNovasAsync(transacoes, ct);
 
         return new ExtratoImportadoDto(

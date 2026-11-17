@@ -153,7 +153,7 @@ public sealed class Transacao : AggregateRoot<IdTransacao>, IPertenceAoUsuario
     /// <remarks>
     /// Interno pois a <paramref name="chave"/> precisa vir de <see cref="ChaveDeduplicacao.CalcularLote"/>, com a mesma origem e o lote do
     /// lançamento, o <paramref name="idUsuario"/> precisa ser o dono da origem e a importação precisa ser da mesma origem, e só a
-    /// <see cref="Services.LoteTransacoesFactory"/> garante isso.
+    /// <see cref="Services.LoteTransacoesContaFactory"/> e a <see cref="Services.LoteTransacoesCartaoFactory"/> garantem isso.
     /// </remarks>
     /// <param name="mesVencimentoFatura">O mês da fatura da importação: presente no cartão e nulo na conta.</param>
     /// <exception cref="ArgumentException">Quando a presença do mês não bate com o tipo da origem: é bug de quem chama.</exception>

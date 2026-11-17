@@ -21,7 +21,7 @@ public sealed class CenarioPagamentoFatura
     private readonly LayoutArquivoImportacao _layout;
     private readonly Periodo _periodo;
     private readonly DateTimeOffset _importadaEm;
-    private readonly List<ImportacaoArquivo> _importacoes = [];
+    private readonly List<ImportacaoFatura> _importacoes = [];
     private readonly List<Transacao> _transacoes = [];
 
     public CenarioPagamentoFatura(IdUsuario idUsuario, ContaBancaria conta, LayoutArquivoImportacao layout, Periodo periodo, DateTimeOffset importadaEm)
@@ -36,11 +36,11 @@ public sealed class CenarioPagamentoFatura
     /// <returns>As transações da fatura, na ordem das linhas.</returns>
     public IReadOnlyList<Transacao> ImportarFatura(Cartao cartao, VencimentoFatura vencimento, params Lancamento[] linhas)
     {
-        ImportacaoArquivo importacao = ImportacaoArquivoFactory
+        ImportacaoFatura importacao = ImportacaoArquivoFactory
             .Registrar(cartao, cartoesUsuario: [cartao], importacoesFaturaMes: [], _layout, _periodo, vencimento, linhas.Length, _importadaEm)
             .Value;
         IReadOnlyList<Beneficiario> beneficiarios = BeneficiariosResolvidos.Dos(_idUsuario, linhas);
-        IReadOnlyList<Transacao> transacoes = LoteTransacoesFactory
+        IReadOnlyList<Transacao> transacoes = LoteTransacoesCartaoFactory
             .Criar(_idUsuario, beneficiarios, categoriasDoUsuario: [], cartao, importacao, linhas)
             .Value;
 
@@ -53,8 +53,8 @@ public sealed class CenarioPagamentoFatura
     public Transacao Saida(Lancamento linha, DateOnly data, ReaisPositivo valor)
     {
         Lancamento lancamento = linha.NaContaComValor(data, -valor);
-        ImportacaoArquivo importacao = ImportacaoArquivoFactory.Registrar(_conta, _layout, _periodo, lidas: 1, _importadaEm);
-        Transacao saida = LoteTransacoesFactory
+        ImportacaoExtrato importacao = ImportacaoArquivoFactory.Registrar(_conta, _layout, _periodo, lidas: 1, _importadaEm);
+        Transacao saida = LoteTransacoesContaFactory
             .Criar(_idUsuario, BeneficiariosResolvidos.Dos(_idUsuario, [lancamento]), categoriasDoUsuario: [], _conta, importacao, [lancamento])
             .Value
             .Single();

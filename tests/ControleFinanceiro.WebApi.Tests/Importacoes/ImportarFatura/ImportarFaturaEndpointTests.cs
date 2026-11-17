@@ -89,15 +89,15 @@ public sealed class ImportarFaturaEndpointTests : IAsyncLifetime
         ImportarFaturaResponse.CartaoImportado linhaFisico = corpo.Cartoes[0];
         ((Guid)fisico.Id).Should().Be(linhaFisico.IdCartao);
 
-        List<ImportacaoArquivo> importacoes = await _api.ObterTodosAsync(db => db.Importacoes);
+        ImportacaoFatura[] importacoes = (await _api.ObterTodosAsync(db => db.Importacoes)).OfType<ImportacaoFatura>().ToArray();
         importacoes.Should().HaveCount(2);
-        ImportacaoArquivo importacaoFisico = importacoes.Single(i => i.Origem == OrigemTransacao.DoCartao(fisico.Id));
+        ImportacaoFatura importacaoFisico = importacoes.Single(i => i.IdCartao == fisico.Id);
         ((Guid)importacaoFisico.Id).Should().Be(linhaFisico.IdImportacao);
         importacaoFisico.Layout.Should().BeSameAs(LayoutArquivoImportacao.C6CartaoCsv);
         importacaoFisico.Periodo.Should().Be(new Periodo(FaturaCartaoC6.PrimeiraCompraFisico, FaturaCartaoC6.UltimaCompraFisico));
         importacaoFisico.Lidas.Should().Be(FaturaCartaoC6.LancamentosPorCartao);
         VencimentoFatura vencimento = (VencimentoFatura)FaturaCartaoC6.Vencimento;
-        importacoes.Should().OnlyContain(i => i.VencimentoFatura == vencimento);
+        importacoes.Should().OnlyContain(i => i.Vencimento == vencimento);
 
         List<Transacao> transacoes = await _api.ObterTodosAsync(db => db.Transacoes);
         transacoes.Should().HaveCount(FaturaCartaoC6.QuantidadeLancamentos);
@@ -575,7 +575,7 @@ public sealed class ImportarFaturaEndpointTests : IAsyncLifetime
         (await resposta.CamposComErroAsync()).Should().Equal("dataVencimento");
         (await _api.ObterTodosAsync(db => db.Importacoes)).Should()
             .HaveCount(2)
-            .And.OnlyContain(i => i.VencimentoFatura == (VencimentoFatura)FaturaCartaoC6.Vencimento);
+            .And.OnlyContain(i => ((ImportacaoFatura)i).Vencimento == (VencimentoFatura)FaturaCartaoC6.Vencimento);
         (await _api.ObterTodosAsync(db => db.Transacoes)).Should()
             .HaveCount(FaturaCartaoC6.QuantidadeLancamentos)
             .And.OnlyContain(t => t.MesVencimentoFatura == FaturaCartaoC6.MesVencimento);

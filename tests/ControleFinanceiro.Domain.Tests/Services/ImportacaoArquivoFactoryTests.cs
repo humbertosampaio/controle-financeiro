@@ -5,7 +5,6 @@ using ControleFinanceiro.Domain.Importacoes;
 using ControleFinanceiro.Domain.Services;
 using ControleFinanceiro.Domain.Shared;
 using ControleFinanceiro.Domain.Shared.ValueObjects;
-using ControleFinanceiro.Domain.Transacoes;
 using ControleFinanceiro.Tests.Shared;
 using ControleFinanceiro.Tests.Shared.AutoFixture.Attributes;
 using CSharpFunctionalExtensions;
@@ -15,27 +14,25 @@ namespace ControleFinanceiro.Domain.Tests.Services;
 public sealed class ImportacaoArquivoFactoryTests
 {
     [Theory, DomainAutoData]
-    public void Registrar_Quando_Conta_Deve_GuardarOsDadosDaImportacaoComOUsuarioEAOrigemDaConta(
+    public void Registrar_Quando_Conta_Deve_GuardarOsDadosDaImportacaoComOUsuarioEAConta(
         ContaBancaria conta,
         LayoutArquivoImportacao layout,
         Periodo periodo,
         byte lidas,
         DateTimeOffset importadaEm)
     {
-        ImportacaoArquivo result = ImportacaoArquivoFactory.Registrar(conta, layout, periodo, lidas, importadaEm);
+        ImportacaoExtrato result = ImportacaoArquivoFactory.Registrar(conta, layout, periodo, lidas, importadaEm);
 
         result.IdUsuario.Should().Be(conta.IdUsuario);
-        result.Origem.Should().Be(OrigemTransacao.DaConta(conta.Id));
+        result.IdConta.Should().Be(conta.Id);
         result.Layout.Should().Be(layout);
         result.Periodo.Should().Be(periodo);
         result.Lidas.Should().Be(lidas);
         result.ImportadaEm.Should().Be(importadaEm);
-        result.VencimentoFatura.Should().BeNull();
-        result.MesVencimentoFatura.Should().BeNull();
     }
 
     [Theory, DomainAutoData]
-    public void Registrar_Quando_Cartao_Deve_GuardarOUsuarioAOrigemEOVencimentoDaFatura(
+    public void Registrar_Quando_Cartao_Deve_GuardarOUsuarioOCartaoEOVencimentoDaFatura(
         Cartao cartao,
         LayoutArquivoImportacao layout,
         Periodo periodo,
@@ -43,14 +40,14 @@ public sealed class ImportacaoArquivoFactoryTests
         byte lidas,
         DateTimeOffset importadaEm)
     {
-        ImportacaoArquivo result = ImportacaoArquivoFactory
+        ImportacaoFatura result = ImportacaoArquivoFactory
             .Registrar(cartao, cartoesUsuario: [cartao], importacoesFaturaMes: [], layout, periodo, vencimento, lidas, importadaEm)
             .Value;
 
         result.IdUsuario.Should().Be(cartao.IdUsuario);
-        result.Origem.Should().Be(OrigemTransacao.DoCartao(cartao.Id));
-        result.VencimentoFatura.Should().Be(vencimento);
-        result.MesVencimentoFatura.Should().Be(vencimento.Mes);
+        result.IdCartao.Should().Be(cartao.Id);
+        result.Vencimento.Should().Be(vencimento);
+        result.MesVencimento.Should().Be(vencimento.Mes);
     }
 
     [Theory, DomainAutoData]
@@ -86,14 +83,14 @@ public sealed class ImportacaoArquivoFactoryTests
         registrar.Should().ThrowExactly<ArgumentOutOfRangeException>().WithParameterName("lidas");
     }
 
-    [Theory, ImportacaoFaturaAutoData]
+    [Theory, VencimentoCicloCartaoAutoData]
     public void Registrar_Quando_FaturaJaImportadaComOutraDataNoMesmoMes_Deve_Falhar(
         [Frozen] MesReferencia mes,
         [Frozen] Cartao cartao,
-        ImportacaoArquivo importada,
+        ImportacaoFatura importada,
         DiaVencimentoCartao outroDia)
     {
-        Result<ImportacaoArquivo, Erro> result = ImportacaoArquivoFactory.Registrar(
+        Result<ImportacaoFatura, Erro> result = ImportacaoArquivoFactory.Registrar(
             cartao,
             cartoesUsuario: [cartao],
             [importada],
@@ -106,11 +103,11 @@ public sealed class ImportacaoArquivoFactoryTests
         result.Should().Fail().Which.Should().Be(ErroFaturaJaImportadaComOutroVencimento.Instancia);
     }
 
-    [Theory, ImportacaoFaturaAutoData]
+    [Theory, VencimentoCicloCartaoAutoData]
     public void ConferirVencimentoFatura_Quando_MesmoCartaoComOutraDataNoMesmoMes_Deve_Falhar(
         [Frozen] MesReferencia mes,
         [Frozen] Cartao cartao,
-        ImportacaoArquivo importada,
+        ImportacaoFatura importada,
         DiaVencimentoCartao outroDia)
     {
         UnitResult<Erro> result = ImportacaoArquivoFactory.ConferirVencimentoFatura(
@@ -124,11 +121,11 @@ public sealed class ImportacaoArquivoFactoryTests
         result.Should().Fail().Which.Should().Be(ErroFaturaJaImportadaComOutroVencimento.Instancia);
     }
 
-    [Theory, ImportacaoFaturaAutoData]
+    [Theory, VencimentoCicloCartaoAutoData]
     public void ConferirVencimentoFatura_Quando_OutroCartaoMesmaFaturaComOutraDataNoMesmoMes_Deve_Falhar(
         [Frozen] MesReferencia mes,
         [Frozen] Cartao cartao,
-        ImportacaoArquivo importada,
+        ImportacaoFatura importada,
         SufixoCartao outroSufixo,
         DiaVencimentoCartao outroDia)
     {
@@ -145,11 +142,11 @@ public sealed class ImportacaoArquivoFactoryTests
         result.Should().Fail().Which.Should().Be(ErroFaturaJaImportadaComOutroVencimento.Instancia);
     }
 
-    [Theory, ImportacaoFaturaAutoData]
+    [Theory, VencimentoCicloCartaoAutoData]
     public void ConferirVencimentoFatura_Quando_CartaoOutraFatura_Deve_Aceitar(
         [Frozen] MesReferencia mes,
         [Frozen] Cartao cartao,
-        ImportacaoArquivo importada,
+        ImportacaoFatura importada,
         DiaVencimentoCartao outroDia)
     {
         Cartao cartaoOutroBanco = cartao.EmOutroBanco();
@@ -165,13 +162,13 @@ public sealed class ImportacaoArquivoFactoryTests
         result.Should().Succeed();
     }
 
-    [Theory, ImportacaoFaturaAutoData]
-    public void ConferirVencimentoFatura_Quando_MesmaData_Deve_Aceitar([Frozen] Cartao cartao, ImportacaoArquivo importada)
+    [Theory, VencimentoCicloCartaoAutoData]
+    public void ConferirVencimentoFatura_Quando_MesmaData_Deve_Aceitar([Frozen] Cartao cartao, ImportacaoFatura importada)
     {
         UnitResult<Erro> result = ImportacaoArquivoFactory.ConferirVencimentoFatura(
             cartao.IdUsuario,
             cartao.Banco,
-            importada.VencimentoFatura!,
+            importada.Vencimento,
             cartoesFatura: [cartao],
             cartoesUsuario: [cartao],
             [importada]);
@@ -179,10 +176,10 @@ public sealed class ImportacaoArquivoFactoryTests
         result.Should().Succeed();
     }
 
-    [Theory, ImportacaoFaturaAutoData]
+    [Theory, VencimentoCicloCartaoAutoData]
     public void ConferirVencimentoFatura_Quando_OutroMes_Deve_Aceitar(
         [Frozen] Cartao cartao,
-        ImportacaoArquivo importada,
+        ImportacaoFatura importada,
         MesReferencia outroMes,
         DiaVencimentoCartao dia)
     {
@@ -211,10 +208,10 @@ public sealed class ImportacaoArquivoFactoryTests
         result.Should().Succeed();
     }
 
-    [Theory, ImportacaoFaturaAutoData]
+    [Theory, VencimentoCicloCartaoAutoData]
     public void ConferirVencimentoFatura_Quando_ImportacaoOutroUsuario_Deve_LancarExcecao(
         Cartao cartao,
-        ImportacaoArquivo importacaoOutroUsuario,
+        ImportacaoFatura importacaoOutroUsuario,
         VencimentoFatura vencimento)
     {
         Action conferir = () => ImportacaoArquivoFactory.ConferirVencimentoFatura(
@@ -270,7 +267,7 @@ public sealed class ImportacaoArquivoFactoryTests
         byte lidas,
         DateTimeOffset importadaEm)
     {
-        ImportacaoArquivo result = ImportacaoArquivoFactory.Registrar(conta, layout, periodo, lidas, importadaEm);
+        ImportacaoExtrato result = ImportacaoArquivoFactory.Registrar(conta, layout, periodo, lidas, importadaEm);
 
         result.Id.Value.Version.Should().Be(7);
     }

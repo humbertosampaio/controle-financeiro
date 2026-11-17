@@ -4,6 +4,9 @@ namespace ControleFinanceiro.Tests.Shared.AutoFixture.Customizations.Domain.Shar
 
 internal sealed class ImportacaoArquivoCustomization : ICustomization
 {
-    public void Customize(IFixture fixture) =>
-        fixture.Customizations.Add(new ImportacaoArquivoGenerator());
+    public void Customize(IFixture fixture)
+    {
+        fixture.Customizations.Add(new ImportacaoExtratoGenerator());
+        fixture.Customizations.Add(new ImportacaoFaturaGenerator());
+    }
 }

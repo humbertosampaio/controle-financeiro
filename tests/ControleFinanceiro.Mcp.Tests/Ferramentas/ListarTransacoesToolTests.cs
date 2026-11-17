@@ -170,6 +170,6 @@ public sealed class ListarTransacoesToolTests : IAsyncLifetime
         // O Postgres só grava o instante em UTC, como o TimeProvider da aplicação o dá.
         fixture.Inject(fixture.Create<DateTimeOffset>().ToUniversalTime());
 
-        return _banco.GravarExtratoAsync(conta, fixture.Create<ImportacaoArquivo>(), lancamentos);
+        return _banco.GravarExtratoAsync(conta, fixture.Create<ImportacaoExtrato>(), lancamentos);
     }
 }

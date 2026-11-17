@@ -55,9 +55,9 @@ public sealed class ImportarExtratoContaInformadaEndpointTests : IAsyncLifetime
         conta.Tipo.Should().BeSameAs(TipoConta.ContaPagamento);
         conta.Sufixo.Should().Be(ExtratoContaMercadoPago.SufixoConta);
 
-        ImportacaoArquivo importacao = (await _api.ObterTodosAsync(db => db.Importacoes)).Should().ContainSingle().Subject;
+        ImportacaoExtrato importacao = (await _api.ObterTodosAsync(db => db.Importacoes)).Should().ContainSingle().Which.Should().BeOfType<ImportacaoExtrato>().Subject;
         ((Guid)importacao.Id).Should().Be(corpo.IdImportacao);
-        importacao.Origem.Should().Be(OrigemTransacao.DaConta(conta.Id));
+        importacao.IdConta.Should().Be(conta.Id);
         importacao.Layout.Should().BeSameAs(LayoutArquivoImportacao.MercadoPagoContaCsv);
         importacao.Periodo.Should().Be(ExtratoContaMercadoPago.Periodo);
 

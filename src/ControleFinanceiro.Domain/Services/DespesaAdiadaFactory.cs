@@ -29,7 +29,7 @@ public static class DespesaAdiadaFactory
     /// <exception cref="ArgumentException">
     /// Quando um item das listas é de outro usuário, quando uma transação não é de cartão, é de outra fatura ou o cartão
     /// dela não está na lista, ou quando o beneficiário ou a categoria de uma compra não está na lista: a
-    /// <see cref="LoteTransacoesFactory"/> já conferiu os aliases.
+    /// <see cref="LoteTransacoesCartaoFactory"/> já conferiu os aliases.
     /// </exception>
     public static IReadOnlyList<DespesaAdiada> CriarDaFatura(
         IdUsuario idUsuario,

@@ -26,7 +26,7 @@ public static class DespesaParceladaFactory
     /// <exception cref="ArgumentException">
     /// Quando o cartão ou um item das listas é de outro usuário, quando a fatura é de outro banco ou não traz o final do
     /// cartão, quando um lançamento não é de fatura, ou quando o beneficiário ou a categoria de uma compra não está na lista:
-    /// a <see cref="LoteTransacoesFactory"/> já conferiu os aliases.
+    /// a <see cref="LoteTransacoesCartaoFactory"/> já conferiu os aliases.
     /// </exception>
     public static IReadOnlyList<DespesaParcelada> CriarDaFatura(
         IdUsuario idUsuario,

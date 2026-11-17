@@ -155,12 +155,12 @@ public sealed class ErrosParaModeloTests
     public void De_Quando_IdentificadorRepetido_Deve_RetornarAMensagemFixa(
         [Frozen] IdUsuario idUsuario,
         [Frozen] ContaBancaria conta,
-        ImportacaoArquivo importacao,
+        ImportacaoExtrato importacao,
         Lancamento lancamento,
         IdentidadeLancamento identidade)
     {
         Lancamento repetido = lancamento.SemCategoria().ComIdentidade(identidade);
-        Erro erro = LoteTransacoesFactory
+        Erro erro = LoteTransacoesContaFactory
             .Criar(idUsuario, beneficiariosDoUsuario: [], categoriasDoUsuario: [], conta, importacao, [repetido, repetido])
             .Error;
 

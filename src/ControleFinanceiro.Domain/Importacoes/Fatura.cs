@@ -58,7 +58,7 @@ public sealed class Fatura : ValueObject
             "A fatura não traz lançamentos.");
     }
 
-    /// <summary>Os lançamentos do cartão, na ordem do arquivo, como a <see cref="Services.LoteTransacoesFactory"/> os recebe.</summary>
+    /// <summary>Os lançamentos do cartão, na ordem do arquivo, como a <see cref="Services.LoteTransacoesCartaoFactory"/> os recebe.</summary>
     /// <exception cref="ArgumentException">Quando o final não está na fatura.</exception>
     public IReadOnlyList<Lancamento> LancamentosCartao(SufixoCartao sufixo)
     {

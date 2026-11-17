@@ -420,24 +420,12 @@ namespace ControleFinanceiro.Infrastructure.Persistence.Migrations
                         .HasColumnType("integer")
                         .HasColumnName("lidas");
 
-                    b.Property<DateOnly?>("VencimentoFatura")
-                        .HasColumnType("date")
-                        .HasColumnName("data_vencimento_fatura");
+                    b.Property<string>("tipo")
+                        .IsRequired()
+                        .HasMaxLength(21)
+                        .HasColumnType("character varying(21)");
 
-                    b.ComplexProperty(typeof(Dictionary<string, object>), "Origem", "ControleFinanceiro.Domain.Importacoes.ImportacaoArquivo.Origem#OrigemTransacao", b1 =>
-                        {
-                            b1.IsRequired();
-
-                            b1.Property<Guid?>("IdCartao")
-                                .HasColumnType("uuid")
-                                .HasColumnName("id_cartao");
-
-                            b1.Property<Guid?>("IdConta")
-                                .HasColumnType("uuid")
-                                .HasColumnName("id_conta");
-                        });
-
-                    b.ComplexProperty(typeof(Dictionary<string, object>), "Periodo", "ControleFinanceiro.Domain.Importacoes.ImportacaoArquivo.Periodo#PeriodoArquivo", b1 =>
+                    b.ComplexProperty(typeof(Dictionary<string, object>), "Periodo", "ControleFinanceiro.Domain.Importacoes.ImportacaoArquivo.Periodo#Periodo", b1 =>
                         {
                             b1.IsRequired();
 
@@ -458,12 +446,16 @@ namespace ControleFinanceiro.Infrastructure.Persistence.Migrations
                         {
                             t.HasCheckConstraint("CK_importacoes_lidas", "lidas >= 0");
 
-                            t.HasCheckConstraint("CK_importacoes_origem", "num_nonnulls(id_conta, id_cartao) = 1");
+                            t.HasCheckConstraint("CK_importacoes_origem", "(tipo = 'extrato' AND id_conta IS NOT NULL AND id_cartao IS NULL) OR (tipo = 'fatura' AND id_cartao IS NOT NULL AND id_conta IS NULL)");
 
                             t.HasCheckConstraint("CK_importacoes_periodo", "periodo_inicio <= periodo_fim");
 
-                            t.HasCheckConstraint("CK_importacoes_vencimento_fatura", "(id_cartao IS NULL) = (data_vencimento_fatura IS NULL)");
+                            t.HasCheckConstraint("CK_importacoes_vencimento_fatura", "(tipo = 'fatura') = (data_vencimento_fatura IS NOT NULL)");
                         });
+
+                    b.HasDiscriminator<string>("tipo").HasValue("ImportacaoArquivo");
+
+                    b.UseTphMappingStrategy();
                 });
 
             modelBuilder.Entity("ControleFinanceiro.Domain.Transacoes.Transacao", b =>
@@ -733,6 +725,58 @@ namespace ControleFinanceiro.Infrastructure.Persistence.Migrations
                         });
 
                     b.HasDiscriminator().HasValue("parcelada");
+                });
+
+            modelBuilder.Entity("ControleFinanceiro.Domain.Importacoes.ImportacaoExtrato", b =>
+                {
+                    b.HasBaseType("ControleFinanceiro.Domain.Importacoes.ImportacaoArquivo");
+
+                    b.Property<Guid>("IdConta")
+                        .HasColumnType("uuid")
+                        .HasColumnName("id_conta");
+
+                    b.HasIndex("IdConta");
+
+                    b.ToTable(t =>
+                        {
+                            t.HasCheckConstraint("CK_importacoes_lidas", "lidas >= 0");
+
+                            t.HasCheckConstraint("CK_importacoes_origem", "(tipo = 'extrato' AND id_conta IS NOT NULL AND id_cartao IS NULL) OR (tipo = 'fatura' AND id_cartao IS NOT NULL AND id_conta IS NULL)");
+
+                            t.HasCheckConstraint("CK_importacoes_periodo", "periodo_inicio <= periodo_fim");
+
+                            t.HasCheckConstraint("CK_importacoes_vencimento_fatura", "(tipo = 'fatura') = (data_vencimento_fatura IS NOT NULL)");
+                        });
+
+                    b.HasDiscriminator().HasValue("extrato");
+                });
+
+            modelBuilder.Entity("ControleFinanceiro.Domain.Importacoes.ImportacaoFatura", b =>
+                {
+                    b.HasBaseType("ControleFinanceiro.Domain.Importacoes.ImportacaoArquivo");
+
+                    b.Property<Guid>("IdCartao")
+                        .HasColumnType("uuid")
+                        .HasColumnName("id_cartao");
+
+                    b.Property<DateOnly>("Vencimento")
+                        .HasColumnType("date")
+                        .HasColumnName("data_vencimento_fatura");
+
+                    b.HasIndex("IdCartao");
+
+                    b.ToTable(t =>
+                        {
+                            t.HasCheckConstraint("CK_importacoes_lidas", "lidas >= 0");
+
+                            t.HasCheckConstraint("CK_importacoes_origem", "(tipo = 'extrato' AND id_conta IS NOT NULL AND id_cartao IS NULL) OR (tipo = 'fatura' AND id_cartao IS NOT NULL AND id_conta IS NULL)");
+
+                            t.HasCheckConstraint("CK_importacoes_periodo", "periodo_inicio <= periodo_fim");
+
+                            t.HasCheckConstraint("CK_importacoes_vencimento_fatura", "(tipo = 'fatura') = (data_vencimento_fatura IS NOT NULL)");
+                        });
+
+                    b.HasDiscriminator().HasValue("fatura");
                 });
 
             modelBuilder.Entity("ControleFinanceiro.Domain.Despesas.DespesaAdiada", b =>
@@ -1064,6 +1108,24 @@ namespace ControleFinanceiro.Infrastructure.Persistence.Migrations
                 });
 
             modelBuilder.Entity("ControleFinanceiro.Domain.Despesas.DespesaParcelada", b =>
+                {
+                    b.HasOne("ControleFinanceiro.Domain.Cartoes.Cartao", null)
+                        .WithMany()
+                        .HasForeignKey("IdCartao")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("ControleFinanceiro.Domain.Importacoes.ImportacaoExtrato", b =>
+                {
+                    b.HasOne("ControleFinanceiro.Domain.Contas.ContaBancaria", null)
+                        .WithMany()
+                        .HasForeignKey("IdConta")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("ControleFinanceiro.Domain.Importacoes.ImportacaoFatura", b =>
                 {
                     b.HasOne("ControleFinanceiro.Domain.Cartoes.Cartao", null)
                         .WithMany()

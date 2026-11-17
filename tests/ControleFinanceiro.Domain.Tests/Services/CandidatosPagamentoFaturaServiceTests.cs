@@ -353,7 +353,7 @@ public sealed class CandidatosPagamentoFaturaServiceTests
     }
 
     [Theory, CandidatosAutoData]
-    public void Apontar_Quando_ImportacaoDeOutroUsuario_Deve_LancarExcecao(ImportacaoArquivo importacaoOutroUsuario, MesReferencia mes)
+    public void Apontar_Quando_ImportacaoDeOutroUsuario_Deve_LancarExcecao(ImportacaoFatura importacaoOutroUsuario, MesReferencia mes)
     {
         Action act = () => CandidatosPagamentoFaturaService.Apontar(
             IdUsuario.FromNewVersion7Guid(),

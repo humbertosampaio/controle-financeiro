@@ -62,7 +62,7 @@ internal sealed class VinculoDeTeste
         // O Postgres só grava o instante em UTC, como o TimeProvider da aplicação o dá.
         fixture.Inject(fixture.Create<DateTimeOffset>().ToUniversalTime());
 
-        return await _banco.GravarExtratoAsync(conta, fixture.Create<ImportacaoArquivo>(), lancamentos);
+        return await _banco.GravarExtratoAsync(conta, fixture.Create<ImportacaoExtrato>(), lancamentos);
     }
 
     public async Task DeveEstarPendenteAsync(Despesa despesa, MesReferencia mes)
