@@ -25,11 +25,11 @@ public sealed class LoteTransacoesContaFactoryTests
         LancamentoConta primeiro,
         LancamentoConta segundo)
     {
-        Result<IReadOnlyList<Transacao>, Erro> result = CriarComAliasesResolvidos(idUsuario, conta, importacao, [primeiro, segundo]);
+        Result<IReadOnlyList<TransacaoConta>, Erro> result = CriarComAliasesResolvidos(idUsuario, conta, importacao, [primeiro, segundo]);
 
-        IReadOnlyList<Transacao> transacoes = result.Should().Succeed().Subject;
+        IReadOnlyList<TransacaoConta> transacoes = result.Should().Succeed().Subject;
         transacoes.Select(t => t.Descricao).Should().Equal(primeiro.Descricao, segundo.Descricao);
-        transacoes.Should().AllSatisfy(t => t.Origem.Should().Be(origem));
+        transacoes.Should().AllSatisfy(t => t.IdConta.Should().Be(conta.Id));
         transacoes.Select(t => t.Chave).Should().Equal(
             ChaveDeduplicacao.CalcularLote(conta.Banco, origem, [primeiro.Identidade, segundo.Identidade]));
     }
@@ -41,32 +41,15 @@ public sealed class LoteTransacoesContaFactoryTests
         ImportacaoExtrato importacao,
         LancamentoConta lancamento)
     {
-        Result<IReadOnlyList<Transacao>, Erro> result = CriarComAliasesResolvidos(idUsuario, conta, importacao, [lancamento]);
+        Result<IReadOnlyList<TransacaoConta>, Erro> result = CriarComAliasesResolvidos(idUsuario, conta, importacao, [lancamento]);
 
-        Transacao transacao = result.Should().Succeed().Which.Should().ContainSingle().Subject;
+        TransacaoConta transacao = result.Should().Succeed().Which.Should().ContainSingle().Subject;
         transacao.Data.Should().Be(lancamento.Data);
         transacao.Hora.Should().Be(lancamento.Hora);
         transacao.Valor.Should().Be(lancamento.Valor);
         transacao.Descricao.Should().Be(lancamento.Descricao);
         transacao.Contraparte.Should().Be(lancamento.Contraparte);
         transacao.CategoriaBanco.Should().Be(lancamento.CategoriaBanco);
-    }
-
-    [Theory, DomainAutoData]
-    public void Criar_Quando_LancamentoSemParcela_Deve_CriarTransacaoNaoParcelada(
-        [Frozen] IdUsuario idUsuario,
-        [Frozen] ContaBancaria conta,
-        ImportacaoExtrato importacao,
-        IdentidadeLancamento identidade,
-        DateOnly data,
-        Reais valor,
-        TextoObrigatorio descricao)
-    {
-        LancamentoConta lancamento = LancamentoConta.Criar(data, hora: null, valor, descricao, contraparte: null, categoriaBanco: null, identidade);
-
-        Result<IReadOnlyList<Transacao>, Erro> result = CriarComAliasesResolvidos(idUsuario, conta, importacao, [lancamento]);
-
-        result.Should().Succeed().Which.Should().ContainSingle().Which.EhParcelada.Should().BeFalse();
     }
 
     [Theory, DomainAutoData]
@@ -77,7 +60,7 @@ public sealed class LoteTransacoesContaFactoryTests
         LancamentoConta primeiro,
         LancamentoConta segundo)
     {
-        Result<IReadOnlyList<Transacao>, Erro> result = CriarComAliasesResolvidos(idUsuario, conta, importacao, [primeiro, segundo]);
+        Result<IReadOnlyList<TransacaoConta>, Erro> result = CriarComAliasesResolvidos(idUsuario, conta, importacao, [primeiro, segundo]);
 
         result.Should().Succeed().Which.Should().AllSatisfy(t =>
         {
@@ -87,25 +70,13 @@ public sealed class LoteTransacoesContaFactoryTests
     }
 
     [Theory, DomainAutoData]
-    public void Criar_Quando_ContaDoUsuario_Deve_DeixarSemMesDaFatura(
-        [Frozen] IdUsuario idUsuario,
-        [Frozen] ContaBancaria conta,
-        ImportacaoExtrato importacao,
-        LancamentoConta lancamento)
-    {
-        Result<IReadOnlyList<Transacao>, Erro> result = CriarComAliasesResolvidos(idUsuario, conta, importacao, [lancamento]);
-
-        result.Should().Succeed().Which.Should().ContainSingle().Which.MesVencimentoFatura.Should().BeNull();
-    }
-
-    [Theory, DomainAutoData]
     public void Criar_Deve_GerarIdVersao7ParaCadaTransacao(
         [Frozen] IdUsuario idUsuario,
         [Frozen] ContaBancaria conta,
         ImportacaoExtrato importacao,
         LancamentoConta lancamento)
     {
-        Result<IReadOnlyList<Transacao>, Erro> result = CriarComAliasesResolvidos(idUsuario, conta, importacao, [lancamento]);
+        Result<IReadOnlyList<TransacaoConta>, Erro> result = CriarComAliasesResolvidos(idUsuario, conta, importacao, [lancamento]);
 
         result.Should().Succeed()
             .Which.Should().ContainSingle()
@@ -119,7 +90,7 @@ public sealed class LoteTransacoesContaFactoryTests
         ImportacaoExtrato importacao,
         LancamentoConta lancamento)
     {
-        Result<IReadOnlyList<Transacao>, Erro> result = CriarComAliasesResolvidos(idUsuario, conta, importacao, [lancamento, lancamento]);
+        Result<IReadOnlyList<TransacaoConta>, Erro> result = CriarComAliasesResolvidos(idUsuario, conta, importacao, [lancamento, lancamento]);
 
         result.Should().Succeed()
             .Which.Select(t => t.Chave).Should().HaveCount(2).And.OnlyHaveUniqueItems();
@@ -132,7 +103,7 @@ public sealed class LoteTransacoesContaFactoryTests
         ImportacaoExtrato importacao,
         LancamentoConta lancamento)
     {
-        Result<IReadOnlyList<Transacao>, Erro> result = CriarComAliasesResolvidos(idUsuario, contaDeOutroUsuario, importacao, [lancamento]);
+        Result<IReadOnlyList<TransacaoConta>, Erro> result = CriarComAliasesResolvidos(idUsuario, contaDeOutroUsuario, importacao, [lancamento]);
 
         result.Should().FailWith(ErroOrigemNaoPertenceAoUsuario.Instancia);
     }
@@ -164,7 +135,7 @@ public sealed class LoteTransacoesContaFactoryTests
         LancamentoConta primeiro = LancamentoConta.Criar(data, hora: null, valor1, descricao, contraparte: null, categoriaBanco: null, identidade);
         LancamentoConta segundo = LancamentoConta.Criar(data, hora: null, valor2, descricao, contraparte: null, categoriaBanco: null, identidade);
 
-        Result<IReadOnlyList<Transacao>, Erro> result = CriarComAliasesResolvidos(idUsuario, conta, importacao, [outro, primeiro, outro, segundo]);
+        Result<IReadOnlyList<TransacaoConta>, Erro> result = CriarComAliasesResolvidos(idUsuario, conta, importacao, [outro, primeiro, outro, segundo]);
 
         ErroIdentificadorRepetido erro = result.Should().Fail().Which.Should().BeOfType<ErroIdentificadorRepetido>().Subject;
         erro.Posicoes.Should().Equal(2, 4);
@@ -184,7 +155,7 @@ public sealed class LoteTransacoesContaFactoryTests
     {
         LancamentoConta saida = LancamentoConta.Criar(data, hora: null, -valor, descricao, contraparte, categoriaBanco: null, identidade);
 
-        Result<IReadOnlyList<Transacao>, Erro> result = CriarComAliasesResolvidos(idUsuario, conta, importacao, [saida]);
+        Result<IReadOnlyList<TransacaoConta>, Erro> result = CriarComAliasesResolvidos(idUsuario, conta, importacao, [saida]);
 
         result.Should().Succeed()
             .Which.Should().ContainSingle()
@@ -203,7 +174,7 @@ public sealed class LoteTransacoesContaFactoryTests
     {
         LancamentoConta boleto = LancamentoConta.Criar(data, hora: null, -valor, descricao, contraparte: null, categoriaBanco: null, identidade);
 
-        Result<IReadOnlyList<Transacao>, Erro> result = CriarComAliasesResolvidos(idUsuario, conta, importacao, [boleto]);
+        Result<IReadOnlyList<TransacaoConta>, Erro> result = CriarComAliasesResolvidos(idUsuario, conta, importacao, [boleto]);
 
         result.Should().Succeed()
             .Which.Should().ContainSingle()
@@ -223,7 +194,7 @@ public sealed class LoteTransacoesContaFactoryTests
     {
         LancamentoConta entrada = LancamentoConta.Criar(data, hora: null, valor, descricao, contraparte, categoriaBanco: null, identidade);
 
-        Result<IReadOnlyList<Transacao>, Erro> result = CriarComAliasesResolvidos(idUsuario, conta, importacao, [entrada]);
+        Result<IReadOnlyList<TransacaoConta>, Erro> result = CriarComAliasesResolvidos(idUsuario, conta, importacao, [entrada]);
 
         result.Should().Succeed()
             .Which.Should().ContainSingle()
@@ -246,7 +217,7 @@ public sealed class LoteTransacoesContaFactoryTests
     {
         LancamentoConta lancamento = LancamentoConta.Criar(data, hora: null, valor, descricao, contraparte: null, categoriaBanco: null, identidade);
 
-        Result<IReadOnlyList<Transacao>, Erro> result = CriarComAliasesResolvidos(idUsuario, conta, importacao, [lancamento]);
+        Result<IReadOnlyList<TransacaoConta>, Erro> result = CriarComAliasesResolvidos(idUsuario, conta, importacao, [lancamento]);
 
         result.Should().Succeed()
             .Which.Should().ContainSingle()
@@ -269,7 +240,7 @@ public sealed class LoteTransacoesContaFactoryTests
     {
         LancamentoConta lancamento = LancamentoConta.Criar(data, hora: null, valor, descricao, contraparte: null, categoriaBanco: null, identidade);
 
-        Result<IReadOnlyList<Transacao>, Erro> result = CriarComAliasesResolvidos(idUsuario, conta, importacao, [lancamento]);
+        Result<IReadOnlyList<TransacaoConta>, Erro> result = CriarComAliasesResolvidos(idUsuario, conta, importacao, [lancamento]);
 
         result.Should().Succeed()
             .Which.Should().ContainSingle()
@@ -288,7 +259,7 @@ public sealed class LoteTransacoesContaFactoryTests
     {
         LancamentoConta ajuste = LancamentoConta.Criar(data, hora: null, valor: 0m, descricao, contraparte, categoriaBanco: null, identidade);
 
-        Result<IReadOnlyList<Transacao>, Erro> result = CriarComAliasesResolvidos(idUsuario, conta, importacao, [ajuste]);
+        Result<IReadOnlyList<TransacaoConta>, Erro> result = CriarComAliasesResolvidos(idUsuario, conta, importacao, [ajuste]);
 
         result.Should().Succeed()
             .Which.Should().ContainSingle()
@@ -312,7 +283,7 @@ public sealed class LoteTransacoesContaFactoryTests
         LancamentoConta resolvida = LancamentoConta.Criar(data, hora: null, -valor, descricao, alias.TextoOriginal, categoriaBanco: null, identidade);
         LancamentoConta pendente = LancamentoConta.Criar(data, hora: null, -valor, descricao, semAlias, categoriaBanco: null, outraIdentidade);
 
-        Result<IReadOnlyList<Transacao>, Erro> result = LoteTransacoesContaFactory.Criar(
+        Result<IReadOnlyList<TransacaoConta>, Erro> result = LoteTransacoesContaFactory.Criar(
             idUsuario,
             [beneficiario],
             categoriasDoUsuario: [],
@@ -336,7 +307,7 @@ public sealed class LoteTransacoesContaFactoryTests
     {
         LancamentoConta saida = LancamentoConta.Criar(data, hora: null, -valor, descricao, semAlias, categoriaBanco: null, identidade);
 
-        Result<IReadOnlyList<Transacao>, Erro> result = LoteTransacoesContaFactory.Criar(
+        Result<IReadOnlyList<TransacaoConta>, Erro> result = LoteTransacoesContaFactory.Criar(
             idUsuario,
             beneficiariosDoUsuario: [],
             categoriasDoUsuario: [],
@@ -374,7 +345,7 @@ public sealed class LoteTransacoesContaFactoryTests
     {
         IReadOnlyList<Beneficiario> beneficiarios = BeneficiariosResolvidos.Dos(idUsuario, [lancamento]);
 
-        Result<IReadOnlyList<Transacao>, Erro> result = LoteTransacoesContaFactory.Criar(
+        Result<IReadOnlyList<TransacaoConta>, Erro> result = LoteTransacoesContaFactory.Criar(
             idUsuario,
             beneficiarios,
             categoriasDoUsuario: [],
@@ -399,7 +370,7 @@ public sealed class LoteTransacoesContaFactoryTests
     {
         LancamentoConta saida = LancamentoConta.Criar(data, hora: null, -valor, descricao, semAlias, categoriaBanco, identidade);
 
-        Result<IReadOnlyList<Transacao>, Erro> result = LoteTransacoesContaFactory.Criar(
+        Result<IReadOnlyList<TransacaoConta>, Erro> result = LoteTransacoesContaFactory.Criar(
             idUsuario,
             beneficiariosDoUsuario: [],
             categoriasDoUsuario: [],
@@ -423,7 +394,7 @@ public sealed class LoteTransacoesContaFactoryTests
     {
         LancamentoConta entrada = LancamentoConta.Criar(data, hora: null, valor, descricao, contraparte: null, categoriaBanco, identidade);
 
-        Result<IReadOnlyList<Transacao>, Erro> result = LoteTransacoesContaFactory.Criar(
+        Result<IReadOnlyList<TransacaoConta>, Erro> result = LoteTransacoesContaFactory.Criar(
             idUsuario,
             beneficiariosDoUsuario: [],
             categoriasDoUsuario: [],
@@ -460,7 +431,7 @@ public sealed class LoteTransacoesContaFactoryTests
         [Frozen] ContaBancaria conta,
         ImportacaoExtrato importacao)
     {
-        Result<IReadOnlyList<Transacao>, Erro> result = CriarComAliasesResolvidos(idUsuario, conta, importacao, lancamentos: []);
+        Result<IReadOnlyList<TransacaoConta>, Erro> result = CriarComAliasesResolvidos(idUsuario, conta, importacao, lancamentos: []);
 
         result.Should().Succeed()
             .Which.Should().BeEmpty();
@@ -470,7 +441,7 @@ public sealed class LoteTransacoesContaFactoryTests
     /// Cria o lote com um beneficiário para cada texto de beneficiário e uma categoria para cada categoria do banco dos
     /// lançamentos, para não falhar por isso.
     /// </summary>
-    private static Result<IReadOnlyList<Transacao>, Erro> CriarComAliasesResolvidos(
+    private static Result<IReadOnlyList<TransacaoConta>, Erro> CriarComAliasesResolvidos(
         IdUsuario idUsuario,
         ContaBancaria conta,
         ImportacaoExtrato importacao,

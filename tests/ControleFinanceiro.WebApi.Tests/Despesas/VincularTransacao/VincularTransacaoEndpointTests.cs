@@ -107,13 +107,13 @@ public sealed class VincularTransacaoEndpointTests : IAsyncLifetime
         Guid idUsuario = await _api.CadastrarUsuarioAsync(cadastro);
         DespesaAdiada despesa = await _api.ImportarFaturaComPrevisaoAsync(idUsuario, CompraRepetidaDoVirtual, recorrente, geracao);
         IReadOnlyList<DespesaAdiada> adiadas = await _api.ObterTodosAsync(db => db.Despesas.OfType<DespesaAdiada>());
-        Transacao doOutroFinal = (await _api.ObterTodosAsync(db => db.Transacoes))
+        TransacaoCartao doOutroFinal = (await _api.ObterTodosAsync(db => db.Transacoes.OfType<TransacaoCartao>()))
             .Single(t => t.Descricao == CompraRepetidaDoVirtual && adiadas.All(d => d.Cobranca?.IdTransacao != t.Id));
 
         using HttpResponseMessage resposta = await _api.VincularAsync(idUsuario, despesa.Id.Value, new VincularTransacaoRequest { IdTransacao = doOutroFinal.Id.Value });
 
         resposta.StatusCode.Should().Be(HttpStatusCode.OK);
-        doOutroFinal.Origem.IdCartao.Should().NotBe(despesa.IdCartao);
+        doOutroFinal.IdCartao.Should().NotBe(despesa.IdCartao);
         DespesaAdiada gravada = (await _api.ObterTodosAsync(db => db.Despesas.OfType<DespesaAdiada>()))
             .Single(d => d.Id == despesa.Id);
         gravada.Cobranca.Should().Be(new Cobranca(doOutroFinal.Id, doOutroFinal.ValorAbsoluto));
@@ -177,7 +177,7 @@ public sealed class VincularTransacaoEndpointTests : IAsyncLifetime
         Guid idUsuario = await ImportarFaturaAsync(cadastro);
         await _api.ImportarFaturaComSucessoAsync(idUsuario, LayoutArquivoImportacao.C6CartaoCsv, FaturaCartaoC6.ComParcelaSeguinte());
         DespesaParcelada despesa = (await _api.ObterParceladasAsync()).Single();
-        Transacao decima = (await _api.ObterTodosAsync(db => db.Transacoes)).Single(t => t.Parcela == (Parcela)(10, 10));
+        TransacaoCartao decima = (await _api.ObterTodosAsync(db => db.Transacoes.OfType<TransacaoCartao>())).Single(t => t.Parcela == (Parcela)(10, 10));
 
         using HttpResponseMessage resposta = await _api.VincularAsync(idUsuario, despesa.Id.Value, new VincularTransacaoRequest { IdTransacao = decima.Id.Value });
 

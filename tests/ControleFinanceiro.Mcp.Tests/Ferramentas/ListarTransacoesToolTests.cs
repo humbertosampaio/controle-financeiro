@@ -67,8 +67,8 @@ public sealed class ListarTransacoesToolTests : IAsyncLifetime
     public async Task Listar_Deve_TerSoOsCamposPermitidos(MesReferencia mes, Fixture fixture)
     {
         fixture.Inject(_servidor.Usuario.Id);
-        IReadOnlyList<Transacao> transacoes = await GravarExtratoAsync(fixture, NaData(fixture, mes.Inicio));
-        Transacao transacao = transacoes.Single();
+        IReadOnlyList<TransacaoConta> transacoes = await GravarExtratoAsync(fixture, NaData(fixture, mes.Inicio));
+        TransacaoConta transacao = transacoes.Single();
 
         CallToolResult resultado = await _servidor.ClienteMcp.ChamarDoMesAsync(Tools.ListarTransacoes, mes.Ano, mes.Mes);
 
@@ -79,7 +79,7 @@ public sealed class ListarTransacoesToolTests : IAsyncLifetime
         resultado.Texto.Should().NotContain(transacao.Chave)
             .And.NotContain(transacao.IdUsuario.Value.ToString())
             .And.NotContain(transacao.IdImportacao.Value.ToString())
-            .And.NotContain(transacao.Origem.IdConta!.Value.Value.ToString());
+            .And.NotContain(transacao.IdConta.Value.ToString());
     }
 
     [Theory]
@@ -163,7 +163,7 @@ public sealed class ListarTransacoesToolTests : IAsyncLifetime
     }
 
     /// <summary>Grava os lançamentos como um extrato de uma conta nova do usuário injetado no <paramref name="fixture"/>.</summary>
-    private Task<IReadOnlyList<Transacao>> GravarExtratoAsync(IFixture fixture, params LancamentoConta[] lancamentos)
+    private Task<IReadOnlyList<TransacaoConta>> GravarExtratoAsync(IFixture fixture, params LancamentoConta[] lancamentos)
     {
         ContaBancaria conta = fixture.Freeze<ContaBancaria>();
 

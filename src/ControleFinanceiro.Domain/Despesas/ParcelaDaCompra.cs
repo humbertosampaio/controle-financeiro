@@ -14,8 +14,8 @@ internal sealed class ParcelaDaCompra : ValueObject
         Numero = numero;
     }
 
-    /// <param name="transacao">Uma transação com <see cref="Transacao.EhParcelaPagaNoCartao"/>, que quem chama já filtrou.</param>
-    public static ParcelaDaCompra DaTransacao(Transacao transacao) =>
+    /// <param name="transacao">Uma transação com <see cref="TransacaoCartao.EhParcelaPaga"/>, que quem chama já filtrou.</param>
+    public static ParcelaDaCompra DaTransacao(TransacaoCartao transacao) =>
         new(ChaveCompraParcelada.DaTransacao(transacao), transacao.Parcela!.Numero);
 
     protected override IEnumerable<object?> GetEqualityComponents()

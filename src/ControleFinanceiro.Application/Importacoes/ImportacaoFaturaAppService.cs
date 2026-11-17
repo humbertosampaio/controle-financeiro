@@ -9,7 +9,7 @@ using ControleFinanceiro.Domain.Shared;
 using ControleFinanceiro.Domain.Transacoes;
 using ControleFinanceiro.Domain.Usuarios;
 using CSharpFunctionalExtensions;
-using LoteCartao = (ControleFinanceiro.Domain.Cartoes.Cartao Cartao, ControleFinanceiro.Domain.Importacoes.ImportacaoFatura Importacao, System.Collections.Generic.IReadOnlyList<ControleFinanceiro.Domain.Transacoes.Transacao> Transacoes, System.Collections.Generic.IReadOnlyList<ControleFinanceiro.Domain.Despesas.DespesaParcelada> DespesasParceladas);
+using LoteCartao = (ControleFinanceiro.Domain.Cartoes.Cartao Cartao, ControleFinanceiro.Domain.Importacoes.ImportacaoFatura Importacao, System.Collections.Generic.IReadOnlyList<ControleFinanceiro.Domain.Transacoes.TransacaoCartao> Transacoes, System.Collections.Generic.IReadOnlyList<ControleFinanceiro.Domain.Despesas.DespesaParcelada> DespesasParceladas);
 
 namespace ControleFinanceiro.Application.Importacoes;
 
@@ -29,7 +29,7 @@ public sealed class ImportacaoFaturaAppService
     private readonly IBeneficiarioRepository _beneficiarioRepository;
     private readonly ICategoriaDespesaRepository _categoriaDespesaRepository;
     private readonly IDespesaRepository _despesaRepository;
-    private readonly ITransacaoRepository _transacaoRepository;
+    private readonly ITransacaoCartaoRepository _transacaoCartaoRepository;
     private readonly IImportacaoFaturaRepository _importacaoFaturaRepository;
     private readonly TimeProvider _timeProvider;
     private readonly IUnitOfWork _unitOfWork;
@@ -39,7 +39,7 @@ public sealed class ImportacaoFaturaAppService
         IBeneficiarioRepository beneficiarioRepository,
         ICategoriaDespesaRepository categoriaDespesaRepository,
         IDespesaRepository despesaRepository,
-        ITransacaoRepository transacaoRepository,
+        ITransacaoCartaoRepository transacaoCartaoRepository,
         IImportacaoFaturaRepository importacaoFaturaRepository,
         TimeProvider timeProvider,
         IUnitOfWork unitOfWork)
@@ -48,7 +48,7 @@ public sealed class ImportacaoFaturaAppService
         _beneficiarioRepository = beneficiarioRepository;
         _categoriaDespesaRepository = categoriaDespesaRepository;
         _despesaRepository = despesaRepository;
-        _transacaoRepository = transacaoRepository;
+        _transacaoCartaoRepository = transacaoCartaoRepository;
         _importacaoFaturaRepository = importacaoFaturaRepository;
         _timeProvider = timeProvider;
         _unitOfWork = unitOfWork;
@@ -220,16 +220,16 @@ public sealed class ImportacaoFaturaAppService
     private async Task<FaturaImportadaDto> AcrescentarAsync(
         Fatura fatura,
         IReadOnlyList<LoteCartao> lotes,
-        Func<IReadOnlyList<Transacao>, IReadOnlyList<DespesaAdiada>> criarAdiadas,
+        Func<IReadOnlyList<TransacaoCartao>, IReadOnlyList<DespesaAdiada>> criarAdiadas,
         CancellationToken ct)
     {
-        List<Transacao> novasDaFatura = [];
+        List<TransacaoCartao> novasDaFatura = [];
         List<(LoteCartao Lote, int Novas)> acrescentados = [];
 
         foreach (LoteCartao lote in lotes)
         {
             await _importacaoFaturaRepository.AdicionarAsync(lote.Importacao, ct);
-            IReadOnlyList<Transacao> novas = await _transacaoRepository.AdicionarNovasAsync(lote.Transacoes, ct);
+            IReadOnlyList<TransacaoCartao> novas = await _transacaoCartaoRepository.AdicionarNovasAsync(lote.Transacoes, ct);
             await _despesaRepository.AdicionarAsync(lote.DespesasParceladas, ct);
 
             novasDaFatura.AddRange(novas);

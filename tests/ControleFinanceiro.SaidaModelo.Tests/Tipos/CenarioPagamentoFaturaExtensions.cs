@@ -16,7 +16,7 @@ internal static class CenarioPagamentoFaturaExtensions
         public CandidatoPagamentoFaturaDto CandidatoPagamentoFaturaUnico(Cartao cartao, VencimentoFatura vencimento, LancamentoConta compra, LancamentoConta linhaSaida)
         {
             cenario.ImportarFatura(cartao, vencimento, compra.NoCartaoComValor(-100m));
-            Transacao saida = cenario.Saida(linhaSaida, vencimento, (ReaisPositivo)100m);
+            TransacaoConta saida = cenario.Saida(linhaSaida, vencimento, (ReaisPositivo)100m);
             CandidatoPagamentoFatura candidato = cenario.Apontar([cartao], vencimento.Mes).Single();
 
             return new CandidatoPagamentoFaturaDto(candidato, saida);

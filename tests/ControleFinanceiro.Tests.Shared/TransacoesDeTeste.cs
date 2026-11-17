@@ -37,7 +37,7 @@ public sealed class TransacoesDeTeste
     }
 
     /// <param name="linha">Vira uma linha de extrato: os casos de origem incompatível usam a mesma saída na conta e no cartão.</param>
-    public Transacao DaConta(Lancamento linha)
+    public TransacaoConta DaConta(Lancamento linha)
     {
         LancamentoConta lancamento = linha.NaConta();
         IReadOnlyList<Beneficiario> beneficiarios = BeneficiariosResolvidos.Dos(_idUsuario, [lancamento]);
@@ -46,7 +46,7 @@ public sealed class TransacoesDeTeste
     }
 
     /// <param name="linha">Vira uma linha de fatura: os casos de origem incompatível usam a mesma saída na conta e no cartão.</param>
-    public Transacao DoCartao(Cartao cartao, Lancamento linha)
+    public TransacaoCartao DoCartao(Cartao cartao, Lancamento linha)
     {
         LancamentoCartao lancamento = linha.NoCartao();
         IReadOnlyList<Beneficiario> beneficiarios = BeneficiariosResolvidos.Dos(_idUsuario, [lancamento]);

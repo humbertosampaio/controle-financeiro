@@ -33,7 +33,7 @@ public sealed class ConferenciaSomaPeriodoTests
         [Frozen] ContaBancaria conta,
         ImportacaoExtrato importacao)
     {
-        Transacao[] lote = Lote(conta, importacao, extrato.Lancamentos);
+        TransacaoConta[] lote = Lote(conta, importacao, extrato.Lancamentos);
 
         Result result = ConferenciaSomaPeriodo.Conferir(extrato, lote.Take(1), lote.Skip(1));
 
@@ -48,7 +48,7 @@ public sealed class ConferenciaSomaPeriodoTests
         ImportacaoExtrato importacao,
         LancamentoConta naoReconhecido)
     {
-        Transacao[] gravadas = Lote(conta, importacao, [.. extrato.Lancamentos, naoReconhecido]);
+        TransacaoConta[] gravadas = Lote(conta, importacao, [.. extrato.Lancamentos, naoReconhecido]);
 
         Result result = ConferenciaSomaPeriodo.Conferir(extrato, gravadas, novas: []);
 
@@ -81,7 +81,7 @@ public sealed class ConferenciaSomaPeriodoTests
         result.Should().Fail();
     }
 
-    private static Transacao[] Lote(ContaBancaria conta, ImportacaoExtrato importacao, IReadOnlyList<LancamentoConta> lancamentos)
+    private static TransacaoConta[] Lote(ContaBancaria conta, ImportacaoExtrato importacao, IReadOnlyList<LancamentoConta> lancamentos)
     {
         IReadOnlyList<Beneficiario> beneficiarios = BeneficiariosResolvidos.Dos(conta.IdUsuario, lancamentos);
         IReadOnlyList<CategoriaDespesa> categorias = CategoriasResolvidas.Dos(conta.IdUsuario, lancamentos);

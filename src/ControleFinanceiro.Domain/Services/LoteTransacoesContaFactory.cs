@@ -23,7 +23,7 @@ public static class LoteTransacoesContaFactory
     /// Quando a importação é de outra conta, ou uma das listas traz um beneficiário
     /// ou uma categoria de outro usuário.
     /// </exception>
-    public static Result<IReadOnlyList<Transacao>, Erro> Criar(
+    public static Result<IReadOnlyList<TransacaoConta>, Erro> Criar(
         IdUsuario idUsuario,
         IReadOnlyCollection<Beneficiario> beneficiariosDoUsuario,
         IReadOnlyCollection<CategoriaDespesa> categoriasDoUsuario,
@@ -36,10 +36,10 @@ public static class LoteTransacoesContaFactory
 
         return LoteTransacoes
             .Conferir(idUsuario, beneficiariosDoUsuario, categoriasDoUsuario, conta.IdUsuario, lancamentos)
-            .Map(IReadOnlyList<Transacao> () => CriarTransacoes(idUsuario, conta, importacao, lancamentos));
+            .Map(IReadOnlyList<TransacaoConta> () => CriarTransacoes(idUsuario, conta, importacao, lancamentos));
     }
 
-    private static Transacao[] CriarTransacoes(
+    private static TransacaoConta[] CriarTransacoes(
         IdUsuario idUsuario,
         ContaBancaria conta,
         ImportacaoExtrato importacao,
@@ -49,7 +49,7 @@ public static class LoteTransacoesContaFactory
         IReadOnlyList<ChaveDeduplicacao> chaves = ChaveDeduplicacao.CalcularLote(conta.Banco, origem, lancamentos.Select(l => l.Identidade));
 
         return lancamentos
-            .Zip(chaves, (lancamento, chave) => Transacao.CriarDaConta(idUsuario, importacao.Id, conta.Id, lancamento, chave))
+            .Zip(chaves, (lancamento, chave) => TransacaoConta.Criar(idUsuario, importacao.Id, conta.Id, lancamento, chave))
             .ToArray();
     }
 }

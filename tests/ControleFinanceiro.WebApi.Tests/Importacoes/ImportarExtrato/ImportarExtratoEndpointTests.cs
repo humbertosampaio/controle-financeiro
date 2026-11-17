@@ -63,13 +63,13 @@ public sealed class ImportarExtratoEndpointTests : IAsyncLifetime
         importacao.IdConta.Should().Be(conta.Id);
         importacao.Layout.Should().BeSameAs(LayoutArquivoImportacao.C6ContaCsv);
 
-        List<Transacao> transacoes = await _api.ObterTodosAsync(db => db.Transacoes);
+        List<TransacaoConta> transacoes = await _api.ObterTodosAsync(db => db.Transacoes.OfType<TransacaoConta>());
         transacoes.Should().HaveCount(ExtratoContaC6.QuantidadeLancamentos);
         transacoes.Should().AllSatisfy(t =>
         {
             t.IdUsuario.Should().Be(IdUsuario.From(idUsuario));
             t.IdImportacao.Should().Be(importacao.Id);
-            t.Origem.Should().Be(OrigemTransacao.DaConta(conta.Id));
+            t.IdConta.Should().Be(conta.Id);
         });
         transacoes.Sum(t => t.Valor).Should().Be(1841.99m);
     }
@@ -114,7 +114,7 @@ public sealed class ImportarExtratoEndpointTests : IAsyncLifetime
         segunda.Novas.Should().Be(0);
         segunda.JaExistentes.Should().Be(ExtratoContaC6.QuantidadeLancamentos);
         segunda.IdConta.Should().Be(primeira.IdConta);
-        List<Transacao> transacoes = await _api.ObterTodosAsync(db => db.Transacoes);
+        List<TransacaoConta> transacoes = await _api.ObterTodosAsync(db => db.Transacoes.OfType<TransacaoConta>());
         transacoes.Should().HaveCount(ExtratoContaC6.QuantidadeLancamentos);
         transacoes.Should().AllSatisfy(t => ((Guid)t.IdImportacao).Should().Be(primeira.IdImportacao));
         (await _api.ObterTodosAsync(db => db.Contas)).Should().ContainSingle();
@@ -140,7 +140,7 @@ public sealed class ImportarExtratoEndpointTests : IAsyncLifetime
         corpo.PeriodoNaoImportado.Should().BeNull();
         List<ContaBancaria> contas = await _api.ObterTodosAsync(db => db.Contas);
         contas.Select(c => c.IdUsuario).Should().BeEquivalentTo([IdUsuario.From(idUsuario), IdUsuario.From(idOutro)]);
-        List<Transacao> transacoes = await _api.ObterTodosAsync(db => db.Transacoes);
+        List<TransacaoConta> transacoes = await _api.ObterTodosAsync(db => db.Transacoes.OfType<TransacaoConta>());
         transacoes.Should().HaveCount(2 * ExtratoContaC6.QuantidadeLancamentos);
         transacoes.Count(t => t.IdUsuario == IdUsuario.From(idUsuario)).Should().Be(ExtratoContaC6.QuantidadeLancamentos);
     }
@@ -160,7 +160,7 @@ public sealed class ImportarExtratoEndpointTests : IAsyncLifetime
         completo.JaExistentes.Should().Be(7);
         completo.PeriodoNaoImportado.Should().BeNull();
         completo.AvisoSomaPeriodo.Should().BeNull();
-        List<Transacao> transacoes = await _api.ObterTodosAsync(db => db.Transacoes);
+        List<TransacaoConta> transacoes = await _api.ObterTodosAsync(db => db.Transacoes.OfType<TransacaoConta>());
         transacoes.Should().HaveCount(ExtratoContaC6.QuantidadeLancamentos);
         transacoes.Count(t => t.IdImportacao == IdImportacao.From(completo.IdImportacao)).Should().Be(3);
     }
@@ -306,7 +306,7 @@ public sealed class ImportarExtratoEndpointTests : IAsyncLifetime
 
         ImportarExtratoResponse resposta = await _api.ImportarExtratoC6Async(idUsuario);
 
-        Transacao boleto = await ObterBoletoAsync();
+        TransacaoConta boleto = await ObterBoletoAsync();
         resposta.CandidatosPagamentoFatura.Should().Equal(new ImportarExtratoResponse.CandidatoPagamentoFaturaResponse(
             boleto.Id.Value,
             ExtratoContaC6.DiaBoleto,
@@ -381,9 +381,9 @@ public sealed class ImportarExtratoEndpointTests : IAsyncLifetime
         _api.ResolverBeneficiariosDoExtratoAsync(idUsuario, LayoutArquivoImportacao.C6ContaCsv, arquivo);
 
     /// <summary>A saída do pagamento de boleto do extrato fictício, lida do banco.</summary>
-    private async Task<Transacao> ObterBoletoAsync()
+    private async Task<TransacaoConta> ObterBoletoAsync()
     {
-        List<Transacao> transacoes = await _api.ObterTodosAsync(db => db.Transacoes);
-        return transacoes.Single(t => t.EhSaidaConta && t.Data == ExtratoContaC6.DiaBoleto && t.ValorAbsoluto == (ReaisPositivo)FaturaCartaoC6.TotalPagaPeloBoleto);
+        List<TransacaoConta> transacoes = await _api.ObterTodosAsync(db => db.Transacoes.OfType<TransacaoConta>());
+        return transacoes.Single(t => t.EhSaida && t.Data == ExtratoContaC6.DiaBoleto && t.ValorAbsoluto == (ReaisPositivo)FaturaCartaoC6.TotalPagaPeloBoleto);
     }
 }

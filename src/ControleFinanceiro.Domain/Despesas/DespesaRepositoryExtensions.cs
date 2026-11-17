@@ -10,12 +10,15 @@ public static class DespesaRepositoryExtensions
         /// A despesa que já usa a transação, pela origem dela: a compra do cartão é usada pela despesa que cobrou, e a saída da
         /// conta, por uma que pagou. É a mesma regra do <see cref="Services.VinculoTransacaoService.Desvincular"/>.
         /// </summary>
+        /// <exception cref="InvalidOperationException">Quando o tipo da transação não tem regra.</exception>
         public async Task<Maybe<Despesa>> ObterQueUsaAsync(Transacao transacao, CancellationToken cancellationToken)
         {
-            if (transacao.EhOrigemConta)
-                return (await despesas.ListarPeloPagamentoAsync(transacao.Id, cancellationToken)).TryFirst();
-
-            return await despesas.ObterPelaCobrancaAsync(transacao.Id, cancellationToken);
+            return transacao switch
+            {
+                TransacaoConta saidaConta => (await despesas.ListarPeloPagamentoAsync(saidaConta.Id, cancellationToken)).TryFirst(),
+                TransacaoCartao compra => await despesas.ObterPelaCobrancaAsync(compra.Id, cancellationToken),
+                _ => throw Services.VinculoTransacaoService.TransacaoSemRegra(transacao),
+            };
         }
     }
 }

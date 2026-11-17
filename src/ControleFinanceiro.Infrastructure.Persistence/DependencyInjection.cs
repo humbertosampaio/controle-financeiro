@@ -44,6 +44,8 @@ public static class DependencyInjection
                 .AddTransient<ICartaoRepository, CartaoRepository>()
                 .AddTransient<IContaRepository, ContaRepository>()
                 .AddTransient<ITransacaoRepository, TransacaoRepository>()
+                .AddTransient<ITransacaoContaRepository, TransacaoContaRepository>()
+                .AddTransient<ITransacaoCartaoRepository, TransacaoCartaoRepository>()
                 .AddTransient<IImportacaoExtratoRepository, ImportacaoExtratoRepository>()
                 .AddTransient<IImportacaoFaturaRepository, ImportacaoFaturaRepository>()
                 .AddTransient<IBeneficiarioRepository, BeneficiarioRepository>()

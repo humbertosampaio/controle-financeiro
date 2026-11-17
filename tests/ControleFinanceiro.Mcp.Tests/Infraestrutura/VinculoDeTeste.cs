@@ -55,7 +55,7 @@ internal sealed class VinculoDeTeste
     /// Grava os lançamentos como um extrato de uma conta nova do usuário injetado no <paramref name="fixture"/>. Uma vez
     /// por teste: a conta fica congelada no fixture.
     /// </summary>
-    public async Task<IReadOnlyList<Transacao>> GravarExtratoAsync(IFixture fixture, IReadOnlyList<LancamentoConta> lancamentos)
+    public async Task<IReadOnlyList<TransacaoConta>> GravarExtratoAsync(IFixture fixture, IReadOnlyList<LancamentoConta> lancamentos)
     {
         ContaBancaria conta = fixture.Freeze<ContaBancaria>();
 

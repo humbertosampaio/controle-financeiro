@@ -345,7 +345,8 @@ public sealed class CandidatosPagamentoFaturaServiceTests
             [mes],
             [cartaoOutroUsuario],
             importacoesFaturas: [],
-            transacoes: [],
+            transacoesFaturas: [],
+            saidasConta: [],
             despesasMeses: [],
             despesasPagasSaidas: []);
 
@@ -360,7 +361,8 @@ public sealed class CandidatosPagamentoFaturaServiceTests
             [mes],
             cartoesUsuario: [],
             [importacaoOutroUsuario],
-            transacoes: [],
+            transacoesFaturas: [],
+            saidasConta: [],
             despesasMeses: [],
             despesasPagasSaidas: []);
 
@@ -368,9 +370,13 @@ public sealed class CandidatosPagamentoFaturaServiceTests
     }
 
     [Theory, CandidatosAutoData]
-    public void Apontar_Quando_TransacaoDeOutroUsuario_Deve_LancarExcecao(TransacoesDeTeste transacoes, LancamentoConta linha, MesReferencia mes)
+    public void Apontar_Quando_TransacaoFaturaDeOutroUsuario_Deve_LancarExcecao(
+        TransacoesDeTeste transacoes,
+        Cartao cartao,
+        LancamentoCartao linha,
+        MesReferencia mes)
     {
-        Transacao transacaoOutroUsuario = transacoes.DaConta(linha.SemCategoria());
+        TransacaoCartao transacaoOutroUsuario = transacoes.DoCartao(cartao, linha.SemCategoria());
 
         Action act = () => CandidatosPagamentoFaturaService.Apontar(
             IdUsuario.FromNewVersion7Guid(),
@@ -378,10 +384,29 @@ public sealed class CandidatosPagamentoFaturaServiceTests
             cartoesUsuario: [],
             importacoesFaturas: [],
             [transacaoOutroUsuario],
+            saidasConta: [],
             despesasMeses: [],
             despesasPagasSaidas: []);
 
-        act.Should().ThrowExactly<ArgumentException>().WithParameterName("transacoes");
+        act.Should().ThrowExactly<ArgumentException>().WithParameterName("transacoesFaturas");
+    }
+
+    [Theory, CandidatosAutoData]
+    public void Apontar_Quando_SaidaContaDeOutroUsuario_Deve_LancarExcecao(TransacoesDeTeste transacoes, LancamentoConta linha, MesReferencia mes)
+    {
+        TransacaoConta saidaOutroUsuario = transacoes.DaConta(linha.SemCategoria());
+
+        Action act = () => CandidatosPagamentoFaturaService.Apontar(
+            IdUsuario.FromNewVersion7Guid(),
+            [mes],
+            cartoesUsuario: [],
+            importacoesFaturas: [],
+            transacoesFaturas: [],
+            [saidaOutroUsuario],
+            despesasMeses: [],
+            despesasPagasSaidas: []);
+
+        act.Should().ThrowExactly<ArgumentException>().WithParameterName("saidasConta");
     }
 
     [Theory, CandidatosAutoData]
@@ -392,7 +417,8 @@ public sealed class CandidatosPagamentoFaturaServiceTests
             [mes],
             cartoesUsuario: [],
             importacoesFaturas: [],
-            transacoes: [],
+            transacoesFaturas: [],
+            saidasConta: [],
             [despesaOutroUsuario],
             despesasPagasSaidas: []);
 
@@ -407,7 +433,8 @@ public sealed class CandidatosPagamentoFaturaServiceTests
             [mes],
             cartoesUsuario: [],
             importacoesFaturas: [],
-            transacoes: [],
+            transacoesFaturas: [],
+            saidasConta: [],
             despesasMeses: [],
             [despesaOutroUsuario]);
 

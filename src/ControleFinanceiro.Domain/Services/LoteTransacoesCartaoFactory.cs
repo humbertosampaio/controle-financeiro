@@ -23,7 +23,7 @@ public static class LoteTransacoesCartaoFactory
     /// Quando a importação é de outro cartão, ou uma das listas traz um beneficiário
     /// ou uma categoria de outro usuário.
     /// </exception>
-    public static Result<IReadOnlyList<Transacao>, Erro> Criar(
+    public static Result<IReadOnlyList<TransacaoCartao>, Erro> Criar(
         IdUsuario idUsuario,
         IReadOnlyCollection<Beneficiario> beneficiariosDoUsuario,
         IReadOnlyCollection<CategoriaDespesa> categoriasDoUsuario,
@@ -36,10 +36,10 @@ public static class LoteTransacoesCartaoFactory
 
         return LoteTransacoes
             .Conferir(idUsuario, beneficiariosDoUsuario, categoriasDoUsuario, cartao.IdUsuario, lancamentos)
-            .Map(IReadOnlyList<Transacao> () => CriarTransacoes(idUsuario, cartao, importacao, lancamentos));
+            .Map(IReadOnlyList<TransacaoCartao> () => CriarTransacoes(idUsuario, cartao, importacao, lancamentos));
     }
 
-    private static Transacao[] CriarTransacoes(
+    private static TransacaoCartao[] CriarTransacoes(
         IdUsuario idUsuario,
         Cartao cartao,
         ImportacaoFatura importacao,
@@ -49,7 +49,7 @@ public static class LoteTransacoesCartaoFactory
         IReadOnlyList<ChaveDeduplicacao> chaves = ChaveDeduplicacao.CalcularLote(cartao.Banco, origem, lancamentos.Select(l => l.Identidade));
 
         return lancamentos
-            .Zip(chaves, (lancamento, chave) => Transacao.CriarDoCartao(idUsuario, importacao.Id, cartao.Id, importacao.MesVencimento, lancamento, chave))
+            .Zip(chaves, (lancamento, chave) => TransacaoCartao.Criar(idUsuario, importacao.Id, cartao.Id, importacao.MesVencimento, lancamento, chave))
             .ToArray();
     }
 }

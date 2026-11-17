@@ -21,7 +21,7 @@ public sealed class ConciliacaoParcelasServiceTests
     public void Conciliar_Quando_ParcelaDaCompra_Deve_VincularSoOMesmoNumero(CompraDeTeste compra)
     {
         DespesaParcelada despesa = compra.Despesas(compra.Parcela()).Single();
-        Transacao transacao = compra.Transacao(compra.Parcela());
+        TransacaoCartao transacao = compra.Transacao(compra.Parcela());
 
         ConciliacaoParcelas result = compra.Conciliar([despesa], [transacao]);
 
@@ -34,9 +34,9 @@ public sealed class ConciliacaoParcelasServiceTests
     public void Conciliar_Quando_ParcelaSeguinteDaDespesaExistente_Deve_VincularNaMesmaDespesa(CompraDeTeste compra)
     {
         DespesaParcelada despesa = compra.Despesas(compra.Parcela()).Single();
-        Transacao terceira = compra.Transacao(compra.Parcela());
+        TransacaoCartao terceira = compra.Transacao(compra.Parcela());
         compra.Conciliar([despesa], [terceira]);
-        Transacao quarta = compra.Transacao(compra.Parcela(numero: 4));
+        TransacaoCartao quarta = compra.Transacao(compra.Parcela(numero: 4));
 
         ConciliacaoParcelas result = compra.Conciliar([despesa], [terceira, quarta]);
 
@@ -50,7 +50,7 @@ public sealed class ConciliacaoParcelasServiceTests
     {
         DespesaParcelada despesa = compra.Despesas(compra.Parcela()).Single();
         Pagamento pagamento = despesa.Parcelas[0].Pagamento;
-        Transacao transacao = compra.Transacao(compra.Parcela(numero: 1, valor: -ValorMaior));
+        TransacaoCartao transacao = compra.Transacao(compra.Parcela(numero: 1, valor: -ValorMaior));
 
         ConciliacaoParcelas result = compra.Conciliar([despesa], [transacao]);
 
@@ -63,8 +63,8 @@ public sealed class ConciliacaoParcelasServiceTests
     public void Conciliar_Quando_GemeasDeMesmoValor_Deve_UsarTransacoesDistintas(CompraDeTeste compra)
     {
         IReadOnlyList<DespesaParcelada> gemeas = compra.Despesas(compra.Parcela(), compra.Parcela());
-        Transacao primeira = compra.Transacao(compra.Parcela());
-        Transacao segunda = compra.Transacao(compra.Parcela());
+        TransacaoCartao primeira = compra.Transacao(compra.Parcela());
+        TransacaoCartao segunda = compra.Transacao(compra.Parcela());
 
         ConciliacaoParcelas result = compra.Conciliar(gemeas, [primeira, segunda]);
 
@@ -76,10 +76,10 @@ public sealed class ConciliacaoParcelasServiceTests
     public void Conciliar_Quando_GemeasDeValoresDiferentes_Deve_CasarPeloValorNosDoisMeses(CompraDeTeste compra)
     {
         (DespesaParcelada menor, DespesaParcelada maior) = compra.GemeasDeValoresDiferentes();
-        Transacao terceiraMaior = compra.Transacao(compra.Parcela(valor: -ValorMaior));
-        Transacao terceiraMenor = compra.Transacao(compra.Parcela(valor: -ValorMenor));
-        Transacao quartaMaior = compra.Transacao(compra.Parcela(numero: 4, valor: -ValorMaior));
-        Transacao quartaMenor = compra.Transacao(compra.Parcela(numero: 4, valor: -ValorMenor));
+        TransacaoCartao terceiraMaior = compra.Transacao(compra.Parcela(valor: -ValorMaior));
+        TransacaoCartao terceiraMenor = compra.Transacao(compra.Parcela(valor: -ValorMenor));
+        TransacaoCartao quartaMaior = compra.Transacao(compra.Parcela(numero: 4, valor: -ValorMaior));
+        TransacaoCartao quartaMenor = compra.Transacao(compra.Parcela(numero: 4, valor: -ValorMenor));
 
         compra.Conciliar([menor, maior], [terceiraMaior, terceiraMenor, quartaMaior, quartaMenor]);
 
@@ -93,7 +93,7 @@ public sealed class ConciliacaoParcelasServiceTests
     public void Conciliar_Quando_GemeasDeMesmoValor_Deve_DesempatarPeloIdEmQualquerOrdemDasListas(CompraDeTeste compra)
     {
         DespesaParcelada[] gemeas = compra.Despesas(compra.Parcela(), compra.Parcela()).OrderBy(d => d.Id).ToArray();
-        Transacao[] transacoes = new[] { compra.Transacao(compra.Parcela()), compra.Transacao(compra.Parcela()) }.OrderBy(t => t.Id).ToArray();
+        TransacaoCartao[] transacoes = new[] { compra.Transacao(compra.Parcela()), compra.Transacao(compra.Parcela()) }.OrderBy(t => t.Id).ToArray();
 
         compra.Conciliar(gemeas.Reverse().ToArray(), transacoes.Reverse().ToArray());
 
@@ -105,7 +105,7 @@ public sealed class ConciliacaoParcelasServiceTests
     public void Conciliar_Quando_SoATransacaoDoValorMaior_Deve_CasarPeloValorENaoPelaOrdem(CompraDeTeste compra)
     {
         (DespesaParcelada menor, DespesaParcelada maior) = compra.GemeasDeValoresDiferentes();
-        Transacao transacao = compra.Transacao(compra.Parcela(valor: -ValorMaior));
+        TransacaoCartao transacao = compra.Transacao(compra.Parcela(valor: -ValorMaior));
 
         compra.Conciliar([menor, maior], [transacao]);
 
@@ -117,8 +117,8 @@ public sealed class ConciliacaoParcelasServiceTests
     public void Conciliar_Quando_UmaTemValorIgualEOutraNao_Deve_CasarOValorIgualEDepoisOQueSobrou(CompraDeTeste compra)
     {
         (DespesaParcelada menor, DespesaParcelada maior) = compra.GemeasDeValoresDiferentes();
-        Transacao valorIgual = compra.Transacao(compra.Parcela(valor: -ValorMaior));
-        Transacao semValorIgual = compra.Transacao(compra.Parcela(valor: -(ValorMaior + 50m)));
+        TransacaoCartao valorIgual = compra.Transacao(compra.Parcela(valor: -ValorMaior));
+        TransacaoCartao semValorIgual = compra.Transacao(compra.Parcela(valor: -(ValorMaior + 50m)));
 
         compra.Conciliar([menor, maior], [valorIgual, semValorIgual]);
 
@@ -132,10 +132,10 @@ public sealed class ConciliacaoParcelasServiceTests
     public void Conciliar_Quando_GemeasSemValorIgual_Deve_CasarNaOrdemDeValorEmQualquerOrdemDasListas(bool inverter, CompraDeTeste compra)
     {
         (DespesaParcelada menor, DespesaParcelada maior) = compra.GemeasDeValoresDiferentes();
-        Transacao transacaoMenor = compra.Transacao(compra.Parcela(valor: -(ValorMenor + 1m)));
-        Transacao transacaoMaior = compra.Transacao(compra.Parcela(valor: -(ValorMaior + 1m)));
+        TransacaoCartao transacaoMenor = compra.Transacao(compra.Parcela(valor: -(ValorMenor + 1m)));
+        TransacaoCartao transacaoMaior = compra.Transacao(compra.Parcela(valor: -(ValorMaior + 1m)));
         DespesaParcelada[] despesas = inverter ? [maior, menor] : [menor, maior];
-        Transacao[] transacoes = inverter ? [transacaoMaior, transacaoMenor] : [transacaoMenor, transacaoMaior];
+        TransacaoCartao[] transacoes = inverter ? [transacaoMaior, transacaoMenor] : [transacaoMenor, transacaoMaior];
 
         compra.Conciliar(despesas, transacoes);
 
@@ -147,7 +147,7 @@ public sealed class ConciliacaoParcelasServiceTests
     public void Conciliar_Quando_ChamadaDeNovo_Deve_NaoVincularNemMudarNada(CompraDeTeste compra)
     {
         DespesaParcelada despesa = compra.Despesas(compra.Parcela()).Single();
-        Transacao transacao = compra.Transacao(compra.Parcela());
+        TransacaoCartao transacao = compra.Transacao(compra.Parcela());
         compra.Conciliar([despesa], [transacao]);
         Cobranca?[] cobrancas = despesa.Parcelas.Select(p => p.Cobranca).ToArray();
 
@@ -161,8 +161,8 @@ public sealed class ConciliacaoParcelasServiceTests
     public void Conciliar_Quando_VinculoExistente_Deve_PreservarEUsarATransacaoLivreNaOutraGemea(CompraDeTeste compra)
     {
         IReadOnlyList<DespesaParcelada> gemeas = compra.Despesas(compra.Parcela(), compra.Parcela());
-        Transacao vinculada = compra.Transacao(compra.Parcela());
-        Transacao livre = compra.Transacao(compra.Parcela());
+        TransacaoCartao vinculada = compra.Transacao(compra.Parcela());
+        TransacaoCartao livre = compra.Transacao(compra.Parcela());
         VinculoTransacaoService.Vincular(vinculada, gemeas[1], despesaQueUsaATransacao: Maybe<Despesa>.None, cartoesDoUsuario: []).Should().Succeed();
 
         ConciliacaoParcelas result = compra.Conciliar(gemeas, [vinculada, livre]);
@@ -188,7 +188,7 @@ public sealed class ConciliacaoParcelasServiceTests
     public void Conciliar_Quando_OutraData_Deve_ContarEmSemParcela(CompraDeTeste compra)
     {
         DespesaParcelada despesa = compra.Despesas(compra.Parcela()).Single();
-        Transacao transacao = compra.Transacao(compra.Parcela(data: despesa.DataOcorrencia.AddDays(1)));
+        TransacaoCartao transacao = compra.Transacao(compra.Parcela(data: despesa.DataOcorrencia.AddDays(1)));
 
         ConciliacaoParcelas result = compra.Conciliar([despesa], [transacao]);
 
@@ -199,7 +199,7 @@ public sealed class ConciliacaoParcelasServiceTests
     public void Conciliar_Quando_OutraDescricao_Deve_ContarEmSemParcela(CompraDeTeste compra, TextoObrigatorio outraDescricao)
     {
         DespesaParcelada despesa = compra.Despesas(compra.Parcela()).Single();
-        Transacao transacao = compra.Transacao(compra.Parcela(descricao: outraDescricao));
+        TransacaoCartao transacao = compra.Transacao(compra.Parcela(descricao: outraDescricao));
 
         ConciliacaoParcelas result = compra.Conciliar([despesa], [transacao]);
 
@@ -210,7 +210,7 @@ public sealed class ConciliacaoParcelasServiceTests
     public void Conciliar_Quando_OutroTotal_Deve_ContarEmSemParcela(CompraDeTeste compra)
     {
         DespesaParcelada despesa = compra.Despesas(compra.Parcela()).Single();
-        Transacao transacao = compra.Transacao(compra.Parcela(total: 12));
+        TransacaoCartao transacao = compra.Transacao(compra.Parcela(total: 12));
 
         ConciliacaoParcelas result = compra.Conciliar([despesa], [transacao]);
 
@@ -221,7 +221,7 @@ public sealed class ConciliacaoParcelasServiceTests
     public void Conciliar_Quando_OutroCartao_Deve_ContarEmSemParcela(CompraDeTeste compra, Cartao outroCartao, TransacoesDeTeste transacoes)
     {
         DespesaParcelada despesa = compra.Despesas(compra.Parcela()).Single();
-        Transacao transacao = transacoes.DoCartao(outroCartao, compra.Parcela());
+        TransacaoCartao transacao = transacoes.DoCartao(outroCartao, compra.Parcela());
 
         ConciliacaoParcelas result = compra.Conciliar([despesa], [transacao]);
 
@@ -235,7 +235,7 @@ public sealed class ConciliacaoParcelasServiceTests
     public void Conciliar_Quando_DescricaoDifereNaForma_Deve_ReconhecerAMesmaCompra(string descricao, CompraDeTeste compra)
     {
         DespesaParcelada despesa = compra.Despesas(compra.Parcela(descricao: (TextoObrigatorio)"LOJA DE EXEMPLO")).Single();
-        Transacao transacao = compra.Transacao(compra.Parcela(descricao: (TextoObrigatorio)descricao));
+        TransacaoCartao transacao = compra.Transacao(compra.Parcela(descricao: (TextoObrigatorio)descricao));
 
         ConciliacaoParcelas result = compra.Conciliar([despesa], [transacao]);
 
@@ -248,7 +248,7 @@ public sealed class ConciliacaoParcelasServiceTests
     public void Conciliar_Quando_TransacaoNaoEhSaida_Deve_IgnorarSemContar(decimal valor, CompraDeTeste compra)
     {
         DespesaParcelada despesa = compra.Despesas(compra.Parcela()).Single();
-        Transacao transacao = compra.Transacao(compra.Parcela(valor: valor));
+        TransacaoCartao transacao = compra.Transacao(compra.Parcela(valor: valor));
 
         ConciliacaoParcelas result = compra.Conciliar([despesa], [transacao]);
 
@@ -259,7 +259,7 @@ public sealed class ConciliacaoParcelasServiceTests
     public void Conciliar_Quando_TransacaoAVista_Deve_IgnorarSemContar(CompraDeTeste compra, VinculoTransacaoServiceTests.SaidaDeTeste saida)
     {
         DespesaParcelada despesa = compra.Despesas(compra.Parcela()).Single();
-        Transacao transacao = compra.Transacao(saida.AVista());
+        TransacaoCartao transacao = compra.Transacao(saida.AVista());
 
         ConciliacaoParcelas result = compra.Conciliar([despesa], [transacao]);
 
@@ -278,7 +278,7 @@ public sealed class ConciliacaoParcelasServiceTests
     [Theory, DomainAutoData]
     public void Conciliar_Quando_TransacaoDeOutroUsuario_Deve_LancarExcecao(IdUsuario idUsuario, [Frozen] IdUsuario outroUsuario, CompraDeTeste compra)
     {
-        Transacao deOutroUsuario = compra.Transacao(compra.Parcela());
+        TransacaoCartao deOutroUsuario = compra.Transacao(compra.Parcela());
         deOutroUsuario.IdUsuario.Should().Be(outroUsuario);
 
         Action act = () => ConciliacaoParcelasService.Conciliar(idUsuario, parceladas: [], [deOutroUsuario]);
@@ -347,9 +347,9 @@ public sealed class ConciliacaoParcelasServiceTests
             return (gemeas[0], gemeas[1]);
         }
 
-        public Transacao Transacao(LancamentoCartao lancamento) => _transacoes.DoCartao(_cartao, lancamento);
+        public TransacaoCartao Transacao(LancamentoCartao lancamento) => _transacoes.DoCartao(_cartao, lancamento);
 
-        public ConciliacaoParcelas Conciliar(IReadOnlyCollection<DespesaParcelada> despesas, IReadOnlyCollection<Transacao> transacoes) =>
+        public ConciliacaoParcelas Conciliar(IReadOnlyCollection<DespesaParcelada> despesas, IReadOnlyCollection<TransacaoCartao> transacoes) =>
             ConciliacaoParcelasService.Conciliar(_cartao.IdUsuario, despesas, transacoes);
     }
 

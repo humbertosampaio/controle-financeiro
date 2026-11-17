@@ -22,7 +22,8 @@ public sealed class CenarioPagamentoFatura
     private readonly Periodo _periodo;
     private readonly DateTimeOffset _importadaEm;
     private readonly List<ImportacaoFatura> _importacoes = [];
-    private readonly List<Transacao> _transacoes = [];
+    private readonly List<TransacaoCartao> _transacoesFaturas = [];
+    private readonly List<TransacaoConta> _saidasConta = [];
 
     public CenarioPagamentoFatura(IdUsuario idUsuario, ContaBancaria conta, LayoutArquivoImportacao layout, Periodo periodo, DateTimeOffset importadaEm)
     {
@@ -34,32 +35,32 @@ public sealed class CenarioPagamentoFatura
     }
 
     /// <returns>As transações da fatura, na ordem das linhas.</returns>
-    public IReadOnlyList<Transacao> ImportarFatura(Cartao cartao, VencimentoFatura vencimento, params LancamentoCartao[] linhas)
+    public IReadOnlyList<TransacaoCartao> ImportarFatura(Cartao cartao, VencimentoFatura vencimento, params LancamentoCartao[] linhas)
     {
         ImportacaoFatura importacao = ImportacaoArquivoFactory
             .Registrar(cartao, cartoesUsuario: [cartao], importacoesFaturaMes: [], _layout, _periodo, vencimento, linhas.Length, _importadaEm)
             .Value;
         IReadOnlyList<Beneficiario> beneficiarios = BeneficiariosResolvidos.Dos(_idUsuario, linhas);
-        IReadOnlyList<Transacao> transacoes = LoteTransacoesCartaoFactory
+        IReadOnlyList<TransacaoCartao> transacoes = LoteTransacoesCartaoFactory
             .Criar(_idUsuario, beneficiarios, categoriasDoUsuario: [], cartao, importacao, linhas)
             .Value;
 
         _importacoes.Add(importacao);
-        _transacoes.AddRange(transacoes);
+        _transacoesFaturas.AddRange(transacoes);
         return transacoes;
     }
 
     /// <summary>Uma saída da conta na data e no valor do caso, com os textos e a identidade da linha gerada.</summary>
-    public Transacao Saida(Lancamento linha, DateOnly data, ReaisPositivo valor)
+    public TransacaoConta Saida(Lancamento linha, DateOnly data, ReaisPositivo valor)
     {
         LancamentoConta lancamento = linha.NaContaComValor(data, -valor);
         ImportacaoExtrato importacao = ImportacaoArquivoFactory.Registrar(_conta, _layout, _periodo, lidas: 1, _importadaEm);
-        Transacao saida = LoteTransacoesContaFactory
+        TransacaoConta saida = LoteTransacoesContaFactory
             .Criar(_idUsuario, BeneficiariosResolvidos.Dos(_idUsuario, [lancamento]), categoriasDoUsuario: [], _conta, importacao, [lancamento])
             .Value
             .Single();
 
-        _transacoes.Add(saida);
+        _saidasConta.Add(saida);
         return saida;
     }
 
@@ -77,7 +78,8 @@ public sealed class CenarioPagamentoFatura
             [mesVencimento],
             cartoesUsuario,
             _importacoes,
-            _transacoes,
+            _transacoesFaturas,
+            _saidasConta,
             despesasMeses,
             despesasPagasSaidas);
     }

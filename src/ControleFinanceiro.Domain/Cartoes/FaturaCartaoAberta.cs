@@ -18,7 +18,7 @@ public sealed class FaturaCartaoAberta : ValueObject
 
     /// <summary>
     /// O que a fatura cobra: as compras, as parcelas, os estornos e as tarifas dos cartões dela, sem o pagamento da
-    /// anterior, pelo <see cref="Transacao.CompoeTotalFatura"/>.
+    /// anterior, pelo <see cref="TransacaoCartao.CompoeTotalFatura"/>.
     /// </summary>
     public ReaisPositivo Total { get; }
 
@@ -35,7 +35,7 @@ public sealed class FaturaCartaoAberta : ValueObject
     /// </summary>
     /// <remarks>Interno porque só o <see cref="Services.CandidatosPagamentoFaturaService"/> sabe que a fatura ainda não foi paga.</remarks>
     /// <param name="vencimento">O vencimento real, de uma importação da fatura.</param>
-    internal static Maybe<FaturaCartaoAberta> Abrir(FaturaCartao fatura, VencimentoFatura vencimento, IEnumerable<Transacao> transacoes)
+    internal static Maybe<FaturaCartaoAberta> Abrir(FaturaCartao fatura, VencimentoFatura vencimento, IEnumerable<TransacaoCartao> transacoes)
     {
         Reais cobrado = -transacoes.Where(transacao => transacao.CompoeTotalFatura(fatura)).Sum(transacao => transacao.Valor);
 

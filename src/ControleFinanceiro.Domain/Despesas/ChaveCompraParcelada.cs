@@ -23,9 +23,9 @@ public sealed class ChaveCompraParcelada : ValueObject
         TotalParcelas = totalParcelas;
     }
 
-    /// <param name="transacao">Uma transação parcelada, o que quem chama já conferiu. Só a fatura traz parcela, então a origem é sempre um cartão.</param>
-    internal static ChaveCompraParcelada DaTransacao(Transacao transacao) =>
-        new(transacao.Origem.IdCartao!.Value, transacao.Data, (TextoNormalizado)transacao.Descricao, transacao.Parcela!.Total);
+    /// <param name="transacao">Uma transação parcelada, o que quem chama já conferiu.</param>
+    internal static ChaveCompraParcelada DaTransacao(TransacaoCartao transacao) =>
+        new(transacao.IdCartao, transacao.Data, (TextoNormalizado)transacao.Descricao, transacao.Parcela!.Total);
 
     /// <param name="lancamento">Uma compra parcelada da fatura do cartão, o que quem chama já conferiu.</param>
     internal static ChaveCompraParcelada DoLancamento(IdCartao idCartao, LancamentoCartao lancamento) =>

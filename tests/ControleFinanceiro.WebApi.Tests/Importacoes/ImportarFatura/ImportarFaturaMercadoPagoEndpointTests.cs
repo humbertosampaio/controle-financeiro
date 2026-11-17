@@ -57,10 +57,10 @@ public sealed class ImportarFaturaMercadoPagoEndpointTests : IAsyncLifetime
         importacao.Periodo.Should().Be(new Periodo(FaturaCartaoMercadoPago.PrimeiraData, FaturaCartaoMercadoPago.UltimaData));
         importacao.Vencimento.Should().Be((VencimentoFatura)FaturaCartaoMercadoPago.Vencimento);
 
-        List<Transacao> transacoes = await _api.ObterTodosAsync(db => db.Transacoes);
+        List<TransacaoCartao> transacoes = await _api.ObterTodosAsync(db => db.Transacoes.OfType<TransacaoCartao>());
         transacoes.Should().HaveCount(FaturaCartaoMercadoPago.QuantidadeLancamentos).And.AllSatisfy(t =>
         {
-            t.Origem.Should().Be(OrigemTransacao.DoCartao(cartao.Id));
+            t.IdCartao.Should().Be(cartao.Id);
             t.IdImportacao.Should().Be(importacao.Id);
             t.MesVencimentoFatura.Should().Be((MesReferencia)FaturaCartaoMercadoPago.Vencimento);
         });
@@ -75,8 +75,8 @@ public sealed class ImportarFaturaMercadoPagoEndpointTests : IAsyncLifetime
 
         _ = await ImportarComSucessoAsync(idUsuario, FaturaCartaoMercadoPago.Completo());
 
-        List<Transacao> transacoes = await _api.ObterTodosAsync(db => db.Transacoes);
-        Transacao parcelada = transacoes.Should().ContainSingle(t => t.EhParcelada).Subject;
+        List<TransacaoCartao> transacoes = await _api.ObterTodosAsync(db => db.Transacoes.OfType<TransacaoCartao>());
+        TransacaoCartao parcelada = transacoes.Should().ContainSingle(t => t.EhParcelada).Subject;
         parcelada.Parcela.Should().Be((Parcela)(5, 10));
         parcelada.Data.Should().Be(FaturaCartaoMercadoPago.PrimeiraData);
     }
@@ -89,8 +89,8 @@ public sealed class ImportarFaturaMercadoPagoEndpointTests : IAsyncLifetime
 
         _ = await ImportarComSucessoAsync(idUsuario, FaturaCartaoMercadoPago.Completo());
 
-        List<Transacao> transacoes = await _api.ObterTodosAsync(db => db.Transacoes);
-        Transacao pagamento = transacoes.Should().ContainSingle(t => t.Valor > 0m).Subject;
+        List<TransacaoCartao> transacoes = await _api.ObterTodosAsync(db => db.Transacoes.OfType<TransacaoCartao>());
+        TransacaoCartao pagamento = transacoes.Should().ContainSingle(t => t.Valor > 0m).Subject;
         pagamento.Data.Should().Be(FaturaCartaoMercadoPago.UltimaData);
         pagamento.Valor.Should().Be((Reais)1429.36m);
     }
@@ -103,8 +103,8 @@ public sealed class ImportarFaturaMercadoPagoEndpointTests : IAsyncLifetime
 
         _ = await ImportarComSucessoAsync(idUsuario, FaturaCartaoMercadoPago.Completo());
 
-        List<Transacao> transacoes = await _api.ObterTodosAsync(db => db.Transacoes);
-        transacoes.Should().ContainSingle(t => t.EhPagamentoFatura)
+        List<TransacaoCartao> transacoes = await _api.ObterTodosAsync(db => db.Transacoes.OfType<TransacaoCartao>());
+        transacoes.Should().ContainSingle(t => t.EhPagamentoFaturaAnterior)
             .Which.Valor.Should().Be((Reais)1429.36m);
     }
 
@@ -134,7 +134,7 @@ public sealed class ImportarFaturaMercadoPagoEndpointTests : IAsyncLifetime
         ImportarFaturaResponse corpo = await ImportarComSucessoAsync(idUsuario, FaturaCartaoMercadoPago.ComParcelaSeguinte());
 
         corpo.Cartoes.Should().ContainSingle().Which.Novas.Should().Be(1);
-        List<Transacao> transacoes = await _api.ObterTodosAsync(db => db.Transacoes);
+        List<TransacaoCartao> transacoes = await _api.ObterTodosAsync(db => db.Transacoes.OfType<TransacaoCartao>());
         transacoes.Should().HaveCount(FaturaCartaoMercadoPago.QuantidadeLancamentos + 1);
         transacoes
             .Where(t => t.EhParcelada)
@@ -153,7 +153,7 @@ public sealed class ImportarFaturaMercadoPagoEndpointTests : IAsyncLifetime
 
         _ = await ImportarComSucessoAsync(idUsuario, FaturaCartaoMercadoPago.NaFaturaSeguinte());
 
-        List<Transacao> transacoes = await _api.ObterTodosAsync(db => db.Transacoes);
+        List<TransacaoCartao> transacoes = await _api.ObterTodosAsync(db => db.Transacoes.OfType<TransacaoCartao>());
         Parcela parcelaNova = (Parcela)(6, 10);
         MesReferencia mesPrimeiraFatura = (MesReferencia)FaturaCartaoMercadoPago.Vencimento;
         transacoes.Single(t => t.Parcela == parcelaNova).MesVencimentoFatura.Should().Be(mesPrimeiraFatura.Posterior());
@@ -298,7 +298,7 @@ public sealed class ImportarFaturaMercadoPagoEndpointTests : IAsyncLifetime
         ImportarFaturaResponse corpo = await ImportarComSucessoAsync(idUsuario, FaturaCartaoMercadoPago.Completo());
 
         corpo.Cartoes.Should().ContainSingle().Which.DespesasAdiadasCriadas.Should().Be(5);
-        IReadOnlyList<Transacao> transacoes = await _api.ObterTodosAsync(db => db.Transacoes);
+        IReadOnlyList<TransacaoCartao> transacoes = await _api.ObterTodosAsync(db => db.Transacoes.OfType<TransacaoCartao>());
         IReadOnlyList<DespesaAdiada> adiadas = await _api.ObterTodosAsync(db => db.Despesas.OfType<DespesaAdiada>());
         adiadas.Should().OnlyContain(d => d.IdCategoria == null && !d.Pagamento.EstaPago);
         adiadas

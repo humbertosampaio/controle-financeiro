@@ -1,5 +1,3 @@
-using ControleFinanceiro.Domain.Cartoes;
-using ControleFinanceiro.Domain.Contas;
 using ControleFinanceiro.Domain.Importacoes;
 using ControleFinanceiro.Domain.Shared;
 using ControleFinanceiro.Domain.Shared.ValueObjects;
@@ -14,15 +12,16 @@ public readonly partial struct IdTransacao
 }
 
 /// <summary>
-/// Um lançamento importado de um extrato ou de uma fatura. Data e hora ficam separadas: sem hora, um
-/// <see cref="DateTimeOffset"/> obrigaria a inventar 00:00, e a conversão para UTC deslocaria o dia.
+/// Um lançamento importado: a <see cref="TransacaoConta"/>, do extrato de uma conta, ou a <see cref="TransacaoCartao"/>,
+/// da fatura de um cartão. Data e hora ficam separadas: sem hora, um <see cref="DateTimeOffset"/> obrigaria a inventar
+/// 00:00, e a conversão para UTC deslocaria o dia.
 /// </summary>
 /// <remarks>
 /// A identidade é o <see cref="IdTransacao"/>, que os vínculos com despesas referenciam. A
 /// <see cref="ChaveDeduplicacao"/> só reconhece o lançamento numa reimportação e muda com a versão do
 /// algoritmo.
 /// </remarks>
-public sealed class Transacao : AggregateRoot<IdTransacao>, IPertenceAoUsuario
+public abstract class Transacao : AggregateRoot<IdTransacao>, IPertenceAoUsuario
 {
     public IdUsuario IdUsuario { get; private set; }
 
@@ -31,14 +30,6 @@ public sealed class Transacao : AggregateRoot<IdTransacao>, IPertenceAoUsuario
     /// primeira importação que a trouxe.
     /// </summary>
     public IdImportacao IdImportacao { get; private set; }
-
-    public OrigemTransacao Origem { get; private set; } = null!;
-
-    /// <summary>
-    /// O mês em que vence a fatura que trouxe a transação do cartão, copiado da importação que a criou; nulo na transação
-    /// da conta. Uma reimportação com outro vencimento não o muda.
-    /// </summary>
-    public MesReferencia? MesVencimentoFatura { get; private set; }
 
     public DateOnly Data { get; private set; }
     public TimeOnly? Hora { get; private set; }
@@ -61,28 +52,11 @@ public sealed class Transacao : AggregateRoot<IdTransacao>, IPertenceAoUsuario
     public TextoObrigatorio Descricao { get; private set; } = null!;
     public string? Contraparte { get; private set; }
 
-    /// <summary>Preenchida quando o banco informou a parcela; nula na compra à vista e no extrato.</summary>
-    public Parcela? Parcela { get; private set; }
-
-    /// <summary>Verdadeiro quando a transação é uma parcela de uma compra parcelada.</summary>
-    public bool EhParcelada => Parcela is not null;
-
-    /// <summary>Verdadeiro quando a transação veio do extrato de uma conta, e não da fatura de um cartão.</summary>
-    public bool EhOrigemConta => Origem.Tipo == TipoOrigem.Conta;
-
-    /// <summary>
-    /// Verdadeiro quando a transação é uma saída parcelada, a única que pode pagar uma parcela. Só a fatura traz parcela,
-    /// então ela é sempre de um cartão.
-    /// </summary>
-    public bool EhParcelaPagaNoCartao => EhSaida && EhParcelada;
-
     /// <summary>O <see cref="Valor"/> sem o sinal.</summary>
     public ReaisPositivo ValorAbsoluto => (ReaisPositivo)decimal.Abs(Valor);
 
     /// <summary>O texto do arquivo que diz quem recebeu o dinheiro de uma saída, pela regra do <see cref="Lancamento.TextoBeneficiario"/>.</summary>
-    public string? TextoBeneficiario => EhOrigemConta
-        ? LancamentoConta.TextoBeneficiarioDe(EhSaida, Contraparte)
-        : LancamentoCartao.TextoBeneficiarioDe(EhSaida, Descricao);
+    public abstract string? TextoBeneficiario { get; }
 
     /// <summary>O alias do <see cref="TextoBeneficiario"/>, pela regra do <see cref="Lancamento.AliasTextoBeneficiario"/>.</summary>
     public Alias? AliasTextoBeneficiario => Alias.DoTextoOuNulo(TextoBeneficiario);
@@ -93,115 +67,28 @@ public sealed class Transacao : AggregateRoot<IdTransacao>, IPertenceAoUsuario
     /// <summary>O alias da <see cref="CategoriaBanco"/>, pela regra do <see cref="Lancamento.AliasCategoriaBanco"/>.</summary>
     public Alias? AliasCategoriaBanco => Alias.DoTextoOuNulo(CategoriaBanco);
 
-    /// <summary>
-    /// Verdadeiro na saída sem parcela da fatura de um cartão. A linha sem texto de beneficiário fica de fora porque a
-    /// despesa exige um beneficiário, como no <see cref="LancamentoCartao.EhCompraParcelada"/>. O pagamento da fatura e o estorno
-    /// chegam como entrada e também ficam de fora.
-    /// </summary>
-    public bool EhCompraAVistaNoCartao => EhSaida && !EhParcelada && !EhOrigemConta && AliasTextoBeneficiario is not null;
-
-    /// <summary>
-    /// Verdadeiro quando a transação é a entrada no cartão que pagou a fatura anterior, copiado do
-    /// <see cref="LancamentoCartao.EhPagamentoFaturaAnterior"/>. A transação importada antes da marca fica falsa.
-    /// </summary>
-    public bool EhPagamentoFatura { get; private set; }
-
-    /// <summary>Verdadeiro quando o dinheiro saiu de uma conta, como a saída que paga a fatura do cartão.</summary>
-    public bool EhSaidaConta => EhSaida && EhOrigemConta;
-
     public ChaveDeduplicacao Chave { get; private set; } = null!;
 
-    /// <summary>
-    /// Verdadeiro na linha que entra no total da <paramref name="fatura"/>: de um cartão dela, trazida pela fatura do mês
-    /// de vencimento dela (o <see cref="MesVencimentoFatura"/>), e que não é o pagamento da fatura anterior. Entram as
-    /// compras, as parcelas, os estornos e as tarifas.
-    /// </summary>
-    public bool CompoeTotalFatura(FaturaCartao fatura)
-    {
-        return Origem.IdCartao is IdCartao idCartao
-            && fatura.Contem(idCartao)
-            && MesVencimentoFatura == fatura.Vencimento.Mes
-            && !EhPagamentoFatura;
-    }
-
-    private Transacao()
+    protected Transacao()
     {
     }
 
-    private Transacao(
+    protected Transacao(
         IdTransacao id,
         IdUsuario idUsuario,
         IdImportacao idImportacao,
-        OrigemTransacao origem,
-        MesReferencia? mesVencimentoFatura,
         Lancamento lancamento,
-        Parcela? parcela,
-        bool ehPagamentoFatura,
         ChaveDeduplicacao chave)
             : base(id)
     {
         IdUsuario = idUsuario;
         IdImportacao = idImportacao;
-        Origem = origem;
-        MesVencimentoFatura = mesVencimentoFatura;
         Data = lancamento.Data;
         Hora = lancamento.Hora;
         Valor = lancamento.Valor;
         Descricao = lancamento.Descricao;
         Contraparte = lancamento.Contraparte;
-        Parcela = parcela;
         CategoriaBanco = lancamento.CategoriaBanco;
-        EhPagamentoFatura = ehPagamentoFatura;
         Chave = chave;
-    }
-
-    /// <remarks>
-    /// Interno pois a <paramref name="chave"/> precisa vir de <see cref="ChaveDeduplicacao.CalcularLote"/>, com a mesma conta e o lote do
-    /// lançamento, o <paramref name="idUsuario"/> precisa ser o dono da conta e a importação precisa ser da mesma conta, e só a
-    /// <see cref="Services.LoteTransacoesContaFactory"/> garante isso.
-    /// </remarks>
-    internal static Transacao CriarDaConta(
-        IdUsuario idUsuario,
-        IdImportacao idImportacao,
-        IdConta idConta,
-        LancamentoConta lancamento,
-        ChaveDeduplicacao chave)
-    {
-        return new Transacao(
-            IdTransacao.FromNewVersion7Guid(),
-            idUsuario,
-            idImportacao,
-            OrigemTransacao.DaConta(idConta),
-            mesVencimentoFatura: null,
-            lancamento,
-            parcela: null,
-            ehPagamentoFatura: false,
-            chave);
-    }
-
-    /// <remarks>
-    /// Interno pois a <paramref name="chave"/> precisa vir de <see cref="ChaveDeduplicacao.CalcularLote"/>, com o mesmo cartão e o lote do
-    /// lançamento, o <paramref name="idUsuario"/> precisa ser o dono do cartão e a importação precisa ser do mesmo cartão, e só a
-    /// <see cref="Services.LoteTransacoesCartaoFactory"/> garante isso.
-    /// </remarks>
-    /// <param name="mesVencimentoFatura">O mês da fatura da importação.</param>
-    internal static Transacao CriarDoCartao(
-        IdUsuario idUsuario,
-        IdImportacao idImportacao,
-        IdCartao idCartao,
-        MesReferencia mesVencimentoFatura,
-        LancamentoCartao lancamento,
-        ChaveDeduplicacao chave)
-    {
-        return new Transacao(
-            IdTransacao.FromNewVersion7Guid(),
-            idUsuario,
-            idImportacao,
-            OrigemTransacao.DoCartao(idCartao),
-            mesVencimentoFatura,
-            lancamento,
-            lancamento.Parcela,
-            lancamento.EhPagamentoFaturaAnterior,
-            chave);
     }
 }

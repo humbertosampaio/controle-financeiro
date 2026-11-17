@@ -6,25 +6,38 @@ using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace ControleFinanceiro.Infrastructure.Persistence.Transacoes;
 
+/// <summary>
+/// Uma tabela para toda a hierarquia (TPH), com o tipo na coluna <c>tipo</c>.
+/// </summary>
 internal sealed class TransacaoConfiguration : IEntityTypeConfiguration<Transacao>
 {
+    internal const string TipoConta = "conta";
+    internal const string TipoCartao = "cartao";
+
     public void Configure(EntityTypeBuilder<Transacao> entity)
     {
         // Os CHECK repetem no esquema o que o domínio já garante; a API é a única porta de entrada dos dados.
         entity.ToTable("transacoes", tabela =>
         {
-            tabela.HasCheckConstraint("CK_transacoes_origem", "num_nonnulls(id_conta, id_cartao) = 1");
+            tabela.HasCheckConstraint(
+                "CK_transacoes_origem",
+                $"(tipo = '{TipoConta}' AND id_conta IS NOT NULL AND id_cartao IS NULL) OR (tipo = '{TipoCartao}' AND id_cartao IS NOT NULL AND id_conta IS NULL)");
             tabela.HasCheckConstraint("CK_transacoes_chave_deduplicacao", "chave_deduplicacao ~ '^[0-9a-f]{64}$'");
             // O num_nulls = 0 na segunda parte não é redundante: a CHECK passa quando a expressão dá NULL, e uma parcela
             // com só uma das colunas preenchida daria NULL sem ele.
             tabela.HasCheckConstraint(
                 "CK_transacoes_parcela",
-                "num_nulls(parcela_numero, parcela_total) = 2 OR (num_nulls(parcela_numero, parcela_total) = 0 AND parcela_total >= 2 AND parcela_numero BETWEEN 1 AND parcela_total AND id_cartao IS NOT NULL)");
-            tabela.HasCheckConstraint("CK_transacoes_mes_vencimento_fatura", "(id_cartao IS NULL) = (mes_vencimento_fatura IS NULL)");
+                $"num_nulls(parcela_numero, parcela_total) = 2 OR (num_nulls(parcela_numero, parcela_total) = 0 AND parcela_total >= 2 AND parcela_numero BETWEEN 1 AND parcela_total AND tipo = '{TipoCartao}')");
+            tabela.HasCheckConstraint("CK_transacoes_mes_vencimento_fatura", $"(tipo = '{TipoCartao}') = (mes_vencimento_fatura IS NOT NULL)");
+            // A marca é de uma filha só, e o TPH deixa a coluna aceitar nulo: ela vem preenchida em toda linha do cartão.
             tabela.HasCheckConstraint(
-                "CK_transacoes_pagamento_fatura",
-                "NOT eh_pagamento_fatura OR (id_cartao IS NOT NULL AND valor >= 0 AND parcela_numero IS NULL)");
+                "CK_transacoes_pagamento_fatura_anterior",
+                $"(tipo = '{TipoCartao}') = (eh_pagamento_fatura_anterior IS NOT NULL) AND (eh_pagamento_fatura_anterior IS NOT TRUE OR (valor >= 0 AND parcela_numero IS NULL))");
         });
+
+        entity.HasDiscriminator<string>("tipo")
+            .HasValue<TransacaoConta>(TipoConta)
+            .HasValue<TransacaoCartao>(TipoCartao);
 
         entity.HasKey(t => t.Id);
 
@@ -49,22 +62,6 @@ internal sealed class TransacaoConfiguration : IEntityTypeConfiguration<Transaca
             .HasForeignKey(t => t.IdImportacao)
             .OnDelete(DeleteBehavior.NoAction);
 
-        // Complex type, e não owned: o lote passa a mesma instância de origem a todas as transações, e o owned é
-        // rastreado pela referência. As FKs para contas e cartões e os índices com a data vão por SQL na migration,
-        // porque o EF não aceita complex type em FK nem em índice.
-        entity.ComplexProperty(t => t.Origem, origem =>
-        {
-            origem.Property(o => o.IdConta)
-                .HasColumnName("id_conta");
-
-            origem.Property(o => o.IdCartao)
-                .HasColumnName("id_cartao");
-        });
-
-        // O conversor global grava o mês como o primeiro dia dele.
-        entity.Property(t => t.MesVencimentoFatura)
-            .HasColumnName("mes_vencimento_fatura");
-
         entity.Property(t => t.Data)
             .HasColumnName("data");
 
@@ -80,23 +77,8 @@ internal sealed class TransacaoConfiguration : IEntityTypeConfiguration<Transaca
         entity.Property(t => t.Contraparte)
             .HasColumnName("contraparte");
 
-        // Complex type opcional: a compra à vista não tem parcela, e as duas colunas ficam nulas.
-        entity.ComplexProperty(t => t.Parcela, parcela =>
-        {
-            parcela.Property(p => p.Numero)
-                .HasColumnName("parcela_numero");
-
-            parcela.Property(p => p.Total)
-                .HasColumnName("parcela_total");
-        });
-
         entity.Property(t => t.CategoriaBanco)
             .HasColumnName("categoria_banco");
-
-        // Sem HasDefaultValue: num bool, o EF avisaria do sentinel false. O DEFAULT false fica só na migration, que preenche
-        // as transações importadas antes da marca.
-        entity.Property(t => t.EhPagamentoFatura)
-            .HasColumnName("eh_pagamento_fatura");
 
         entity.Property(t => t.Chave)
             .HasColumnName("chave_deduplicacao")

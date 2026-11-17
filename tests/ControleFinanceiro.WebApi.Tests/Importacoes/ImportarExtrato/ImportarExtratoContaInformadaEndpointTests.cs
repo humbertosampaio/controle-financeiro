@@ -61,12 +61,12 @@ public sealed class ImportarExtratoContaInformadaEndpointTests : IAsyncLifetime
         importacao.Layout.Should().BeSameAs(LayoutArquivoImportacao.MercadoPagoContaCsv);
         importacao.Periodo.Should().Be(ExtratoContaMercadoPago.Periodo);
 
-        List<Transacao> transacoes = await _api.ObterTodosAsync(db => db.Transacoes);
+        List<TransacaoConta> transacoes = await _api.ObterTodosAsync(db => db.Transacoes.OfType<TransacaoConta>());
         transacoes.Should().HaveCount(ExtratoContaMercadoPago.QuantidadeLancamentos);
         transacoes.Should().AllSatisfy(t =>
         {
             t.IdImportacao.Should().Be(importacao.Id);
-            t.Origem.Should().Be(OrigemTransacao.DaConta(conta.Id));
+            t.IdConta.Should().Be(conta.Id);
         });
         transacoes.Sum(t => t.Valor).Should().Be(ExtratoContaMercadoPago.SomaLancamentos);
         transacoes.Select(t => t.Contraparte).Should().Contain("BELTRANO FICTICIO 12345678909");

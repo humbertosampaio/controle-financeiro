@@ -27,7 +27,7 @@ public static class DespesaAdiadaFactory
     /// </param>
     /// <returns>As despesas que faltam, na ordem em que as compras aparecem.</returns>
     /// <exception cref="ArgumentException">
-    /// Quando um item das listas é de outro usuário, quando uma transação não é de cartão, é de outra fatura ou o cartão
+    /// Quando um item das listas é de outro usuário, quando uma transação é de outra fatura ou o cartão
     /// dela não está na lista, ou quando o beneficiário ou a categoria de uma compra não está na lista: a
     /// <see cref="LoteTransacoesCartaoFactory"/> já conferiu os aliases.
     /// </exception>
@@ -38,7 +38,7 @@ public static class DespesaAdiadaFactory
         IReadOnlyCollection<Cartao> cartoesDoUsuario,
         IReadOnlyCollection<DespesaAdiada> adiadasDoUsuario,
         VencimentoFatura vencimento,
-        IReadOnlyList<Transacao> transacoesNovas)
+        IReadOnlyList<TransacaoCartao> transacoesNovas)
     {
         if (beneficiariosDoUsuario.Any(b => b.IdUsuario != idUsuario))
             throw new ArgumentException("A lista traz um beneficiário de outro usuário.", nameof(beneficiariosDoUsuario));
@@ -55,9 +55,6 @@ public static class DespesaAdiadaFactory
         if (transacoesNovas.Any(t => t.IdUsuario != idUsuario))
             throw new ArgumentException("A lista traz uma transação de outro usuário.", nameof(transacoesNovas));
 
-        if (transacoesNovas.Any(t => t.EhOrigemConta))
-            throw new ArgumentException("A lista traz uma transação que não é de fatura.", nameof(transacoesNovas));
-
         MesReferencia mesVencimento = vencimento.Mes;
         if (transacoesNovas.Any(t => t.MesVencimentoFatura != mesVencimento))
             throw new ArgumentException("A lista traz uma transação de outra fatura.", nameof(transacoesNovas));
@@ -65,10 +62,9 @@ public static class DespesaAdiadaFactory
         List<DespesaAdiada> previsoesLivres = adiadasDoUsuario.ToList();
         List<DespesaAdiada> criadas = [];
 
-        foreach (Transacao compra in transacoesNovas.Where(t => t.EhCompraAVistaNoCartao))
+        foreach (TransacaoCartao compra in transacoesNovas.Where(t => t.EhCompraAVista))
         {
-            // O Value é seguro: a lista já recusou a transação da conta.
-            IdCartao idCartao = compra.Origem.IdCartao!.Value;
+            IdCartao idCartao = compra.IdCartao;
             IdBeneficiario idBeneficiario = AliasesResolvidos.IdBeneficiarioDo(beneficiariosDoUsuario, compra.AliasTextoBeneficiario!);
             FaturaCartao fatura = FaturaCartao.DoCartao(idCartao, cartoesDoUsuario, mesVencimento);
 
@@ -91,7 +87,7 @@ public static class DespesaAdiadaFactory
         IdCartao idCartao,
         IdBeneficiario idBeneficiario,
         VencimentoFatura vencimento,
-        Transacao compra)
+        TransacaoCartao compra)
     {
         return DespesaAdiada.CriarCobrada(
             idUsuario,
