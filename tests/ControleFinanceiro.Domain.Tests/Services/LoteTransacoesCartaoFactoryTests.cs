@@ -51,13 +51,11 @@ public sealed class LoteTransacoesCartaoFactoryTests
         ImportacaoFatura importacao,
         LancamentoCartao lancamento)
     {
-        OrigemTransacao origem = OrigemTransacao.DoCartao(cartao.Id);
-
         Result<IReadOnlyList<TransacaoCartao>, Erro> result = CriarComAliasesResolvidos(idUsuario, cartao, importacao, [lancamento]);
 
         TransacaoCartao transacao = result.Should().Succeed().Which.Should().ContainSingle().Subject;
         transacao.IdCartao.Should().Be(cartao.Id);
-        transacao.Chave.Should().Be(ChaveDeduplicacao.Calcular(cartao.Banco, origem, lancamento.Identidade, ordinal: 1));
+        transacao.Chave.Should().Be(ChaveDeduplicacao.Calcular(cartao.Banco, cartao.Id, lancamento.Identidade, ordinal: 1));
     }
 
     [Theory, DomainAutoData]
@@ -100,13 +98,11 @@ public sealed class LoteTransacoesCartaoFactoryTests
     {
         IdentidadeLancamento identidade = IdentidadeLancamento.Composta(identificador).Value.ComValor(valor);
         LancamentoCartao lancamento = LancamentoCartao.Criar(data, hora: null, valor, descricao, contraparte: null, parcela: null, categoriaBanco: null, identidade);
-        OrigemTransacao origem = OrigemTransacao.DoCartao(cartao.Id);
-
         Result<IReadOnlyList<TransacaoCartao>, Erro> result = CriarComAliasesResolvidos(idUsuario, cartao, importacao, [lancamento, lancamento]);
 
         result.Should().Succeed().Which.Select(t => t.Chave).Should().Equal(
-            ChaveDeduplicacao.Calcular(cartao.Banco, origem, identidade, ordinal: 1),
-            ChaveDeduplicacao.Calcular(cartao.Banco, origem, identidade, ordinal: 2));
+            ChaveDeduplicacao.Calcular(cartao.Banco, cartao.Id, identidade, ordinal: 1),
+            ChaveDeduplicacao.Calcular(cartao.Banco, cartao.Id, identidade, ordinal: 2));
     }
 
     [Theory, DomainAutoData]

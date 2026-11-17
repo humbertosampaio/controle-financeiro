@@ -21,7 +21,6 @@ public sealed class LoteTransacoesContaFactoryTests
         [Frozen] IdUsuario idUsuario,
         [Frozen] ContaBancaria conta,
         ImportacaoExtrato importacao,
-        OrigemTransacao origem,
         LancamentoConta primeiro,
         LancamentoConta segundo)
     {
@@ -31,7 +30,7 @@ public sealed class LoteTransacoesContaFactoryTests
         transacoes.Select(t => t.Descricao).Should().Equal(primeiro.Descricao, segundo.Descricao);
         transacoes.Should().AllSatisfy(t => t.IdConta.Should().Be(conta.Id));
         transacoes.Select(t => t.Chave).Should().Equal(
-            ChaveDeduplicacao.CalcularLote(conta.Banco, origem, [primeiro.Identidade, segundo.Identidade]));
+            ChaveDeduplicacao.CalcularLote(conta.Banco, conta.Id, [primeiro.Identidade, segundo.Identidade]));
     }
 
     [Theory, DomainAutoData]

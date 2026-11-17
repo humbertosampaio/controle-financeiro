@@ -45,8 +45,7 @@ public static class LoteTransacoesContaFactory
         ImportacaoExtrato importacao,
         IReadOnlyList<LancamentoConta> lancamentos)
     {
-        OrigemTransacao origem = OrigemTransacao.DaConta(conta.Id);
-        IReadOnlyList<ChaveDeduplicacao> chaves = ChaveDeduplicacao.CalcularLote(conta.Banco, origem, lancamentos.Select(l => l.Identidade));
+        IReadOnlyList<ChaveDeduplicacao> chaves = ChaveDeduplicacao.CalcularLote(conta.Banco, conta.Id, lancamentos.Select(l => l.Identidade));
 
         return lancamentos
             .Zip(chaves, (lancamento, chave) => TransacaoConta.Criar(idUsuario, importacao.Id, conta.Id, lancamento, chave))

@@ -29,7 +29,7 @@ public sealed class TransacaoConta : Transacao
     }
 
     /// <remarks>
-    /// Interno pois a <paramref name="chave"/> precisa vir de <see cref="ChaveDeduplicacao.CalcularLote"/>, com a mesma conta e o lote do
+    /// Interno pois a <paramref name="chave"/> precisa vir de <see cref="ChaveDeduplicacao.CalcularLote(Shared.ValueObjects.Banco, Contas.IdConta, IEnumerable{IdentidadeLancamento})"/>, com a mesma conta e o lote do
     /// lançamento, o <paramref name="idUsuario"/> precisa ser o dono da conta e a importação precisa ser da mesma conta, e só a
     /// <see cref="Services.LoteTransacoesContaFactory"/> garante isso.
     /// </remarks>

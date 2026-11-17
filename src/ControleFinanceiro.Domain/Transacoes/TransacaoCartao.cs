@@ -74,7 +74,7 @@ public sealed class TransacaoCartao : Transacao
     }
 
     /// <remarks>
-    /// Interno pois a <paramref name="chave"/> precisa vir de <see cref="ChaveDeduplicacao.CalcularLote"/>, com o mesmo cartão e o lote do
+    /// Interno pois a <paramref name="chave"/> precisa vir de <see cref="ChaveDeduplicacao.CalcularLote(Shared.ValueObjects.Banco, Cartoes.IdCartao, IEnumerable{IdentidadeLancamento})"/>, com o mesmo cartão e o lote do
     /// lançamento, o <paramref name="idUsuario"/> precisa ser o dono do cartão e a importação precisa ser do mesmo cartão, e só a
     /// <see cref="Services.LoteTransacoesCartaoFactory"/> garante isso.
     /// </remarks>
