@@ -194,7 +194,7 @@ public sealed class ImportarExtratoContaInformadaEndpointTests : IAsyncLifetime
         using MultipartFormDataContent formulario = new()
         {
             { conteudo, "arquivo", "extrato.csv" },
-            { new StringContent(ExtratoContaMercadoPago.SufixoConta.Value), "sufixoConta" },
+            { new StringContent(ExtratoContaMercadoPago.SufixoConta), "sufixoConta" },
         };
 
         return await _api.Client.PostAsync(Rota(idUsuario), formulario);

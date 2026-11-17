@@ -158,10 +158,10 @@ public sealed class GerarDespesasDoMesEndpointTests : IAsyncLifetime
 
         Guid idNoPix = await _api.CadastrarDespesaRecorrenteAsync(
             idUsuario,
-            doUsuario with { Descricao = "Aluguel", FormaPagamento = FormaPagamento.Pix.Value, IdCartao = null });
+            doUsuario with { Descricao = "Aluguel", FormaPagamento = FormaPagamento.Pix, IdCartao = null });
         Guid idNoCredito = await _api.CadastrarDespesaRecorrenteAsync(
             idUsuario,
-            doUsuario with { Descricao = "Streaming", FormaPagamento = FormaPagamento.Credito.Value, IdCartao = idCartao });
+            doUsuario with { Descricao = "Streaming", FormaPagamento = FormaPagamento.Credito, IdCartao = idCartao });
 
         return new Recorrentes(idUsuario, idCartao, idNoPix, idNoCredito);
     }

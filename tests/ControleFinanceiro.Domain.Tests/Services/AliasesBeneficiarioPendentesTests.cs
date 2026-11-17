@@ -41,9 +41,9 @@ public sealed class AliasesBeneficiarioPendentesTests
         IReadOnlyList<Alias> result = AliasesBeneficiarioPendentes.Listar(
             idUsuario,
             beneficiariosDoUsuario: [],
-            [Lancamento.DoCartao(data, hora: null, -valor.Value, estabelecimento, contraparte, parcela: null, categoriaBanco: null, identidade)]);
+            [Lancamento.DoCartao(data, hora: null, -valor, estabelecimento, contraparte, parcela: null, categoriaBanco: null, identidade)]);
 
-        result.Should().ContainSingle().Which.TextoOriginal.Should().Be(estabelecimento.Value);
+        result.Should().ContainSingle().Which.TextoOriginal.Should().Be(estabelecimento);
     }
 
     [Theory, DomainAutoData]
@@ -107,7 +107,7 @@ public sealed class AliasesBeneficiarioPendentesTests
         TextoObrigatorio descricao,
         IdentidadeLancamento identidade)
     {
-        Lancamento boleto = Lancamento.DaConta(data, hora: null, -valor.Value, descricao, contraparte: null, categoriaBanco: null, identidade);
+        Lancamento boleto = Lancamento.DaConta(data, hora: null, -valor, descricao, contraparte: null, categoriaBanco: null, identidade);
 
         IReadOnlyList<Alias> result = AliasesBeneficiarioPendentes.Listar(idUsuario, beneficiariosDoUsuario: [], [boleto]);
 
@@ -171,7 +171,7 @@ public sealed class AliasesBeneficiarioPendentesTests
         IdentidadeLancamento identidade)
     {
         Lancamento entrada = Lancamento.DaConta(data, hora: null, valor, descricao, contraparte, categoriaBanco: null, identidade);
-        Lancamento boleto = Lancamento.DaConta(data, hora: null, -valor.Value, descricao, contraparte: null, categoriaBanco: null, identidade);
+        Lancamento boleto = Lancamento.DaConta(data, hora: null, -valor, descricao, contraparte: null, categoriaBanco: null, identidade);
 
         UnitResult<Erro> result = AliasesBeneficiarioPendentes.Conferir(idUsuario, beneficiariosDoUsuario: [], [entrada, boleto]);
 
@@ -191,6 +191,6 @@ public sealed class AliasesBeneficiarioPendentesTests
 
     private static Lancamento Saida(DateOnly data, ReaisPositivo valor, TextoObrigatorio descricao, string contraparte, IdentidadeLancamento identidade)
     {
-        return Lancamento.DaConta(data, hora: null, -valor.Value, descricao, contraparte, categoriaBanco: null, identidade);
+        return Lancamento.DaConta(data, hora: null, -valor, descricao, contraparte, categoriaBanco: null, identidade);
     }
 }

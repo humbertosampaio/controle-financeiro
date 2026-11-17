@@ -219,7 +219,7 @@ public sealed class FaturaTests
     [Theory, DomainAutoData]
     public void ConferirVencimento_Quando_CompraAVistaNoDiaDoVencimento_Deve_Falhar(Fatura modelo, Lancamento lancamento)
     {
-        Fatura fatura = ComLancamentos(modelo, lancamento.NaFatura(modelo.Vencimento.Value, parcela: null).ComoSaida());
+        Fatura fatura = ComLancamentos(modelo, lancamento.NaFatura(modelo.Vencimento, parcela: null).ComoSaida());
 
         UnitResult<Erro> result = fatura.ConferirVencimento();
 

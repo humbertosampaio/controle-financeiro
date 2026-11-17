@@ -34,7 +34,7 @@ public sealed class ReaisTests
         Reais sut = new(-valor);
 
         sut.Value.Should().Be(0m);
-        decimal.IsNegative(sut.Value).Should().BeFalse();
+        decimal.IsNegative(sut).Should().BeFalse();
     }
 
     [Theory]
@@ -116,11 +116,13 @@ public sealed class ReaisTests
     }
 
     [Theory, DomainAutoData]
-    public void OperadorImplicitoReaisParaDecimal_Deve_RetornarValor(Reais reais)
+    public void OperadorImplicitoReaisParaDecimal_Deve_RetornarValor(decimal valor)
     {
+        Reais reais = new(valor);
+
         decimal resultado = reais;
 
-        resultado.Should().Be(reais.Value);
+        resultado.Should().Be(valor);
     }
 
     [Theory, DomainAutoData]

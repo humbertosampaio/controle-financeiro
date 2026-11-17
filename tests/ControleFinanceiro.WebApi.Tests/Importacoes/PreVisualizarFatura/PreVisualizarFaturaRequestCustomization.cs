@@ -17,7 +17,7 @@ internal sealed class PreVisualizarFaturaRequestCustomization : ICustomization
         fixture.Register((Guid idUsuario, DateOnly dataVencimento) => new PreVisualizarFaturaRequest
         {
             IdUsuario = idUsuario,
-            Layout = LayoutArquivoImportacao.C6CartaoCsv.Value,
+            Layout = LayoutArquivoImportacao.C6CartaoCsv,
             Arquivo = ArquivoFormulario.ComTamanho(tamanho: 1),
             DataVencimento = dataVencimento,
         });

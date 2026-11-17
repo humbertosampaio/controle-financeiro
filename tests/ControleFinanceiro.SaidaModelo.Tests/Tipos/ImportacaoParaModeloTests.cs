@@ -34,7 +34,7 @@ public sealed class ImportacaoParaModeloTests
     {
         JsonObject json = ImportacaoParaModelo.DoExtrato(LayoutArquivoImportacao.C6ContaCsv, importado).Serializar();
 
-        json.Texto("layout").Should().Be(LayoutArquivoImportacao.C6ContaCsv.Value);
+        json.Texto("layout").Should().Be(LayoutArquivoImportacao.C6ContaCsv);
         json.Texto("banco").Should().Be(importado.Banco.Name);
         Periodo(json, "periodo").Should().Be((importado.Periodo.Inicio, importado.Periodo.Fim));
         json["conta_nova"]!.GetValue<bool>().Should().Be(importado.ContaNova);

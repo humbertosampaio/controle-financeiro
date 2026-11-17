@@ -44,7 +44,7 @@ public static class PagamentoFaturaService
 
         FaturaCartao fatura = FaturaCartao.DoCartao(cartao.Id, cartoesDoUsuario, mesVencimento);
 
-        if (despesasPagasPelaSaida.Any(d => d is not IDespesaDoCartao doCartao || !doCartao.FoiPagaSoPelaFatura(fatura, saida.Id)))
+        if (despesasPagasPelaSaida.Any(d => d is not IDespesaDoCartao doCartao || !doCartao.FoiPagaApenasPelaFatura(fatura, saida.Id)))
             return ErroTransacaoPagaOutraFatura.Instancia;
 
         List<Despesa> pagas = [];

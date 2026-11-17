@@ -51,7 +51,7 @@ public sealed class CpfTests
     [Theory, DomainAutoData]
     public void Criar_Quando_CnpjValido_Deve_RetornarFalha(Cnpj cnpj)
     {
-        Result<Cpf> result = Cpf.Criar(cnpj.Value);
+        Result<Cpf> result = Cpf.Criar(cnpj);
 
         result.Should().Fail();
     }

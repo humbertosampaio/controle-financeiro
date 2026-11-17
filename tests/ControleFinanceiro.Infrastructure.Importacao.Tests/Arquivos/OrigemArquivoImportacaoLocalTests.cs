@@ -92,7 +92,7 @@ public sealed class OrigemArquivoImportacaoLocalTests : IDisposable
         result.Should().FailWith(FalhaOrigemArquivoImportacao.ForaDaOrigem);
     }
 
-    [FactSoNoWindows]
+    [FactApenasNoWindows]
     public async Task AbrirAsync_Quando_CaixaDiferenteNoWindows_Deve_AbrirOArquivo()
     {
         CriarArquivo("dados/extrato.csv");

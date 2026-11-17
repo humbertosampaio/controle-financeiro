@@ -71,7 +71,7 @@ internal static class FaturaCartaoC6
         string[] linhas = File.ReadAllText(_caminho, Encoding.UTF8).Split(QuebraLinha, StringSplitOptions.RemoveEmptyEntries);
         IEnumerable<string> linhasFinal = linhas
             .Skip(1)
-            .Where(linha => linha.Split(';')[ColunaFinal].Trim('"') == sufixo.Value);
+            .Where(linha => linha.Split(';')[ColunaFinal].Trim('"') == sufixo);
 
         return Encoding.UTF8.GetBytes(string.Join(QuebraLinha, linhasFinal.Prepend(linhas[0])) + QuebraLinha);
     }

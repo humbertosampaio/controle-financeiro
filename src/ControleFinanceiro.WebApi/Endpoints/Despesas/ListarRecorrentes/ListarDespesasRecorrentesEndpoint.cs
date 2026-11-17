@@ -41,7 +41,7 @@ public sealed class ListarDespesasRecorrentesEndpoint : Endpoint<ListarDespesasR
             despesaRecorrente.IdBeneficiario,
             despesaRecorrente.Descricao,
             despesaRecorrente.IdCategoria,
-            despesaRecorrente.FormaPagamento.Value,
+            despesaRecorrente.FormaPagamento,
             despesaRecorrente.IdCartao,
             despesaRecorrente.Valor,
             despesaRecorrente.DiaOcorrencia);

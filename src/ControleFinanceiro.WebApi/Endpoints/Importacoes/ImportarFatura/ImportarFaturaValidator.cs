@@ -44,8 +44,8 @@ public sealed class ImportarFaturaValidator : Validator<ImportarFaturaRequest>
     }
 
     /// <summary>Se o código é de um layout de fatura sem o vencimento no arquivo.</summary>
-    public static bool EhVencimentoInformado(string layout) => LayoutArquivoImportacao.FaturasVencimentoInformado.Any(l => l.Value == layout);
+    public static bool EhVencimentoInformado(string layout) => LayoutArquivoImportacao.FaturasVencimentoInformado.Any(l => l == layout);
 
     /// <summary>Se o código é de um layout de fatura que traz o vencimento no arquivo.</summary>
-    public static bool EhVencimentoNoArquivo(string layout) => LayoutArquivoImportacao.FaturasVencimentoNoArquivo.Any(l => l.Value == layout);
+    public static bool EhVencimentoNoArquivo(string layout) => LayoutArquivoImportacao.FaturasVencimentoNoArquivo.Any(l => l == layout);
 }

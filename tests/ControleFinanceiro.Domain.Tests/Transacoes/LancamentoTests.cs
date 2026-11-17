@@ -177,7 +177,7 @@ public sealed class LancamentoTests
         string contraparte,
         IdentidadeLancamento identidade)
     {
-        Lancamento saida = Lancamento.DaConta(data, hora: null, -valor.Value, descricao, contraparte, categoriaBanco: null, identidade);
+        Lancamento saida = Lancamento.DaConta(data, hora: null, -valor, descricao, contraparte, categoriaBanco: null, identidade);
 
         saida.TextoBeneficiario.Should().Be(contraparte);
     }
@@ -189,7 +189,7 @@ public sealed class LancamentoTests
         TextoObrigatorio descricao,
         IdentidadeLancamento identidade)
     {
-        Lancamento boleto = Lancamento.DaConta(data, hora: null, -valor.Value, descricao, contraparte: null, categoriaBanco: null, identidade);
+        Lancamento boleto = Lancamento.DaConta(data, hora: null, -valor, descricao, contraparte: null, categoriaBanco: null, identidade);
 
         boleto.TextoBeneficiario.Should().BeNull();
     }
@@ -202,9 +202,9 @@ public sealed class LancamentoTests
         string contraparte,
         IdentidadeLancamento identidade)
     {
-        Lancamento compra = Lancamento.DoCartao(data, hora: null, -valor.Value, estabelecimento, contraparte, parcela: null, categoriaBanco: null, identidade);
+        Lancamento compra = Lancamento.DoCartao(data, hora: null, -valor, estabelecimento, contraparte, parcela: null, categoriaBanco: null, identidade);
 
-        compra.TextoBeneficiario.Should().Be(estabelecimento.Value);
+        compra.TextoBeneficiario.Should().Be(estabelecimento);
     }
 
     [Theory, DomainAutoData]
@@ -236,7 +236,7 @@ public sealed class LancamentoTests
     [Theory, DomainAutoData]
     public void AliasTextoBeneficiario_Quando_SaidaNoCartao_Deve_RetornarOAliasDaDescricao(Lancamento lancamento, ReaisPositivo valor)
     {
-        Lancamento compra = NoCartao(lancamento, -valor.Value);
+        Lancamento compra = NoCartao(lancamento, -valor);
 
         compra.AliasTextoBeneficiario.Should().Be((Alias)lancamento.Descricao.Value);
     }
@@ -244,7 +244,7 @@ public sealed class LancamentoTests
     [Theory, DomainAutoData]
     public void AliasTextoBeneficiario_Quando_SaidaNaConta_Deve_RetornarOAliasDaContraparte(Lancamento lancamento, ReaisPositivo valor, string contraparte)
     {
-        Lancamento saida = NaConta(lancamento, -valor.Value, contraparte: contraparte);
+        Lancamento saida = NaConta(lancamento, -valor, contraparte: contraparte);
 
         saida.AliasTextoBeneficiario.Should().Be((Alias)contraparte);
     }
@@ -252,7 +252,7 @@ public sealed class LancamentoTests
     [Theory, DomainAutoData]
     public void AliasTextoBeneficiario_Quando_SaidaNaContaSemContraparte_Deve_RetornarNulo(Lancamento lancamento, ReaisPositivo valor)
     {
-        Lancamento boleto = NaConta(lancamento, -valor.Value);
+        Lancamento boleto = NaConta(lancamento, -valor);
 
         boleto.AliasTextoBeneficiario.Should().BeNull();
     }
@@ -276,7 +276,7 @@ public sealed class LancamentoTests
     [Theory, DomainAutoData]
     public void AliasTextoBeneficiario_Quando_DescricaoNormalizaParaVazio_Deve_RetornarNulo(Lancamento lancamento, ReaisPositivo valor)
     {
-        Lancamento compra = NoCartao(lancamento, -valor.Value, descricao: (TextoObrigatorio)TextoQueNormalizaParaVazio);
+        Lancamento compra = NoCartao(lancamento, -valor, descricao: (TextoObrigatorio)TextoQueNormalizaParaVazio);
 
         compra.AliasTextoBeneficiario.Should().BeNull();
     }
@@ -310,7 +310,7 @@ public sealed class LancamentoTests
     [Theory, DomainAutoData]
     public void EhCompraParcelada_Quando_SaidaComParcelaNaFatura_Deve_SerVerdadeiro(Lancamento lancamento, ReaisPositivo valor, Parcela parcela)
     {
-        Lancamento compra = NoCartao(lancamento, -valor.Value, parcela: parcela);
+        Lancamento compra = NoCartao(lancamento, -valor, parcela: parcela);
 
         compra.EhCompraParcelada.Should().BeTrue();
     }
@@ -318,7 +318,7 @@ public sealed class LancamentoTests
     [Theory, DomainAutoData]
     public void EhCompraParcelada_Quando_AVista_Deve_SerFalso(Lancamento lancamento, ReaisPositivo valor)
     {
-        Lancamento compra = NoCartao(lancamento, -valor.Value);
+        Lancamento compra = NoCartao(lancamento, -valor);
 
         compra.EhCompraParcelada.Should().BeFalse();
     }
@@ -336,7 +336,7 @@ public sealed class LancamentoTests
     [Theory, DomainAutoData]
     public void EhCompraParcelada_Quando_DescricaoNormalizaParaVazio_Deve_SerFalso(Lancamento lancamento, ReaisPositivo valor, Parcela parcela)
     {
-        Lancamento compra = NoCartao(lancamento, -valor.Value, descricao: (TextoObrigatorio)TextoQueNormalizaParaVazio, parcela: parcela);
+        Lancamento compra = NoCartao(lancamento, -valor, descricao: (TextoObrigatorio)TextoQueNormalizaParaVazio, parcela: parcela);
 
         compra.EhCompraParcelada.Should().BeFalse();
     }

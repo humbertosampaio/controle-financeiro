@@ -14,10 +14,10 @@ public sealed class ChaveDeduplicacaoTests
     public static readonly TheoryData<string?> ChavesInvalidas = new(
         null,
         "",
-        new string('a', 63),
-        new string('a', 65),
-        new string('A', 64),
-        new string('g', 64));
+        new string('a', count: 63),
+        new string('a', count: 65),
+        new string('A', count: 64),
+        new string('g', count: 64));
 
     [Fact]
     public void Calcular_Quando_IdentidadeComposta_Deve_RetornarHashDoTextoCanonico()

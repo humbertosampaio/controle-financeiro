@@ -16,7 +16,7 @@ import { claudeMdAplicaveis, importsDe } from "./claude-md-aplicaveis.mjs";
 const RAIZ = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../..");
 const KB = 1024;
 const TETO_RAIZ = 12 * KB;
-const TETO_SRC = 9 * KB;
+const TETO_SRC = 8 * KB;
 const TETO_PASTA = 4 * KB;
 const TETO_CADEIA = 24 * KB;
 const AVISO = "Revise as instruções da cadeia que estourou (docs/harness.md, \"Revisão das instruções\").";

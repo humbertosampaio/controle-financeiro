@@ -17,7 +17,7 @@ internal sealed class ImportarExtratoRequestCustomization : ICustomization
         fixture.Register((Guid idUsuario) => new ImportarExtratoRequest
         {
             IdUsuario = idUsuario,
-            Layout = LayoutArquivoImportacao.C6ContaCsv.Value,
+            Layout = LayoutArquivoImportacao.C6ContaCsv,
             Arquivo = ArquivoFormulario.ComTamanho(tamanho: 1),
         });
     }

@@ -14,3 +14,6 @@ CF0006 | Convencoes | Disabled | DoubleCastAnalyzer
 CF0009 | Convencoes | Warning | TestNameAnalyzer
 CF0009b | Convencoes | Warning | ResultSuffixAnalyzer
 CF0007 | Convencoes | Warning | SiblingArgumentsAnalyzer
+CF0011 | Convencoes | Warning | NamedLiteralArgumentAnalyzer
+CF0012 | Convencoes | Warning | EmptyPropertyPatternAnalyzer
+CF0013 | Convencoes | Warning | UnnecessaryValueAnalyzer

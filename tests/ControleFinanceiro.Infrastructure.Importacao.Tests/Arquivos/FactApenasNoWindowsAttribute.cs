@@ -4,9 +4,9 @@ namespace ControleFinanceiro.Infrastructure.Importacao.Tests.Arquivos;
 /// Um <see cref="FactAttribute"/> para o comportamento que só existe no sistema de arquivos do Windows. Nas outras
 /// plataformas, o teste aparece como pulado, e não como aprovado.
 /// </summary>
-internal sealed class FactSoNoWindowsAttribute : FactAttribute
+internal sealed class FactApenasNoWindowsAttribute : FactAttribute
 {
-    public FactSoNoWindowsAttribute()
+    public FactApenasNoWindowsAttribute()
     {
         if (!OperatingSystem.IsWindows())
             Skip = "O comportamento é do sistema de arquivos do Windows.";

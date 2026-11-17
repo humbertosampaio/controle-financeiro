@@ -23,7 +23,7 @@ public sealed class CadastrarDespesaRecorrenteValidatorTests
         CadastrarDespesaRecorrenteRequest noCredito = requisicao with
         {
             IdUsuario = idUsuario,
-            FormaPagamento = FormaPagamento.Credito.Value,
+            FormaPagamento = FormaPagamento.Credito,
             IdCartao = idCartao,
         };
 
@@ -55,7 +55,7 @@ public sealed class CadastrarDespesaRecorrenteValidatorTests
     [Theory, ApiAutoData]
     public void Validate_Quando_CreditoSemCartao_Deve_RetornarErroNoIdCartao(CadastrarDespesaRecorrenteRequest requisicao)
     {
-        CadastrarDespesaRecorrenteRequest semCartao = requisicao with { FormaPagamento = FormaPagamento.Credito.Value, IdCartao = null };
+        CadastrarDespesaRecorrenteRequest semCartao = requisicao with { FormaPagamento = FormaPagamento.Credito, IdCartao = null };
 
         TestValidationResult<CadastrarDespesaRecorrenteRequest> resultado = _sut.TestValidate(semCartao);
 

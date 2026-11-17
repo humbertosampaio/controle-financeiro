@@ -305,7 +305,7 @@ public sealed class PreVisualizarFaturaEndpointTests : IAsyncLifetime
     {
         using MultipartFormDataContent formulario = ImportacaoFaturaExtensions.FormularioFatura(arquivo, dataVencimento);
 
-        return await _api.Client.PostAsync(Rota(idUsuario, layout.Value), formulario);
+        return await _api.Client.PostAsync(Rota(idUsuario, layout), formulario);
     }
 
     private async Task<PreVisualizarFaturaResponse> PreVisualizarComSucessoAsync(Guid idUsuario, LayoutArquivoImportacao layout, byte[] arquivo)

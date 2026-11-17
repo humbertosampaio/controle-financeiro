@@ -11,10 +11,10 @@ public sealed class EnumExtensionsTests
     {
         TestEnum item1 = TestEnum.Item1;
 
-        Result<TestEnum> resultado = TestEnum.TryFromValue(item1.Value);
+        Result<TestEnum> resultado = TestEnum.TryFromValue(item1);
 
         resultado.Should().Succeed()
-            .Which.Value.Should().Be(item1.Value);
+            .Which.Value.Should().Be(item1);
     }
 
     [Fact]

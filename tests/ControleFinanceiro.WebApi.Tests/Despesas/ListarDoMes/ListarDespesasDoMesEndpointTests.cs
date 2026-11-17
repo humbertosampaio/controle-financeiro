@@ -51,14 +51,14 @@ public sealed class ListarDespesasDoMesEndpointTests : IAsyncLifetime
         CadastrarDespesaRecorrenteRequest noPix = doUsuario with
         {
             Descricao = "Aluguel",
-            FormaPagamento = FormaPagamento.Pix.Value,
+            FormaPagamento = FormaPagamento.Pix,
             IdCartao = null,
             DiaOcorrencia = 20,
         };
         CadastrarDespesaRecorrenteRequest noCredito = doUsuario with
         {
             Descricao = "Streaming",
-            FormaPagamento = FormaPagamento.Credito.Value,
+            FormaPagamento = FormaPagamento.Credito,
             IdCartao = idCartao,
             DiaOcorrencia = 5,
         };
@@ -109,7 +109,7 @@ public sealed class ListarDespesasDoMesEndpointTests : IAsyncLifetime
         despesa.Id.Should().Be(parcelada.Id.Value);
         despesa.Parcela.Should().Be(new ListarDespesasDoMesResponse.ParcelaDoMes(parcelaDoMes.Id.Value, numeroEsperado, Total: 10));
         despesa.IdCartao.Should().Be(parcelada.IdCartao.Value);
-        despesa.FormaPagamento.Should().Be(FormaPagamento.Credito.Value);
+        despesa.FormaPagamento.Should().Be(FormaPagamento.Credito);
         despesa.ValorProjetado.Should().Be(99.90m);
         despesa.StatusPagamento.Should().Be(statusEsperado);
         despesa.DataPagamentoProjetada.Should().Be(new DateOnly(ano, mes, 10));
@@ -164,7 +164,7 @@ public sealed class ListarDespesasDoMesEndpointTests : IAsyncLifetime
         ListarDespesasDoMesResponse? corpo = await noMes.Content.ReadFromJsonAsync<ListarDespesasDoMesResponse>();
         // A nona parcela vence com as compras à vista da fatura, que também viram despesas do mês.
         ListarDespesasDoMesResponse.Despesa lida = corpo!.Despesas.Should().ContainSingle(d => d.Id == parcelada.Id.Value).Subject;
-        lida.StatusPagamento.Should().Be(StatusPagamento.Pendente.Value);
+        lida.StatusPagamento.Should().Be(StatusPagamento.Pendente);
         lida.IdTransacaoCobranca.Should().Be(transacao.Id.Value);
         lida.ValorCobrado.Should().Be(99.90m);
         lida.IdTransacao.Should().BeNull();
@@ -186,7 +186,7 @@ public sealed class ListarDespesasDoMesEndpointTests : IAsyncLifetime
 
         ListarDespesasDoMesResponse? corpo = await resposta.Content.ReadFromJsonAsync<ListarDespesasDoMesResponse>();
         ListarDespesasDoMesResponse.Despesa lida = corpo!.Despesas.Should().ContainSingle(d => d.Id == despesa.Id.Value).Subject;
-        lida.StatusPagamento.Should().Be(StatusPagamento.Pendente.Value);
+        lida.StatusPagamento.Should().Be(StatusPagamento.Pendente);
         lida.IdTransacaoCobranca.Should().Be(transacao.Id.Value);
         lida.ValorCobrado.Should().Be(123.45m);
         lida.IdTransacao.Should().BeNull();
@@ -241,7 +241,7 @@ public sealed class ListarDespesasDoMesEndpointTests : IAsyncLifetime
             idDespesaRecorrente,
             recorrente.Valor,
             ValorEfetivo: null,
-            StatusPagamento.Pendente.Value,
+            StatusPagamento.Pendente,
             dataPagamentoProjetada,
             DataPagamentoEfetiva: null,
             IdTransacao: null,

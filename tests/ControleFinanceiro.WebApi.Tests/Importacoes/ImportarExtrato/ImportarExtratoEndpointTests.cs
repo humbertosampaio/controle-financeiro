@@ -96,7 +96,7 @@ public sealed class ImportarExtratoEndpointTests : IAsyncLifetime
         await ImportarComSucessoAsync(idUsuario, ExtratoContaC6.Completo());
 
         List<Transacao> tarifas = (await _api.ObterTodosAsync(db => db.Transacoes))
-            .Where(t => t.Data == ExtratoContaC6.DiaTarifasIdenticas && t.Descricao.Value == "Tarifa de exemplo")
+            .Where(t => t.Data == ExtratoContaC6.DiaTarifasIdenticas && t.Descricao == "Tarifa de exemplo")
             .ToList();
         tarifas.Should().HaveCount(2);
         tarifas.Should().OnlyHaveUniqueItems(t => t.Chave);
@@ -366,7 +366,7 @@ public sealed class ImportarExtratoEndpointTests : IAsyncLifetime
         return (await resposta.Content.ReadFromJsonAsync<ImportarExtratoResponse>())!;
     }
 
-    private static Uri Rota(Guid idUsuario) => Rota(idUsuario, LayoutArquivoImportacao.C6ContaCsv.Value);
+    private static Uri Rota(Guid idUsuario) => Rota(idUsuario, LayoutArquivoImportacao.C6ContaCsv);
 
     private static Uri Rota(Guid idUsuario, string layout) => new($"/api/usuarios/{idUsuario}/importacoes/extratos/{layout}", UriKind.Relative);
 

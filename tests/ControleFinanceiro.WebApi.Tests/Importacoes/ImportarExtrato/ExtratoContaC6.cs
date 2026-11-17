@@ -64,7 +64,7 @@ internal static class ExtratoContaC6
     {
         string conteudo = File.ReadAllText(_caminho);
         int tarifa = conteudo.IndexOf("Tarifa de exemplo,,0.00,5.00", StringComparison.Ordinal);
-        return Montar(string.Concat(conteudo.AsSpan(0, tarifa), "Tarifa de exemplo,,0.00,6.00", conteudo.AsSpan(tarifa + "Tarifa de exemplo,,0.00,5.00".Length)));
+        return Montar(string.Concat(conteudo.AsSpan(start: 0, length: tarifa), "Tarifa de exemplo,,0.00,6.00", conteudo.AsSpan(tarifa + "Tarifa de exemplo,,0.00,5.00".Length)));
     }
 
     private static byte[] Montar(string conteudo) => [.. _utf8ComBom.GetPreamble(), .. _utf8ComBom.GetBytes(conteudo)];

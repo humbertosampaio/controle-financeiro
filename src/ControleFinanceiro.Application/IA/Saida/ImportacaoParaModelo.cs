@@ -94,7 +94,7 @@ public sealed record ImportacaoParaModelo : ISaidaModelo
         PeriodoParaModelo? periodoNaoImportado,
         bool somaPeriodoFecha)
     {
-        Layout = layout.Value;
+        Layout = layout;
         Banco = banco.Name;
         Periodo = PeriodoParaModelo.De(periodo);
         ContaNova = contaNova;
@@ -121,7 +121,7 @@ public sealed record ImportacaoParaModelo : ISaidaModelo
         IReadOnlyList<CartaoImportadoParaModelo> cartoes,
         IReadOnlyList<DocumentoMascarado> avisos)
     {
-        Layout = layout.Value;
+        Layout = layout;
         Banco = banco.Name;
         Periodo = PeriodoParaModelo.De(periodo);
         Vencimento = vencimento;

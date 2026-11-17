@@ -121,7 +121,7 @@ public sealed class DespesaParcelada : Despesa, IDespesaDoCartao
     /// <param name="parcela">A parcela como o banco a informou, de uma compra com o mesmo total.</param>
     internal UnitResult<Erro> CobrarParcela(Parcela parcela, Cobranca cobranca) => ParcelaNumero(parcela.Numero).CobrarCom(cobranca);
 
-    public bool FoiPagaSoPelaFatura(FaturaCartao fatura, IdTransacao idSaida)
+    public bool FoiPagaApenasPelaFatura(FaturaCartao fatura, IdTransacao idSaida)
     {
         return fatura.Contem(IdCartao)
             && _parcelas.TrueForAll(p => p.Pagamento.IdTransacao != idSaida || p.MesReferencia == fatura.Vencimento.Mes);

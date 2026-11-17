@@ -46,7 +46,7 @@ public sealed class ImportarExtratoValidatorTests
     public void Validate_Quando_LayoutDeFatura_Deve_RetornarErroNoLayout(ImportarExtratoRequest requisicao)
     {
         TestValidationResult<ImportarExtratoRequest> resultado = _sut.TestValidate(
-            requisicao with { Layout = LayoutArquivoImportacao.C6CartaoCsv.Value });
+            requisicao with { Layout = LayoutArquivoImportacao.C6CartaoCsv });
 
         resultado.ShouldHaveValidationErrorFor(r => r.Layout);
     }
@@ -81,7 +81,7 @@ public sealed class ImportarExtratoValidatorTests
     public void Validate_Quando_LayoutDoMercadoPagoComSufixo_Deve_Passar(ImportarExtratoRequest requisicao, SufixoConta sufixo)
     {
         TestValidationResult<ImportarExtratoRequest> resultado = _sut.TestValidate(
-            requisicao with { Layout = LayoutArquivoImportacao.MercadoPagoContaCsv.Value, SufixoConta = sufixo });
+            requisicao with { Layout = LayoutArquivoImportacao.MercadoPagoContaCsv, SufixoConta = sufixo });
 
         resultado.ShouldNotHaveAnyValidationErrors();
     }
@@ -94,7 +94,7 @@ public sealed class ImportarExtratoValidatorTests
     public void Validate_Quando_LayoutDoMercadoPagoComSufixoAusenteOuMalformado_Deve_RetornarErroNoSufixo(string? sufixo, ImportarExtratoRequest requisicao)
     {
         TestValidationResult<ImportarExtratoRequest> resultado = _sut.TestValidate(
-            requisicao with { Layout = LayoutArquivoImportacao.MercadoPagoContaCsv.Value, SufixoConta = sufixo });
+            requisicao with { Layout = LayoutArquivoImportacao.MercadoPagoContaCsv, SufixoConta = sufixo });
 
         resultado.ShouldHaveValidationErrorFor(r => r.SufixoConta);
     }

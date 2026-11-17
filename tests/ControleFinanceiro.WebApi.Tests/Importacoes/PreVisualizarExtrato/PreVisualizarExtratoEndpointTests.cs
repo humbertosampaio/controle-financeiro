@@ -135,7 +135,7 @@ public sealed class PreVisualizarExtratoEndpointTests : IAsyncLifetime
         if (sufixoConta is not null)
             formulario.Add(new StringContent(sufixoConta), "sufixoConta");
 
-        return await _api.Client.PostAsync(Rota(idUsuario, layout.Value), formulario);
+        return await _api.Client.PostAsync(Rota(idUsuario, layout), formulario);
     }
 
     private static Uri Rota(Guid idUsuario, string layout) => new($"/api/usuarios/{idUsuario}/importacoes/extratos/{layout}/previa", UriKind.Relative);

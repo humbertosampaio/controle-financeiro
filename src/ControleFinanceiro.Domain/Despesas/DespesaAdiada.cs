@@ -151,7 +151,7 @@ public sealed class DespesaAdiada : DespesaInteira, IDespesaDoCartao
         return UnitResult.Success<Erro>();
     }
 
-    public bool FoiPagaSoPelaFatura(FaturaCartao fatura, IdTransacao idSaida)
+    public bool FoiPagaApenasPelaFatura(FaturaCartao fatura, IdTransacao idSaida)
     {
         return fatura.Contem(IdCartao) && (Pagamento.IdTransacao != idSaida || MesReferencia == fatura.Vencimento.Mes);
     }
