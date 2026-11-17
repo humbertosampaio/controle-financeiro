@@ -278,7 +278,7 @@ public sealed class DespesaParceladaTests
 
     private static DespesaParcelada Parcelar(IdUsuario idUsuario, Cartao cartao, int numero, int total)
     {
-        Lancamento compra = Lancamento.DoCartao(
+        LancamentoCartao compra = LancamentoCartao.Criar(
             _dataOcorrencia,
             hora: null,
             valor: -99.90m,

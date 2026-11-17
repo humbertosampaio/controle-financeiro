@@ -26,7 +26,7 @@ public sealed class DespesaParceladaFactoryTests
     private static readonly VencimentoFatura _vencimento = (VencimentoFatura)new DateOnly(2026, 05, 25);
 
     [Theory, CompraAutoData]
-    public void CriarDaFatura_Quando_CompraSemDespesa_Deve_CriarADespesaDoCartao([Frozen] IdUsuario idUsuario, Cartao cartao, Lancamento compra)
+    public void CriarDaFatura_Quando_CompraSemDespesa_Deve_CriarADespesaDoCartao([Frozen] IdUsuario idUsuario, Cartao cartao, LancamentoCartao compra)
     {
         IReadOnlyList<Beneficiario> beneficiarios = BeneficiariosResolvidos.Dos(idUsuario, [compra]);
         IReadOnlyList<CategoriaDespesa> categorias = CategoriasResolvidas.Dos(idUsuario, [compra]);
@@ -56,7 +56,7 @@ public sealed class DespesaParceladaFactoryTests
     }
 
     [Theory, CompraAutoData]
-    public void CriarDaFatura_Quando_CompraAVista_Deve_NaoCriar([Frozen] IdUsuario idUsuario, Cartao cartao, Lancamento compra)
+    public void CriarDaFatura_Quando_CompraAVista_Deve_NaoCriar([Frozen] IdUsuario idUsuario, Cartao cartao, LancamentoCartao compra)
     {
         IReadOnlyList<DespesaParcelada> result = CriarDaFatura(
             idUsuario,
@@ -70,7 +70,7 @@ public sealed class DespesaParceladaFactoryTests
     [Theory]
     [InlineCompraAutoData(99.90)]
     [InlineCompraAutoData(0)]
-    public void CriarDaFatura_Quando_NaoEhSaida_Deve_NaoCriar(decimal valor, [Frozen] IdUsuario idUsuario, Cartao cartao, Lancamento compra)
+    public void CriarDaFatura_Quando_NaoEhSaida_Deve_NaoCriar(decimal valor, [Frozen] IdUsuario idUsuario, Cartao cartao, LancamentoCartao compra)
     {
         IReadOnlyList<DespesaParcelada> result = CriarDaFatura(
             idUsuario,
@@ -82,7 +82,7 @@ public sealed class DespesaParceladaFactoryTests
     }
 
     [Theory, CompraAutoData]
-    public void CriarDaFatura_Quando_DescricaoNormalizaParaVazio_Deve_NaoCriar([Frozen] IdUsuario idUsuario, Cartao cartao, Lancamento compra)
+    public void CriarDaFatura_Quando_DescricaoNormalizaParaVazio_Deve_NaoCriar([Frozen] IdUsuario idUsuario, Cartao cartao, LancamentoCartao compra)
     {
         IReadOnlyList<DespesaParcelada> result = CriarDaFatura(
             idUsuario,
@@ -96,7 +96,7 @@ public sealed class DespesaParceladaFactoryTests
     [Theory]
     [InlineCompraAutoData(null)]
     [InlineCompraAutoData(TextoQueNormalizaParaVazio)]
-    public void CriarDaFatura_Quando_SemCategoriaDoBanco_Deve_CriarSemCategoria(string? categoriaBanco, [Frozen] IdUsuario idUsuario, Cartao cartao, Lancamento compra)
+    public void CriarDaFatura_Quando_SemCategoriaDoBanco_Deve_CriarSemCategoria(string? categoriaBanco, [Frozen] IdUsuario idUsuario, Cartao cartao, LancamentoCartao compra)
     {
         IReadOnlyList<DespesaParcelada> result = CriarDaFatura(
             idUsuario,
@@ -108,7 +108,7 @@ public sealed class DespesaParceladaFactoryTests
     }
 
     [Theory, CompraAutoData]
-    public void CriarDaFatura_Quando_CompraJaTemDespesa_Deve_NaoCriarNemAlterar([Frozen] IdUsuario idUsuario, Cartao cartao, Lancamento compra)
+    public void CriarDaFatura_Quando_CompraJaTemDespesa_Deve_NaoCriarNemAlterar([Frozen] IdUsuario idUsuario, Cartao cartao, LancamentoCartao compra)
     {
         DespesaParcelada existente = CriarDaFatura(idUsuario, cartao, parceladas: [], compra).Single();
 
@@ -131,7 +131,7 @@ public sealed class DespesaParceladaFactoryTests
         string descricao,
         [Frozen] IdUsuario idUsuario,
         Cartao cartao,
-        Lancamento compra)
+        LancamentoCartao compra)
     {
         DespesaParcelada existente = CriarDaFatura(idUsuario, cartao, parceladas: [], compra).Single();
 
@@ -145,7 +145,7 @@ public sealed class DespesaParceladaFactoryTests
     }
 
     [Theory, CompraAutoData]
-    public void CriarDaFatura_Quando_OutroTotal_Deve_CriarOutraDespesa([Frozen] IdUsuario idUsuario, Cartao cartao, Lancamento compra)
+    public void CriarDaFatura_Quando_OutroTotal_Deve_CriarOutraDespesa([Frozen] IdUsuario idUsuario, Cartao cartao, LancamentoCartao compra)
     {
         DespesaParcelada existente = CriarDaFatura(idUsuario, cartao, parceladas: [], compra).Single();
 
@@ -159,7 +159,7 @@ public sealed class DespesaParceladaFactoryTests
     }
 
     [Theory, CompraAutoData]
-    public void CriarDaFatura_Quando_OutraData_Deve_CriarOutraDespesa([Frozen] IdUsuario idUsuario, Cartao cartao, Lancamento compra)
+    public void CriarDaFatura_Quando_OutraData_Deve_CriarOutraDespesa([Frozen] IdUsuario idUsuario, Cartao cartao, LancamentoCartao compra)
     {
         DespesaParcelada existente = CriarDaFatura(idUsuario, cartao, parceladas: [], compra).Single();
 
@@ -173,7 +173,7 @@ public sealed class DespesaParceladaFactoryTests
     }
 
     [Theory, CompraAutoData]
-    public void CriarDaFatura_Quando_OutroCartao_Deve_CriarOutraDespesa([Frozen] IdUsuario idUsuario, Cartao cartao, Cartao outroCartao, Lancamento compra)
+    public void CriarDaFatura_Quando_OutroCartao_Deve_CriarOutraDespesa([Frozen] IdUsuario idUsuario, Cartao cartao, Cartao outroCartao, LancamentoCartao compra)
     {
         DespesaParcelada existente = CriarDaFatura(idUsuario, outroCartao, parceladas: [], compra).Single();
 
@@ -191,7 +191,7 @@ public sealed class DespesaParceladaFactoryTests
         int quantidadeEsperada,
         [Frozen] IdUsuario idUsuario,
         Cartao cartao,
-        Lancamento compra)
+        LancamentoCartao compra)
     {
         DespesaParcelada[] existentes = CriarDaFatura(idUsuario, cartao, parceladas: [], compra, compra)
             .Take(quantidadeExistentes)
@@ -203,7 +203,7 @@ public sealed class DespesaParceladaFactoryTests
     }
 
     [Theory, CompraAutoData]
-    public void CriarDaFatura_Quando_EmpateEntreNumeros_Deve_UsarOMenor([Frozen] IdUsuario idUsuario, Cartao cartao, Lancamento compra)
+    public void CriarDaFatura_Quando_EmpateEntreNumeros_Deve_UsarOMenor([Frozen] IdUsuario idUsuario, Cartao cartao, LancamentoCartao compra)
     {
         IReadOnlyList<DespesaParcelada> result = CriarDaFatura(
             idUsuario,
@@ -216,7 +216,7 @@ public sealed class DespesaParceladaFactoryTests
     }
 
     [Theory, CompraAutoData]
-    public void CriarDaFatura_Quando_CartaoDeOutroUsuario_Deve_LancarExcecao(IdUsuario idUsuario, Cartao cartao, Lancamento compra)
+    public void CriarDaFatura_Quando_CartaoDeOutroUsuario_Deve_LancarExcecao(IdUsuario idUsuario, Cartao cartao, LancamentoCartao compra)
     {
         Action act = () => CriarDaFatura(idUsuario, cartao, parceladas: [], compra);
 
@@ -224,7 +224,7 @@ public sealed class DespesaParceladaFactoryTests
     }
 
     [Theory, CompraAutoData]
-    public void CriarDaFatura_Quando_BeneficiarioDeOutroUsuario_Deve_LancarExcecao([Frozen] IdUsuario idUsuario, Cartao cartao, Lancamento compra)
+    public void CriarDaFatura_Quando_BeneficiarioDeOutroUsuario_Deve_LancarExcecao([Frozen] IdUsuario idUsuario, Cartao cartao, LancamentoCartao compra)
     {
         IdUsuario outroUsuario = IdUsuario.FromNewVersion7Guid();
         Action act = () => DespesaParceladaFactory.CriarDaFatura(
@@ -239,7 +239,7 @@ public sealed class DespesaParceladaFactoryTests
     }
 
     [Theory, CompraAutoData]
-    public void CriarDaFatura_Quando_CategoriaDeOutroUsuario_Deve_LancarExcecao([Frozen] IdUsuario idUsuario, Cartao cartao, Lancamento compra)
+    public void CriarDaFatura_Quando_CategoriaDeOutroUsuario_Deve_LancarExcecao([Frozen] IdUsuario idUsuario, Cartao cartao, LancamentoCartao compra)
     {
         IdUsuario outroUsuario = IdUsuario.FromNewVersion7Guid();
         Action act = () => DespesaParceladaFactory.CriarDaFatura(
@@ -259,7 +259,7 @@ public sealed class DespesaParceladaFactoryTests
         DespesaParcelada deOutroUsuario,
         [Frozen] IdUsuario idUsuario,
         Cartao cartao,
-        Lancamento compra)
+        LancamentoCartao compra)
     {
         Action act = () => CriarDaFatura(idUsuario, cartao, [deOutroUsuario], compra);
 
@@ -267,7 +267,7 @@ public sealed class DespesaParceladaFactoryTests
     }
 
     [Theory, CompraAutoData]
-    public void CriarDaFatura_Quando_BeneficiarioNaoEncontrado_Deve_LancarExcecao([Frozen] IdUsuario idUsuario, Cartao cartao, Lancamento compra)
+    public void CriarDaFatura_Quando_BeneficiarioNaoEncontrado_Deve_LancarExcecao([Frozen] IdUsuario idUsuario, Cartao cartao, LancamentoCartao compra)
     {
         Action act = () => DespesaParceladaFactory.CriarDaFatura(
             idUsuario,
@@ -281,7 +281,7 @@ public sealed class DespesaParceladaFactoryTests
     }
 
     [Theory, CompraAutoData]
-    public void CriarDaFatura_Quando_CategoriaNaoEncontrada_Deve_LancarExcecao([Frozen] IdUsuario idUsuario, Cartao cartao, Lancamento compra)
+    public void CriarDaFatura_Quando_CategoriaNaoEncontrada_Deve_LancarExcecao([Frozen] IdUsuario idUsuario, Cartao cartao, LancamentoCartao compra)
     {
         Action act = () => DespesaParceladaFactory.CriarDaFatura(
             idUsuario,
@@ -298,7 +298,7 @@ public sealed class DespesaParceladaFactoryTests
         IdUsuario idUsuario,
         Cartao cartao,
         IReadOnlyCollection<DespesaParcelada> parceladas,
-        params Lancamento[] lancamentos)
+        params LancamentoCartao[] lancamentos)
     {
         return DespesaParceladaFactory.CriarDaFatura(
             idUsuario,
@@ -310,7 +310,7 @@ public sealed class DespesaParceladaFactoryTests
     }
 
     [Theory, CompraAutoData]
-    public void CriarDaFatura_Quando_FaturaDeOutroBanco_Deve_LancarExcecao([Frozen] IdUsuario idUsuario, Cartao cartao, Lancamento compra)
+    public void CriarDaFatura_Quando_FaturaDeOutroBanco_Deve_LancarExcecao([Frozen] IdUsuario idUsuario, Cartao cartao, LancamentoCartao compra)
     {
         Action act = () => DespesaParceladaFactory.CriarDaFatura(
             idUsuario,
@@ -328,7 +328,7 @@ public sealed class DespesaParceladaFactoryTests
         [Frozen] IdUsuario idUsuario,
         Cartao cartao,
         SufixoCartao outroSufixo,
-        Lancamento compra)
+        LancamentoCartao compra)
     {
         Action act = () => DespesaParceladaFactory.CriarDaFatura(
             idUsuario,
@@ -341,24 +341,8 @@ public sealed class DespesaParceladaFactoryTests
         act.Should().ThrowExactly<ArgumentException>().WithParameterName("fatura");
     }
 
-    [Theory, CompraAutoData]
-    public void CriarDaFatura_Quando_LancamentoNaoEhDeFatura_Deve_Lancar([Frozen] IdUsuario idUsuario, Cartao cartao, Lancamento compra)
-    {
-        Lancamento doExtrato = compra.NaOrigem(TipoOrigem.Conta);
-
-        Action act = () => DespesaParceladaFactory.CriarDaFatura(
-            idUsuario,
-            beneficiariosDoUsuario: [],
-            categoriasDoUsuario: [],
-            cartao,
-            cartao.FaturaCom(_vencimento, doExtrato),
-            parceladasDoUsuario: []);
-
-        act.Should().ThrowExactly<ArgumentException>().WithParameterName("fatura");
-    }
-
     /// <param name="numero">Nulo na compra à vista.</param>
-    private static Lancamento Compra(
+    private static LancamentoCartao Compra(
         IdentidadeLancamento identidade,
         int? numero = 3,
         int total = 10,
@@ -367,7 +351,7 @@ public sealed class DespesaParceladaFactoryTests
         string descricao = DescricaoCompra,
         string? categoria = CategoriaCompra)
     {
-        return Lancamento.DoCartao(
+        return LancamentoCartao.Criar(
             data ?? _dataCompra,
             hora: null,
             valor,

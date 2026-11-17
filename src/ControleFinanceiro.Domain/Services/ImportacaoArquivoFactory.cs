@@ -3,26 +3,25 @@ using ControleFinanceiro.Domain.Contas;
 using ControleFinanceiro.Domain.Importacoes;
 using ControleFinanceiro.Domain.Shared;
 using ControleFinanceiro.Domain.Shared.ValueObjects;
-using ControleFinanceiro.Domain.Transacoes;
 using ControleFinanceiro.Domain.Usuarios;
 
 namespace ControleFinanceiro.Domain.Services;
 
 /// <summary>
-/// Registra a importação de um arquivo da conta ou do cartão. O usuário e a origem saem da própria conta ou
-/// do próprio cartão, para a importação nunca ficar com o dono de um e a origem de outro.
+/// Registra a importação de um arquivo da conta ou do cartão. O usuário e a conta ou o cartão saem do
+/// próprio agregado, para a importação nunca ficar com o dono de um e o id de outro.
 /// </summary>
 public static class ImportacaoArquivoFactory
 {
     /// <param name="lidas">Quantos lançamentos o arquivo trazia.</param>
-    public static ImportacaoArquivo Registrar(
+    public static ImportacaoExtrato Registrar(
         ContaBancaria conta,
         LayoutArquivoImportacao layout,
         Periodo periodo,
         int lidas,
         DateTimeOffset importadaEm)
     {
-        return ImportacaoArquivo.RegistrarExtrato(conta.IdUsuario, OrigemTransacao.DaConta(conta.Id), layout, periodo, lidas, importadaEm);
+        return ImportacaoExtrato.Registrar(conta.IdUsuario, conta.Id, layout, periodo, lidas, importadaEm);
     }
 
     /// <summary>
@@ -34,10 +33,10 @@ public static class ImportacaoArquivoFactory
     /// <param name="vencimento">O vencimento da fatura do arquivo.</param>
     /// <param name="lidas">Quantos lançamentos o arquivo trazia.</param>
     /// <exception cref="ArgumentException">Quando um cartão ou uma importação é de outro usuário.</exception>
-    public static Result<ImportacaoArquivo, Erro> Registrar(
+    public static Result<ImportacaoFatura, Erro> Registrar(
         Cartao cartao,
         IReadOnlyCollection<Cartao> cartoesUsuario,
-        IReadOnlyCollection<ImportacaoArquivo> importacoesFaturaMes,
+        IReadOnlyCollection<ImportacaoFatura> importacoesFaturaMes,
         LayoutArquivoImportacao layout,
         Periodo periodo,
         VencimentoFatura vencimento,
@@ -45,9 +44,9 @@ public static class ImportacaoArquivoFactory
         DateTimeOffset importadaEm)
     {
         return ConferirVencimentoFatura(cartao.IdUsuario, cartao.Banco, vencimento, cartoesFatura: [cartao], cartoesUsuario, importacoesFaturaMes)
-            .Map(() => ImportacaoArquivo.RegistrarFatura(
+            .Map(() => ImportacaoFatura.Registrar(
                 cartao.IdUsuario,
-                OrigemTransacao.DoCartao(cartao.Id),
+                cartao.Id,
                 layout,
                 periodo,
                 vencimento,
@@ -76,7 +75,7 @@ public static class ImportacaoArquivoFactory
         VencimentoFatura vencimento,
         IReadOnlyCollection<Cartao> cartoesFatura,
         IReadOnlyCollection<Cartao> cartoesUsuario,
-        IReadOnlyCollection<ImportacaoArquivo> importacoesFaturaMes)
+        IReadOnlyCollection<ImportacaoFatura> importacoesFaturaMes)
     {
         cartoesFatura.ConferirDono(idUsuario, nameof(cartoesFatura));
         cartoesUsuario.ConferirDono(idUsuario, nameof(cartoesUsuario));

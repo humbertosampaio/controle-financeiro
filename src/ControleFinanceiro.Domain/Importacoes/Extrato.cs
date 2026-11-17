@@ -19,8 +19,8 @@ public sealed class Extrato : ValueObject
     public IReadOnlyList<LancamentoContabilizado> LancamentosContabilizados { get; }
     public IReadOnlyList<SaldoDiario> Saldos { get; }
 
-    /// <summary>Os lançamentos na ordem do arquivo, como a <see cref="Services.LoteTransacoesFactory"/> os recebe.</summary>
-    public IReadOnlyList<Lancamento> Lancamentos { get; }
+    /// <summary>Os lançamentos na ordem do arquivo, como a <see cref="Services.LoteTransacoesContaFactory"/> os recebe.</summary>
+    public IReadOnlyList<LancamentoConta> Lancamentos { get; }
 
     private Extrato(
         Banco banco,

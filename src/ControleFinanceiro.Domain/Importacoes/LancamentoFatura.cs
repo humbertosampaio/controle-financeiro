@@ -9,16 +9,16 @@ namespace ControleFinanceiro.Domain.Importacoes;
 /// </summary>
 public sealed class LancamentoFatura : ValueObject
 {
-    public Lancamento Lancamento { get; }
+    public LancamentoCartao Lancamento { get; }
     public SufixoCartao SufixoCartao { get; }
 
-    private LancamentoFatura(Lancamento lancamento, SufixoCartao sufixoCartao)
+    private LancamentoFatura(LancamentoCartao lancamento, SufixoCartao sufixoCartao)
     {
         Lancamento = lancamento;
         SufixoCartao = sufixoCartao;
     }
 
-    public static LancamentoFatura Criar(Lancamento lancamento, SufixoCartao sufixoCartao) => new(lancamento, sufixoCartao);
+    public static LancamentoFatura Criar(LancamentoCartao lancamento, SufixoCartao sufixoCartao) => new(lancamento, sufixoCartao);
 
     protected override IEnumerable<object?> GetEqualityComponents()
     {

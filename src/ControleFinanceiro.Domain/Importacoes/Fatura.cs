@@ -58,9 +58,9 @@ public sealed class Fatura : ValueObject
             "A fatura não traz lançamentos.");
     }
 
-    /// <summary>Os lançamentos do cartão, na ordem do arquivo, como a <see cref="Services.LoteTransacoesFactory"/> os recebe.</summary>
+    /// <summary>Os lançamentos do cartão, na ordem do arquivo, como a <see cref="Services.LoteTransacoesCartaoFactory"/> os recebe.</summary>
     /// <exception cref="ArgumentException">Quando o final não está na fatura.</exception>
-    public IReadOnlyList<Lancamento> LancamentosCartao(SufixoCartao sufixo)
+    public IReadOnlyList<LancamentoCartao> LancamentosCartao(SufixoCartao sufixo)
     {
         GarantirSufixo(sufixo);
 
@@ -73,14 +73,14 @@ public sealed class Fatura : ValueObject
 
     /// <summary>
     /// Toda fatura traz o pagamento da anterior, num dos cartões. Falha quando nenhum lançamento é o pagamento
-    /// (<see cref="Lancamento.EhPagamentoFatura"/>): na primeira fatura do cartão e na fatura anterior zerada isso é
+    /// (<see cref="LancamentoCartao.EhPagamentoFaturaAnterior"/>): na primeira fatura do cartão e na fatura anterior zerada isso é
     /// esperado, e nas demais costuma ser o layout do banco que mudou. Não impede a importação. A falha é um texto fixo,
     /// sem dado do arquivo.
     /// </summary>
     public Result ConferirPagamentoAnterior()
     {
         return Result.SuccessIf(
-            _lancamentos.Any(l => l.Lancamento.EhPagamentoFatura),
+            _lancamentos.Any(l => l.Lancamento.EhPagamentoFaturaAnterior),
             "A fatura não traz o pagamento da fatura anterior: se não é a primeira fatura do cartão, confira se o layout do banco mudou.");
     }
 
@@ -99,14 +99,14 @@ public sealed class Fatura : ValueObject
     }
 
     /// <summary>As saídas da fatura. As entradas, como o pagamento da fatura anterior e o estorno, ficam de fora.</summary>
-    private IEnumerable<Lancamento> Compras => _lancamentos.Select(l => l.Lancamento).Where(l => l.EhSaida);
+    private IEnumerable<LancamentoCartao> Compras => _lancamentos.Select(l => l.Lancamento).Where(l => l.EhSaida);
 
     /// <summary>
     /// A fatura fecha antes de vencer, então a compra à vista dela é anterior ao vencimento. A parcela traz a data da
     /// compra original, que é antiga, e fica de fora.
     /// </summary>
     /// <param name="compra">Uma saída da fatura.</param>
-    private bool CompraAVistaAntesVencimento(Lancamento compra) => !compra.EhAVista || compra.Data < Vencimento;
+    private bool CompraAVistaAntesVencimento(LancamentoCartao compra) => !compra.EhAVista || compra.Data < Vencimento;
 
     /// <summary>
     /// O mês do vencimento está entre o primeiro mês em que a compra pode vencer e
@@ -114,7 +114,7 @@ public sealed class Fatura : ValueObject
     /// </summary>
     /// <param name="compra">Uma saída da fatura.</param>
     /// <param name="mesVencimento">O mês do <see cref="Vencimento"/>.</param>
-    private static bool ParcelaVenceNestaFatura(Lancamento compra, MesReferencia mesVencimento)
+    private static bool ParcelaVenceNestaFatura(LancamentoCartao compra, MesReferencia mesVencimento)
     {
         MesReferencia primeiroMes = compra.PrimeiroMesVencimentoPossivel;
         MesReferencia ultimoMes = primeiroMes.Posterior(MaximoMesesAteVencimento);
@@ -130,7 +130,7 @@ public sealed class Fatura : ValueObject
     public Periodo PeriodoCartao(SufixoCartao sufixo) => PeriodoDe(LancamentosCartao(sufixo));
 
     /// <param name="lancamentos">Pelo menos um.</param>
-    private static Periodo PeriodoDe(IReadOnlyList<Lancamento> lancamentos) =>
+    private static Periodo PeriodoDe(IReadOnlyList<LancamentoCartao> lancamentos) =>
         new Periodo(lancamentos.Min(l => l.Data), lancamentos.Max(l => l.Data));
 
     private void GarantirSufixo(SufixoCartao sufixo)

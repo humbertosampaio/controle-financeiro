@@ -36,7 +36,7 @@ public static class PagamentoFaturaService
         if (!saida.EhSaida)
             return ErroTransacaoNaoEhSaida.Instancia;
 
-        if (!saida.EhOrigemConta)
+        if (saida is not TransacaoConta)
             return ErroOrigemIncompativelComDespesa.Instancia;
 
         if (despesasPagasPelaSaida.OfType<DespesaSimples>().FirstOrDefault() is DespesaSimples simples)

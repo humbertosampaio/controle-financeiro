@@ -16,8 +16,8 @@ public sealed class AliasesCategoriaPendentesTests
     [Theory, DomainAutoData]
     public void Listar_Quando_SemCategorias_Deve_DevolverTodosOsTextos(
         IdUsuario idUsuario,
-        Lancamento primeiro,
-        Lancamento segundo)
+        LancamentoConta primeiro,
+        LancamentoConta segundo)
     {
         IReadOnlyList<Alias> result = AliasesCategoriaPendentes.Listar(idUsuario, categoriasDoUsuario: [], [primeiro, segundo]);
 
@@ -27,7 +27,7 @@ public sealed class AliasesCategoriaPendentesTests
     [Theory, DomainAutoData]
     public void Listar_Quando_AliasEmOutraCaixaComAcentoOuEspacosRepetidos_Deve_OmitirOTexto(
         [Frozen] IdUsuario idUsuario,
-        Lancamento lancamento,
+        LancamentoConta lancamento,
         Fixture fixture)
     {
         fixture.Inject((Alias)"Supermercado São João");
@@ -44,9 +44,9 @@ public sealed class AliasesCategoriaPendentesTests
     [Theory, DomainAutoData]
     public void Listar_Quando_GrafiasDiferentesDoMesmoTexto_Deve_DevolverUmComOOriginalDaPrimeira(
         IdUsuario idUsuario,
-        Lancamento lancamento)
+        LancamentoConta lancamento)
     {
-        Lancamento[] lancamentos = [ComCategoria(lancamento, "Restaurante São João"), ComCategoria(lancamento, "RESTAURANTE  SAO JOAO")];
+        LancamentoConta[] lancamentos = [ComCategoria(lancamento, "Restaurante São João"), ComCategoria(lancamento, "RESTAURANTE  SAO JOAO")];
 
         IReadOnlyList<Alias> result = AliasesCategoriaPendentes.Listar(idUsuario, categoriasDoUsuario: [], lancamentos);
 
@@ -56,12 +56,12 @@ public sealed class AliasesCategoriaPendentesTests
     [Theory, DomainAutoData]
     public void Listar_Quando_VariosTextos_Deve_ManterAOrdemDaPrimeiraOcorrencia(
         IdUsuario idUsuario,
-        Lancamento lancamento,
+        LancamentoConta lancamento,
         string primeira,
         string segunda,
         string terceira)
     {
-        Lancamento[] lancamentos =
+        LancamentoConta[] lancamentos =
         [
             ComCategoria(lancamento, primeira),
             ComCategoria(lancamento, segunda),
@@ -75,7 +75,7 @@ public sealed class AliasesCategoriaPendentesTests
     }
 
     [Theory, DomainAutoData]
-    public void Listar_Quando_CategoriaBancoNula_Deve_Ignorar(IdUsuario idUsuario, Lancamento lancamento)
+    public void Listar_Quando_CategoriaBancoNula_Deve_Ignorar(IdUsuario idUsuario, LancamentoConta lancamento)
     {
         IReadOnlyList<Alias> result = AliasesCategoriaPendentes.Listar(
             idUsuario,
@@ -86,7 +86,7 @@ public sealed class AliasesCategoriaPendentesTests
     }
 
     [Theory, DomainAutoData]
-    public void Listar_Quando_TextoNaoViraAlias_Deve_Ignorar(IdUsuario idUsuario, Lancamento lancamento)
+    public void Listar_Quando_TextoNaoViraAlias_Deve_Ignorar(IdUsuario idUsuario, LancamentoConta lancamento)
     {
         IReadOnlyList<Alias> result = AliasesCategoriaPendentes.Listar(
             idUsuario,
@@ -105,7 +105,7 @@ public sealed class AliasesCategoriaPendentesTests
         IdentidadeLancamento identidade,
         string categoriaBanco)
     {
-        Lancamento estorno = Lancamento.DaConta(data, hora: null, valor, descricao, contraparte: null, categoriaBanco, identidade);
+        LancamentoConta estorno = LancamentoConta.Criar(data, hora: null, valor, descricao, contraparte: null, categoriaBanco, identidade);
 
         IReadOnlyList<Alias> result = AliasesCategoriaPendentes.Listar(idUsuario, categoriasDoUsuario: [], [estorno]);
 
@@ -116,7 +116,7 @@ public sealed class AliasesCategoriaPendentesTests
     public void Listar_Quando_ListaComCategoriaDeOutroUsuario_Deve_LancarExcecao(
         IdUsuario idUsuario,
         CategoriaDespesa deOutroUsuario,
-        Lancamento lancamento)
+        LancamentoConta lancamento)
     {
         Action listar = () => AliasesCategoriaPendentes.Listar(idUsuario, [deOutroUsuario], [lancamento]);
 
@@ -128,7 +128,7 @@ public sealed class AliasesCategoriaPendentesTests
         [Frozen] IdUsuario idUsuario,
         [Frozen] Alias alias,
         CategoriaDespesa categoria,
-        Lancamento lancamento)
+        LancamentoConta lancamento)
     {
         UnitResult<Erro> result = AliasesCategoriaPendentes.Conferir(
             idUsuario,
@@ -143,7 +143,7 @@ public sealed class AliasesCategoriaPendentesTests
         [Frozen] IdUsuario idUsuario,
         [Frozen] Alias alias,
         CategoriaDespesa categoria,
-        Lancamento lancamento,
+        LancamentoConta lancamento,
         string semAlias)
     {
         UnitResult<Erro> result = AliasesCategoriaPendentes.Conferir(
@@ -154,9 +154,9 @@ public sealed class AliasesCategoriaPendentesTests
         result.Should().Fail().Which.Should().Be(ErroCategoriasBancoNaoResolvidas.Instancia);
     }
 
-    private static Lancamento ComCategoria(Lancamento lancamento, string? categoriaBanco)
+    private static LancamentoConta ComCategoria(LancamentoConta lancamento, string? categoriaBanco)
     {
-        return Lancamento.DaConta(
+        return LancamentoConta.Criar(
             lancamento.Data,
             lancamento.Hora,
             lancamento.Valor,

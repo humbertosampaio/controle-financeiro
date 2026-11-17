@@ -22,7 +22,7 @@ public sealed class AliasesBeneficiarioPendentesTests
         string primeira,
         string segunda)
     {
-        Lancamento[] lancamentos = [Saida(data, valor, descricao, primeira, identidade), Saida(data, valor, descricao, segunda, identidade)];
+        LancamentoConta[] lancamentos = [Saida(data, valor, descricao, primeira, identidade), Saida(data, valor, descricao, segunda, identidade)];
 
         IReadOnlyList<Alias> result = AliasesBeneficiarioPendentes.Listar(idUsuario, beneficiariosDoUsuario: [], lancamentos);
 
@@ -41,7 +41,7 @@ public sealed class AliasesBeneficiarioPendentesTests
         IReadOnlyList<Alias> result = AliasesBeneficiarioPendentes.Listar(
             idUsuario,
             beneficiariosDoUsuario: [],
-            [Lancamento.DoCartao(data, hora: null, -valor, estabelecimento, contraparte, parcela: null, categoriaBanco: null, identidade)]);
+            [LancamentoCartao.Criar(data, hora: null, -valor, estabelecimento, contraparte, parcela: null, categoriaBanco: null, identidade)]);
 
         result.Should().ContainSingle().Which.TextoOriginal.Should().Be(estabelecimento);
     }
@@ -54,7 +54,7 @@ public sealed class AliasesBeneficiarioPendentesTests
         TextoObrigatorio descricao,
         IdentidadeLancamento identidade)
     {
-        Lancamento[] lancamentos =
+        LancamentoConta[] lancamentos =
         [
             Saida(data, valor, descricao, "Padaria São João", identidade),
             Saida(data, valor, descricao, "PADARIA  SAO JOAO", identidade),
@@ -92,7 +92,7 @@ public sealed class AliasesBeneficiarioPendentesTests
         string contraparte,
         IdentidadeLancamento identidade)
     {
-        Lancamento entrada = Lancamento.DaConta(data, hora: null, valor, descricao, contraparte, categoriaBanco: null, identidade);
+        LancamentoConta entrada = LancamentoConta.Criar(data, hora: null, valor, descricao, contraparte, categoriaBanco: null, identidade);
 
         IReadOnlyList<Alias> result = AliasesBeneficiarioPendentes.Listar(idUsuario, beneficiariosDoUsuario: [], [entrada]);
 
@@ -107,7 +107,7 @@ public sealed class AliasesBeneficiarioPendentesTests
         TextoObrigatorio descricao,
         IdentidadeLancamento identidade)
     {
-        Lancamento boleto = Lancamento.DaConta(data, hora: null, -valor, descricao, contraparte: null, categoriaBanco: null, identidade);
+        LancamentoConta boleto = LancamentoConta.Criar(data, hora: null, -valor, descricao, contraparte: null, categoriaBanco: null, identidade);
 
         IReadOnlyList<Alias> result = AliasesBeneficiarioPendentes.Listar(idUsuario, beneficiariosDoUsuario: [], [boleto]);
 
@@ -118,7 +118,7 @@ public sealed class AliasesBeneficiarioPendentesTests
     public void Listar_Quando_BeneficiarioDeOutroUsuario_Deve_LancarArgumentException(
         IdUsuario idUsuario,
         Beneficiario deOutroUsuario,
-        Lancamento lancamento)
+        LancamentoConta lancamento)
     {
         Action listar = () => AliasesBeneficiarioPendentes.Listar(idUsuario, [deOutroUsuario], [lancamento]);
 
@@ -154,7 +154,7 @@ public sealed class AliasesBeneficiarioPendentesTests
         IdentidadeLancamento identidade,
         string semAlias)
     {
-        Lancamento[] lancamentos = [Saida(data, valor, descricao, alias.TextoOriginal, identidade), Saida(data, valor, descricao, semAlias, identidade)];
+        LancamentoConta[] lancamentos = [Saida(data, valor, descricao, alias.TextoOriginal, identidade), Saida(data, valor, descricao, semAlias, identidade)];
 
         UnitResult<Erro> result = AliasesBeneficiarioPendentes.Conferir(idUsuario, [beneficiario], lancamentos);
 
@@ -170,8 +170,8 @@ public sealed class AliasesBeneficiarioPendentesTests
         string contraparte,
         IdentidadeLancamento identidade)
     {
-        Lancamento entrada = Lancamento.DaConta(data, hora: null, valor, descricao, contraparte, categoriaBanco: null, identidade);
-        Lancamento boleto = Lancamento.DaConta(data, hora: null, -valor, descricao, contraparte: null, categoriaBanco: null, identidade);
+        LancamentoConta entrada = LancamentoConta.Criar(data, hora: null, valor, descricao, contraparte, categoriaBanco: null, identidade);
+        LancamentoConta boleto = LancamentoConta.Criar(data, hora: null, -valor, descricao, contraparte: null, categoriaBanco: null, identidade);
 
         UnitResult<Erro> result = AliasesBeneficiarioPendentes.Conferir(idUsuario, beneficiariosDoUsuario: [], [entrada, boleto]);
 
@@ -182,15 +182,15 @@ public sealed class AliasesBeneficiarioPendentesTests
     public void Conferir_Quando_ListaComBeneficiarioDeOutroUsuario_Deve_LancarExcecao(
         IdUsuario idUsuario,
         Beneficiario deOutroUsuario,
-        Lancamento lancamento)
+        LancamentoConta lancamento)
     {
         Action conferir = () => AliasesBeneficiarioPendentes.Conferir(idUsuario, [deOutroUsuario], [lancamento]);
 
         conferir.Should().ThrowExactly<ArgumentException>().WithParameterName("beneficiariosDoUsuario");
     }
 
-    private static Lancamento Saida(DateOnly data, ReaisPositivo valor, TextoObrigatorio descricao, string contraparte, IdentidadeLancamento identidade)
+    private static LancamentoConta Saida(DateOnly data, ReaisPositivo valor, TextoObrigatorio descricao, string contraparte, IdentidadeLancamento identidade)
     {
-        return Lancamento.DaConta(data, hora: null, -valor, descricao, contraparte, categoriaBanco: null, identidade);
+        return LancamentoConta.Criar(data, hora: null, -valor, descricao, contraparte, categoriaBanco: null, identidade);
     }
 }

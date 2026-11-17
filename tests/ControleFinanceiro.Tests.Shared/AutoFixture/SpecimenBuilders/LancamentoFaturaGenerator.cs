@@ -6,7 +6,7 @@ using ControleFinanceiro.Domain.Transacoes;
 namespace ControleFinanceiro.Tests.Shared.AutoFixture.SpecimenBuilders;
 
 /// <summary>
-/// Monta o <see cref="LancamentoFatura"/> com o lançamento do contexto, como uma linha de fatura. Com
+/// Monta o <see cref="LancamentoFatura"/> com o lançamento do cartão do contexto. Com
 /// <c>[Frozen] SufixoCartao</c> no teste, o lançamento é desse cartão.
 /// </summary>
 public sealed class LancamentoFaturaGenerator : ISpecimenBuilder
@@ -16,6 +16,6 @@ public sealed class LancamentoFaturaGenerator : ISpecimenBuilder
         if (request is not Type t || t != typeof(LancamentoFatura))
             return new NoSpecimen();
 
-        return LancamentoFatura.Criar(context.Create<Lancamento>().NaOrigem(TipoOrigem.Cartao), context.Create<SufixoCartao>());
+        return LancamentoFatura.Criar(context.Create<LancamentoCartao>(), context.Create<SufixoCartao>());
     }
 }

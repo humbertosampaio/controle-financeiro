@@ -112,7 +112,7 @@ public sealed class ConfirmarVinculoToolTests : IAsyncLifetime
         Despesa despesa = await _vinculo.GravarDespesaAsync(fixture, mes);
         IReadOnlyList<Transacao> saidas = await _vinculo.GravarExtratoAsync(
             fixture,
-            fixture.CreateMany<Lancamento>(2).Select(lancamento => lancamento.SemCategoria().ComoSaida()).ToArray());
+            fixture.CreateMany<LancamentoConta>(2).Select(lancamento => lancamento.SemCategoria().ComoSaida()).ToArray());
         (Transacao transacao, Transacao outraSaida) = (saidas[0], saidas[1]);
         string resumo = await PreverAsync(transacao, despesa);
         await GravarVinculoAsync(outraSaida, despesa);
@@ -205,7 +205,7 @@ public sealed class ConfirmarVinculoToolTests : IAsyncLifetime
     public async Task Confirmar_Quando_TransacaoDeEntrada_Deve_DevolverErroDaRegraSemGravar(MesReferencia mes, Fixture fixture, string resumo)
     {
         Despesa despesa = await _vinculo.GravarDespesaAsync(fixture, mes);
-        Transacao entrada = await _vinculo.GravarExtratoAsync(fixture, fixture.Create<Lancamento>().SemCategoria());
+        Transacao entrada = await _vinculo.GravarExtratoAsync(fixture, fixture.Create<LancamentoConta>().SemCategoria());
 
         CallToolResult resultado = await _servidor.ClienteMcp.ConfirmarVinculoAsync(entrada.Id.Value, despesa.Id.Value, resumo);
 

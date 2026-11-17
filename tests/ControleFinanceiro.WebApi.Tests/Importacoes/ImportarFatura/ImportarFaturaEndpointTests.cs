@@ -44,8 +44,8 @@ public sealed class ImportarFaturaEndpointTests : IAsyncLifetime
 
         ImportarFaturaResponse resposta = await _api.ImportarFaturaPagaPeloBoletoAsync(idUsuario);
 
-        List<Transacao> transacoes = await _api.ObterTodosAsync(db => db.Transacoes);
-        Transacao boleto = transacoes.Single(t => t.EhSaidaConta && t.Data == ExtratoContaC6.DiaBoleto && t.ValorAbsoluto == (ReaisPositivo)FaturaCartaoC6.TotalPagaPeloBoleto);
+        List<TransacaoConta> transacoes = await _api.ObterTodosAsync(db => db.Transacoes.OfType<TransacaoConta>());
+        TransacaoConta boleto = transacoes.Single(t => t.EhSaida && t.Data == ExtratoContaC6.DiaBoleto && t.ValorAbsoluto == (ReaisPositivo)FaturaCartaoC6.TotalPagaPeloBoleto);
         resposta.CandidatosPagamentoFatura.Should().Equal(new ImportarFaturaResponse.CandidatoPagamentoFaturaResponse(
             boleto.Id.Value,
             ExtratoContaC6.DiaBoleto,
@@ -89,19 +89,19 @@ public sealed class ImportarFaturaEndpointTests : IAsyncLifetime
         ImportarFaturaResponse.CartaoImportado linhaFisico = corpo.Cartoes[0];
         ((Guid)fisico.Id).Should().Be(linhaFisico.IdCartao);
 
-        List<ImportacaoArquivo> importacoes = await _api.ObterTodosAsync(db => db.Importacoes);
+        ImportacaoFatura[] importacoes = (await _api.ObterTodosAsync(db => db.Importacoes)).OfType<ImportacaoFatura>().ToArray();
         importacoes.Should().HaveCount(2);
-        ImportacaoArquivo importacaoFisico = importacoes.Single(i => i.Origem == OrigemTransacao.DoCartao(fisico.Id));
+        ImportacaoFatura importacaoFisico = importacoes.Single(i => i.IdCartao == fisico.Id);
         ((Guid)importacaoFisico.Id).Should().Be(linhaFisico.IdImportacao);
         importacaoFisico.Layout.Should().BeSameAs(LayoutArquivoImportacao.C6CartaoCsv);
         importacaoFisico.Periodo.Should().Be(new Periodo(FaturaCartaoC6.PrimeiraCompraFisico, FaturaCartaoC6.UltimaCompraFisico));
         importacaoFisico.Lidas.Should().Be(FaturaCartaoC6.LancamentosPorCartao);
         VencimentoFatura vencimento = (VencimentoFatura)FaturaCartaoC6.Vencimento;
-        importacoes.Should().OnlyContain(i => i.VencimentoFatura == vencimento);
+        importacoes.Should().OnlyContain(i => i.Vencimento == vencimento);
 
-        List<Transacao> transacoes = await _api.ObterTodosAsync(db => db.Transacoes);
+        List<TransacaoCartao> transacoes = await _api.ObterTodosAsync(db => db.Transacoes.OfType<TransacaoCartao>());
         transacoes.Should().HaveCount(FaturaCartaoC6.QuantidadeLancamentos);
-        transacoes.Where(t => t.Origem == OrigemTransacao.DoCartao(fisico.Id)).Should().AllSatisfy(t =>
+        transacoes.Where(t => t.IdCartao == fisico.Id).Should().AllSatisfy(t =>
         {
             t.IdUsuario.Should().Be(IdUsuario.From(idUsuario));
             t.IdImportacao.Should().Be(importacaoFisico.Id);
@@ -118,8 +118,8 @@ public sealed class ImportarFaturaEndpointTests : IAsyncLifetime
 
         await ImportarComSucessoAsync(idUsuario, FaturaCartaoC6.Completo());
 
-        List<Transacao> transacoes = await _api.ObterTodosAsync(db => db.Transacoes);
-        Transacao parcelada = transacoes.Should().ContainSingle(t => t.EhParcelada).Subject;
+        List<TransacaoCartao> transacoes = await _api.ObterTodosAsync(db => db.Transacoes.OfType<TransacaoCartao>());
+        TransacaoCartao parcelada = transacoes.Should().ContainSingle(t => t.EhParcelada).Subject;
         parcelada.Parcela.Should().Be((Parcela)(9, 10));
         parcelada.Data.Should().Be(FaturaCartaoC6.PrimeiraCompraFisico);
         parcelada.CategoriaBanco.Should().Be("Eletrônicos");
@@ -134,8 +134,8 @@ public sealed class ImportarFaturaEndpointTests : IAsyncLifetime
 
         await ImportarComSucessoAsync(idUsuario, FaturaCartaoC6.Completo());
 
-        List<Transacao> transacoes = await _api.ObterTodosAsync(db => db.Transacoes);
-        transacoes.Should().ContainSingle(t => t.EhPagamentoFatura)
+        List<TransacaoCartao> transacoes = await _api.ObterTodosAsync(db => db.Transacoes.OfType<TransacaoCartao>());
+        transacoes.Should().ContainSingle(t => t.EhPagamentoFaturaAnterior)
             .Which.Valor.Should().Be((Reais)500.00m);
     }
 
@@ -148,8 +148,8 @@ public sealed class ImportarFaturaEndpointTests : IAsyncLifetime
         ImportarFaturaResponse corpo = await ImportarComSucessoAsync(idUsuario, FaturaCartaoC6.SemPagamento());
 
         corpo.AvisoPagamentoFaturaAnterior.Should().Be("A fatura não traz o pagamento da fatura anterior: se não é a primeira fatura do cartão, confira se o layout do banco mudou.");
-        (await _api.ObterTodosAsync(db => db.Transacoes)).Should().HaveCount(FaturaCartaoC6.QuantidadeLancamentos)
-            .And.NotContain(t => t.EhPagamentoFatura);
+        (await _api.ObterTodosAsync(db => db.Transacoes.OfType<TransacaoCartao>())).Should().HaveCount(FaturaCartaoC6.QuantidadeLancamentos)
+            .And.NotContain(t => t.EhPagamentoFaturaAnterior);
     }
 
     [Theory, ApiAutoData]
@@ -267,7 +267,7 @@ public sealed class ImportarFaturaEndpointTests : IAsyncLifetime
 
         corpo.Cartoes[0].Novas.Should().Be(1);
         corpo.Cartoes[1].Novas.Should().Be(0);
-        List<Transacao> transacoes = await _api.ObterTodosAsync(db => db.Transacoes);
+        List<TransacaoCartao> transacoes = await _api.ObterTodosAsync(db => db.Transacoes.OfType<TransacaoCartao>());
         transacoes.Should().HaveCount(FaturaCartaoC6.QuantidadeLancamentos + 1);
         transacoes.Where(t => t.EhParcelada).Select(t => t.Parcela).Should().BeEquivalentTo([(Parcela)(9, 10), (Parcela)(10, 10)]);
     }
@@ -575,8 +575,8 @@ public sealed class ImportarFaturaEndpointTests : IAsyncLifetime
         (await resposta.CamposComErroAsync()).Should().Equal("dataVencimento");
         (await _api.ObterTodosAsync(db => db.Importacoes)).Should()
             .HaveCount(2)
-            .And.OnlyContain(i => i.VencimentoFatura == (VencimentoFatura)FaturaCartaoC6.Vencimento);
-        (await _api.ObterTodosAsync(db => db.Transacoes)).Should()
+            .And.OnlyContain(i => ((ImportacaoFatura)i).Vencimento == (VencimentoFatura)FaturaCartaoC6.Vencimento);
+        (await _api.ObterTodosAsync(db => db.Transacoes.OfType<TransacaoCartao>())).Should()
             .HaveCount(FaturaCartaoC6.QuantidadeLancamentos)
             .And.OnlyContain(t => t.MesVencimentoFatura == FaturaCartaoC6.MesVencimento);
     }
@@ -677,7 +677,7 @@ public sealed class ImportarFaturaEndpointTests : IAsyncLifetime
 
         await ImportarComSucessoAsync(idUsuario, FaturaCartaoC6.Completo());
 
-        IReadOnlyList<Transacao> transacoes = await _api.ObterTodosAsync(db => db.Transacoes);
+        IReadOnlyList<TransacaoCartao> transacoes = await _api.ObterTodosAsync(db => db.Transacoes.OfType<TransacaoCartao>());
         IReadOnlyList<DespesaAdiada> adiadas = await _api.ObterTodosAsync(db => db.Despesas.OfType<DespesaAdiada>());
         adiadas
             .Select(d => transacoes.Single(t => t.Id == d.Cobranca!.IdTransacao).Descricao.Value)
@@ -730,11 +730,11 @@ public sealed class ImportarFaturaEndpointTests : IAsyncLifetime
 
         DespesaAdiada prevista = await _api.ImportarFaturaComPrevisaoAsync(idUsuario, VinculoExtensions.CompraRepetidaDoVirtual, recorrente, geracao);
 
-        IReadOnlyList<Transacao> repetidas = (await _api.ObterTodosAsync(db => db.Transacoes))
+        IReadOnlyList<TransacaoCartao> repetidas = (await _api.ObterTodosAsync(db => db.Transacoes.OfType<TransacaoCartao>()))
             .Where(t => t.Descricao == VinculoExtensions.CompraRepetidaDoVirtual)
             .ToList();
         IReadOnlyList<DespesaAdiada> adiadas = await _api.ObterTodosAsync(db => db.Despesas.OfType<DespesaAdiada>());
-        repetidas.Should().HaveCount(2).And.OnlyContain(t => t.Origem.IdCartao != prevista.IdCartao);
+        repetidas.Should().HaveCount(2).And.OnlyContain(t => t.IdCartao != prevista.IdCartao);
         repetidas.Count(t => adiadas.Any(d => d.Cobranca != null && d.Cobranca.IdTransacao == t.Id)).Should().Be(1);
     }
 

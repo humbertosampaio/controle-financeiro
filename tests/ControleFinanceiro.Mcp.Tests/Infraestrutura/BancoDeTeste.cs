@@ -40,13 +40,13 @@ internal sealed class BancoDeTeste
     /// importado. Os lançamentos não podem ter categoria do banco.
     /// </summary>
     /// <param name="importacao">A importação da mesma conta.</param>
-    public async Task<IReadOnlyList<Transacao>> GravarExtratoAsync(
+    public async Task<IReadOnlyList<TransacaoConta>> GravarExtratoAsync(
         ContaBancaria conta,
-        ImportacaoArquivo importacao,
-        IReadOnlyList<Lancamento> lancamentos)
+        ImportacaoExtrato importacao,
+        IReadOnlyList<LancamentoConta> lancamentos)
     {
         IReadOnlyList<Beneficiario> beneficiarios = BeneficiariosResolvidos.Dos(conta.IdUsuario, lancamentos);
-        IReadOnlyList<Transacao> transacoes = LoteTransacoesFactory
+        IReadOnlyList<TransacaoConta> transacoes = LoteTransacoesContaFactory
             .Criar(conta.IdUsuario, beneficiarios, categoriasDoUsuario: [], conta, importacao, lancamentos)
             .Value;
 
@@ -73,13 +73,13 @@ internal sealed class BancoDeTeste
     /// importada. Os lançamentos não podem ter categoria do banco.
     /// </summary>
     /// <param name="importacao">A importação do mesmo cartão.</param>
-    public async Task<IReadOnlyList<Transacao>> GravarFaturaAsync(
+    public async Task<IReadOnlyList<TransacaoCartao>> GravarFaturaAsync(
         Cartao cartao,
-        ImportacaoArquivo importacao,
-        IReadOnlyList<Lancamento> lancamentos)
+        ImportacaoFatura importacao,
+        IReadOnlyList<LancamentoCartao> lancamentos)
     {
         IReadOnlyList<Beneficiario> beneficiarios = BeneficiariosResolvidos.Dos(cartao.IdUsuario, lancamentos);
-        IReadOnlyList<Transacao> transacoes = LoteTransacoesFactory
+        IReadOnlyList<TransacaoCartao> transacoes = LoteTransacoesCartaoFactory
             .Criar(cartao.IdUsuario, beneficiarios, categoriasDoUsuario: [], cartao, importacao, lancamentos)
             .Value;
 

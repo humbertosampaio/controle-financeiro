@@ -20,7 +20,7 @@ public sealed class ConferenciaSomaPeriodoTests
     public void Conferir_Quando_PrimeiraImportacao_Deve_RetornarSucesso(
         Extrato extrato,
         [Frozen] ContaBancaria conta,
-        ImportacaoArquivo importacao)
+        ImportacaoExtrato importacao)
     {
         Result result = ConferenciaSomaPeriodo.Conferir(extrato, gravadasNoPeriodo: [], Lote(conta, importacao, extrato.Lancamentos));
 
@@ -31,9 +31,9 @@ public sealed class ConferenciaSomaPeriodoTests
     public void Conferir_Quando_ParteDoPeriodoJaGravada_Deve_SomarAsGravadasEAsNovas(
         Extrato extrato,
         [Frozen] ContaBancaria conta,
-        ImportacaoArquivo importacao)
+        ImportacaoExtrato importacao)
     {
-        IReadOnlyList<Transacao> lote = Lote(conta, importacao, extrato.Lancamentos);
+        TransacaoConta[] lote = Lote(conta, importacao, extrato.Lancamentos);
 
         Result result = ConferenciaSomaPeriodo.Conferir(extrato, lote.Take(1), lote.Skip(1));
 
@@ -45,10 +45,10 @@ public sealed class ConferenciaSomaPeriodoTests
         [Frozen] Periodo periodo,
         Extrato extrato,
         [Frozen] ContaBancaria conta,
-        ImportacaoArquivo importacao,
-        Lancamento naoReconhecido)
+        ImportacaoExtrato importacao,
+        LancamentoConta naoReconhecido)
     {
-        IReadOnlyList<Transacao> gravadas = Lote(conta, importacao, [.. extrato.Lancamentos, naoReconhecido]);
+        TransacaoConta[] gravadas = Lote(conta, importacao, [.. extrato.Lancamentos, naoReconhecido]);
 
         Result result = ConferenciaSomaPeriodo.Conferir(extrato, gravadas, novas: []);
 
@@ -61,12 +61,12 @@ public sealed class ConferenciaSomaPeriodoTests
         [Frozen] Periodo periodo,
         Extrato arquivo,
         [Frozen] ContaBancaria conta,
-        ImportacaoArquivo importacao,
+        ImportacaoExtrato importacao,
         Reais valor,
         TextoObrigatorio descricao)
     {
         DateOnly depoisDoFim = periodo.Fim.AddDays(1);
-        Lancamento foraDoPeriodo = Lancamento.DaConta(
+        LancamentoConta foraDoPeriodo = LancamentoConta.Criar(
             depoisDoFim, hora: null, valor, descricao, contraparte: null, categoriaBanco: null, IdentidadeLancamento.Composta(depoisDoFim).ComValor(valor).ComTexto(descricao));
         Extrato extrato = Extrato.Criar(
             arquivo.Banco,
@@ -81,11 +81,11 @@ public sealed class ConferenciaSomaPeriodoTests
         result.Should().Fail();
     }
 
-    private static IReadOnlyList<Transacao> Lote(ContaBancaria conta, ImportacaoArquivo importacao, IReadOnlyList<Lancamento> lancamentos)
+    private static TransacaoConta[] Lote(ContaBancaria conta, ImportacaoExtrato importacao, IReadOnlyList<LancamentoConta> lancamentos)
     {
         IReadOnlyList<Beneficiario> beneficiarios = BeneficiariosResolvidos.Dos(conta.IdUsuario, lancamentos);
         IReadOnlyList<CategoriaDespesa> categorias = CategoriasResolvidas.Dos(conta.IdUsuario, lancamentos);
-        return LoteTransacoesFactory.Criar(conta.IdUsuario, beneficiarios, categorias, conta, importacao, lancamentos).Value;
+        return LoteTransacoesContaFactory.Criar(conta.IdUsuario, beneficiarios, categorias, conta, importacao, lancamentos).Value.ToArray();
     }
 
     private static string Formatar(DateOnly data) => data.ToString("dd/MM/yyyy", CultureInfo.InvariantCulture);
@@ -114,10 +114,10 @@ public sealed class ConferenciaSomaPeriodoTests
         {
         }
 
-        private static Lancamento NoInicio(Periodo periodo, Reais valor, TextoObrigatorio descricao)
+        private static LancamentoConta NoInicio(Periodo periodo, Reais valor, TextoObrigatorio descricao)
         {
             IdentidadeLancamento identidade = IdentidadeLancamento.Composta(periodo.Inicio).ComValor(valor).ComTexto(descricao);
-            return Lancamento.DaConta(periodo.Inicio, hora: null, valor, descricao, contraparte: null, categoriaBanco: null, identidade);
+            return LancamentoConta.Criar(periodo.Inicio, hora: null, valor, descricao, contraparte: null, categoriaBanco: null, identidade);
         }
     }
 }

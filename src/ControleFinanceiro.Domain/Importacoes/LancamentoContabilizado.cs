@@ -8,16 +8,16 @@ namespace ControleFinanceiro.Domain.Importacoes;
 /// </summary>
 public sealed class LancamentoContabilizado : ValueObject
 {
-    public Lancamento Lancamento { get; }
+    public LancamentoConta Lancamento { get; }
     public DateOnly DataContabil { get; }
 
-    private LancamentoContabilizado(Lancamento lancamento, DateOnly dataContabil)
+    private LancamentoContabilizado(LancamentoConta lancamento, DateOnly dataContabil)
     {
         Lancamento = lancamento;
         DataContabil = dataContabil;
     }
 
-    public static LancamentoContabilizado Criar(Lancamento lancamento, DateOnly dataContabil) => new(lancamento, dataContabil);
+    public static LancamentoContabilizado Criar(LancamentoConta lancamento, DateOnly dataContabil) => new(lancamento, dataContabil);
 
     protected override IEnumerable<object?> GetEqualityComponents()
     {

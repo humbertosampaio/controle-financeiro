@@ -84,7 +84,7 @@ public sealed class LeitorExtratoContaMercadoPagoTests
     {
         Extrato extrato = await LerFixtureAsync();
 
-        Lancamento lancamento = extrato.Lancamentos[posicao];
+        LancamentoConta lancamento = extrato.Lancamentos[posicao];
         lancamento.Descricao.Should().Be((TextoObrigatorio)descricao);
         lancamento.Contraparte.Should().Be(contraparte);
     }

@@ -25,8 +25,8 @@ public static class DespesaParceladaFactory
     /// <returns>As despesas que faltam, na ordem em que as compras aparecem no arquivo.</returns>
     /// <exception cref="ArgumentException">
     /// Quando o cartão ou um item das listas é de outro usuário, quando a fatura é de outro banco ou não traz o final do
-    /// cartão, quando um lançamento não é de fatura, ou quando o beneficiário ou a categoria de uma compra não está na lista:
-    /// a <see cref="LoteTransacoesFactory"/> já conferiu os aliases.
+    /// cartão, ou quando o beneficiário ou a categoria de uma compra não está na lista:
+    /// a <see cref="LoteTransacoesCartaoFactory"/> já conferiu os aliases.
     /// </exception>
     public static IReadOnlyList<DespesaParcelada> CriarDaFatura(
         IdUsuario idUsuario,
@@ -54,11 +54,8 @@ public static class DespesaParceladaFactory
         if (parceladasDoUsuario.Any(d => d.IdUsuario != idUsuario))
             throw new ArgumentException("A lista traz uma despesa de outro usuário.", nameof(parceladasDoUsuario));
 
-        IReadOnlyList<Lancamento> lancamentos = fatura.LancamentosCartao(cartao.Sufixo);
-        if (lancamentos.Any(l => l.TipoOrigem != TipoOrigem.Cartao))
-            throw new ArgumentException("A fatura traz um lançamento que não é de fatura.", nameof(fatura));
-
-        return lancamentos
+        return fatura
+            .LancamentosCartao(cartao.Sufixo)
             .Where(l => l.EhCompraParcelada)
             .GroupBy(l => ChaveCompraParcelada.DoLancamento(cartao.Id, l))
             .SelectMany(compra => LinhasSemDespesa(compra, compra.Key, parceladasDoUsuario))
@@ -70,8 +67,8 @@ public static class DespesaParceladaFactory
     /// As linhas do número que mais aparece na compra, descontadas as que já têm despesa. No empate fica o menor número,
     /// porque ele só marca como pagas as parcelas que certamente vieram antes.
     /// </summary>
-    private static IEnumerable<Lancamento> LinhasSemDespesa(
-        IEnumerable<Lancamento> compra,
+    private static IEnumerable<LancamentoCartao> LinhasSemDespesa(
+        IEnumerable<LancamentoCartao> compra,
         ChaveCompraParcelada chave,
         IReadOnlyCollection<DespesaParcelada> parceladasDoUsuario)
     {
@@ -91,7 +88,7 @@ public static class DespesaParceladaFactory
         IReadOnlyCollection<CategoriaDespesa> categoriasDoUsuario,
         Cartao cartao,
         VencimentoFatura vencimento,
-        Lancamento lancamento)
+        LancamentoCartao lancamento)
     {
         return DespesaParcelada.Criar(
             idUsuario,

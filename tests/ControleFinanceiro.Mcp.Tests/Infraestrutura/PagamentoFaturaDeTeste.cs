@@ -39,7 +39,7 @@ internal sealed class PagamentoFaturaDeTeste
         Cartao cartao = fixture.Freeze<Cartao>();
 
         DespesaAdiada adiada = await GravarAdiadaCobradaAsync(fixture, cartao);
-        Transacao saida = await _vinculo.GravarExtratoAsync(fixture, fixture.Create<Lancamento>().SemCategoria().ComoSaida());
+        Transacao saida = await _vinculo.GravarExtratoAsync(fixture, fixture.Create<LancamentoConta>().SemCategoria().ComoSaida());
 
         return new FaturaDeTeste(cartao, adiada, saida);
     }
@@ -50,10 +50,10 @@ internal sealed class PagamentoFaturaDeTeste
     /// </summary>
     public async Task<DespesaAdiada> GravarAdiadaCobradaAsync(IFixture fixture, Cartao cartao)
     {
-        Lancamento compra = fixture.Create<Lancamento>().SemCategoria().ComoSaida().NaOrigem(TipoOrigem.Cartao);
+        LancamentoCartao compra = fixture.Create<LancamentoConta>().SemCategoria().ComoSaida().NoCartao();
 
         // O Postgres só grava o instante em UTC, como o TimeProvider da aplicação o dá.
-        ImportacaoArquivo importacao = ImportacaoArquivoFactory
+        ImportacaoFatura importacao = ImportacaoArquivoFactory
             .Registrar(
                 cartao,
                 cartoesUsuario: [cartao],
@@ -96,7 +96,7 @@ internal sealed class PagamentoFaturaDeTeste
         Cartao cartao = fixture.Create<Cartao>();
         VencimentoFatura vencimento = cartao.VencimentoNoMes(fixture.Create<MesReferencia>());
         await GravarFaturaImportadaAsync(fixture, cartao, vencimento, valorCompra: -100m);
-        Transacao saida = await _vinculo.GravarExtratoAsync(fixture, fixture.Create<Lancamento>().NaContaComValor(vencimento, valor: -100m));
+        Transacao saida = await _vinculo.GravarExtratoAsync(fixture, fixture.Create<LancamentoConta>().NaContaComValor(vencimento, valor: -100m));
 
         return new CandidatoPagamentoFaturaGravado(cartao, vencimento, saida);
     }
@@ -107,7 +107,7 @@ internal sealed class PagamentoFaturaDeTeste
     public async Task GravarFaturaImportadaAsync(IFixture fixture, Cartao cartao, VencimentoFatura vencimento, decimal valorCompra)
     {
         // O Postgres só grava o instante em UTC, como o TimeProvider da aplicação o dá.
-        ImportacaoArquivo importacao = ImportacaoArquivoFactory
+        ImportacaoFatura importacao = ImportacaoArquivoFactory
             .Registrar(
                 cartao,
                 cartoesUsuario: [cartao],
@@ -118,7 +118,7 @@ internal sealed class PagamentoFaturaDeTeste
                 lidas: 1,
                 fixture.Create<DateTimeOffset>().ToUniversalTime())
             .Value;
-        await _banco.GravarFaturaAsync(cartao, importacao, [fixture.Create<Lancamento>().NoCartaoComValor(valorCompra)]);
+        await _banco.GravarFaturaAsync(cartao, importacao, [fixture.Create<LancamentoCartao>().NoCartaoComValor(valorCompra)]);
     }
 
     /// <summary>Paga a fatura pelas duas etapas, como outra conversa faria antes da chamada do teste.</summary>

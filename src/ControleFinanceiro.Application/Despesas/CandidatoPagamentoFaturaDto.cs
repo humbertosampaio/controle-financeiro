@@ -8,4 +8,4 @@ namespace ControleFinanceiro.Application.Despesas;
 /// resposta ler a data e os textos dela sem buscá-la de novo.
 /// </summary>
 /// <param name="Saida">A transação do <see cref="CandidatoPagamentoFatura.IdSaida"/>.</param>
-public sealed record CandidatoPagamentoFaturaDto(CandidatoPagamentoFatura Candidato, Transacao Saida);
+public sealed record CandidatoPagamentoFaturaDto(CandidatoPagamentoFatura Candidato, TransacaoConta Saida);

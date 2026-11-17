@@ -3,13 +3,14 @@ using ControleFinanceiro.Domain.Shared.ValueObjects;
 namespace ControleFinanceiro.Domain.Transacoes;
 
 /// <summary>
-/// Uma linha do extrato ou da fatura, como o adaptador do layout a leu, antes de virar transação.
+/// Uma linha do arquivo, como o adaptador do layout a leu, antes de virar transação: a do extrato de uma conta é o
+/// <see cref="LancamentoConta"/>, e a da fatura de um cartão, o <see cref="LancamentoCartao"/>.
 /// </summary>
 /// <remarks>
-/// Duas linhas com os mesmos campos são iguais como valor. Quem as distingue é a posição no lote, na
-/// <see cref="ChaveDeduplicacao"/>, e não o objeto.
+/// Duas linhas com os mesmos campos são iguais como valor, e uma linha da conta nunca é igual a uma do cartão. Quem as
+/// distingue é a posição no lote, na <see cref="ChaveDeduplicacao"/>, e não o objeto.
 /// </remarks>
-public sealed class Lancamento : ValueObject
+public abstract class Lancamento : ValueObject
 {
     public DateOnly Data { get; }
 
@@ -33,19 +34,6 @@ public sealed class Lancamento : ValueObject
     /// <summary>Aparada; nula quando o layout não traz ou traz em branco.</summary>
     public string? Contraparte { get; }
 
-    /// <summary>Preenchida quando o layout traz a parcela; nula na compra à vista e nos layouts sem parcela.</summary>
-    public Parcela? Parcela { get; }
-
-    /// <summary>Verdadeiro quando o lançamento não traz parcela: a compra à vista, ou a entrada.</summary>
-    public bool EhAVista => Parcela is null;
-
-    /// <summary>
-    /// O primeiro mês em que este lançamento pode vencer: o mês da <see cref="Data"/>, avançado um mês por parcela
-    /// anterior a ele. A parcela traz a data da compra original, e cada parcela anterior venceu numa fatura antes desta;
-    /// o lançamento à vista não avança.
-    /// </summary>
-    public MesReferencia PrimeiroMesVencimentoPossivel => Data.AddMonths(Parcela?.QuantidadeParcelasAnteriores ?? 0);
-
     /// <summary>
     /// A categoria que o banco deu à compra, aparada; nula quando o layout não traz ou traz em branco. Não entra
     /// na <see cref="Identidade"/>.
@@ -55,104 +43,29 @@ public sealed class Lancamento : ValueObject
     /// <summary>Os campos que o layout declara para reconhecer o lançamento numa reimportação.</summary>
     public IdentidadeLancamento Identidade { get; }
 
-    /// <summary>De onde o lançamento veio: o extrato de uma conta ou a fatura de um cartão.</summary>
-    public TipoOrigem TipoOrigem { get; }
-
-    /// <summary>
-    /// Verdadeiro na linha da fatura que é o pagamento da fatura anterior, que só nasce pelo <see cref="PagamentoFaturaCartao"/>.
-    /// Não entra na <see cref="Identidade"/>: reimportar a linha não muda a chave dela.
-    /// </summary>
-    public bool EhPagamentoFatura { get; }
-
-    private Lancamento(
+    protected Lancamento(
         DateOnly data,
         TimeOnly? hora,
         Reais valor,
         TextoObrigatorio descricao,
         string? contraparte,
-        Parcela? parcela,
         string? categoriaBanco,
-        IdentidadeLancamento identidade,
-        TipoOrigem tipoOrigem,
-        bool ehPagamentoFatura)
+        IdentidadeLancamento identidade)
     {
         Data = data;
         Hora = hora;
         Valor = valor;
         Descricao = descricao;
         Contraparte = Aparar(contraparte);
-        Parcela = parcela;
         CategoriaBanco = Aparar(categoriaBanco);
         Identidade = identidade;
-        TipoOrigem = tipoOrigem;
-        EhPagamentoFatura = ehPagamentoFatura;
-    }
-
-    /// <summary>Uma linha do extrato de uma conta, que nunca traz parcela.</summary>
-    public static Lancamento DaConta(
-        DateOnly data,
-        TimeOnly? hora,
-        Reais valor,
-        TextoObrigatorio descricao,
-        string? contraparte,
-        string? categoriaBanco,
-        IdentidadeLancamento identidade)
-    {
-        return new Lancamento(data, hora, valor, descricao, contraparte, parcela: null, categoriaBanco, identidade, TipoOrigem.Conta, ehPagamentoFatura: false);
-    }
-
-    /// <summary>Uma linha da fatura de um cartão.</summary>
-    public static Lancamento DoCartao(
-        DateOnly data,
-        TimeOnly? hora,
-        Reais valor,
-        TextoObrigatorio descricao,
-        string? contraparte,
-        Parcela? parcela,
-        string? categoriaBanco,
-        IdentidadeLancamento identidade)
-    {
-        return new Lancamento(data, hora, valor, descricao, contraparte, parcela, categoriaBanco, identidade, TipoOrigem.Cartao, ehPagamentoFatura: false);
     }
 
     /// <summary>
-    /// A linha da fatura de um cartão que é o pagamento da fatura anterior: entra no cartão com valor não negativo e sem
-    /// parcela. Continua sendo uma entrada no cartão e não paga despesa; quem paga a fatura é a saída da conta.
+    /// O texto do arquivo que diz quem recebeu o dinheiro de uma saída. Nulo na entrada e no valor zero. A saída da conta
+    /// para outra conta do titular, como o pagamento da fatura do lado da conta, tem texto como qualquer saída.
     /// </summary>
-    public static Lancamento PagamentoFaturaCartao(
-        DateOnly data,
-        TimeOnly? hora,
-        ReaisPositivo valor,
-        TextoObrigatorio descricao,
-        string? contraparte,
-        string? categoriaBanco,
-        IdentidadeLancamento identidade)
-    {
-        // O valor vai como Reais, e não como o ReaisPositivo recebido: a igualdade dos value objects compara o tipo.
-        return new Lancamento(data, hora, valor.Value, descricao, contraparte, parcela: null, categoriaBanco, identidade, TipoOrigem.Cartao, ehPagamentoFatura: true);
-    }
-
-    /// <summary>
-    /// O texto do arquivo que diz quem recebeu o dinheiro de uma saída: a contraparte no extrato da conta (nula em
-    /// boleto e tarifa) e a descrição, o estabelecimento, na fatura do cartão. Nulo na entrada, o que inclui o
-    /// estorno e o pagamento da fatura do lado do cartão, e no valor zero. A saída da conta para outra conta do
-    /// titular, como o pagamento da fatura do lado da conta, tem texto como qualquer saída.
-    /// </summary>
-    public string? TextoBeneficiario => TextoBeneficiarioDe(EhSaida, Descricao, Contraparte, TipoOrigem);
-
-    /// <summary>A regra do <see cref="TextoBeneficiario"/>, também para a transação, que não guarda o lançamento.</summary>
-    internal static string? TextoBeneficiarioDe(bool ehSaida, TextoObrigatorio descricao, string? contraparte, TipoOrigem tipoOrigem)
-    {
-        if (!ehSaida)
-            return null;
-
-        return tipoOrigem switch
-        {
-            TipoOrigem.Conta => contraparte,
-            TipoOrigem.Cartao => descricao,
-            _ => throw new ArgumentOutOfRangeException(nameof(tipoOrigem), tipoOrigem, message: null),
-        };
-    }
+    public abstract string? TextoBeneficiario { get; }
 
     /// <summary>O alias do <see cref="TextoBeneficiario"/>; nulo quando não há texto ou ele fica vazio depois de normalizado.</summary>
     public Alias? AliasTextoBeneficiario => Alias.DoTextoOuNulo(TextoBeneficiario);
@@ -160,28 +73,25 @@ public sealed class Lancamento : ValueObject
     /// <summary>O alias da <see cref="CategoriaBanco"/>; nulo quando não há categoria ou ela fica vazia depois de normalizada.</summary>
     public Alias? AliasCategoriaBanco => Alias.DoTextoOuNulo(CategoriaBanco);
 
-    /// <summary>
-    /// Verdadeiro na saída com parcela, que só a fatura traz. A linha sem texto de beneficiário fica de fora porque a despesa exige
-    /// um beneficiário.
-    /// </summary>
-    public bool EhCompraParcelada => EhSaida && Parcela is not null && AliasTextoBeneficiario is not null;
-
     /// <summary>O <see cref="Valor"/> sem o sinal.</summary>
     public ReaisPositivo ValorAbsoluto => (ReaisPositivo)decimal.Abs(Valor);
 
     private static string? Aparar(string? texto) => string.IsNullOrWhiteSpace(texto) ? null : texto.Trim();
 
-    protected override IEnumerable<object?> GetEqualityComponents()
+    /// <summary>Os componentes de igualdade que só a origem da filha tem.</summary>
+    protected abstract IEnumerable<object?> ComponentesIgualdadeOrigem();
+
+    protected sealed override IEnumerable<object?> GetEqualityComponents()
     {
         yield return Data;
         yield return Hora;
         yield return Valor;
         yield return Descricao;
         yield return Contraparte;
-        yield return Parcela;
         yield return CategoriaBanco;
         yield return Identidade;
-        yield return TipoOrigem;
-        yield return EhPagamentoFatura;
+
+        foreach (object? componente in ComponentesIgualdadeOrigem())
+            yield return componente;
     }
 }

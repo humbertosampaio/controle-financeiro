@@ -213,10 +213,10 @@ public sealed partial class LeitorFaturaCartaoC6 : ILeitorFaturaVencimentoInform
 
         string? categoriaBanco = linha.Categoria.Trim() == SemCategoria ? null : linha.Categoria;
 
-        Lancamento lancamento;
-        if (EhPagamentoFatura(linha, valor, sufixoEParcela.Parcela))
+        LancamentoCartao lancamento;
+        if (EhPagamentoFaturaAnterior(linha, valor, sufixoEParcela.Parcela))
         {
-            lancamento = Lancamento.PagamentoFaturaCartao(
+            lancamento = LancamentoCartao.PagamentoFaturaAnterior(
                 linha.DataCompra,
                 hora: null,
                 (ReaisPositivo)valor.Value,
@@ -227,7 +227,7 @@ public sealed partial class LeitorFaturaCartaoC6 : ILeitorFaturaVencimentoInform
         }
         else
         {
-            lancamento = Lancamento.DoCartao(
+            lancamento = LancamentoCartao.Criar(
                 linha.DataCompra,
                 hora: null,
                 valor,
@@ -246,7 +246,7 @@ public sealed partial class LeitorFaturaCartaoC6 : ILeitorFaturaVencimentoInform
     /// para não marcar outra linha que comece igual; a compra com o mesmo texto sai como compra.
     /// </summary>
     /// <param name="valor">Do ponto de vista do usuário.</param>
-    private static bool EhPagamentoFatura(LinhaFaturaC6 linha, Reais valor, Parcela? parcela)
+    private static bool EhPagamentoFaturaAnterior(LinhaFaturaC6 linha, Reais valor, Parcela? parcela)
     {
         return valor > 0 && parcela is null && (TextoNormalizado)linha.Descricao == _rotuloPagamentoFatura;
     }

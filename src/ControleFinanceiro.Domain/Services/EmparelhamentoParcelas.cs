@@ -11,13 +11,13 @@ namespace ControleFinanceiro.Domain.Services;
 /// </summary>
 internal static class EmparelhamentoParcelas
 {
-    public static IEnumerable<Vinculo> Emparelhar(IEnumerable<Transacao> transacoes, IEnumerable<Vaga> vagas)
+    public static IEnumerable<Vinculo> Emparelhar(IEnumerable<TransacaoCartao> transacoes, IEnumerable<Vaga> vagas)
     {
         List<Vaga> vagasLivres = vagas.OrderBy(v => v.Despesa.Id).ToList();
-        List<Transacao> semValorIgual = [];
+        List<TransacaoCartao> semValorIgual = [];
         List<Vinculo> vinculos = [];
 
-        foreach (Transacao transacao in transacoes.OrderBy(t => t.Id))
+        foreach (TransacaoCartao transacao in transacoes.OrderBy(t => t.Id))
         {
             ReaisPositivo valor = transacao.ValorAbsoluto;
             Vaga? vaga = vagasLivres.Find(v => v.ValorProjetado == valor);
@@ -46,5 +46,5 @@ internal static class EmparelhamentoParcelas
         public ReaisPositivo ValorProjetado => Parcela.ValorProjetado;
     }
 
-    public sealed record Vinculo(Transacao Transacao, DespesaParcelada Despesa);
+    public sealed record Vinculo(TransacaoCartao Transacao, DespesaParcelada Despesa);
 }

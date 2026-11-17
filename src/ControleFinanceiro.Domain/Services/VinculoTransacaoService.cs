@@ -56,47 +56,69 @@ public static class VinculoTransacaoService
         };
     }
 
+    /// <summary>Só a saída da conta paga a simples. A parcela do cartão falha pela parcela, e a compra à vista, pela origem.</summary>
     private static UnitResult<Erro> VincularSimples(Transacao transacao, DespesaSimples simples)
     {
-        if (transacao.EhParcelada)
-            return ErroParcelaIncompativelComDespesa.Instancia;
+        return transacao switch
+        {
+            TransacaoConta saidaConta => simples.PagarCom(saidaConta.Id, saidaConta.Data, saidaConta.ValorAbsoluto),
+            TransacaoCartao { EhParcelada: true } => ErroParcelaIncompativelComDespesa.Instancia,
+            TransacaoCartao => ErroOrigemIncompativelComDespesa.Instancia,
+            _ => throw TransacaoSemRegra(transacao),
+        };
+    }
 
-        if (!transacao.EhOrigemConta)
-            return ErroOrigemIncompativelComDespesa.Instancia;
-
-        return simples.PagarCom(transacao.Id, transacao.Data, transacao.ValorAbsoluto);
+    private static UnitResult<Erro> VincularAdiada(Transacao transacao, DespesaAdiada adiada, IReadOnlyCollection<Cartao> cartoesDoUsuario)
+    {
+        return transacao switch
+        {
+            TransacaoCartao compra => VincularAdiada(compra, adiada, cartoesDoUsuario),
+            TransacaoConta => ErroOrigemIncompativelComDespesa.Instancia,
+            _ => throw TransacaoSemRegra(transacao),
+        };
     }
 
     /// <remarks>A compra de qualquer cartão da fatura em que a despesa vence a cobra, como os finais do C6.</remarks>
-    private static UnitResult<Erro> VincularAdiada(Transacao transacao, DespesaAdiada adiada, IReadOnlyCollection<Cartao> cartoesDoUsuario)
+    private static UnitResult<Erro> VincularAdiada(TransacaoCartao compra, DespesaAdiada adiada, IReadOnlyCollection<Cartao> cartoesDoUsuario)
     {
-        if (transacao.EhParcelada)
+        if (compra.EhParcelada)
             return ErroParcelaIncompativelComDespesa.Instancia;
 
         FaturaCartao fatura = FaturaCartao.DoCartao(adiada.IdCartao, cartoesDoUsuario, adiada.MesReferencia);
 
-        if (transacao.Origem.IdCartao is not IdCartao idCartao || !fatura.Contem(idCartao))
+        if (!fatura.Contem(compra.IdCartao))
             return ErroOrigemIncompativelComDespesa.Instancia;
 
-        return adiada.CobrarCom(new Cobranca(transacao.Id, transacao.ValorAbsoluto));
+        return adiada.CobrarCom(new Cobranca(compra.Id, compra.ValorAbsoluto));
+    }
+
+    /// <summary>Só a parcela do cartão cobra a parcelada: a saída da conta não traz parcela.</summary>
+    private static UnitResult<Erro> VincularParcelada(Transacao transacao, DespesaParcelada parcelada)
+    {
+        return transacao switch
+        {
+            TransacaoCartao compra => VincularParcelada(compra, parcelada),
+            TransacaoConta => ErroParcelaIncompativelComDespesa.Instancia,
+            _ => throw TransacaoSemRegra(transacao),
+        };
     }
 
     /// <remarks>
     /// O mês da parcela não entra na conferência, para um fechamento deslocado por feriado não impedir o vínculo. Interno
     /// para a <see cref="ConciliacaoParcelasService"/>, que já conferiu o usuário, a saída e a transação livre.
     /// </remarks>
-    internal static UnitResult<Erro> VincularParcelada(Transacao transacao, DespesaParcelada parcelada)
+    internal static UnitResult<Erro> VincularParcelada(TransacaoCartao compra, DespesaParcelada parcelada)
     {
-        if (transacao.Parcela is not Parcela parcela)
+        if (compra.Parcela is not Parcela parcela)
             return ErroParcelaIncompativelComDespesa.Instancia;
 
-        if (transacao.Origem.IdCartao != parcelada.IdCartao)
+        if (compra.IdCartao != parcelada.IdCartao)
             return ErroOrigemIncompativelComDespesa.Instancia;
 
-        if (!parcelada.EhDaCompra(ChaveCompraParcelada.DaTransacao(transacao)))
+        if (!parcelada.EhDaCompra(ChaveCompraParcelada.DaTransacao(compra)))
             return ErroParcelaIncompativelComDespesa.Instancia;
 
-        return parcelada.CobrarParcela(parcela, new Cobranca(transacao.Id, transacao.ValorAbsoluto));
+        return parcelada.CobrarParcela(parcela, new Cobranca(compra.Id, compra.ValorAbsoluto));
     }
 
     /// <summary>
@@ -110,9 +132,12 @@ public static class VinculoTransacaoService
         if (transacao.IdUsuario != despesa.IdUsuario)
             throw new ArgumentException("A transação é de outro usuário.", nameof(transacao));
 
-        return transacao.EhOrigemConta
-            ? DesfazerPagamento(transacao.Id, despesa)
-            : DesfazerCobranca(transacao.Id, despesa);
+        return transacao switch
+        {
+            TransacaoConta saidaConta => DesfazerPagamento(saidaConta.Id, despesa),
+            TransacaoCartao compra => DesfazerCobranca(compra.Id, despesa),
+            _ => throw TransacaoSemRegra(transacao),
+        };
     }
 
     /// <remarks>Por enquanto, só a simples é paga por uma saída da conta.</remarks>
@@ -132,4 +157,8 @@ public static class VinculoTransacaoService
             _ => ErroTransacaoNaoCobrouADespesa.Instancia,
         };
     }
+
+    /// <summary>A exceção da filha de <see cref="Transacao"/> sem regra de vínculo, que é bug.</summary>
+    internal static InvalidOperationException TransacaoSemRegra(Transacao transacao) =>
+        new($"Transação sem regra de vínculo: {transacao.GetType().Name}");
 }

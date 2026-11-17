@@ -17,7 +17,8 @@ Entidade cujo `Criar` devolve `Result<T>` também precisa de ajuda, porque o Aut
 Antes de escrever `new` ou chamar um método de fábrica no corpo do teste, veja se o objeto pode vir como parâmetro. Se o AutoFixture ainda não sabe criá-lo e é provável que outros testes peçam o mesmo tipo, **crie a customização** em vez de montá-lo no teste. Num caso isolado, montar o objeto no teste ainda é melhor que uma customização que só ele usa. Os exemplos abaixo são tipos que vários testes pedem:
 
 - `IdentidadeLancamentoCustomization` registra `(string id) => IdentidadeLancamento.Unica(id).Value`. Assim, o teste pede `IdentidadeLancamento identidade`, em vez de pedir uma `string idExterno` que só serviria para chamar o `Unica`.
-- `OrigemTransacaoCustomization` registra a origem a partir de uma `ContaBancaria`. Com `[Frozen] ContaBancaria conta`, a `OrigemTransacao origem` do mesmo teste aponta para essa conta, sem `OrigemTransacao.DaConta(conta.Id)` no corpo.
+- `ImportacaoExtratoGenerator` monta a importação pela `ImportacaoArquivoFactory`, a partir de uma `ContaBancaria` do contexto. Com `[Frozen] ContaBancaria conta`, a `ImportacaoExtrato importacao` do mesmo teste é dessa conta, sem `ImportacaoArquivoFactory.Registrar(conta, ...)` no corpo. O `ImportacaoFaturaGenerator` faz o mesmo com o `[Frozen] Cartao`.
+- `LancamentoGenerator` monta o `LancamentoConta` e o `LancamentoCartao`, e não o `Lancamento` abstrato: o teste pede a filha da origem que o caso usa. O mesmo vale para toda base abstrata, que não ganha relay para uma filha escolhida.
 - `[Frozen] Banco banco` e `[Frozen] SufixoConta sufixo` fazem duas `ContaBancaria` pedidas como parâmetro terem o mesmo banco e o mesmo sufixo, em vez de duas chamadas à `ContaBancariaFactory` no corpo do teste.
 
 O teste monta o objeto à mão só quando todos os valores dele são o assunto do teste, como no texto canônico de um hash conhecido. Quando só alguns são, como em duas contas em bancos **diferentes**, ele declara esses e o resto continua gerado.
@@ -80,7 +81,7 @@ Vale também para o valor de um passo só que o caso escolhe, como a data na pon
 
 Já decidido que o teste tem valor, o critério é a legibilidade: deve ser fácil entender o cenário e o que cada variável representa. Um AutoData privado declara só o cenário da classe, como congelar o usuário ou fixar a parcela. Um `Register` grande, com vários `fixture.Create<T>`, não deixa claro o que se quer representar. Três sinais pedem outra montagem:
 
-- **`Register` que monta entidade do domínio pede um generator compartilhado** em `Tests.Shared`, como o `DespesaParceladaGenerator`: outros testes vão pedir a mesma entidade, e o `[Frozen]` chega até ela. Fica no atributo o `Register` curto que só escolhe a variante do cenário da classe, como o `ImportacaoDoCartaoAutoDataAttribute`, que troca a conta pelo cartão.
+- **`Register` que monta entidade do domínio pede um generator compartilhado** em `Tests.Shared`, como o `DespesaParceladaGenerator`: outros testes vão pedir a mesma entidade, e o `[Frozen]` chega até ela. Fica no atributo o `Register` curto que só escolhe a variante do cenário da classe, como o `CompraAutoDataAttribute` da `DespesaAdiadaFactoryTests`, que faz do `LancamentoCartao` pedido pelo teste a compra à vista padrão.
 - **Helper que recebe e repassa os campos de um objeto pede um tipo.** `NovoLancamento(saida.Data, saida.Valor, saida.Identidade)` (ilustrativo) diz que esses campos andam juntos: eles viram um tipo de teste, montado pelo construtor, e o teste passa a pedir esse tipo. Se o tipo só monta cenários, ele fica nos testes, e não no domínio.
 - **Mais de um `Register` num AutoData privado pede reavaliação.** Antes de seguir, veja se cada um deles não é um dos casos acima.
 
@@ -92,7 +93,7 @@ O teste precisa do `DomainAutoData` quando pede value object com regra, id Vogen
 
 ### Método interno se testa pela entrada pública
 
-Não use `InternalsVisibleTo`. Um método `internal` está fechado porque só uma entrada pública pode chamá-lo, e é por ela que o teste passa, do mesmo jeito que a aplicação. O `Transacao.Criar` é interno, então a cópia dos campos e o id v7 são testados pela `LoteTransacoesFactory`.
+Não use `InternalsVisibleTo`. Um método `internal` está fechado porque só uma entrada pública pode chamá-lo, e é por ela que o teste passa, do mesmo jeito que a aplicação. O `TransacaoConta.Criar` é interno, então a cópia dos campos e o id v7 são testados pela `LoteTransacoesContaFactory`.
 
 ## Quando o teste precisa de um valor específico
 
@@ -101,7 +102,7 @@ Cinco caminhos, do mais geral para o mais local:
 1. **Customização**: a regra vale para todo teste. É o caso do `DiaVencimentoCartaoCustomization`, que traz qualquer inteiro para 1–24. Use quando o valor gerado por padrão seria inválido.
 
    Value object de faixa curta (os dias do mês, o `MesReferencia`) também não se repete: a customização envolve o gerador num `DistinctSpecimenBuilder`, que sorteia de novo enquanto o valor estiver entre os últimos gerados no mesmo teste. Com isso, dois valores pedidos no mesmo teste, ou o de uma entidade do fixture e outro pedido à parte, saem sempre diferentes, como já acontece com um `int` ou uma `string`. O teste que precisa de um dia diferente do vencimento do cartão pede `Cartao cartao, DiaVencimentoCartao outroDia`, em vez de derivar o dia com a regra da faixa. A janela fica abaixo da quantidade de valores possíveis, para sempre sobrar um a sortear: 27 para os dias de 1 a 28, 23 para o vencimento do cartão, de 1 a 24, e 12 para o mês.
-2. **AutoData privado da classe**: a regra vale para vários testes de uma classe só. A classe declara um atributo `private sealed` que herda do `DomainAutoDataAttribute` e recebe a configuração no construtor, como o `ImportacaoDoCartaoAutoDataAttribute` da `LoteTransacoesFactoryTests`, que monta a importação a partir do cartão, e não da conta. Prefira esse atributo a um método auxiliar que pede valores ao `Fixture` para montar o objeto no corpo do teste.
+2. **AutoData privado da classe**: a regra vale para vários testes de uma classe só. A classe declara um atributo `private sealed` que herda do `DomainAutoDataAttribute` e recebe a configuração no construtor, como o `VinculoAutoDataAttribute` da `VinculoTransacaoServiceTests`, que congela o usuário e fixa a parcelada na parcela 3 de 10. Prefira esse atributo a um método auxiliar que pede valores ao `Fixture` para montar o objeto no corpo do teste.
 3. **Anotação no parâmetro**: o teste restringe só a si mesmo.
    - `[Range(1, 12)] int mes`, como em `MesReferenciaTests`, quando qualquer valor de uma faixa serve.
    - `[Frozen] Usuario esperado` congela a instância: todo objeto que o fixture montar depois e dependa de um `Usuario` recebe esse mesmo. É assim que o teste do cadastro sabe o que esperar no banco.

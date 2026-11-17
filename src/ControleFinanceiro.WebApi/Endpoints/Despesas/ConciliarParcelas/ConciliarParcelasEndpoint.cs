@@ -14,16 +14,16 @@ namespace ControleFinanceiro.WebApi.Endpoints.Despesas.ConciliarParcelas;
 public sealed class ConciliarParcelasEndpoint : Endpoint<ConciliarParcelasRequest, ConciliarParcelasResponse>
 {
     private readonly IDespesaRepository _despesaRepository;
-    private readonly ITransacaoRepository _transacaoRepository;
+    private readonly ITransacaoCartaoRepository _transacaoCartaoRepository;
     private readonly IUnitOfWork _unitOfWork;
 
     public ConciliarParcelasEndpoint(
         IDespesaRepository despesaRepository,
-        ITransacaoRepository transacaoRepository,
+        ITransacaoCartaoRepository transacaoCartaoRepository,
         IUnitOfWork unitOfWork)
     {
         _despesaRepository = despesaRepository;
-        _transacaoRepository = transacaoRepository;
+        _transacaoCartaoRepository = transacaoCartaoRepository;
         _unitOfWork = unitOfWork;
     }
 
@@ -36,7 +36,7 @@ public sealed class ConciliarParcelasEndpoint : Endpoint<ConciliarParcelasReques
     public override async Task HandleAsync(ConciliarParcelasRequest req, CancellationToken ct)
     {
         IReadOnlyList<DespesaParcelada> parceladas = await _despesaRepository.ListarParceladasAsync(ct);
-        IReadOnlyList<Transacao> transacoes = await _transacaoRepository.ListarParceladasAsync(ct);
+        IReadOnlyList<TransacaoCartao> transacoes = await _transacaoCartaoRepository.ListarParceladasAsync(ct);
 
         ConciliacaoParcelas conciliacao = ConciliacaoParcelasService.Conciliar(IdUsuario.From(req.IdUsuario), parceladas, transacoes);
 

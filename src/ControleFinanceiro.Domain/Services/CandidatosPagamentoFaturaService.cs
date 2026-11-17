@@ -37,10 +37,8 @@ public static class CandidatosPagamentoFaturaService
     /// <param name="importacoesFaturas">
     /// As importações de fatura com vencimento nos <see cref="MesesConferidos"/>, de onde sai o vencimento real.
     /// </param>
-    /// <param name="transacoes">
-    /// As transações das faturas dos <see cref="MesesConferidos"/>, que compõem os totais, e as saídas da conta que podem
-    /// pagá-las. As demais são ignoradas.
-    /// </param>
+    /// <param name="transacoesFaturas">As transações das faturas dos <see cref="MesesConferidos"/>, que compõem os totais.</param>
+    /// <param name="saidasConta">As transações da conta que podem pagar as faturas; as entradas são ignoradas.</param>
     /// <param name="despesasMeses">As despesas com pagamento nos <see cref="MesesConferidos"/>, para saber que fatura já foi paga.</param>
     /// <param name="despesasPagasSaidas">As despesas que alguma das saídas já pagou, inteiras ou por uma das parcelas.</param>
     /// <returns>Os candidatos das faturas dos meses pedidos, um por fatura e por saída, na ordem dos meses e das faturas.</returns>
@@ -49,25 +47,27 @@ public static class CandidatosPagamentoFaturaService
         IdUsuario idUsuario,
         IReadOnlyCollection<MesReferencia> mesesVencimento,
         IReadOnlyCollection<Cartao> cartoesUsuario,
-        IReadOnlyCollection<ImportacaoArquivo> importacoesFaturas,
-        IReadOnlyCollection<Transacao> transacoes,
+        IReadOnlyCollection<ImportacaoFatura> importacoesFaturas,
+        IReadOnlyCollection<TransacaoCartao> transacoesFaturas,
+        IReadOnlyCollection<TransacaoConta> saidasConta,
         IReadOnlyCollection<Despesa> despesasMeses,
         IReadOnlyCollection<Despesa> despesasPagasSaidas)
     {
         cartoesUsuario.ConferirDono(idUsuario, nameof(cartoesUsuario));
         importacoesFaturas.ConferirDono(idUsuario, nameof(importacoesFaturas));
-        transacoes.ConferirDono(idUsuario, nameof(transacoes));
+        transacoesFaturas.ConferirDono(idUsuario, nameof(transacoesFaturas));
+        saidasConta.ConferirDono(idUsuario, nameof(saidasConta));
         despesasMeses.ConferirDono(idUsuario, nameof(despesasMeses));
         despesasPagasSaidas.ConferirDono(idUsuario, nameof(despesasPagasSaidas));
 
         FaturaCartaoAberta[] faturas = MesesConferidos(mesesVencimento)
             .SelectMany(mes => FaturaCartao.TodasVencendoEm(cartoesUsuario, mes))
             .Where(fatura => !EstaPaga(fatura, despesasMeses))
-            .Select(fatura => Abrir(fatura, importacoesFaturas, transacoes))
+            .Select(fatura => Abrir(fatura, importacoesFaturas, transacoesFaturas))
             .Choose()
             .ToArray();
 
-        return Emparelhar(faturas, SaidasLivres(transacoes, despesasPagasSaidas))
+        return Emparelhar(faturas, SaidasLivres(saidasConta, despesasPagasSaidas))
             .Where(candidato => mesesVencimento.Contains(candidato.FaturaCartaoAberta.Fatura.Vencimento.Mes))
             .ToList();
     }
@@ -81,30 +81,30 @@ public static class CandidatosPagamentoFaturaService
     /// </summary>
     private static Maybe<FaturaCartaoAberta> Abrir(
         FaturaCartao fatura,
-        IReadOnlyCollection<ImportacaoArquivo> importacoesFaturas,
-        IReadOnlyCollection<Transacao> transacoes)
+        IReadOnlyCollection<ImportacaoFatura> importacoesFaturas,
+        IReadOnlyCollection<TransacaoCartao> transacoesFaturas)
     {
         return importacoesFaturas
             .Select(importacao => importacao.VencimentoImportado(fatura))
             .Choose()
             .TryFirst()
-            .Bind(vencimento => FaturaCartaoAberta.Abrir(fatura, vencimento, transacoes));
+            .Bind(vencimento => FaturaCartaoAberta.Abrir(fatura, vencimento, transacoesFaturas));
     }
 
     /// <summary>As saídas da conta que ainda não pagaram nenhuma despesa.</summary>
-    private static Transacao[] SaidasLivres(IReadOnlyCollection<Transacao> transacoes, IReadOnlyCollection<Despesa> despesasPagasSaidas)
+    private static TransacaoConta[] SaidasLivres(IReadOnlyCollection<TransacaoConta> saidasConta, IReadOnlyCollection<Despesa> despesasPagasSaidas)
     {
-        return transacoes
-            .Where(transacao => transacao.EhSaidaConta)
+        return saidasConta
+            .Where(transacao => transacao.EhSaida)
             .Where(saida => despesasPagasSaidas.All(despesa => despesa.PagamentosRealizadosPor(saida.Id).Count == 0))
             .DistinctBy(saida => saida.Id)
             .ToArray();
     }
 
     /// <summary>Os pares em que a fatura aceita só aquela saída e a saída só cabe naquela fatura.</summary>
-    private static CandidatoPagamentoFatura[] Emparelhar(FaturaCartaoAberta[] faturas, Transacao[] saidas)
+    private static CandidatoPagamentoFatura[] Emparelhar(FaturaCartaoAberta[] faturas, TransacaoConta[] saidas)
     {
-        (FaturaCartaoAberta Fatura, Transacao Saida)[] pares = faturas
+        (FaturaCartaoAberta Fatura, TransacaoConta Saida)[] pares = faturas
             .SelectMany(fatura => saidas
                 .Where(saida => fatura.AceitaPagamento(saida.ValorAbsoluto, saida.Data))
                 .Select(saida => (Fatura: fatura, Saida: saida)))

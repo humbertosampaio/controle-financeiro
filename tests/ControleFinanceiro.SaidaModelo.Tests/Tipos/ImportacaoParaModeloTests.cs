@@ -159,8 +159,8 @@ public sealed class ImportacaoParaModeloTests
         [Frozen] VencimentoFatura vencimento,
         Cartao cartao,
         CenarioPagamentoFatura cenario,
-        Lancamento compra,
-        Lancamento linhaSaida)
+        LancamentoConta compra,
+        LancamentoConta linhaSaida)
     {
         ImportacaoParaModelo importacao = ImportacaoParaModelo.DoExtrato(LayoutArquivoImportacao.C6ContaCsv, importado);
         CandidatoPagamentoFaturaDto candidatoDto = cenario.CandidatoPagamentoFaturaUnico(cartao, vencimento, compra, linhaSaida);

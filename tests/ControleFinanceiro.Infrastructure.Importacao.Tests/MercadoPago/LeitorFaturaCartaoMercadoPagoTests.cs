@@ -173,7 +173,7 @@ public sealed class LeitorFaturaCartaoMercadoPagoTests
     {
         Fatura fatura = await LerFixtureAsync();
 
-        fatura.Lancamentos[LinhaPagamento - 2].Lancamento.EhPagamentoFatura.Should().BeTrue();
+        fatura.Lancamentos[LinhaPagamento - 2].Lancamento.EhPagamentoFaturaAnterior.Should().BeTrue();
     }
 
     [Fact]
@@ -181,7 +181,7 @@ public sealed class LeitorFaturaCartaoMercadoPagoTests
     {
         Fatura fatura = await LerFixtureAsync();
 
-        fatura.Lancamentos.Take(LinhaPagamento - 2).Should().AllSatisfy(l => l.Lancamento.EhPagamentoFatura.Should().BeFalse());
+        fatura.Lancamentos.Take(LinhaPagamento - 2).Should().AllSatisfy(l => l.Lancamento.EhPagamentoFaturaAnterior.Should().BeFalse());
     }
 
     [Fact]
@@ -227,7 +227,7 @@ public sealed class LeitorFaturaCartaoMercadoPagoTests
         string[] proibidos = ["12.ABC.345/01DE-35", "Ficticio", "2000000000000001"];
         fatura.Lancamentos.Should().AllSatisfy(l =>
         {
-            Lancamento lancamento = l.Lancamento;
+            LancamentoCartao lancamento = l.Lancamento;
             string?[] textos = [lancamento.Descricao, lancamento.Contraparte, lancamento.CategoriaBanco, .. lancamento.Identidade.Campos];
             textos.Should().NotContain(t => t != null && proibidos.Any(p => t.Contains(p, StringComparison.Ordinal)));
         });

@@ -67,8 +67,8 @@ public sealed class ListarTransacoesToolTests : IAsyncLifetime
     public async Task Listar_Deve_TerSoOsCamposPermitidos(MesReferencia mes, Fixture fixture)
     {
         fixture.Inject(_servidor.Usuario.Id);
-        IReadOnlyList<Transacao> transacoes = await GravarExtratoAsync(fixture, NaData(fixture, mes.Inicio));
-        Transacao transacao = transacoes.Single();
+        IReadOnlyList<TransacaoConta> transacoes = await GravarExtratoAsync(fixture, NaData(fixture, mes.Inicio));
+        TransacaoConta transacao = transacoes.Single();
 
         CallToolResult resultado = await _servidor.ClienteMcp.ChamarDoMesAsync(Tools.ListarTransacoes, mes.Ano, mes.Mes);
 
@@ -79,7 +79,7 @@ public sealed class ListarTransacoesToolTests : IAsyncLifetime
         resultado.Texto.Should().NotContain(transacao.Chave)
             .And.NotContain(transacao.IdUsuario.Value.ToString())
             .And.NotContain(transacao.IdImportacao.Value.ToString())
-            .And.NotContain(transacao.Origem.IdConta!.Value.Value.ToString());
+            .And.NotContain(transacao.IdConta.Value.ToString());
     }
 
     [Theory]
@@ -93,7 +93,7 @@ public sealed class ListarTransacoesToolTests : IAsyncLifetime
         Fixture fixture)
     {
         fixture.Inject(_servidor.Usuario.Id);
-        Lancamento comDocumentos = NaData(fixture, mes.Inicio)
+        LancamentoConta comDocumentos = NaData(fixture, mes.Inicio)
             .ComTextos((TextoObrigatorio)$"PIX {documentos.Em(forma)}", $"FULANO {documentos.Em(forma)}");
         await GravarExtratoAsync(fixture, comDocumentos);
 
@@ -107,7 +107,7 @@ public sealed class ListarTransacoesToolTests : IAsyncLifetime
     public async Task Listar_Quando_ContraparteAusente_Deve_OmitirOCampo(MesReferencia mes, Fixture fixture)
     {
         fixture.Inject(_servidor.Usuario.Id);
-        Lancamento lancamento = NaData(fixture, mes.Inicio);
+        LancamentoConta lancamento = NaData(fixture, mes.Inicio);
         await GravarExtratoAsync(fixture, lancamento.ComTextos(lancamento.Descricao, contraparte: null));
 
         JsonObject json = (await _servidor.ClienteMcp.ChamarDoMesAsync(Tools.ListarTransacoes, mes.Ano, mes.Mes)).Json;
@@ -156,20 +156,20 @@ public sealed class ListarTransacoesToolTests : IAsyncLifetime
         return new TransacoesDoMesLidas(resultado.Json);
     }
 
-    private static Lancamento NaData(IFixture fixture, DateOnly data)
+    private static LancamentoConta NaData(IFixture fixture, DateOnly data)
     {
         fixture.Inject(data);
-        return fixture.Create<Lancamento>().SemCategoria();
+        return fixture.Create<LancamentoConta>().SemCategoria();
     }
 
     /// <summary>Grava os lançamentos como um extrato de uma conta nova do usuário injetado no <paramref name="fixture"/>.</summary>
-    private Task<IReadOnlyList<Transacao>> GravarExtratoAsync(IFixture fixture, params Lancamento[] lancamentos)
+    private Task<IReadOnlyList<TransacaoConta>> GravarExtratoAsync(IFixture fixture, params LancamentoConta[] lancamentos)
     {
         ContaBancaria conta = fixture.Freeze<ContaBancaria>();
 
         // O Postgres só grava o instante em UTC, como o TimeProvider da aplicação o dá.
         fixture.Inject(fixture.Create<DateTimeOffset>().ToUniversalTime());
 
-        return _banco.GravarExtratoAsync(conta, fixture.Create<ImportacaoArquivo>(), lancamentos);
+        return _banco.GravarExtratoAsync(conta, fixture.Create<ImportacaoExtrato>(), lancamentos);
     }
 }

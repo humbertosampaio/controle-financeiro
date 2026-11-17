@@ -9,7 +9,7 @@ using ControleFinanceiro.Domain.Usuarios;
 
 namespace ControleFinanceiro.Tests.Shared;
 
-/// <summary>Cria as transações pela <see cref="LoteTransacoesFactory"/>, a única entrada, do usuário que o fixture der.</summary>
+/// <summary>Cria as transações pela <see cref="LoteTransacoesContaFactory"/> e pela <see cref="LoteTransacoesCartaoFactory"/>, as únicas entradas, do usuário que o fixture der.</summary>
 public sealed class TransacoesDeTeste
 {
     private readonly IdUsuario _idUsuario;
@@ -37,22 +37,22 @@ public sealed class TransacoesDeTeste
     }
 
     /// <param name="linha">Vira uma linha de extrato: os casos de origem incompatível usam a mesma saída na conta e no cartão.</param>
-    public Transacao DaConta(Lancamento linha)
+    public TransacaoConta DaConta(Lancamento linha)
     {
-        Lancamento lancamento = linha.NaOrigem(TipoOrigem.Conta);
+        LancamentoConta lancamento = linha.NaConta();
         IReadOnlyList<Beneficiario> beneficiarios = BeneficiariosResolvidos.Dos(_idUsuario, [lancamento]);
-        ImportacaoArquivo importacao = ImportacaoArquivoFactory.Registrar(_conta, _layout, _periodo, lidas: 1, _importadaEm);
-        return LoteTransacoesFactory.Criar(_idUsuario, beneficiarios, categoriasDoUsuario: [], _conta, importacao, [lancamento]).Value.Single();
+        ImportacaoExtrato importacao = ImportacaoArquivoFactory.Registrar(_conta, _layout, _periodo, lidas: 1, _importadaEm);
+        return LoteTransacoesContaFactory.Criar(_idUsuario, beneficiarios, categoriasDoUsuario: [], _conta, importacao, [lancamento]).Value.Single();
     }
 
     /// <param name="linha">Vira uma linha de fatura: os casos de origem incompatível usam a mesma saída na conta e no cartão.</param>
-    public Transacao DoCartao(Cartao cartao, Lancamento linha)
+    public TransacaoCartao DoCartao(Cartao cartao, Lancamento linha)
     {
-        Lancamento lancamento = linha.NaOrigem(TipoOrigem.Cartao);
+        LancamentoCartao lancamento = linha.NoCartao();
         IReadOnlyList<Beneficiario> beneficiarios = BeneficiariosResolvidos.Dos(_idUsuario, [lancamento]);
-        ImportacaoArquivo importacao = ImportacaoArquivoFactory
+        ImportacaoFatura importacao = ImportacaoArquivoFactory
             .Registrar(cartao, cartoesUsuario: [cartao], importacoesFaturaMes: [], _layout, _periodo, _vencimentoFatura, lidas: 1, _importadaEm)
             .Value;
-        return LoteTransacoesFactory.Criar(_idUsuario, beneficiarios, categoriasDoUsuario: [], cartao, importacao, [lancamento]).Value.Single();
+        return LoteTransacoesCartaoFactory.Criar(_idUsuario, beneficiarios, categoriasDoUsuario: [], cartao, importacao, [lancamento]).Value.Single();
     }
 }

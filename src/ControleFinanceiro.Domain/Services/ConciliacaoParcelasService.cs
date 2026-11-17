@@ -21,7 +21,7 @@ public static class ConciliacaoParcelasService
     public static ConciliacaoParcelas Conciliar(
         IdUsuario idUsuario,
         IReadOnlyCollection<DespesaParcelada> parceladas,
-        IReadOnlyCollection<Transacao> transacoesParceladas)
+        IReadOnlyCollection<TransacaoCartao> transacoesParceladas)
     {
         if (parceladas.Any(d => d.IdUsuario != idUsuario))
             throw new ArgumentException("A lista traz uma despesa de outro usuário.", nameof(parceladas));
@@ -32,8 +32,8 @@ public static class ConciliacaoParcelasService
         // Transação com parcela só cobra parcela, então as parceladas bastam para saber quais já têm vínculo.
         HashSet<IdTransacao> jaVinculadas = parceladas.SelectMany(d => d.TransacoesCobranca).ToHashSet();
 
-        Transacao[] candidatas = transacoesParceladas
-            .Where(t => t.EhParcelaPagaNoCartao && !jaVinculadas.Contains(t.Id))
+        TransacaoCartao[] candidatas = transacoesParceladas
+            .Where(t => t.EhParcelaPaga && !jaVinculadas.Contains(t.Id))
             .ToArray();
 
         Vinculo[] vinculos = candidatas

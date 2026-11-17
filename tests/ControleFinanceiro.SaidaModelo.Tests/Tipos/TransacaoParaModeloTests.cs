@@ -15,7 +15,7 @@ public sealed class TransacaoParaModeloTests
     public static readonly TheoryData<FormaDocumento> FormasDocumento = new(Enum.GetValues<FormaDocumento>());
 
     [Theory, UsuarioUnicoAutoData]
-    public void Serializar_Deve_TerSomenteOsCamposPermitidos(TransacoesDeTeste transacoes, Lancamento lancamento)
+    public void Serializar_Deve_TerSomenteOsCamposPermitidos(TransacoesDeTeste transacoes, LancamentoConta lancamento)
     {
         JsonObject json = transacoes.DaConta(lancamento.SemCategoria()).ParaModelo().Serializar();
 
@@ -23,7 +23,7 @@ public sealed class TransacaoParaModeloTests
     }
 
     [Theory, UsuarioUnicoAutoData]
-    public void Serializar_Deve_LevarOsValoresDaTransacao(TransacoesDeTeste transacoes, Lancamento lancamento)
+    public void Serializar_Deve_LevarOsValoresDaTransacao(TransacoesDeTeste transacoes, LancamentoConta lancamento)
     {
         Transacao transacao = transacoes.DaConta(lancamento.SemCategoria());
 
@@ -36,7 +36,7 @@ public sealed class TransacaoParaModeloTests
     }
 
     [Theory, UsuarioUnicoAutoData]
-    public void Serializar_Deve_NaoConterAChaveDeduplicacao(TransacoesDeTeste transacoes, Lancamento lancamento)
+    public void Serializar_Deve_NaoConterAChaveDeduplicacao(TransacoesDeTeste transacoes, LancamentoConta lancamento)
     {
         Transacao transacao = transacoes.DaConta(lancamento.SemCategoria());
 
@@ -50,7 +50,7 @@ public sealed class TransacaoParaModeloTests
         FormaDocumento forma,
         DocumentosDeTeste documentos,
         TransacoesDeTeste transacoes,
-        Lancamento lancamento)
+        LancamentoConta lancamento)
     {
         TextoObrigatorio descricao = (TextoObrigatorio)$"LOJA {documentos.Em(forma)}";
 
@@ -66,9 +66,9 @@ public sealed class TransacaoParaModeloTests
         FormaDocumento forma,
         DocumentosDeTeste documentos,
         TransacoesDeTeste transacoes,
-        Lancamento lancamento)
+        LancamentoConta lancamento)
     {
-        Lancamento comDocumento = lancamento.SemCategoria().ComTextos(lancamento.Descricao, $"FULANO {documentos.Em(forma)}");
+        LancamentoConta comDocumento = lancamento.SemCategoria().ComTextos(lancamento.Descricao, $"FULANO {documentos.Em(forma)}");
 
         JsonObject json = transacoes.DaConta(comDocumento).ParaModelo().Serializar();
 
@@ -80,9 +80,9 @@ public sealed class TransacaoParaModeloTests
         FormaDocumento forma,
         DocumentosDeTeste documentos,
         TransacoesDeTeste transacoes,
-        Lancamento lancamento)
+        LancamentoConta lancamento)
     {
-        Lancamento comDocumento = lancamento.SemCategoria().ComTextos(lancamento.Descricao, documentos.Em(forma));
+        LancamentoConta comDocumento = lancamento.SemCategoria().ComTextos(lancamento.Descricao, documentos.Em(forma));
 
         JsonObject json = transacoes.DaConta(comDocumento).ParaModelo().Serializar();
 
@@ -90,7 +90,7 @@ public sealed class TransacaoParaModeloTests
     }
 
     [Theory, UsuarioUnicoAutoData]
-    public void Serializar_Quando_ContraparteAusente_Deve_OmitirOCampo(TransacoesDeTeste transacoes, Lancamento lancamento)
+    public void Serializar_Quando_ContraparteAusente_Deve_OmitirOCampo(TransacoesDeTeste transacoes, LancamentoConta lancamento)
     {
         Transacao transacao = transacoes.DaConta(lancamento.SemCategoria().ComTextos(lancamento.Descricao, contraparte: null));
 
@@ -100,7 +100,7 @@ public sealed class TransacaoParaModeloTests
     }
 
     [Theory, UsuarioUnicoAutoData]
-    public void Serializar_Quando_DescricaoSoComDocumento_Deve_SairVazia(DocumentosDeTeste documentos, TransacoesDeTeste transacoes, Lancamento lancamento)
+    public void Serializar_Quando_DescricaoSoComDocumento_Deve_SairVazia(DocumentosDeTeste documentos, TransacoesDeTeste transacoes, LancamentoConta lancamento)
     {
         TextoObrigatorio descricao = (TextoObrigatorio)documentos.Em(FormaDocumento.CpfPuro);
 
@@ -112,7 +112,7 @@ public sealed class TransacaoParaModeloTests
     }
 
     [Theory, UsuarioUnicoAutoData]
-    public void Serializar_Quando_NumeroComVerificadorErrado_Deve_ManterONumero(TransacoesDeTeste transacoes, Lancamento lancamento)
+    public void Serializar_Quando_NumeroComVerificadorErrado_Deve_ManterONumero(TransacoesDeTeste transacoes, LancamentoConta lancamento)
     {
         TextoObrigatorio descricao = (TextoObrigatorio)"LOJA 11222333000182";
 

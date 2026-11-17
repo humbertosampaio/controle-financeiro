@@ -420,24 +420,12 @@ namespace ControleFinanceiro.Infrastructure.Persistence.Migrations
                         .HasColumnType("integer")
                         .HasColumnName("lidas");
 
-                    b.Property<DateOnly?>("VencimentoFatura")
-                        .HasColumnType("date")
-                        .HasColumnName("data_vencimento_fatura");
+                    b.Property<string>("tipo")
+                        .IsRequired()
+                        .HasMaxLength(21)
+                        .HasColumnType("character varying(21)");
 
-                    b.ComplexProperty(typeof(Dictionary<string, object>), "Origem", "ControleFinanceiro.Domain.Importacoes.ImportacaoArquivo.Origem#OrigemTransacao", b1 =>
-                        {
-                            b1.IsRequired();
-
-                            b1.Property<Guid?>("IdCartao")
-                                .HasColumnType("uuid")
-                                .HasColumnName("id_cartao");
-
-                            b1.Property<Guid?>("IdConta")
-                                .HasColumnType("uuid")
-                                .HasColumnName("id_conta");
-                        });
-
-                    b.ComplexProperty(typeof(Dictionary<string, object>), "Periodo", "ControleFinanceiro.Domain.Importacoes.ImportacaoArquivo.Periodo#PeriodoArquivo", b1 =>
+                    b.ComplexProperty(typeof(Dictionary<string, object>), "Periodo", "ControleFinanceiro.Domain.Importacoes.ImportacaoArquivo.Periodo#Periodo", b1 =>
                         {
                             b1.IsRequired();
 
@@ -458,12 +446,16 @@ namespace ControleFinanceiro.Infrastructure.Persistence.Migrations
                         {
                             t.HasCheckConstraint("CK_importacoes_lidas", "lidas >= 0");
 
-                            t.HasCheckConstraint("CK_importacoes_origem", "num_nonnulls(id_conta, id_cartao) = 1");
+                            t.HasCheckConstraint("CK_importacoes_origem", "(tipo = 'extrato' AND id_conta IS NOT NULL AND id_cartao IS NULL) OR (tipo = 'fatura' AND id_cartao IS NOT NULL AND id_conta IS NULL)");
 
                             t.HasCheckConstraint("CK_importacoes_periodo", "periodo_inicio <= periodo_fim");
 
-                            t.HasCheckConstraint("CK_importacoes_vencimento_fatura", "(id_cartao IS NULL) = (data_vencimento_fatura IS NULL)");
+                            t.HasCheckConstraint("CK_importacoes_vencimento_fatura", "(tipo = 'fatura') = (data_vencimento_fatura IS NOT NULL)");
                         });
+
+                    b.HasDiscriminator<string>("tipo").HasValue("ImportacaoArquivo");
+
+                    b.UseTphMappingStrategy();
                 });
 
             modelBuilder.Entity("ControleFinanceiro.Domain.Transacoes.Transacao", b =>
@@ -496,10 +488,6 @@ namespace ControleFinanceiro.Infrastructure.Persistence.Migrations
                         .HasColumnType("text")
                         .HasColumnName("descricao");
 
-                    b.Property<bool>("EhPagamentoFatura")
-                        .HasColumnType("boolean")
-                        .HasColumnName("eh_pagamento_fatura");
-
                     b.Property<TimeOnly?>("Hora")
                         .HasColumnType("time without time zone")
                         .HasColumnName("hora");
@@ -512,38 +500,15 @@ namespace ControleFinanceiro.Infrastructure.Persistence.Migrations
                         .HasColumnType("uuid")
                         .HasColumnName("id_usuario");
 
-                    b.Property<DateOnly?>("MesVencimentoFatura")
-                        .HasColumnType("date")
-                        .HasColumnName("mes_vencimento_fatura");
-
                     b.Property<decimal>("Valor")
                         .HasPrecision(14, 2)
                         .HasColumnType("numeric(14,2)")
                         .HasColumnName("valor");
 
-                    b.ComplexProperty(typeof(Dictionary<string, object>), "Origem", "ControleFinanceiro.Domain.Transacoes.Transacao.Origem#OrigemTransacao", b1 =>
-                        {
-                            b1.IsRequired();
-
-                            b1.Property<Guid?>("IdCartao")
-                                .HasColumnType("uuid")
-                                .HasColumnName("id_cartao");
-
-                            b1.Property<Guid?>("IdConta")
-                                .HasColumnType("uuid")
-                                .HasColumnName("id_conta");
-                        });
-
-                    b.ComplexProperty(typeof(Dictionary<string, object>), "Parcela", "ControleFinanceiro.Domain.Transacoes.Transacao.Parcela#Parcela", b1 =>
-                        {
-                            b1.Property<int>("Numero")
-                                .HasColumnType("integer")
-                                .HasColumnName("parcela_numero");
-
-                            b1.Property<int>("Total")
-                                .HasColumnType("integer")
-                                .HasColumnName("parcela_total");
-                        });
+                    b.Property<string>("tipo")
+                        .IsRequired()
+                        .HasMaxLength(13)
+                        .HasColumnType("character varying(13)");
 
                     b.HasKey("Id");
 
@@ -558,14 +523,18 @@ namespace ControleFinanceiro.Infrastructure.Persistence.Migrations
                         {
                             t.HasCheckConstraint("CK_transacoes_chave_deduplicacao", "chave_deduplicacao ~ '^[0-9a-f]{64}$'");
 
-                            t.HasCheckConstraint("CK_transacoes_mes_vencimento_fatura", "(id_cartao IS NULL) = (mes_vencimento_fatura IS NULL)");
+                            t.HasCheckConstraint("CK_transacoes_mes_vencimento_fatura", "(tipo = 'cartao') = (mes_vencimento_fatura IS NOT NULL)");
 
-                            t.HasCheckConstraint("CK_transacoes_origem", "num_nonnulls(id_conta, id_cartao) = 1");
+                            t.HasCheckConstraint("CK_transacoes_origem", "(tipo = 'conta' AND id_conta IS NOT NULL AND id_cartao IS NULL) OR (tipo = 'cartao' AND id_cartao IS NOT NULL AND id_conta IS NULL)");
 
-                            t.HasCheckConstraint("CK_transacoes_pagamento_fatura", "NOT eh_pagamento_fatura OR (id_cartao IS NOT NULL AND valor >= 0 AND parcela_numero IS NULL)");
+                            t.HasCheckConstraint("CK_transacoes_pagamento_fatura_anterior", "(tipo = 'cartao') = (eh_pagamento_fatura_anterior IS NOT NULL) AND (eh_pagamento_fatura_anterior IS NOT TRUE OR (valor >= 0 AND parcela_numero IS NULL))");
 
-                            t.HasCheckConstraint("CK_transacoes_parcela", "num_nulls(parcela_numero, parcela_total) = 2 OR (num_nulls(parcela_numero, parcela_total) = 0 AND parcela_total >= 2 AND parcela_numero BETWEEN 1 AND parcela_total AND id_cartao IS NOT NULL)");
+                            t.HasCheckConstraint("CK_transacoes_parcela", "num_nulls(parcela_numero, parcela_total) = 2 OR (num_nulls(parcela_numero, parcela_total) = 0 AND parcela_total >= 2 AND parcela_numero BETWEEN 1 AND parcela_total AND tipo = 'cartao')");
                         });
+
+                    b.HasDiscriminator<string>("tipo").HasValue("Transacao");
+
+                    b.UseTphMappingStrategy();
                 });
 
             modelBuilder.Entity("ControleFinanceiro.Domain.Usuarios.DescontoSalarial", b =>
@@ -733,6 +702,129 @@ namespace ControleFinanceiro.Infrastructure.Persistence.Migrations
                         });
 
                     b.HasDiscriminator().HasValue("parcelada");
+                });
+
+            modelBuilder.Entity("ControleFinanceiro.Domain.Importacoes.ImportacaoExtrato", b =>
+                {
+                    b.HasBaseType("ControleFinanceiro.Domain.Importacoes.ImportacaoArquivo");
+
+                    b.Property<Guid>("IdConta")
+                        .HasColumnType("uuid")
+                        .HasColumnName("id_conta");
+
+                    b.HasIndex("IdConta");
+
+                    b.ToTable(t =>
+                        {
+                            t.HasCheckConstraint("CK_importacoes_lidas", "lidas >= 0");
+
+                            t.HasCheckConstraint("CK_importacoes_origem", "(tipo = 'extrato' AND id_conta IS NOT NULL AND id_cartao IS NULL) OR (tipo = 'fatura' AND id_cartao IS NOT NULL AND id_conta IS NULL)");
+
+                            t.HasCheckConstraint("CK_importacoes_periodo", "periodo_inicio <= periodo_fim");
+
+                            t.HasCheckConstraint("CK_importacoes_vencimento_fatura", "(tipo = 'fatura') = (data_vencimento_fatura IS NOT NULL)");
+                        });
+
+                    b.HasDiscriminator().HasValue("extrato");
+                });
+
+            modelBuilder.Entity("ControleFinanceiro.Domain.Importacoes.ImportacaoFatura", b =>
+                {
+                    b.HasBaseType("ControleFinanceiro.Domain.Importacoes.ImportacaoArquivo");
+
+                    b.Property<Guid>("IdCartao")
+                        .HasColumnType("uuid")
+                        .HasColumnName("id_cartao");
+
+                    b.Property<DateOnly>("Vencimento")
+                        .HasColumnType("date")
+                        .HasColumnName("data_vencimento_fatura");
+
+                    b.HasIndex("IdCartao");
+
+                    b.ToTable(t =>
+                        {
+                            t.HasCheckConstraint("CK_importacoes_lidas", "lidas >= 0");
+
+                            t.HasCheckConstraint("CK_importacoes_origem", "(tipo = 'extrato' AND id_conta IS NOT NULL AND id_cartao IS NULL) OR (tipo = 'fatura' AND id_cartao IS NOT NULL AND id_conta IS NULL)");
+
+                            t.HasCheckConstraint("CK_importacoes_periodo", "periodo_inicio <= periodo_fim");
+
+                            t.HasCheckConstraint("CK_importacoes_vencimento_fatura", "(tipo = 'fatura') = (data_vencimento_fatura IS NOT NULL)");
+                        });
+
+                    b.HasDiscriminator().HasValue("fatura");
+                });
+
+            modelBuilder.Entity("ControleFinanceiro.Domain.Transacoes.TransacaoCartao", b =>
+                {
+                    b.HasBaseType("ControleFinanceiro.Domain.Transacoes.Transacao");
+
+                    b.Property<bool>("EhPagamentoFaturaAnterior")
+                        .HasColumnType("boolean")
+                        .HasColumnName("eh_pagamento_fatura_anterior");
+
+                    b.Property<Guid>("IdCartao")
+                        .HasColumnType("uuid")
+                        .HasColumnName("id_cartao");
+
+                    b.Property<DateOnly>("MesVencimentoFatura")
+                        .HasColumnType("date")
+                        .HasColumnName("mes_vencimento_fatura");
+
+                    b.ComplexProperty(typeof(Dictionary<string, object>), "Parcela", "ControleFinanceiro.Domain.Transacoes.TransacaoCartao.Parcela#Parcela", b1 =>
+                        {
+                            b1.Property<int>("Numero")
+                                .HasColumnType("integer")
+                                .HasColumnName("parcela_numero");
+
+                            b1.Property<int>("Total")
+                                .HasColumnType("integer")
+                                .HasColumnName("parcela_total");
+                        });
+
+                    b.HasIndex("IdCartao", "Data");
+
+                    b.ToTable(t =>
+                        {
+                            t.HasCheckConstraint("CK_transacoes_chave_deduplicacao", "chave_deduplicacao ~ '^[0-9a-f]{64}$'");
+
+                            t.HasCheckConstraint("CK_transacoes_mes_vencimento_fatura", "(tipo = 'cartao') = (mes_vencimento_fatura IS NOT NULL)");
+
+                            t.HasCheckConstraint("CK_transacoes_origem", "(tipo = 'conta' AND id_conta IS NOT NULL AND id_cartao IS NULL) OR (tipo = 'cartao' AND id_cartao IS NOT NULL AND id_conta IS NULL)");
+
+                            t.HasCheckConstraint("CK_transacoes_pagamento_fatura_anterior", "(tipo = 'cartao') = (eh_pagamento_fatura_anterior IS NOT NULL) AND (eh_pagamento_fatura_anterior IS NOT TRUE OR (valor >= 0 AND parcela_numero IS NULL))");
+
+                            t.HasCheckConstraint("CK_transacoes_parcela", "num_nulls(parcela_numero, parcela_total) = 2 OR (num_nulls(parcela_numero, parcela_total) = 0 AND parcela_total >= 2 AND parcela_numero BETWEEN 1 AND parcela_total AND tipo = 'cartao')");
+                        });
+
+                    b.HasDiscriminator().HasValue("cartao");
+                });
+
+            modelBuilder.Entity("ControleFinanceiro.Domain.Transacoes.TransacaoConta", b =>
+                {
+                    b.HasBaseType("ControleFinanceiro.Domain.Transacoes.Transacao");
+
+                    b.Property<Guid>("IdConta")
+                        .HasColumnType("uuid")
+                        .HasColumnName("id_conta");
+
+                    b.HasIndex("IdConta", "Data");
+
+                    b.ToTable(t =>
+                        {
+                            t.HasCheckConstraint("CK_transacoes_chave_deduplicacao", "chave_deduplicacao ~ '^[0-9a-f]{64}$'");
+
+                            t.HasCheckConstraint("CK_transacoes_mes_vencimento_fatura", "(tipo = 'cartao') = (mes_vencimento_fatura IS NOT NULL)");
+
+                            t.HasCheckConstraint("CK_transacoes_origem", "(tipo = 'conta' AND id_conta IS NOT NULL AND id_cartao IS NULL) OR (tipo = 'cartao' AND id_cartao IS NOT NULL AND id_conta IS NULL)");
+
+                            t.HasCheckConstraint("CK_transacoes_pagamento_fatura_anterior", "(tipo = 'cartao') = (eh_pagamento_fatura_anterior IS NOT NULL) AND (eh_pagamento_fatura_anterior IS NOT TRUE OR (valor >= 0 AND parcela_numero IS NULL))");
+
+                            t.HasCheckConstraint("CK_transacoes_parcela", "num_nulls(parcela_numero, parcela_total) = 2 OR (num_nulls(parcela_numero, parcela_total) = 0 AND parcela_total >= 2 AND parcela_numero BETWEEN 1 AND parcela_total AND tipo = 'cartao')");
+                        });
+
+                    b.HasDiscriminator().HasValue("conta");
                 });
 
             modelBuilder.Entity("ControleFinanceiro.Domain.Despesas.DespesaAdiada", b =>
@@ -1068,6 +1160,42 @@ namespace ControleFinanceiro.Infrastructure.Persistence.Migrations
                     b.HasOne("ControleFinanceiro.Domain.Cartoes.Cartao", null)
                         .WithMany()
                         .HasForeignKey("IdCartao")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("ControleFinanceiro.Domain.Importacoes.ImportacaoExtrato", b =>
+                {
+                    b.HasOne("ControleFinanceiro.Domain.Contas.ContaBancaria", null)
+                        .WithMany()
+                        .HasForeignKey("IdConta")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("ControleFinanceiro.Domain.Importacoes.ImportacaoFatura", b =>
+                {
+                    b.HasOne("ControleFinanceiro.Domain.Cartoes.Cartao", null)
+                        .WithMany()
+                        .HasForeignKey("IdCartao")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("ControleFinanceiro.Domain.Transacoes.TransacaoCartao", b =>
+                {
+                    b.HasOne("ControleFinanceiro.Domain.Cartoes.Cartao", null)
+                        .WithMany()
+                        .HasForeignKey("IdCartao")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("ControleFinanceiro.Domain.Transacoes.TransacaoConta", b =>
+                {
+                    b.HasOne("ControleFinanceiro.Domain.Contas.ContaBancaria", null)
+                        .WithMany()
+                        .HasForeignKey("IdConta")
                         .OnDelete(DeleteBehavior.NoAction)
                         .IsRequired();
                 });

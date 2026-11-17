@@ -346,7 +346,7 @@ public sealed class VinculoTransacaoServiceTests
         TransacoesDeTeste transacoes,
         SaidaDeTeste saida)
     {
-        Lancamento compra = saida.DaCompra(despesa.DataOcorrencia.AddDays(1), despesa.Descricao, (Parcela)(3, despesa.Parcelas.Count));
+        LancamentoCartao compra = saida.DaCompra(despesa.DataOcorrencia.AddDays(1), despesa.Descricao, (Parcela)(3, despesa.Parcelas.Count));
 
         UnitResult<Erro> result = VinculoTransacaoService.Vincular(transacoes.DoCartao(cartao, compra), despesa, despesaQueUsaATransacao: Maybe<Despesa>.None, cartoesDoUsuario: []);
 
@@ -361,7 +361,7 @@ public sealed class VinculoTransacaoServiceTests
         SaidaDeTeste saida,
         TextoObrigatorio outraDescricao)
     {
-        Lancamento compra = saida.DaCompra(despesa.DataOcorrencia, outraDescricao, (Parcela)(3, despesa.Parcelas.Count));
+        LancamentoCartao compra = saida.DaCompra(despesa.DataOcorrencia, outraDescricao, (Parcela)(3, despesa.Parcelas.Count));
 
         UnitResult<Erro> result = VinculoTransacaoService.Vincular(transacoes.DoCartao(cartao, compra), despesa, despesaQueUsaATransacao: Maybe<Despesa>.None, cartoesDoUsuario: []);
 
@@ -375,7 +375,7 @@ public sealed class VinculoTransacaoServiceTests
         TransacoesDeTeste transacoes,
         SaidaDeTeste saida)
     {
-        Lancamento compra = saida.DaCompra(despesa.DataOcorrencia, despesa.Descricao, (Parcela)(3, despesa.Parcelas.Count + 2));
+        LancamentoCartao compra = saida.DaCompra(despesa.DataOcorrencia, despesa.Descricao, (Parcela)(3, despesa.Parcelas.Count + 2));
 
         UnitResult<Erro> result = VinculoTransacaoService.Vincular(transacoes.DoCartao(cartao, compra), despesa, despesaQueUsaATransacao: Maybe<Despesa>.None, cartoesDoUsuario: []);
 
@@ -918,20 +918,20 @@ public sealed class VinculoTransacaoServiceTests
             _identidade = identidade;
         }
 
-        public Lancamento AVista() => Criar(_data, _valor, _descricao, parcela: null);
+        public LancamentoCartao AVista() => Criar(_data, _valor, _descricao, parcela: null);
 
-        public Lancamento ComParcela() => Criar(_data, _valor, _descricao, _parcelaDaCompra);
+        public LancamentoCartao ComParcela() => Criar(_data, _valor, _descricao, _parcelaDaCompra);
 
-        public Lancamento ComValor(decimal valor) => Criar(_data, valor, _descricao, parcela: null);
+        public LancamentoCartao ComValor(decimal valor) => Criar(_data, valor, _descricao, parcela: null);
 
-        public Lancamento DaCompra(DespesaParcelada despesa, int numero) =>
+        public LancamentoCartao DaCompra(DespesaParcelada despesa, int numero) =>
             Criar(despesa.DataOcorrencia, _valor, despesa.Descricao, (Parcela)(numero, despesa.Parcelas.Count));
 
         /// <summary>Uma parcela com a chave escolhida pelo teste, para os casos de outra compra.</summary>
-        public Lancamento DaCompra(DateOnly data, TextoObrigatorio descricao, Parcela parcela) => Criar(data, _valor, descricao, parcela);
+        public LancamentoCartao DaCompra(DateOnly data, TextoObrigatorio descricao, Parcela parcela) => Criar(data, _valor, descricao, parcela);
 
-        private Lancamento Criar(DateOnly data, decimal valor, TextoObrigatorio descricao, Parcela? parcela) =>
-            Lancamento.DoCartao(data, hora: null, valor, descricao, contraparte: null, parcela, categoriaBanco: null, _identidade);
+        private LancamentoCartao Criar(DateOnly data, decimal valor, TextoObrigatorio descricao, Parcela? parcela) =>
+            LancamentoCartao.Criar(data, hora: null, valor, descricao, contraparte: null, parcela, categoriaBanco: null, _identidade);
     }
 
     /// <summary>

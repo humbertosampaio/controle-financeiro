@@ -1,3 +1,4 @@
+using ControleFinanceiro.Domain.Cartoes;
 using ControleFinanceiro.Domain.Contas;
 using ControleFinanceiro.Domain.Shared.ValueObjects;
 using System.Globalization;
@@ -9,12 +10,12 @@ namespace ControleFinanceiro.Domain.Transacoes;
 /// <summary>
 /// Identifica o lançamento de um extrato entre importações, para reimportar um período sem duplicar
 /// transações. É o SHA-256, em hex minúsculo, do texto canônico
-/// <c>v1|&lt;COMPE&gt;|&lt;tipo de origem&gt;|&lt;id da origem&gt;|&lt;tipo da identidade&gt;|&lt;campos da identidade&gt;|&lt;ordinal&gt;</c>.
+/// <c>v1|&lt;COMPE&gt;|&lt;conta ou cartao&gt;|&lt;id da conta ou do cartão&gt;|&lt;tipo da identidade&gt;|&lt;campos da identidade&gt;|&lt;ordinal&gt;</c>.
 /// </summary>
 /// <remarks>
 /// <para>
 /// Os campos vêm da <see cref="IdentidadeLancamento"/>, que o adaptador de cada layout declara. O banco
-/// e o tipo de origem no prefixo identificam o layout, então layouts diferentes nunca produzem o mesmo
+/// e a origem (<c>conta</c> ou <c>cartao</c>) no prefixo identificam o layout, então layouts diferentes nunca produzem o mesmo
 /// texto. O tipo da identidade (<c>unica</c> ou <c>composta</c>) impede que um id externo e um campo de
 /// texto iguais produzam a mesma chave.
 /// </para>
@@ -33,6 +34,8 @@ public sealed class ChaveDeduplicacao : SimpleValueObject<string>
     public const int QuantidadeCaracteres = 64;
 
     private const char Separador = '|';
+    private const string RotuloConta = "conta";
+    private const string RotuloCartao = "cartao";
 
     private ChaveDeduplicacao(string value) : base(value)
     {
@@ -50,12 +53,26 @@ public sealed class ChaveDeduplicacao : SimpleValueObject<string>
 
     public static explicit operator ChaveDeduplicacao(string? chave) => Criar(chave).Value;
 
-    /// <summary>
-    /// Calcula as chaves do lote, na ordem das identidades, numerando as identidades iguais.
-    /// </summary>
-    public static IReadOnlyList<ChaveDeduplicacao> CalcularLote(
+    /// <summary>Calcula as chaves do lote do extrato da conta, na ordem das identidades, numerando as identidades iguais.</summary>
+    public static IReadOnlyList<ChaveDeduplicacao> CalcularLote(Banco banco, IdConta idConta, IEnumerable<IdentidadeLancamento> identidades) =>
+        CalcularLote(banco, RotuloConta, (Guid)idConta, identidades);
+
+    /// <summary>Calcula as chaves do lote da fatura do cartão, na ordem das identidades, numerando as identidades iguais.</summary>
+    public static IReadOnlyList<ChaveDeduplicacao> CalcularLote(Banco banco, IdCartao idCartao, IEnumerable<IdentidadeLancamento> identidades) =>
+        CalcularLote(banco, RotuloCartao, (Guid)idCartao, identidades);
+
+    /// <param name="ordinal">A posição do lançamento entre os de identidade igual no lote, a partir de 1.</param>
+    public static ChaveDeduplicacao Calcular(Banco banco, IdConta idConta, IdentidadeLancamento identidade, int ordinal) =>
+        Calcular(banco, RotuloConta, (Guid)idConta, identidade, ordinal);
+
+    /// <param name="ordinal">A posição do lançamento entre os de identidade igual no lote, a partir de 1.</param>
+    public static ChaveDeduplicacao Calcular(Banco banco, IdCartao idCartao, IdentidadeLancamento identidade, int ordinal) =>
+        Calcular(banco, RotuloCartao, (Guid)idCartao, identidade, ordinal);
+
+    private static List<ChaveDeduplicacao> CalcularLote(
         Banco banco,
-        OrigemTransacao origem,
+        string rotuloOrigem,
+        Guid idOrigem,
         IEnumerable<IdentidadeLancamento> identidades)
     {
         Dictionary<string, int> ocorrencias = [];
@@ -63,7 +80,7 @@ public sealed class ChaveDeduplicacao : SimpleValueObject<string>
 
         foreach (IdentidadeLancamento identidade in identidades)
         {
-            string identificacao = Identificacao(banco, origem, identidade);
+            string identificacao = Identificacao(banco, rotuloOrigem, idOrigem, identidade);
             int ordinal = ocorrencias.GetValueOrDefault(identificacao) + 1;
             ocorrencias[identificacao] = ordinal;
             chaves.Add(Hash(identificacao, ordinal));
@@ -72,11 +89,10 @@ public sealed class ChaveDeduplicacao : SimpleValueObject<string>
         return chaves;
     }
 
-    /// <param name="ordinal">A posição do lançamento entre os de identidade igual no lote, a partir de 1.</param>
-    public static ChaveDeduplicacao Calcular(Banco banco, OrigemTransacao origem, IdentidadeLancamento identidade, int ordinal)
+    private static ChaveDeduplicacao Calcular(Banco banco, string rotuloOrigem, Guid idOrigem, IdentidadeLancamento identidade, int ordinal)
     {
         ArgumentOutOfRangeException.ThrowIfLessThan(ordinal, 1);
-        return Hash(Identificacao(banco, origem, identidade), ordinal);
+        return Hash(Identificacao(banco, rotuloOrigem, idOrigem, identidade), ordinal);
     }
 
     private static ChaveDeduplicacao Hash(string identificacao, int ordinal)
@@ -85,17 +101,14 @@ public sealed class ChaveDeduplicacao : SimpleValueObject<string>
         return new ChaveDeduplicacao(Convert.ToHexStringLower(SHA256.HashData(Encoding.UTF8.GetBytes(texto))));
     }
 
-    private static string Identificacao(Banco banco, OrigemTransacao origem, IdentidadeLancamento identidade)
+    /// <param name="rotuloOrigem">O <see cref="RotuloConta"/> ou o <see cref="RotuloCartao"/>, que o texto canônico guarda.</param>
+    private static string Identificacao(Banco banco, string rotuloOrigem, Guid idOrigem, IdentidadeLancamento identidade)
     {
-        (string tipoOrigem, Guid idOrigem) = origem.IdConta is IdConta idConta
-            ? ("conta", (Guid)idConta)
-            : ("cartao", (Guid)origem.IdCartao!.Value);
-
         IEnumerable<string> campos =
         [
             Versao,
             banco,
-            tipoOrigem,
+            rotuloOrigem,
             idOrigem.ToString("D"),
             identidade.EhUnica ? "unica" : "composta",
             .. identidade.Campos,

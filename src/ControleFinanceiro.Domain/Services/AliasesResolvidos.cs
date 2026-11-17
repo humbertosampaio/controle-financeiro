@@ -5,7 +5,7 @@ using ControleFinanceiro.Domain.Shared.ValueObjects;
 namespace ControleFinanceiro.Domain.Services;
 
 /// <summary>
-/// O beneficiário e a categoria de uma compra da fatura, pelos aliases que a <see cref="LoteTransacoesFactory"/> já
+/// O beneficiário e a categoria de uma compra da fatura, pelos aliases que a <see cref="LoteTransacoesCartaoFactory"/> já
 /// conferiu. Serve às factories que criam despesas da fatura.
 /// </summary>
 internal static class AliasesResolvidos

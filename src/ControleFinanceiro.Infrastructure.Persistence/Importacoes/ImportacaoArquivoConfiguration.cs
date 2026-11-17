@@ -1,4 +1,3 @@
-using ControleFinanceiro.Domain.Cartoes;
 using ControleFinanceiro.Domain.Importacoes;
 using ControleFinanceiro.Domain.Usuarios;
 using Microsoft.EntityFrameworkCore;
@@ -6,18 +5,32 @@ using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace ControleFinanceiro.Infrastructure.Persistence.Importacoes;
 
+/// <summary>
+/// Uma tabela para toda a hierarquia (TPH), com o tipo na coluna <c>tipo</c>.
+/// </summary>
 internal sealed class ImportacaoArquivoConfiguration : IEntityTypeConfiguration<ImportacaoArquivo>
 {
+    internal const string TipoExtrato = "extrato";
+    internal const string TipoFatura = "fatura";
+
     public void Configure(EntityTypeBuilder<ImportacaoArquivo> entity)
     {
         // Os CHECK repetem no esquema o que o domínio já garante; a API é a única porta de entrada dos dados.
         entity.ToTable("importacoes", tabela =>
         {
-            tabela.HasCheckConstraint("CK_importacoes_origem", "num_nonnulls(id_conta, id_cartao) = 1");
+            tabela.HasCheckConstraint(
+                "CK_importacoes_origem",
+                $"(tipo = '{TipoExtrato}' AND id_conta IS NOT NULL AND id_cartao IS NULL) OR (tipo = '{TipoFatura}' AND id_cartao IS NOT NULL AND id_conta IS NULL)");
             tabela.HasCheckConstraint("CK_importacoes_periodo", "periodo_inicio <= periodo_fim");
             tabela.HasCheckConstraint("CK_importacoes_lidas", "lidas >= 0");
-            tabela.HasCheckConstraint("CK_importacoes_vencimento_fatura", "(id_cartao IS NULL) = (data_vencimento_fatura IS NULL)");
+            tabela.HasCheckConstraint(
+                "CK_importacoes_vencimento_fatura",
+                $"(tipo = '{TipoFatura}') = (data_vencimento_fatura IS NOT NULL)");
         });
+
+        entity.HasDiscriminator<string>("tipo")
+            .HasValue<ImportacaoExtrato>(TipoExtrato)
+            .HasValue<ImportacaoFatura>(TipoFatura);
 
         entity.HasKey(i => i.Id);
 
@@ -31,17 +44,6 @@ internal sealed class ImportacaoArquivoConfiguration : IEntityTypeConfiguration<
             .WithMany()
             .HasForeignKey(i => i.IdUsuario)
             .OnDelete(DeleteBehavior.Cascade);
-
-        // Complex type, e não owned, como a origem da transação. O EF não aceita complex type em FK nem em índice, então
-        // as FKs para contas e cartões e o índice com o fim do período vão por SQL na migration.
-        entity.ComplexProperty(i => i.Origem, origem =>
-        {
-            origem.Property(o => o.IdConta)
-                .HasColumnName("id_conta");
-
-            origem.Property(o => o.IdCartao)
-                .HasColumnName("id_cartao");
-        });
 
         entity.Property(i => i.Layout)
             .HasColumnName("layout");
@@ -60,9 +62,5 @@ internal sealed class ImportacaoArquivoConfiguration : IEntityTypeConfiguration<
 
         entity.Property(i => i.ImportadaEm)
             .HasColumnName("importada_em");
-
-        entity.Property(i => i.VencimentoFatura)
-            .HasColumnName("data_vencimento_fatura")
-            .HasConversion(vencimento => vencimento!.Value, data => (VencimentoFatura)data);
     }
 }

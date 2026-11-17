@@ -18,21 +18,24 @@ public sealed class CandidatosPagamentoFaturaAppService
 {
     private readonly IUsuarioAtual _usuarioAtual;
     private readonly ICartaoRepository _cartaoRepository;
-    private readonly IImportacaoRepository _importacaoRepository;
-    private readonly ITransacaoRepository _transacaoRepository;
+    private readonly IImportacaoFaturaRepository _importacaoFaturaRepository;
+    private readonly ITransacaoCartaoRepository _transacaoCartaoRepository;
+    private readonly ITransacaoContaRepository _transacaoContaRepository;
     private readonly IDespesaRepository _despesaRepository;
 
     public CandidatosPagamentoFaturaAppService(
         IUsuarioAtual usuarioAtual,
         ICartaoRepository cartaoRepository,
-        IImportacaoRepository importacaoRepository,
-        ITransacaoRepository transacaoRepository,
+        IImportacaoFaturaRepository importacaoFaturaRepository,
+        ITransacaoCartaoRepository transacaoCartaoRepository,
+        ITransacaoContaRepository transacaoContaRepository,
         IDespesaRepository despesaRepository)
     {
         _usuarioAtual = usuarioAtual;
         _cartaoRepository = cartaoRepository;
-        _importacaoRepository = importacaoRepository;
-        _transacaoRepository = transacaoRepository;
+        _importacaoFaturaRepository = importacaoFaturaRepository;
+        _transacaoCartaoRepository = transacaoCartaoRepository;
+        _transacaoContaRepository = transacaoContaRepository;
         _despesaRepository = despesaRepository;
     }
 
@@ -45,7 +48,7 @@ public sealed class CandidatosPagamentoFaturaAppService
         IReadOnlyList<CandidatoPagamentoFaturaDto> candidatos = await ApontarAsync(VencimentoFatura.MesesVencimentoFaturasPagaveisEm(extrato.Periodo), ct);
 
         return candidatos
-            .Where(candidato => candidato.Saida.Origem.IdConta == extrato.IdConta && extrato.Periodo.Contem(candidato.Saida.Data))
+            .Where(candidato => candidato.Saida.IdConta == extrato.IdConta && extrato.Periodo.Contem(candidato.Saida.Data))
             .ToList();
     }
 
@@ -66,15 +69,16 @@ public sealed class CandidatosPagamentoFaturaAppService
     private async Task<CandidatoPagamentoFaturaDto[]> ApontarAsync(IReadOnlyList<MesReferencia> mesesVencimento, CancellationToken ct)
     {
         IReadOnlyList<Cartao> cartoes = await _cartaoRepository.ListarAsync(ct);
-        List<ImportacaoArquivo> importacoes = [];
-        List<Transacao> transacoes = [];
+        List<ImportacaoFatura> importacoes = [];
+        List<TransacaoCartao> transacoesFaturas = [];
+        List<TransacaoConta> saidasConta = [];
         List<Despesa> despesasMeses = [];
 
         // As faturas dos meses vizinhos competem pelas mesmas saídas, e o par único confere também a elas.
         foreach (MesReferencia mes in CandidatosPagamentoFaturaService.MesesConferidos(mesesVencimento))
         {
-            importacoes.AddRange(await _importacaoRepository.ListarImportacoesFaturaEmAsync(mes, ct));
-            transacoes.AddRange(await _transacaoRepository.ListarTransacoesFaturaEmAsync(mes, ct));
+            importacoes.AddRange(await _importacaoFaturaRepository.ListarEmAsync(mes, ct));
+            transacoesFaturas.AddRange(await _transacaoCartaoRepository.ListarFaturaEmAsync(mes, ct));
             despesasMeses.AddRange(await _despesaRepository.ListarDoMesAsync(mes, ct));
         }
 
@@ -82,10 +86,10 @@ public sealed class CandidatosPagamentoFaturaAppService
             .SelectMany(VencimentoFatura.MesesPagamentoFaturasVencendoEm)
             .Distinct();
         foreach (MesReferencia mes in mesesSaidas)
-            transacoes.AddRange(await _transacaoRepository.ListarDoMesAsync(mes, ct));
+            saidasConta.AddRange(await _transacaoContaRepository.ListarDoMesAsync(mes, ct));
 
-        Dictionary<IdTransacao, Transacao> transacoesPorId = transacoes.DistinctBy(t => t.Id).ToDictionary(t => t.Id);
-        IdTransacao[] idsSaidas = transacoesPorId.Values.Where(t => t.EhSaidaConta).Select(t => t.Id).ToArray();
+        Dictionary<IdTransacao, TransacaoConta> saidasPorId = saidasConta.DistinctBy(t => t.Id).ToDictionary(t => t.Id);
+        IdTransacao[] idsSaidas = saidasPorId.Values.Where(t => t.EhSaida).Select(t => t.Id).ToArray();
         IReadOnlyList<Despesa> despesasPagasSaidas = await _despesaRepository.ListarPagasPorAsync(idsSaidas, ct);
 
         return CandidatosPagamentoFaturaService
@@ -94,10 +98,11 @@ public sealed class CandidatosPagamentoFaturaAppService
                 mesesVencimento,
                 cartoes,
                 importacoes.DistinctBy(i => i.Id).ToList(),
-                transacoesPorId.Values,
+                transacoesFaturas.DistinctBy(t => t.Id).ToList(),
+                saidasPorId.Values,
                 despesasMeses.DistinctBy(d => d.Id).ToList(),
                 despesasPagasSaidas)
-            .Select(candidato => new CandidatoPagamentoFaturaDto(candidato, transacoesPorId[candidato.IdSaida]))
+            .Select(candidato => new CandidatoPagamentoFaturaDto(candidato, saidasPorId[candidato.IdSaida]))
             .ToArray();
     }
 }

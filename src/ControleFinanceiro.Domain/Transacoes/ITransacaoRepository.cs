@@ -2,31 +2,15 @@ using ControleFinanceiro.Domain.Shared.ValueObjects;
 
 namespace ControleFinanceiro.Domain.Transacoes;
 
-/// <summary>Enxerga só as transações do usuário atual.</summary>
+/// <summary>
+/// Enxerga só as transações do usuário atual, das duas origens. Quem trabalha com uma origem só usa o
+/// <see cref="ITransacaoContaRepository"/> ou o <see cref="ITransacaoCartaoRepository"/>.
+/// </summary>
 public interface ITransacaoRepository
 {
+    /// <summary>A transação do id que chega de fora, de qualquer origem: quem a recebe resolve o tipo.</summary>
     Task<Maybe<Transacao>> ObterAsync(IdTransacao idTransacao, CancellationToken cancellationToken);
-
-    /// <summary>Todas as transações com parcela.</summary>
-    Task<IReadOnlyList<Transacao>> ListarParceladasAsync(CancellationToken cancellationToken);
-
-    /// <summary>
-    /// Adiciona só as transações cuja chave de deduplicação ainda não está no banco de dados.
-    /// </summary>
-    /// <returns>As transações adicionadas: as mesmas instâncias recebidas, na mesma ordem.</returns>
-    Task<IReadOnlyList<Transacao>> AdicionarNovasAsync(IEnumerable<Transacao> transacoes, CancellationToken cancellationToken);
-
-    /// <summary>
-    /// As transações da origem gravadas no banco de dados com a data dentro do período.
-    /// </summary>
-    Task<IReadOnlyList<Transacao>> ListarNoPeriodoAsync(OrigemTransacao origem, Periodo periodo, CancellationToken cancellationToken);
 
     /// <summary>As transações de todas as origens com a data dentro do mês, em ordem de data.</summary>
     Task<IReadOnlyList<Transacao>> ListarDoMesAsync(MesReferencia mesReferencia, CancellationToken cancellationToken);
-
-    /// <summary>
-    /// As transações de cartão trazidas pela fatura que vence no <paramref name="mesVencimento"/>, pelo
-    /// <see cref="Transacao.MesVencimentoFatura"/>, de qualquer cartão.
-    /// </summary>
-    Task<IReadOnlyList<Transacao>> ListarTransacoesFaturaEmAsync(MesReferencia mesVencimento, CancellationToken cancellationToken);
 }

@@ -7,7 +7,7 @@ using CsvHelper;
 using System.Globalization;
 using System.Text;
 using System.Text.RegularExpressions;
-using LancamentoLido = (ControleFinanceiro.Domain.Transacoes.Lancamento Lancamento, ControleFinanceiro.Domain.Cartoes.SufixoCartao? Sufixo, System.DateOnly Vencimento);
+using LancamentoLido = (ControleFinanceiro.Domain.Transacoes.LancamentoCartao Lancamento, ControleFinanceiro.Domain.Cartoes.SufixoCartao? Sufixo, System.DateOnly Vencimento);
 using TipoEValor = (ControleFinanceiro.Infrastructure.Importacao.MercadoPago.LeitorFaturaCartaoMercadoPago.TipoLancamento Tipo, ControleFinanceiro.Domain.Shared.ValueObjects.Reais Valor);
 using TipoValorSufixoEParcela = (ControleFinanceiro.Infrastructure.Importacao.MercadoPago.LeitorFaturaCartaoMercadoPago.TipoLancamento Tipo, ControleFinanceiro.Domain.Shared.ValueObjects.Reais Valor, ControleFinanceiro.Domain.Cartoes.SufixoCartao? Sufixo, ControleFinanceiro.Domain.Transacoes.Parcela? Parcela);
 using VencimentoELancamentos = (System.DateOnly Vencimento, System.Collections.Generic.IReadOnlyList<ControleFinanceiro.Domain.Importacoes.LancamentoFatura> Lancamentos);
@@ -34,7 +34,7 @@ namespace ControleFinanceiro.Infrastructure.Importacao.MercadoPago;
 /// <list type="bullet">
 /// <item>os valores vêm sem sinal: a compra na coluna da cobrança, e o crédito na do crédito, com a outra coluna vazia;</item>
 /// <item>o tipo <c>pagamento_debito_automatico_pos_fechamento</c> é o pagamento da fatura anterior: vem na coluna do
-/// crédito, sem final e sem parcela, e é lido pelo <see cref="Lancamento.PagamentoFaturaCartao"/>, com a marca de
+/// crédito, sem final e sem parcela, e é lido pelo <see cref="LancamentoCartao.PagamentoFaturaAnterior"/>, com a marca de
 /// pagamento da fatura;</item>
 /// <item>o pagamento vai para o menor final do arquivo, para que a escolha não dependa da ordem das linhas;</item>
 /// <item>o vencimento vem em toda linha, no formato <c>dd/MM/yyyy</c>, e é o mesmo em todas: a linha sem ele e o arquivo
@@ -254,11 +254,11 @@ public sealed partial class LeitorFaturaCartaoMercadoPago : ILeitorFatura
     }
 
     /// <summary>
-    /// O pagamento da fatura sai pelo <see cref="Lancamento.PagamentoFaturaCartao"/>, sem parcela. O valor nunca é negativo:
+    /// O pagamento da fatura sai pelo <see cref="LancamentoCartao.PagamentoFaturaAnterior"/>, sem parcela. O valor nunca é negativo:
     /// o tipo dele é crédito, que o <see cref="LerTipoEValor"/> devolve com o sinal da coluna, e o
-    /// <see cref="ValorFaturaConverter"/> recusa a coluna com sinal. Os demais tipos saem pelo <see cref="Lancamento.DoCartao"/>.
+    /// <see cref="ValorFaturaConverter"/> recusa a coluna com sinal. Os demais tipos saem pelo <see cref="LancamentoCartao.Criar"/>.
     /// </summary>
-    private static Lancamento Montar(
+    private static LancamentoCartao Montar(
         LinhaFaturaMercadoPago linha,
         string descricao,
         TipoValorSufixoEParcela tipoValorSufixoEParcela,
@@ -268,7 +268,7 @@ public sealed partial class LeitorFaturaCartaoMercadoPago : ILeitorFatura
 
         if (tipoValorSufixoEParcela.Tipo.PagamentoFatura)
         {
-            return Lancamento.PagamentoFaturaCartao(
+            return LancamentoCartao.PagamentoFaturaAnterior(
                 data,
                 hora: null,
                 (ReaisPositivo)tipoValorSufixoEParcela.Valor.Value,
@@ -278,7 +278,7 @@ public sealed partial class LeitorFaturaCartaoMercadoPago : ILeitorFatura
                 identidade);
         }
 
-        return Lancamento.DoCartao(
+        return LancamentoCartao.Criar(
             data,
             hora: null,
             tipoValorSufixoEParcela.Valor,

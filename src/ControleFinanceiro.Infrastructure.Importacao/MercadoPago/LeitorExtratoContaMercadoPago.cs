@@ -245,7 +245,7 @@ public sealed partial class LeitorExtratoContaMercadoPago : ILeitorExtratoContaI
     {
         (TextoObrigatorio descricaoSemContraparte, string? contraparte) = DescricaoEContraparte(descricao);
 
-        Lancamento lancamento = Lancamento.DaConta(
+        LancamentoConta lancamento = LancamentoConta.Criar(
             linha.Data, hora: null, linha.Valor, descricaoSemContraparte, contraparte, categoriaBanco: null, identidade);
 
         // O Mercado Pago não separa a data contábil: o saldo parcial já é o do dia da transação.

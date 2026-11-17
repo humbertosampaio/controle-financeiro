@@ -30,9 +30,9 @@ public sealed class DespesaAdiadaFactoryTests
         IdUsuario idUsuario,
         Cartao cartao,
         FaturaDeTeste fatura,
-        Lancamento compra)
+        LancamentoCartao compra)
     {
-        IReadOnlyList<Transacao> novas = fatura.Importar(cartao, compra);
+        IReadOnlyList<TransacaoCartao> novas = fatura.Importar(cartao, compra);
 
         IReadOnlyList<DespesaAdiada> result = fatura.CriarAdiadas([cartao], adiadasDoUsuario: [], novas);
 
@@ -57,11 +57,11 @@ public sealed class DespesaAdiadaFactoryTests
     public void CriarDaFatura_Quando_CompraDepoisDoFechamentoCadastrado_Deve_CriarNaFaturaDaImportacao(
         Cartao cartao,
         FaturaDeTeste fatura,
-        Lancamento compra)
+        LancamentoCartao compra)
     {
         cartao.AlterarCicloFatura((DiaVencimentoCartao)10, (DiaFechamentoCartao)3);
         VencimentoFatura vencimentoEmpurrado = (VencimentoFatura)new DateOnly(2026, 03, 13);
-        IReadOnlyList<Transacao> novas = fatura.Importar(cartao, vencimentoEmpurrado, Compra(compra.Identidade, data: new DateOnly(2026, 03, 04)));
+        IReadOnlyList<TransacaoCartao> novas = fatura.Importar(cartao, vencimentoEmpurrado, Compra(compra.Identidade, data: new DateOnly(2026, 03, 04)));
 
         IReadOnlyList<DespesaAdiada> result = fatura.CriarAdiadas([cartao], adiadasDoUsuario: [], vencimentoEmpurrado, novas);
 
@@ -71,9 +71,9 @@ public sealed class DespesaAdiadaFactoryTests
     }
 
     [Theory, CompraAutoData]
-    public void CriarDaFatura_Quando_TransacaoDeOutraFatura_Deve_LancarExcecao(Cartao cartao, FaturaDeTeste fatura, Lancamento compra)
+    public void CriarDaFatura_Quando_TransacaoDeOutraFatura_Deve_LancarExcecao(Cartao cartao, FaturaDeTeste fatura, LancamentoCartao compra)
     {
-        IReadOnlyList<Transacao> novas = fatura.Importar(cartao, compra);
+        IReadOnlyList<TransacaoCartao> novas = fatura.Importar(cartao, compra);
 
         Action act = () => fatura.CriarAdiadas([cartao], adiadasDoUsuario: [], (VencimentoFatura)new DateOnly(2026, 05, 25), novas);
 
@@ -81,9 +81,9 @@ public sealed class DespesaAdiadaFactoryTests
     }
 
     [Theory, CompraAutoData]
-    public void CriarDaFatura_Quando_CompraParcelada_Deve_NaoCriar(Cartao cartao, FaturaDeTeste fatura, Lancamento compra)
+    public void CriarDaFatura_Quando_CompraParcelada_Deve_NaoCriar(Cartao cartao, FaturaDeTeste fatura, LancamentoCartao compra)
     {
-        IReadOnlyList<Transacao> novas = fatura.Importar(cartao, Compra(compra.Identidade, parcela: (Parcela)(3, 10)));
+        IReadOnlyList<TransacaoCartao> novas = fatura.Importar(cartao, Compra(compra.Identidade, parcela: (Parcela)(3, 10)));
 
         IReadOnlyList<DespesaAdiada> result = fatura.CriarAdiadas([cartao], adiadasDoUsuario: [], novas);
 
@@ -94,9 +94,9 @@ public sealed class DespesaAdiadaFactoryTests
     [Theory]
     [InlineCompraAutoData(99.90)]
     [InlineCompraAutoData(0)]
-    public void CriarDaFatura_Quando_NaoEhSaida_Deve_NaoCriar(decimal valor, Cartao cartao, FaturaDeTeste fatura, Lancamento compra)
+    public void CriarDaFatura_Quando_NaoEhSaida_Deve_NaoCriar(decimal valor, Cartao cartao, FaturaDeTeste fatura, LancamentoCartao compra)
     {
-        IReadOnlyList<Transacao> novas = fatura.Importar(cartao, Compra(compra.Identidade, valor: valor));
+        IReadOnlyList<TransacaoCartao> novas = fatura.Importar(cartao, Compra(compra.Identidade, valor: valor));
 
         IReadOnlyList<DespesaAdiada> result = fatura.CriarAdiadas([cartao], adiadasDoUsuario: [], novas);
 
@@ -104,9 +104,9 @@ public sealed class DespesaAdiadaFactoryTests
     }
 
     [Theory, CompraAutoData]
-    public void CriarDaFatura_Quando_DescricaoNormalizaParaVazio_Deve_NaoCriar(Cartao cartao, FaturaDeTeste fatura, Lancamento compra)
+    public void CriarDaFatura_Quando_DescricaoNormalizaParaVazio_Deve_NaoCriar(Cartao cartao, FaturaDeTeste fatura, LancamentoCartao compra)
     {
-        IReadOnlyList<Transacao> novas = fatura.Importar(cartao, Compra(compra.Identidade, descricao: "\u0301"));
+        IReadOnlyList<TransacaoCartao> novas = fatura.Importar(cartao, Compra(compra.Identidade, descricao: "\u0301"));
 
         IReadOnlyList<DespesaAdiada> result = fatura.CriarAdiadas([cartao], adiadasDoUsuario: [], novas);
 
@@ -114,9 +114,9 @@ public sealed class DespesaAdiadaFactoryTests
     }
 
     [Theory, CompraAutoData]
-    public void CriarDaFatura_Quando_SemCategoriaDoBanco_Deve_CriarSemCategoria(Cartao cartao, FaturaDeTeste fatura, Lancamento compra)
+    public void CriarDaFatura_Quando_SemCategoriaDoBanco_Deve_CriarSemCategoria(Cartao cartao, FaturaDeTeste fatura, LancamentoCartao compra)
     {
-        IReadOnlyList<Transacao> novas = fatura.Importar(cartao, Compra(compra.Identidade, categoria: null));
+        IReadOnlyList<TransacaoCartao> novas = fatura.Importar(cartao, Compra(compra.Identidade, categoria: null));
 
         IReadOnlyList<DespesaAdiada> result = fatura.CriarAdiadas([cartao], adiadasDoUsuario: [], novas);
 
@@ -124,9 +124,9 @@ public sealed class DespesaAdiadaFactoryTests
     }
 
     [Theory, CompraAutoData]
-    public void CriarDaFatura_Quando_PrevisaoNoMesmoCartao_Deve_NaoCriarNemCobrarAPrevisao(Cartao cartao, FaturaDeTeste fatura, Lancamento compra)
+    public void CriarDaFatura_Quando_PrevisaoNoMesmoCartao_Deve_NaoCriarNemCobrarAPrevisao(Cartao cartao, FaturaDeTeste fatura, LancamentoCartao compra)
     {
-        IReadOnlyList<Transacao> novas = fatura.Importar(cartao, compra);
+        IReadOnlyList<TransacaoCartao> novas = fatura.Importar(cartao, compra);
         DespesaAdiada previsao = fatura.PrevisaoDe(cartao, compra);
 
         IReadOnlyList<DespesaAdiada> result = fatura.CriarAdiadas([cartao], [previsao], novas);
@@ -140,10 +140,10 @@ public sealed class DespesaAdiadaFactoryTests
         Cartao cartao,
         SufixoCartao outroSufixo,
         FaturaDeTeste fatura,
-        Lancamento compra)
+        LancamentoCartao compra)
     {
         Cartao outroFinal = cartao.OutroFinal(outroSufixo);
-        IReadOnlyList<Transacao> novas = fatura.Importar(cartao, compra);
+        IReadOnlyList<TransacaoCartao> novas = fatura.Importar(cartao, compra);
 
         IReadOnlyList<DespesaAdiada> result = fatura.CriarAdiadas([cartao, outroFinal], [fatura.PrevisaoDe(outroFinal, compra)], novas);
 
@@ -151,10 +151,10 @@ public sealed class DespesaAdiadaFactoryTests
     }
 
     [Theory, CompraAutoData]
-    public void CriarDaFatura_Quando_PrevisaoEmCartaoDeOutraFatura_Deve_Criar(Cartao cartao, FaturaDeTeste fatura, Lancamento compra)
+    public void CriarDaFatura_Quando_PrevisaoEmCartaoDeOutraFatura_Deve_Criar(Cartao cartao, FaturaDeTeste fatura, LancamentoCartao compra)
     {
         Cartao outroBanco = cartao.EmOutroBanco();
-        IReadOnlyList<Transacao> novas = fatura.Importar(cartao, compra);
+        IReadOnlyList<TransacaoCartao> novas = fatura.Importar(cartao, compra);
 
         IReadOnlyList<DespesaAdiada> result = fatura.CriarAdiadas([cartao, outroBanco], [fatura.PrevisaoDe(outroBanco, compra)], novas);
 
@@ -162,9 +162,9 @@ public sealed class DespesaAdiadaFactoryTests
     }
 
     [Theory, CompraAutoData]
-    public void CriarDaFatura_Quando_PrevisaoDeOutroBeneficiario_Deve_Criar(Cartao cartao, FaturaDeTeste fatura, Lancamento compra)
+    public void CriarDaFatura_Quando_PrevisaoDeOutroBeneficiario_Deve_Criar(Cartao cartao, FaturaDeTeste fatura, LancamentoCartao compra)
     {
-        IReadOnlyList<Transacao> novas = fatura.Importar(cartao, Compra(compra.Identidade, descricao: "OUTRA LOJA"));
+        IReadOnlyList<TransacaoCartao> novas = fatura.Importar(cartao, Compra(compra.Identidade, descricao: "OUTRA LOJA"));
 
         IReadOnlyList<DespesaAdiada> result = fatura.CriarAdiadas([cartao], [fatura.PrevisaoDe(cartao, compra)], novas);
 
@@ -172,9 +172,9 @@ public sealed class DespesaAdiadaFactoryTests
     }
 
     [Theory, CompraAutoData]
-    public void CriarDaFatura_Quando_PrevisaoDeOutroMes_Deve_Criar(Cartao cartao, FaturaDeTeste fatura, Lancamento compra)
+    public void CriarDaFatura_Quando_PrevisaoDeOutroMes_Deve_Criar(Cartao cartao, FaturaDeTeste fatura, LancamentoCartao compra)
     {
-        IReadOnlyList<Transacao> novas = fatura.Importar(cartao, compra);
+        IReadOnlyList<TransacaoCartao> novas = fatura.Importar(cartao, compra);
         MesReferencia mesSeguinte = _vencimento.Mes.Posterior();
 
         IReadOnlyList<DespesaAdiada> result = fatura.CriarAdiadas([cartao], [fatura.PrevisaoDe(cartao, compra, mesSeguinte)], novas);
@@ -183,10 +183,10 @@ public sealed class DespesaAdiadaFactoryTests
     }
 
     [Theory, CompraAutoData]
-    public void CriarDaFatura_Quando_PrevisaoJaCobrada_Deve_Criar(Cartao cartao, FaturaDeTeste fatura, Lancamento compra, Lancamento outraCompra)
+    public void CriarDaFatura_Quando_PrevisaoJaCobrada_Deve_Criar(Cartao cartao, FaturaDeTeste fatura, LancamentoCartao compra, LancamentoCartao outraCompra)
     {
         DespesaAdiada jaCobrada = fatura.CriarAdiadas([cartao], adiadasDoUsuario: [], fatura.Importar(cartao, compra)).Single();
-        IReadOnlyList<Transacao> novas = fatura.Importar(cartao, outraCompra);
+        IReadOnlyList<TransacaoCartao> novas = fatura.Importar(cartao, outraCompra);
 
         IReadOnlyList<DespesaAdiada> result = fatura.CriarAdiadas([cartao], [jaCobrada], novas);
 
@@ -197,10 +197,10 @@ public sealed class DespesaAdiadaFactoryTests
     public void CriarDaFatura_Quando_DuasComprasEUmaPrevisao_Deve_CriarSoADaSegunda(
         Cartao cartao,
         FaturaDeTeste fatura,
-        Lancamento compra,
-        Lancamento outraCompra)
+        LancamentoCartao compra,
+        LancamentoCartao outraCompra)
     {
-        IReadOnlyList<Transacao> novas = fatura.Importar(cartao, compra, outraCompra);
+        IReadOnlyList<TransacaoCartao> novas = fatura.Importar(cartao, compra, outraCompra);
 
         IReadOnlyList<DespesaAdiada> result = fatura.CriarAdiadas([cartao], [fatura.PrevisaoDe(cartao, compra)], novas);
 
@@ -212,11 +212,11 @@ public sealed class DespesaAdiadaFactoryTests
         Cartao cartao,
         SufixoCartao outroSufixo,
         FaturaDeTeste fatura,
-        Lancamento compra,
-        Lancamento outraCompra)
+        LancamentoCartao compra,
+        LancamentoCartao outraCompra)
     {
         Cartao outroFinal = cartao.OutroFinal(outroSufixo);
-        IReadOnlyList<Transacao> novas = fatura.Importar(cartao, compra)
+        IReadOnlyList<TransacaoCartao> novas = fatura.Importar(cartao, compra)
             .Concat(fatura.Importar(outroFinal, outraCompra))
             .ToArray();
 
@@ -229,10 +229,10 @@ public sealed class DespesaAdiadaFactoryTests
     public void CriarDaFatura_Quando_DuasComprasEDuasPrevisoes_Deve_NaoCriar(
         Cartao cartao,
         FaturaDeTeste fatura,
-        Lancamento compra,
-        Lancamento outraCompra)
+        LancamentoCartao compra,
+        LancamentoCartao outraCompra)
     {
-        IReadOnlyList<Transacao> novas = fatura.Importar(cartao, compra, outraCompra);
+        IReadOnlyList<TransacaoCartao> novas = fatura.Importar(cartao, compra, outraCompra);
 
         IReadOnlyList<DespesaAdiada> result = fatura.CriarAdiadas(
             [cartao],
@@ -243,19 +243,9 @@ public sealed class DespesaAdiadaFactoryTests
     }
 
     [Theory, CompraAutoData]
-    public void CriarDaFatura_Quando_TransacaoDaConta_Deve_LancarExcecao(TransacoesDeTeste transacoes, Cartao cartao, FaturaDeTeste fatura, Lancamento compra)
+    public void CriarDaFatura_Quando_CartaoDaCompraForaDaLista_Deve_LancarExcecao(Cartao cartao, FaturaDeTeste fatura, LancamentoCartao compra)
     {
-        Transacao daConta = transacoes.DaConta(compra.SemCategoria());
-
-        Action act = () => fatura.CriarAdiadas([cartao], adiadasDoUsuario: [], [daConta]);
-
-        act.Should().ThrowExactly<ArgumentException>().WithParameterName("transacoesNovas");
-    }
-
-    [Theory, CompraAutoData]
-    public void CriarDaFatura_Quando_CartaoDaCompraForaDaLista_Deve_LancarExcecao(Cartao cartao, FaturaDeTeste fatura, Lancamento compra)
-    {
-        IReadOnlyList<Transacao> novas = fatura.Importar(cartao, compra);
+        IReadOnlyList<TransacaoCartao> novas = fatura.Importar(cartao, compra);
 
         Action act = () => fatura.CriarAdiadas(cartoesDoUsuario: [], adiadasDoUsuario: [], novas);
 
@@ -263,9 +253,9 @@ public sealed class DespesaAdiadaFactoryTests
     }
 
     [Theory, CompraAutoData]
-    public void CriarDaFatura_Quando_BeneficiarioNaoEncontrado_Deve_LancarExcecao(IdUsuario idUsuario, Cartao cartao, FaturaDeTeste fatura, Lancamento compra)
+    public void CriarDaFatura_Quando_BeneficiarioNaoEncontrado_Deve_LancarExcecao(IdUsuario idUsuario, Cartao cartao, FaturaDeTeste fatura, LancamentoCartao compra)
     {
-        IReadOnlyList<Transacao> novas = fatura.Importar(cartao, compra);
+        IReadOnlyList<TransacaoCartao> novas = fatura.Importar(cartao, compra);
 
         Action act = () => DespesaAdiadaFactory.CriarDaFatura(
             idUsuario,
@@ -280,9 +270,9 @@ public sealed class DespesaAdiadaFactoryTests
     }
 
     [Theory, CompraAutoData]
-    public void CriarDaFatura_Quando_CategoriaNaoEncontrada_Deve_LancarExcecao(IdUsuario idUsuario, Cartao cartao, FaturaDeTeste fatura, Lancamento compra)
+    public void CriarDaFatura_Quando_CategoriaNaoEncontrada_Deve_LancarExcecao(IdUsuario idUsuario, Cartao cartao, FaturaDeTeste fatura, LancamentoCartao compra)
     {
-        IReadOnlyList<Transacao> novas = fatura.Importar(cartao, compra);
+        IReadOnlyList<TransacaoCartao> novas = fatura.Importar(cartao, compra);
 
         Action act = () => DespesaAdiadaFactory.CriarDaFatura(
             idUsuario,
@@ -297,9 +287,9 @@ public sealed class DespesaAdiadaFactoryTests
     }
 
     [Theory, CompraAutoData]
-    public void CriarDaFatura_Quando_BeneficiarioDeOutroUsuario_Deve_LancarExcecao(Cartao cartao, FaturaDeTeste fatura, Lancamento compra)
+    public void CriarDaFatura_Quando_BeneficiarioDeOutroUsuario_Deve_LancarExcecao(Cartao cartao, FaturaDeTeste fatura, LancamentoCartao compra)
     {
-        IReadOnlyList<Transacao> novas = fatura.Importar(cartao, compra);
+        IReadOnlyList<TransacaoCartao> novas = fatura.Importar(cartao, compra);
 
         Action act = () => DespesaAdiadaFactory.CriarDaFatura(
             cartao.IdUsuario,
@@ -314,9 +304,9 @@ public sealed class DespesaAdiadaFactoryTests
     }
 
     [Theory, CompraAutoData]
-    public void CriarDaFatura_Quando_CategoriaDeOutroUsuario_Deve_LancarExcecao(Cartao cartao, FaturaDeTeste fatura, Lancamento compra)
+    public void CriarDaFatura_Quando_CategoriaDeOutroUsuario_Deve_LancarExcecao(Cartao cartao, FaturaDeTeste fatura, LancamentoCartao compra)
     {
-        IReadOnlyList<Transacao> novas = fatura.Importar(cartao, compra);
+        IReadOnlyList<TransacaoCartao> novas = fatura.Importar(cartao, compra);
 
         Action act = () => DespesaAdiadaFactory.CriarDaFatura(
             cartao.IdUsuario,
@@ -358,9 +348,9 @@ public sealed class DespesaAdiadaFactoryTests
     }
 
     [Theory, CompraAutoData]
-    public void CriarDaFatura_Quando_TransacaoDeOutroUsuario_Deve_LancarExcecao(Cartao cartao, FaturaDeTeste fatura, Lancamento compra)
+    public void CriarDaFatura_Quando_TransacaoDeOutroUsuario_Deve_LancarExcecao(Cartao cartao, FaturaDeTeste fatura, LancamentoCartao compra)
     {
-        IReadOnlyList<Transacao> novas = fatura.Importar(cartao, compra);
+        IReadOnlyList<TransacaoCartao> novas = fatura.Importar(cartao, compra);
 
         Action act = () => DespesaAdiadaFactory.CriarDaFatura(
             IdUsuario.FromNewVersion7Guid(),
@@ -375,7 +365,7 @@ public sealed class DespesaAdiadaFactoryTests
     }
 
     /// <param name="parcela">Nula na compra à vista.</param>
-    private static Lancamento Compra(
+    private static LancamentoCartao Compra(
         IdentidadeLancamento identidade,
         Parcela? parcela = null,
         decimal valor = -99.90m,
@@ -383,7 +373,7 @@ public sealed class DespesaAdiadaFactoryTests
         string descricao = DescricaoCompra,
         string? categoria = CategoriaCompra)
     {
-        return Lancamento.DoCartao(
+        return LancamentoCartao.Criar(
             data ?? _dataCompra,
             hora: null,
             valor,
@@ -395,7 +385,7 @@ public sealed class DespesaAdiadaFactoryTests
     }
 
     /// <summary>
-    /// A fatura importada no teste: grava as compras de cada cartão pela <see cref="LoteTransacoesFactory"/> e guarda os
+    /// A fatura importada no teste: grava as compras de cada cartão pela <see cref="LoteTransacoesCartaoFactory"/> e guarda os
     /// beneficiários e as categorias delas, os mesmos que a <see cref="DespesaAdiadaFactory"/> e a previsão recebem.
     /// </summary>
     public sealed class FaturaDeTeste
@@ -419,23 +409,23 @@ public sealed class DespesaAdiadaFactoryTests
         }
 
         /// <summary>As compras importadas numa fatura que vence em <see cref="_vencimento"/>.</summary>
-        public IReadOnlyList<Transacao> Importar(Cartao cartao, params Lancamento[] compras) => Importar(cartao, _vencimento, compras);
+        public IReadOnlyList<TransacaoCartao> Importar(Cartao cartao, params LancamentoCartao[] compras) => Importar(cartao, _vencimento, compras);
 
-        public IReadOnlyList<Transacao> Importar(Cartao cartao, VencimentoFatura vencimento, params Lancamento[] compras)
+        public IReadOnlyList<TransacaoCartao> Importar(Cartao cartao, VencimentoFatura vencimento, params LancamentoCartao[] compras)
         {
             Resolver(compras);
-            ImportacaoArquivo importacao = ImportacaoArquivoFactory
+            ImportacaoFatura importacao = ImportacaoArquivoFactory
                 .Registrar(cartao, cartoesUsuario: [cartao], importacoesFaturaMes: [], _layout, _periodo, vencimento, compras.Length, _importadaEm)
                 .Value;
 
-            return LoteTransacoesFactory.Criar(_idUsuario, _beneficiarios, _categorias, cartao, importacao, compras).Value;
+            return LoteTransacoesCartaoFactory.Criar(_idUsuario, _beneficiarios, _categorias, cartao, importacao, compras).Value;
         }
 
         /// <summary>As adiadas da fatura que vence em <see cref="_vencimento"/>.</summary>
         public IReadOnlyList<DespesaAdiada> CriarAdiadas(
             IReadOnlyCollection<Cartao> cartoesDoUsuario,
             IReadOnlyCollection<DespesaAdiada> adiadasDoUsuario,
-            IReadOnlyList<Transacao> transacoesNovas)
+            IReadOnlyList<TransacaoCartao> transacoesNovas)
         {
             return CriarAdiadas(cartoesDoUsuario, adiadasDoUsuario, _vencimento, transacoesNovas);
         }
@@ -444,7 +434,7 @@ public sealed class DespesaAdiadaFactoryTests
             IReadOnlyCollection<Cartao> cartoesDoUsuario,
             IReadOnlyCollection<DespesaAdiada> adiadasDoUsuario,
             VencimentoFatura vencimento,
-            IReadOnlyList<Transacao> transacoesNovas)
+            IReadOnlyList<TransacaoCartao> transacoesNovas)
         {
             return DespesaAdiadaFactory.CriarDaFatura(
                 _idUsuario,
@@ -457,10 +447,10 @@ public sealed class DespesaAdiadaFactoryTests
         }
 
         /// <summary>A adiada que prevê a compra no cartão, na fatura que vence em <see cref="_vencimento"/>.</summary>
-        public DespesaAdiada PrevisaoDe(Cartao cartao, Lancamento compra) => PrevisaoDe(cartao, compra, _vencimento.Mes);
+        public DespesaAdiada PrevisaoDe(Cartao cartao, LancamentoCartao compra) => PrevisaoDe(cartao, compra, _vencimento.Mes);
 
         /// <summary>A adiada que prevê a compra no cartão: mesmo beneficiário, no mês de vencimento pedido, sem cobrança.</summary>
-        public DespesaAdiada PrevisaoDe(Cartao cartao, Lancamento compra, MesReferencia mesVencimento)
+        public DespesaAdiada PrevisaoDe(Cartao cartao, LancamentoCartao compra, MesReferencia mesVencimento)
         {
             Resolver([compra]);
             Beneficiario beneficiario = _beneficiarios.Single(b => b.PossuiAlias(compra.AliasTextoBeneficiario!));
@@ -477,20 +467,20 @@ public sealed class DespesaAdiadaFactoryTests
                 idDespesaRecorrente: null);
         }
 
-        private void Resolver(IReadOnlyCollection<Lancamento> compras)
+        private void Resolver(IReadOnlyCollection<LancamentoCartao> compras)
         {
             _beneficiarios.AddRange(BeneficiarioFactory.Resolver(_idUsuario, _beneficiarios, Novos(compras)).Value);
             _categorias.AddRange(CategoriaDespesaFactory.Resolver(_idUsuario, _categorias, NovasCategorias(compras)).Value);
         }
 
-        private IEnumerable<BeneficiarioNovo> Novos(IReadOnlyCollection<Lancamento> compras)
+        private IEnumerable<BeneficiarioNovo> Novos(IReadOnlyCollection<LancamentoCartao> compras)
         {
             return AliasesBeneficiarioPendentes
                 .Listar(_idUsuario, _beneficiarios, compras)
                 .Select(alias => new BeneficiarioNovo((TextoObrigatorio)alias.TextoOriginal, alias));
         }
 
-        private IEnumerable<CategoriaNova> NovasCategorias(IReadOnlyCollection<Lancamento> compras)
+        private IEnumerable<CategoriaNova> NovasCategorias(IReadOnlyCollection<LancamentoCartao> compras)
         {
             return AliasesCategoriaPendentes
                 .Listar(_idUsuario, _categorias, compras)
