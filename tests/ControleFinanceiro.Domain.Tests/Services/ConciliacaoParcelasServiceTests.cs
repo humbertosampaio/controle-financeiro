@@ -313,9 +313,9 @@ public sealed class ConciliacaoParcelasServiceTests
         }
 
         /// <summary>Por padrão, a parcela 3 de 10: a despesa criada dela tem parcelas pagas antes e pendentes depois.</summary>
-        public Lancamento Parcela(int numero = 3, int total = 10, decimal valor = -ValorMenor, DateOnly? data = null, TextoObrigatorio? descricao = null)
+        public LancamentoCartao Parcela(int numero = 3, int total = 10, decimal valor = -ValorMenor, DateOnly? data = null, TextoObrigatorio? descricao = null)
         {
-            return Lancamento.DoCartao(
+            return LancamentoCartao.Criar(
                 data ?? _data,
                 hora: null,
                 valor,
@@ -327,7 +327,7 @@ public sealed class ConciliacaoParcelasServiceTests
         }
 
         /// <summary>Uma despesa por lançamento: repetir a mesma chave cria compras gêmeas.</summary>
-        public IReadOnlyList<DespesaParcelada> Despesas(params Lancamento[] lancamentos)
+        public IReadOnlyList<DespesaParcelada> Despesas(params LancamentoCartao[] lancamentos)
         {
             IReadOnlyList<Beneficiario> beneficiarios = BeneficiariosResolvidos.Dos(_cartao.IdUsuario, lancamentos);
             VencimentoFatura vencimento = _cartao.VencimentoNoMes(lancamentos[0].PrimeiroMesVencimentoPossivel.Posterior());
@@ -347,7 +347,7 @@ public sealed class ConciliacaoParcelasServiceTests
             return (gemeas[0], gemeas[1]);
         }
 
-        public Transacao Transacao(Lancamento lancamento) => _transacoes.DoCartao(_cartao, lancamento);
+        public Transacao Transacao(LancamentoCartao lancamento) => _transacoes.DoCartao(_cartao, lancamento);
 
         public ConciliacaoParcelas Conciliar(IReadOnlyCollection<DespesaParcelada> despesas, IReadOnlyCollection<Transacao> transacoes) =>
             ConciliacaoParcelasService.Conciliar(_cartao.IdUsuario, despesas, transacoes);

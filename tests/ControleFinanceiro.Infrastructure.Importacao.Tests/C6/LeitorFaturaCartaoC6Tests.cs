@@ -87,7 +87,7 @@ public sealed class LeitorFaturaCartaoC6Tests
     {
         Fatura fatura = await LerFixtureAsync();
 
-        Lancamento parcelada = fatura.Lancamentos[2].Lancamento;
+        LancamentoCartao parcelada = fatura.Lancamentos[2].Lancamento;
         parcelada.Parcela.Should().Be((Parcela)(9, 10));
         parcelada.Data.Should().Be(new DateOnly(2025, 7, 15));
     }
@@ -137,7 +137,7 @@ public sealed class LeitorFaturaCartaoC6Tests
     {
         Fatura fatura = await LerFixtureAsync();
 
-        fatura.Lancamentos[LinhaPagamento - 2].Lancamento.EhPagamentoFatura.Should().BeTrue();
+        fatura.Lancamentos[LinhaPagamento - 2].Lancamento.EhPagamentoFaturaAnterior.Should().BeTrue();
     }
 
     [Fact]
@@ -145,7 +145,7 @@ public sealed class LeitorFaturaCartaoC6Tests
     {
         Fatura fatura = await LerFixtureAsync();
 
-        fatura.Lancamentos[LinhaEstorno - 2].Lancamento.EhPagamentoFatura.Should().BeFalse();
+        fatura.Lancamentos[LinhaEstorno - 2].Lancamento.EhPagamentoFaturaAnterior.Should().BeFalse();
     }
 
     [Fact]
@@ -153,7 +153,7 @@ public sealed class LeitorFaturaCartaoC6Tests
     {
         Fatura fatura = await LerFixtureAsync();
 
-        fatura.Lancamentos.Where(l => l.Lancamento.EhSaida).Should().AllSatisfy(l => l.Lancamento.EhPagamentoFatura.Should().BeFalse());
+        fatura.Lancamentos.Where(l => l.Lancamento.EhSaida).Should().AllSatisfy(l => l.Lancamento.EhPagamentoFaturaAnterior.Should().BeFalse());
     }
 
     [Fact]
@@ -163,7 +163,7 @@ public sealed class LeitorFaturaCartaoC6Tests
 
         Fatura fatura = (await _leitor.LerAsync(arquivo, _vencimento, CancellationToken.None)).Value;
 
-        fatura.Lancamentos[LinhaEstorno - 2].Lancamento.EhPagamentoFatura.Should().BeFalse();
+        fatura.Lancamentos[LinhaEstorno - 2].Lancamento.EhPagamentoFaturaAnterior.Should().BeFalse();
     }
 
     [Fact]
@@ -173,7 +173,7 @@ public sealed class LeitorFaturaCartaoC6Tests
 
         Fatura fatura = (await _leitor.LerAsync(arquivo, _vencimento, CancellationToken.None)).Value;
 
-        fatura.Lancamentos[LinhaPagamento - 2].Lancamento.EhPagamentoFatura.Should().BeTrue();
+        fatura.Lancamentos[LinhaPagamento - 2].Lancamento.EhPagamentoFaturaAnterior.Should().BeTrue();
     }
 
     [Fact]
@@ -183,7 +183,7 @@ public sealed class LeitorFaturaCartaoC6Tests
 
         Fatura fatura = (await _leitor.LerAsync(arquivo, _vencimento, CancellationToken.None)).Value;
 
-        fatura.Lancamentos[LinhaPagamento - 2].Lancamento.EhPagamentoFatura.Should().BeFalse();
+        fatura.Lancamentos[LinhaPagamento - 2].Lancamento.EhPagamentoFaturaAnterior.Should().BeFalse();
     }
 
     [Fact]
@@ -191,7 +191,7 @@ public sealed class LeitorFaturaCartaoC6Tests
     {
         Fatura fatura = await LerFixtureAsync();
 
-        Lancamento comEspacos = fatura.Lancamentos[1].Lancamento;
+        LancamentoCartao comEspacos = fatura.Lancamentos[1].Lancamento;
         comEspacos.Descricao.Value.Should().Be("PADARIA EXEMPLO");
         fatura.Lancamentos.Should().AllSatisfy(l =>
         {
@@ -222,8 +222,8 @@ public sealed class LeitorFaturaCartaoC6Tests
     {
         Fatura fatura = await LerFixtureAsync();
 
-        Lancamento primeira = fatura.Lancamentos[6].Lancamento;
-        Lancamento segunda = fatura.Lancamentos[7].Lancamento;
+        LancamentoCartao primeira = fatura.Lancamentos[6].Lancamento;
+        LancamentoCartao segunda = fatura.Lancamentos[7].Lancamento;
         primeira.Should().NotBeSameAs(segunda);
         primeira.Identidade.Should().Be(segunda.Identidade);
     }
@@ -235,7 +235,7 @@ public sealed class LeitorFaturaCartaoC6Tests
 
         fatura.Lancamentos.Should().AllSatisfy(l =>
         {
-            Lancamento lancamento = l.Lancamento;
+            LancamentoCartao lancamento = l.Lancamento;
             string?[] textos = [lancamento.Descricao, lancamento.Contraparte, lancamento.CategoriaBanco, .. lancamento.Identidade.Campos];
             textos.Should().NotContain(t => t != null && t.Contains("FULANA", StringComparison.OrdinalIgnoreCase));
         });

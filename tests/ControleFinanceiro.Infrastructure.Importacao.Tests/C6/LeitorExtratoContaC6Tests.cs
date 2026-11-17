@@ -106,8 +106,8 @@ public sealed class LeitorExtratoContaC6Tests
     {
         Extrato extrato = await LerFixtureAsync();
 
-        Lancamento primeira = extrato.Lancamentos[3];
-        Lancamento segunda = extrato.Lancamentos[4];
+        LancamentoConta primeira = extrato.Lancamentos[3];
+        LancamentoConta segunda = extrato.Lancamentos[4];
         primeira.Should().NotBeSameAs(segunda);
         primeira.Identidade.Should().Be(segunda.Identidade);
     }
@@ -124,7 +124,7 @@ public sealed class LeitorExtratoContaC6Tests
     {
         Extrato extrato = await LerFixtureAsync();
 
-        Lancamento lancamento = extrato.Lancamentos[posicao];
+        LancamentoConta lancamento = extrato.Lancamentos[posicao];
         lancamento.Descricao.Value.Should().Be(descricao);
         lancamento.Contraparte.Should().Be(contraparte);
     }

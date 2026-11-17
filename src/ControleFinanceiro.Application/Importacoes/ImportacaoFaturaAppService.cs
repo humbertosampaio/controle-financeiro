@@ -185,7 +185,7 @@ public sealed class ImportacaoFaturaAppService
         Cartao cartao,
         DateTimeOffset importadaEm)
     {
-        IReadOnlyList<Lancamento> lancamentos = fatura.LancamentosCartao(cartao.Sufixo);
+        IReadOnlyList<LancamentoCartao> lancamentos = fatura.LancamentosCartao(cartao.Sufixo);
 
         return ImportacaoArquivoFactory
             .Registrar(

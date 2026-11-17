@@ -45,7 +45,7 @@ public sealed class PendenciasImportacaoAppService
         IReadOnlyList<Cartao> cartoes = await _cartaoRepository.ListarAsync(ct);
         IReadOnlyList<Beneficiario> beneficiarios = await _beneficiarioRepository.ListarAsync(ct);
         IReadOnlyList<CategoriaDespesa> categorias = await _categoriaDespesaRepository.ListarAsync(ct);
-        IReadOnlyList<Lancamento> lancamentos = fatura.Lancamentos.Select(l => l.Lancamento).ToArray();
+        LancamentoCartao[] lancamentos = fatura.Lancamentos.Select(l => l.Lancamento).ToArray();
 
         return new PendenciasFaturaDto(
             fatura.Sufixos

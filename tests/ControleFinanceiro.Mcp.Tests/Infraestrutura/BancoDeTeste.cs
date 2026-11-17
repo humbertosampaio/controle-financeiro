@@ -43,7 +43,7 @@ internal sealed class BancoDeTeste
     public async Task<IReadOnlyList<Transacao>> GravarExtratoAsync(
         ContaBancaria conta,
         ImportacaoExtrato importacao,
-        IReadOnlyList<Lancamento> lancamentos)
+        IReadOnlyList<LancamentoConta> lancamentos)
     {
         IReadOnlyList<Beneficiario> beneficiarios = BeneficiariosResolvidos.Dos(conta.IdUsuario, lancamentos);
         IReadOnlyList<Transacao> transacoes = LoteTransacoesContaFactory
@@ -76,7 +76,7 @@ internal sealed class BancoDeTeste
     public async Task<IReadOnlyList<Transacao>> GravarFaturaAsync(
         Cartao cartao,
         ImportacaoFatura importacao,
-        IReadOnlyList<Lancamento> lancamentos)
+        IReadOnlyList<LancamentoCartao> lancamentos)
     {
         IReadOnlyList<Beneficiario> beneficiarios = BeneficiariosResolvidos.Dos(cartao.IdUsuario, lancamentos);
         IReadOnlyList<Transacao> transacoes = LoteTransacoesCartaoFactory

@@ -27,7 +27,7 @@ public sealed class ExtratoGenerator : ISpecimenBuilder
                 context.Create<TipoConta>(),
                 context.Create<SufixoConta>(),
                 periodo,
-                context.CreateMany<Lancamento>().Select(l => LancamentoContabilizado.Criar(l, periodo.Inicio)),
+                context.CreateMany<LancamentoConta>().Select(l => LancamentoContabilizado.Criar(l, periodo.Inicio)),
                 [SaldoDiario.Criar(periodo.Inicio, context.Create<Reais>())])
             .Value;
     }

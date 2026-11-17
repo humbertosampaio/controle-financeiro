@@ -16,7 +16,7 @@ namespace ControleFinanceiro.SaidaModelo.Tests.Tipos;
 public sealed class VinculoParaModeloTests
 {
     [Theory, UsuarioUnicoAutoData]
-    public void Serializar_Deve_TerSomenteOsCamposPermitidos(DespesaSimples despesa, TransacoesDeTeste transacoes, Lancamento lancamento)
+    public void Serializar_Deve_TerSomenteOsCamposPermitidos(DespesaSimples despesa, TransacoesDeTeste transacoes, LancamentoConta lancamento)
     {
         Transacao transacao = Vincular(despesa, transacoes, lancamento);
 
@@ -29,7 +29,7 @@ public sealed class VinculoParaModeloTests
     public void Serializar_Deve_LevarADespesaPagaPelaTransacaoEOValorProjetado(
         DespesaSimples despesa,
         TransacoesDeTeste transacoes,
-        Lancamento lancamento)
+        LancamentoConta lancamento)
     {
         Transacao transacao = Vincular(despesa, transacoes, lancamento);
 
@@ -49,7 +49,7 @@ public sealed class VinculoParaModeloTests
         [Frozen] Cartao cartao,
         DespesaParcelada despesa,
         TransacoesDeTeste transacoes,
-        Lancamento lancamento)
+        LancamentoConta lancamento)
     {
         Transacao transacao = Cobrar(despesa, cartao, transacoes, lancamento);
 
@@ -71,7 +71,7 @@ public sealed class VinculoParaModeloTests
     }
 
     [Theory, UsuarioUnicoAutoData]
-    public void Resumo_Deve_DescreverATransacaoEADespesaSemOsIds(DespesaSimples despesa, TransacoesDeTeste transacoes, Lancamento lancamento)
+    public void Resumo_Deve_DescreverATransacaoEADespesaSemOsIds(DespesaSimples despesa, TransacoesDeTeste transacoes, LancamentoConta lancamento)
     {
         Transacao transacao = Vincular(despesa, transacoes, lancamento);
 
@@ -88,7 +88,7 @@ public sealed class VinculoParaModeloTests
     }
 
     [Theory, UsuarioUnicoAutoData]
-    public void Resumo_Quando_SaidaPagaASimples_Deve_DizerQueASaidaPaga(DespesaSimples despesa, TransacoesDeTeste transacoes, Lancamento lancamento)
+    public void Resumo_Quando_SaidaPagaASimples_Deve_DizerQueASaidaPaga(DespesaSimples despesa, TransacoesDeTeste transacoes, LancamentoConta lancamento)
     {
         Transacao transacao = Vincular(despesa, transacoes, lancamento);
 
@@ -102,7 +102,7 @@ public sealed class VinculoParaModeloTests
         [Frozen] Cartao cartao,
         DespesaParcelada despesa,
         TransacoesDeTeste transacoes,
-        Lancamento lancamento)
+        LancamentoConta lancamento)
     {
         Transacao transacao = Cobrar(despesa, cartao, transacoes, lancamento);
 
@@ -119,7 +119,7 @@ public sealed class VinculoParaModeloTests
         FormaDocumento forma,
         DocumentosDeTeste documentos,
         TransacoesDeTeste transacoes,
-        Lancamento lancamento,
+        LancamentoConta lancamento,
         Fixture fixture)
     {
         TextoObrigatorio comDocumento = (TextoObrigatorio)$"LOJA {documentos.Em(forma)}";
@@ -134,7 +134,7 @@ public sealed class VinculoParaModeloTests
 
     // O Reais formata com espaço não separável, e o resumo volta ao servidor nos argumentos da confirmação.
     [Theory, UsuarioUnicoAutoData]
-    public void Resumo_Deve_TerSoEspacosComuns(DespesaSimples despesa, TransacoesDeTeste transacoes, Lancamento lancamento)
+    public void Resumo_Deve_TerSoEspacosComuns(DespesaSimples despesa, TransacoesDeTeste transacoes, LancamentoConta lancamento)
     {
         Transacao transacao = Vincular(despesa, transacoes, lancamento);
 
@@ -144,7 +144,7 @@ public sealed class VinculoParaModeloTests
     }
 
     [Theory, UsuarioUnicoAutoData]
-    public void ConfereResumo_Quando_ResumoIgual_Deve_Conferir(DespesaSimples despesa, TransacoesDeTeste transacoes, Lancamento lancamento)
+    public void ConfereResumo_Quando_ResumoIgual_Deve_Conferir(DespesaSimples despesa, TransacoesDeTeste transacoes, LancamentoConta lancamento)
     {
         VinculoParaModelo vinculo = VinculoParaModelo.De(Vincular(despesa, transacoes, lancamento), despesa);
 
@@ -155,7 +155,7 @@ public sealed class VinculoParaModeloTests
     public void ConfereResumo_Quando_EspacosNaoSeparaveisENasPontas_Deve_Conferir(
         DespesaSimples despesa,
         TransacoesDeTeste transacoes,
-        Lancamento lancamento)
+        LancamentoConta lancamento)
     {
         VinculoParaModelo vinculo = VinculoParaModelo.De(Vincular(despesa, transacoes, lancamento), despesa);
 
@@ -163,7 +163,7 @@ public sealed class VinculoParaModeloTests
     }
 
     [Theory, UsuarioUnicoAutoData]
-    public void ConfereResumo_Quando_ResumoAlterado_Deve_NaoConferir(DespesaSimples despesa, TransacoesDeTeste transacoes, Lancamento lancamento)
+    public void ConfereResumo_Quando_ResumoAlterado_Deve_NaoConferir(DespesaSimples despesa, TransacoesDeTeste transacoes, LancamentoConta lancamento)
     {
         VinculoParaModelo vinculo = VinculoParaModelo.De(Vincular(despesa, transacoes, lancamento), despesa);
 
@@ -177,7 +177,7 @@ public sealed class VinculoParaModeloTests
     }
 
     [Theory, UsuarioUnicoAutoData]
-    public void De_Quando_TransacaoNaoPagouADespesa_Deve_LancarExcecao(DespesaSimples despesa, TransacoesDeTeste transacoes, Lancamento lancamento)
+    public void De_Quando_TransacaoNaoPagouADespesa_Deve_LancarExcecao(DespesaSimples despesa, TransacoesDeTeste transacoes, LancamentoConta lancamento)
     {
         Transacao transacao = transacoes.DaConta(lancamento.SemCategoria().ComoSaida());
 
@@ -191,9 +191,9 @@ public sealed class VinculoParaModeloTests
     private static string ComEspacosComuns(string texto) => texto.Replace(EspacoNaoSeparavel, " ", StringComparison.Ordinal);
 
     /// <summary>A compra da última parcela da despesa, no cartão dela, ligada à despesa: a parcela fica cobrada e pendente.</summary>
-    private static Transacao Cobrar(DespesaParcelada despesa, Cartao cartao, TransacoesDeTeste transacoes, Lancamento lancamento)
+    private static Transacao Cobrar(DespesaParcelada despesa, Cartao cartao, TransacoesDeTeste transacoes, LancamentoConta lancamento)
     {
-        Lancamento compra = Lancamento.DoCartao(
+        LancamentoCartao compra = LancamentoCartao.Criar(
             despesa.DataOcorrencia,
             hora: null,
             -(decimal.Abs(lancamento.Valor) + 1m),
@@ -207,7 +207,7 @@ public sealed class VinculoParaModeloTests
         return transacao;
     }
 
-    private static Transacao Vincular(DespesaSimples despesa, TransacoesDeTeste transacoes, Lancamento lancamento)
+    private static Transacao Vincular(DespesaSimples despesa, TransacoesDeTeste transacoes, LancamentoConta lancamento)
     {
         Transacao transacao = transacoes.DaConta(lancamento.SemCategoria().ComoSaida());
         VinculoTransacaoService.Vincular(transacao, despesa, despesaQueUsaATransacao: Maybe<Despesa>.None, cartoesDoUsuario: []).Should().Succeed();

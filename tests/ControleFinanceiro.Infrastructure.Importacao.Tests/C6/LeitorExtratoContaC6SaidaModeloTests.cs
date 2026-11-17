@@ -81,7 +81,7 @@ public sealed class LeitorExtratoContaC6SaidaModeloTests
     {
         Stream arquivo = _fixture.ComLinha(LinhaPixEnviado, $"02/03/2026,02/03/2026,{titulo},{descricao},0.00,89.90,-12.50");
         Result<Extrato, FalhaLeituraArquivo> extrato = await _leitor.LerAsync(arquivo, CancellationToken.None);
-        Lancamento lancamento = extrato.Should().Succeed().Which.Lancamentos[IndiceLancamentoPixEnviado];
+        LancamentoConta lancamento = extrato.Should().Succeed().Which.Lancamentos[IndiceLancamentoPixEnviado];
         return transacoes.DaConta(lancamento).ParaModelo();
     }
 }

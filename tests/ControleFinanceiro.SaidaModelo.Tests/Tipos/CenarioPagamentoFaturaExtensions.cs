@@ -13,7 +13,7 @@ internal static class CenarioPagamentoFaturaExtensions
     extension(CenarioPagamentoFatura cenario)
     {
         /// <summary>A fatura de 100,00 do cartão e a saída de 100,00 no dia do vencimento: o candidato único.</summary>
-        public CandidatoPagamentoFaturaDto CandidatoPagamentoFaturaUnico(Cartao cartao, VencimentoFatura vencimento, Lancamento compra, Lancamento linhaSaida)
+        public CandidatoPagamentoFaturaDto CandidatoPagamentoFaturaUnico(Cartao cartao, VencimentoFatura vencimento, LancamentoConta compra, LancamentoConta linhaSaida)
         {
             cenario.ImportarFatura(cartao, vencimento, compra.NoCartaoComValor(-100m));
             Transacao saida = cenario.Saida(linhaSaida, vencimento, (ReaisPositivo)100m);

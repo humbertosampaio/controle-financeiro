@@ -120,7 +120,7 @@ public sealed class PreverVinculoToolTests : IAsyncLifetime
     public async Task Prever_Quando_TransacaoDeEntrada_Deve_DevolverErroDaRegra(MesReferencia mes, Fixture fixture)
     {
         Despesa despesa = await _vinculo.GravarDespesaAsync(fixture, mes);
-        Transacao entrada = await _vinculo.GravarExtratoAsync(fixture, fixture.Create<Lancamento>().SemCategoria());
+        Transacao entrada = await _vinculo.GravarExtratoAsync(fixture, fixture.Create<LancamentoConta>().SemCategoria());
 
         CallToolResult resultado = await _servidor.ClienteMcp.PreverVinculoAsync(entrada.Id.Value, despesa.Id.Value);
 

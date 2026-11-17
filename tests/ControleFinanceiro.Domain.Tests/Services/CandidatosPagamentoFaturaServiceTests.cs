@@ -20,10 +20,10 @@ public sealed class CandidatosPagamentoFaturaServiceTests
         [Frozen] VencimentoFatura vencimento,
         Cartao cartao,
         CenarioPagamentoFatura cenario,
-        Lancamento compra,
-        Lancamento outraCompra,
-        Lancamento estorno,
-        Lancamento linhaSaida)
+        LancamentoConta compra,
+        LancamentoConta outraCompra,
+        LancamentoConta estorno,
+        LancamentoConta linhaSaida)
     {
         cenario.ImportarFatura(cartao, vencimento, compra.NoCartaoComValor(-100m), outraCompra.NoCartaoComValor(-50.25m), estorno.NoCartaoComValor(20m));
         Transacao saida = cenario.Saida(linhaSaida, vencimento, (ReaisPositivo)130.25m);
@@ -43,9 +43,9 @@ public sealed class CandidatosPagamentoFaturaServiceTests
         Cartao cartao,
         SufixoCartao outroSufixo,
         CenarioPagamentoFatura cenario,
-        Lancamento compra,
-        Lancamento compraOutroFinal,
-        Lancamento linhaSaida)
+        LancamentoConta compra,
+        LancamentoConta compraOutroFinal,
+        LancamentoConta linhaSaida)
     {
         Cartao outroFinal = cartao.OutroFinal(outroSufixo);
         cenario.ImportarFatura(cartao, vencimento, compra.NoCartaoComValor(-100m));
@@ -62,11 +62,11 @@ public sealed class CandidatosPagamentoFaturaServiceTests
         [Frozen] VencimentoFatura vencimento,
         Cartao cartao,
         CenarioPagamentoFatura cenario,
-        Lancamento compra,
-        Lancamento pagamentoAnterior,
-        Lancamento linhaSaida)
+        LancamentoConta compra,
+        LancamentoCartao pagamentoAnterior,
+        LancamentoConta linhaSaida)
     {
-        cenario.ImportarFatura(cartao, vencimento, compra.NoCartaoComValor(-100m), pagamentoAnterior.SemCategoria().ComoPagamentoFatura());
+        cenario.ImportarFatura(cartao, vencimento, compra.NoCartaoComValor(-100m), pagamentoAnterior.SemCategoria().ComoPagamentoFaturaAnterior());
         cenario.Saida(linhaSaida, vencimento, (ReaisPositivo)100m);
 
         IReadOnlyList<CandidatoPagamentoFatura> result = cenario.Apontar([cartao], vencimento.Mes);
@@ -79,11 +79,11 @@ public sealed class CandidatosPagamentoFaturaServiceTests
         [Frozen] VencimentoFatura vencimento,
         Cartao cartao,
         CenarioPagamentoFatura cenario,
-        Lancamento compra,
-        Lancamento parcela,
-        Lancamento linhaSaida)
+        LancamentoConta compra,
+        LancamentoCartao parcela,
+        LancamentoConta linhaSaida)
     {
-        Lancamento parcelaCompraAntiga = parcela.NaFatura(vencimento.Value.AddMonths(-6), (Parcela)(7, 10));
+        LancamentoCartao parcelaCompraAntiga = parcela.NaFatura(vencimento.Value.AddMonths(-6), (Parcela)(7, 10));
         cenario.ImportarFatura(cartao, vencimento, compra.NoCartaoComValor(-100m), parcelaCompraAntiga.NoCartaoComValor(-40m));
         cenario.Saida(linhaSaida, vencimento, (ReaisPositivo)140m);
 
@@ -97,9 +97,9 @@ public sealed class CandidatosPagamentoFaturaServiceTests
         [Frozen] VencimentoFatura vencimento,
         Cartao cartao,
         CenarioPagamentoFatura cenario,
-        Lancamento compra,
-        Lancamento compraMesSeguinte,
-        Lancamento linhaSaida)
+        LancamentoConta compra,
+        LancamentoConta compraMesSeguinte,
+        LancamentoConta linhaSaida)
     {
         cenario.ImportarFatura(cartao, vencimento, compra.NoCartaoComValor(-100m));
         cenario.ImportarFatura(cartao, (VencimentoFatura)vencimento.Value.AddMonths(1), compraMesSeguinte.NoCartaoComValor(-30m));
@@ -119,9 +119,9 @@ public sealed class CandidatosPagamentoFaturaServiceTests
         [Frozen] VencimentoFatura vencimento,
         Cartao cartao,
         CenarioPagamentoFatura cenario,
-        Lancamento compra,
-        Lancamento estorno,
-        Lancamento linhaSaida)
+        LancamentoConta compra,
+        LancamentoConta estorno,
+        LancamentoConta linhaSaida)
     {
         cenario.ImportarFatura(cartao, vencimento, compra.NoCartaoComValor(valorCompra), estorno.NoCartaoComValor(30m));
         cenario.Saida(linhaSaida, vencimento, (ReaisPositivo)20m);
@@ -136,8 +136,8 @@ public sealed class CandidatosPagamentoFaturaServiceTests
         [Frozen] VencimentoFatura vencimento,
         Cartao cartao,
         CenarioPagamentoFatura cenario,
-        Lancamento compra,
-        Lancamento linhaSaida)
+        LancamentoConta compra,
+        LancamentoConta linhaSaida)
     {
         cenario.ImportarFatura(cartao, vencimento, compra.NoCartaoComValor(-100m));
         cenario.Saida(linhaSaida, vencimento, (ReaisPositivo)100.01m);
@@ -155,8 +155,8 @@ public sealed class CandidatosPagamentoFaturaServiceTests
         [Frozen] VencimentoFatura vencimento,
         Cartao cartao,
         CenarioPagamentoFatura cenario,
-        Lancamento compra,
-        Lancamento linhaSaida)
+        LancamentoConta compra,
+        LancamentoConta linhaSaida)
     {
         cenario.ImportarFatura(cartao, vencimento, compra.NoCartaoComValor(-100m));
         cenario.Saida(linhaSaida, vencimento.Value.AddDays(diasVencimento), (ReaisPositivo)100m);
@@ -174,8 +174,8 @@ public sealed class CandidatosPagamentoFaturaServiceTests
         [Frozen] VencimentoFatura vencimento,
         Cartao cartao,
         CenarioPagamentoFatura cenario,
-        Lancamento compra,
-        Lancamento linhaSaida)
+        LancamentoConta compra,
+        LancamentoConta linhaSaida)
     {
         cenario.ImportarFatura(cartao, vencimento, compra.NoCartaoComValor(-100m));
         cenario.Saida(linhaSaida, vencimento.Value.AddDays(diasVencimento), (ReaisPositivo)100m);
@@ -191,11 +191,11 @@ public sealed class CandidatosPagamentoFaturaServiceTests
         [Frozen] VencimentoFatura vencimento,
         Cartao cartao,
         CenarioPagamentoFatura cenario,
-        Lancamento compra,
-        Lancamento compraOutroBanco)
+        LancamentoConta compra,
+        LancamentoCartao compraOutroBanco)
     {
         Cartao cartaoOutroBanco = cartao.EmOutroBanco();
-        Lancamento compraOutroCartaoNoVencimento = compraOutroBanco.NaFatura(vencimento, parcela: null).NoCartaoComValor(-100m);
+        LancamentoCartao compraOutroCartaoNoVencimento = compraOutroBanco.NaFatura(vencimento, parcela: null).NoCartaoComValor(-100m);
         cenario.ImportarFatura(cartao, vencimento, compra.NoCartaoComValor(-100m));
         cenario.ImportarFatura(cartaoOutroBanco, (VencimentoFatura)vencimento.Value.AddMonths(1), compraOutroCartaoNoVencimento);
 
@@ -209,9 +209,9 @@ public sealed class CandidatosPagamentoFaturaServiceTests
         [Frozen] VencimentoFatura vencimento,
         Cartao cartao,
         CenarioPagamentoFatura cenario,
-        Lancamento compra,
-        Lancamento linhaSaida,
-        Lancamento outraLinhaSaida)
+        LancamentoConta compra,
+        LancamentoConta linhaSaida,
+        LancamentoConta outraLinhaSaida)
     {
         cenario.ImportarFatura(cartao, vencimento, compra.NoCartaoComValor(-100m));
         cenario.Saida(linhaSaida, vencimento, (ReaisPositivo)100m);
@@ -227,9 +227,9 @@ public sealed class CandidatosPagamentoFaturaServiceTests
         [Frozen] VencimentoFatura vencimento,
         Cartao cartao,
         CenarioPagamentoFatura cenario,
-        Lancamento compra,
-        Lancamento compraOutroBanco,
-        Lancamento linhaSaida)
+        LancamentoConta compra,
+        LancamentoConta compraOutroBanco,
+        LancamentoConta linhaSaida)
     {
         Cartao cartaoOutroBanco = cartao.EmOutroBanco();
         cenario.ImportarFatura(cartao, vencimento, compra.NoCartaoComValor(-100m));
@@ -246,8 +246,8 @@ public sealed class CandidatosPagamentoFaturaServiceTests
         [Frozen] VencimentoFatura vencimento,
         Cartao cartao,
         CenarioPagamentoFatura cenario,
-        Lancamento compra,
-        Lancamento linhaSaida,
+        LancamentoConta compra,
+        LancamentoConta linhaSaida,
         DespesaSimples simples)
     {
         cenario.ImportarFatura(cartao, vencimento, compra.NoCartaoComValor(-100m));
@@ -265,9 +265,9 @@ public sealed class CandidatosPagamentoFaturaServiceTests
         [Frozen] Cartao cartao,
         CenarioPagamentoFatura cenario,
         DespesaAdiada adiada,
-        Lancamento compra,
-        Lancamento linhaPagamento,
-        Lancamento linhaSaida)
+        LancamentoConta compra,
+        LancamentoConta linhaPagamento,
+        LancamentoConta linhaSaida)
     {
         Transacao cobranca = cenario.ImportarFatura(cartao, vencimento, compra.NoCartaoComValor(-100m)).Single();
         VinculoTransacaoService.Vincular(cobranca, adiada, despesaQueUsaATransacao: Maybe<Despesa>.None, cartoesDoUsuario: [cartao]).Should().Succeed();
@@ -294,9 +294,9 @@ public sealed class CandidatosPagamentoFaturaServiceTests
     public void Apontar_Quando_SaidaCabeNaFaturaDoMesVizinho_Deve_FicarSemCandidato(
         Cartao cartao,
         CenarioPagamentoFatura cenario,
-        Lancamento compra,
-        Lancamento compraOutroBanco,
-        Lancamento linhaSaida)
+        LancamentoConta compra,
+        LancamentoConta compraOutroBanco,
+        LancamentoConta linhaSaida)
     {
         Cartao cartaoOutroBanco = cartao.EmOutroBanco();
         cenario.ImportarFatura(cartao, (VencimentoFatura)new DateOnly(2026, 3, 28), compra.NoCartaoComValor(-100m));
@@ -312,8 +312,8 @@ public sealed class CandidatosPagamentoFaturaServiceTests
     public void Apontar_Quando_CandidatoDoMesVizinho_Deve_DevolverApenasOsDosMesesPedidos(
         Cartao cartao,
         CenarioPagamentoFatura cenario,
-        Lancamento compra,
-        Lancamento linhaSaida)
+        LancamentoConta compra,
+        LancamentoConta linhaSaida)
     {
         cenario.ImportarFatura(cartao, (VencimentoFatura)new DateOnly(2026, 4, 2), compra.NoCartaoComValor(-100m));
         cenario.Saida(linhaSaida, new DateOnly(2026, 3, 30), (ReaisPositivo)100m);
@@ -328,7 +328,7 @@ public sealed class CandidatosPagamentoFaturaServiceTests
         [Frozen] VencimentoFatura vencimento,
         Cartao cartao,
         CenarioPagamentoFatura cenario,
-        Lancamento linhaSaida)
+        LancamentoConta linhaSaida)
     {
         cenario.Saida(linhaSaida, vencimento, (ReaisPositivo)100m);
 
@@ -368,7 +368,7 @@ public sealed class CandidatosPagamentoFaturaServiceTests
     }
 
     [Theory, CandidatosAutoData]
-    public void Apontar_Quando_TransacaoDeOutroUsuario_Deve_LancarExcecao(TransacoesDeTeste transacoes, Lancamento linha, MesReferencia mes)
+    public void Apontar_Quando_TransacaoDeOutroUsuario_Deve_LancarExcecao(TransacoesDeTeste transacoes, LancamentoConta linha, MesReferencia mes)
     {
         Transacao transacaoOutroUsuario = transacoes.DaConta(linha.SemCategoria());
 

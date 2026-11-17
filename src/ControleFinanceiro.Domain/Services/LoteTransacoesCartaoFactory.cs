@@ -20,7 +20,7 @@ public static class LoteTransacoesCartaoFactory
     /// <param name="categoriasDoUsuario">Todas as categorias do usuário, e só as dele.</param>
     /// <param name="importacao">A importação do arquivo, do mesmo cartão.</param>
     /// <exception cref="ArgumentException">
-    /// Quando a importação é de outro cartão, um lançamento é de outro tipo de origem, ou uma das listas traz um beneficiário
+    /// Quando a importação é de outro cartão, ou uma das listas traz um beneficiário
     /// ou uma categoria de outro usuário.
     /// </exception>
     public static Result<IReadOnlyList<Transacao>, Erro> Criar(
@@ -29,13 +29,10 @@ public static class LoteTransacoesCartaoFactory
         IReadOnlyCollection<CategoriaDespesa> categoriasDoUsuario,
         Cartao cartao,
         ImportacaoFatura importacao,
-        IReadOnlyList<Lancamento> lancamentos)
+        IReadOnlyList<LancamentoCartao> lancamentos)
     {
         if (importacao.IdCartao != cartao.Id)
             throw new ArgumentException("A importação é de outro cartão.", nameof(importacao));
-
-        if (lancamentos.Any(l => l.TipoOrigem != TipoOrigem.Cartao))
-            throw new ArgumentException("A lista traz um lançamento de outro tipo de origem.", nameof(lancamentos));
 
         return LoteTransacoes
             .Conferir(idUsuario, beneficiariosDoUsuario, categoriasDoUsuario, cartao.IdUsuario, lancamentos)
@@ -46,13 +43,13 @@ public static class LoteTransacoesCartaoFactory
         IdUsuario idUsuario,
         Cartao cartao,
         ImportacaoFatura importacao,
-        IReadOnlyList<Lancamento> lancamentos)
+        IReadOnlyList<LancamentoCartao> lancamentos)
     {
         OrigemTransacao origem = OrigemTransacao.DoCartao(cartao.Id);
         IReadOnlyList<ChaveDeduplicacao> chaves = ChaveDeduplicacao.CalcularLote(cartao.Banco, origem, lancamentos.Select(l => l.Identidade));
 
         return lancamentos
-            .Zip(chaves, (lancamento, chave) => Transacao.Criar(idUsuario, importacao.Id, origem, importacao.MesVencimento, lancamento, chave))
+            .Zip(chaves, (lancamento, chave) => Transacao.CriarDoCartao(idUsuario, importacao.Id, cartao.Id, importacao.MesVencimento, lancamento, chave))
             .ToArray();
     }
 }

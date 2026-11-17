@@ -67,7 +67,7 @@ public sealed class PagamentoFaturaParaModeloTests
     public void Resumo_Quando_SaidaComDocumento_Deve_SairSemODocumento(
         FormaDocumento forma,
         DocumentosDeTeste documentos,
-        Lancamento lancamento,
+        LancamentoConta lancamento,
         Fixture fixture)
     {
         fixture.Inject(lancamento.ComTextos((TextoObrigatorio)$"PIX {documentos.Em(forma)}", $"FULANO {documentos.Em(forma)}"));
@@ -120,7 +120,7 @@ public sealed class PagamentoFaturaParaModeloTests
         public PagamentoFatura Pagamento { get; }
 
         /// <param name="despesas">Adiadas do cartão no mesmo mês de vencimento.</param>
-        public FaturaPagaDeTeste(Cartao cartao, DespesaAdiada[] despesas, TransacoesDeTeste transacoes, Lancamento lancamento)
+        public FaturaPagaDeTeste(Cartao cartao, DespesaAdiada[] despesas, TransacoesDeTeste transacoes, LancamentoConta lancamento)
         {
             foreach (DespesaAdiada despesa in despesas)
             {
@@ -135,9 +135,9 @@ public sealed class PagamentoFaturaParaModeloTests
 
         public PagamentoFaturaParaModelo ParaModelo() => PagamentoFaturaParaModelo.De(Saida, Cartao, Pagamento);
 
-        private static Lancamento CompraDa(DespesaAdiada despesa, Lancamento lancamento)
+        private static LancamentoCartao CompraDa(DespesaAdiada despesa, LancamentoConta lancamento)
         {
-            return Lancamento.DoCartao(
+            return LancamentoCartao.Criar(
                 despesa.DataOcorrencia,
                 hora: null,
                 -(decimal.Abs(lancamento.Valor) + 1m),

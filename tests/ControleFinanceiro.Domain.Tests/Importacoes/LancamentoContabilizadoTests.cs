@@ -7,7 +7,7 @@ namespace ControleFinanceiro.Domain.Tests.Importacoes;
 public sealed class LancamentoContabilizadoTests
 {
     [Theory, DomainAutoData]
-    public void Equals_Quando_MesmosCampos_Deve_SerIgual(Lancamento lancamento, DateOnly dataContabil)
+    public void Equals_Quando_MesmosCampos_Deve_SerIgual(LancamentoConta lancamento, DateOnly dataContabil)
     {
         LancamentoContabilizado contabilizado = LancamentoContabilizado.Criar(lancamento, dataContabil);
 

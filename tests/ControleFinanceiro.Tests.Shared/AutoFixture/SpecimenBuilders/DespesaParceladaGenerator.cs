@@ -23,7 +23,7 @@ public sealed class DespesaParceladaGenerator : ISpecimenBuilder
 
         Cartao cartao = context.Create<Cartao>();
         TextoObrigatorio descricao = context.Create<TextoObrigatorio>();
-        Lancamento compra = Lancamento.DoCartao(
+        LancamentoCartao compra = LancamentoCartao.Criar(
             context.Create<DateOnly>(),
             hora: null,
             valor: -(Math.Abs(context.Create<int>()) + 1m),

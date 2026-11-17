@@ -10,7 +10,7 @@ namespace ControleFinanceiro.Domain.Tests.Transacoes;
 public sealed class TransacaoTests
 {
     [Theory, TransacaoAutoData]
-    public void EhOrigemConta_Quando_DaConta_Deve_SerVerdadeiro(TransacoesDeTeste transacoes, Lancamento lancamento)
+    public void EhOrigemConta_Quando_DaConta_Deve_SerVerdadeiro(TransacoesDeTeste transacoes, LancamentoConta lancamento)
     {
         Transacao transacao = transacoes.DaConta(lancamento.SemCategoria());
 
@@ -18,7 +18,7 @@ public sealed class TransacaoTests
     }
 
     [Theory, TransacaoAutoData]
-    public void EhOrigemConta_Quando_DoCartao_Deve_SerFalso(TransacoesDeTeste transacoes, Cartao cartao, Lancamento lancamento)
+    public void EhOrigemConta_Quando_DoCartao_Deve_SerFalso(TransacoesDeTeste transacoes, Cartao cartao, LancamentoConta lancamento)
     {
         Transacao transacao = transacoes.DoCartao(cartao, lancamento.SemCategoria());
 
@@ -26,7 +26,7 @@ public sealed class TransacaoTests
     }
 
     [Theory, TransacaoAutoData]
-    public void EhCompraAVistaNoCartao_Quando_SaidaSemParcelaNoCartao_Deve_SerVerdadeiro(TransacoesDeTeste transacoes, Cartao cartao, Lancamento lancamento)
+    public void EhCompraAVistaNoCartao_Quando_SaidaSemParcelaNoCartao_Deve_SerVerdadeiro(TransacoesDeTeste transacoes, Cartao cartao, LancamentoConta lancamento)
     {
         Transacao transacao = transacoes.DoCartao(cartao, lancamento.SemCategoria().ComoSaida());
 
@@ -34,9 +34,9 @@ public sealed class TransacaoTests
     }
 
     [Theory, TransacaoAutoData]
-    public void EhCompraAVistaNoCartao_Quando_Parcelada_Deve_SerFalso(TransacoesDeTeste transacoes, Cartao cartao, Lancamento lancamento, Parcela parcela)
+    public void EhCompraAVistaNoCartao_Quando_Parcelada_Deve_SerFalso(TransacoesDeTeste transacoes, Cartao cartao, LancamentoConta lancamento, Parcela parcela)
     {
-        Lancamento compra = Lancamento.DoCartao(
+        LancamentoCartao compra = LancamentoCartao.Criar(
             lancamento.Data,
             lancamento.Hora,
             -(decimal.Abs(lancamento.Valor) + 1m),
@@ -52,7 +52,7 @@ public sealed class TransacaoTests
     }
 
     [Theory, TransacaoAutoData]
-    public void EhCompraAVistaNoCartao_Quando_SaidaDaConta_Deve_SerFalso(TransacoesDeTeste transacoes, Lancamento lancamento)
+    public void EhCompraAVistaNoCartao_Quando_SaidaDaConta_Deve_SerFalso(TransacoesDeTeste transacoes, LancamentoConta lancamento)
     {
         Transacao transacao = transacoes.DaConta(lancamento.SemCategoria().ComoSaida());
 
@@ -60,9 +60,9 @@ public sealed class TransacaoTests
     }
 
     [Theory, TransacaoAutoData]
-    public void EhCompraAVistaNoCartao_Quando_EntradaNoCartao_Deve_SerFalso(TransacoesDeTeste transacoes, Cartao cartao, Lancamento lancamento)
+    public void EhCompraAVistaNoCartao_Quando_EntradaNoCartao_Deve_SerFalso(TransacoesDeTeste transacoes, Cartao cartao, LancamentoConta lancamento)
     {
-        Lancamento entrada = Lancamento.DoCartao(
+        LancamentoCartao entrada = LancamentoCartao.Criar(
             lancamento.Data,
             lancamento.Hora,
             decimal.Abs(lancamento.Valor) + 1m,
@@ -78,9 +78,9 @@ public sealed class TransacaoTests
     }
 
     [Theory, TransacaoAutoData]
-    public void EhCompraAVistaNoCartao_Quando_DescricaoNormalizaParaVazio_Deve_SerFalso(TransacoesDeTeste transacoes, Cartao cartao, Lancamento lancamento)
+    public void EhCompraAVistaNoCartao_Quando_DescricaoNormalizaParaVazio_Deve_SerFalso(TransacoesDeTeste transacoes, Cartao cartao, LancamentoConta lancamento)
     {
-        Lancamento semTexto = lancamento.SemCategoria().ComoSaida().ComTextos((TextoObrigatorio)"\u0301", contraparte: null);
+        LancamentoConta semTexto = lancamento.SemCategoria().ComoSaida().ComTextos((TextoObrigatorio)"\u0301", contraparte: null);
 
         Transacao transacao = transacoes.DoCartao(cartao, semTexto);
 
@@ -88,9 +88,9 @@ public sealed class TransacaoTests
     }
 
     [Theory, TransacaoAutoData]
-    public void AliasTextoBeneficiario_Deve_SerODoLancamento(TransacoesDeTeste transacoes, Cartao cartao, Lancamento lancamento)
+    public void AliasTextoBeneficiario_Deve_SerODoLancamento(TransacoesDeTeste transacoes, Cartao cartao, LancamentoConta lancamento)
     {
-        Lancamento compra = lancamento.SemCategoria().ComoSaida().NaOrigem(TipoOrigem.Cartao);
+        LancamentoCartao compra = lancamento.SemCategoria().ComoSaida().NoCartao();
 
         Transacao transacao = transacoes.DoCartao(cartao, compra);
 
@@ -98,15 +98,15 @@ public sealed class TransacaoTests
     }
 
     [Theory, TransacaoAutoData]
-    public void EhPagamentoFatura_Quando_LancamentoDePagamentoFatura_Deve_SerVerdadeiro(TransacoesDeTeste transacoes, Cartao cartao, Lancamento lancamento)
+    public void EhPagamentoFatura_Quando_LancamentoDePagamentoFatura_Deve_SerVerdadeiro(TransacoesDeTeste transacoes, Cartao cartao, LancamentoCartao lancamento)
     {
-        Transacao transacao = transacoes.DoCartao(cartao, lancamento.SemCategoria().ComoPagamentoFatura());
+        Transacao transacao = transacoes.DoCartao(cartao, lancamento.SemCategoria().ComoPagamentoFaturaAnterior());
 
         transacao.EhPagamentoFatura.Should().BeTrue();
     }
 
     [Theory, TransacaoAutoData]
-    public void EhPagamentoFatura_Quando_CompraNoCartao_Deve_SerFalso(TransacoesDeTeste transacoes, Cartao cartao, Lancamento lancamento)
+    public void EhPagamentoFatura_Quando_CompraNoCartao_Deve_SerFalso(TransacoesDeTeste transacoes, Cartao cartao, LancamentoConta lancamento)
     {
         Transacao transacao = transacoes.DoCartao(cartao, lancamento.SemCategoria().ComoSaida());
 
@@ -114,15 +114,15 @@ public sealed class TransacaoTests
     }
 
     [Theory, TransacaoAutoData]
-    public void EhCompraAVistaNoCartao_Quando_PagamentoFatura_Deve_SerFalso(TransacoesDeTeste transacoes, Cartao cartao, Lancamento lancamento)
+    public void EhCompraAVistaNoCartao_Quando_PagamentoFatura_Deve_SerFalso(TransacoesDeTeste transacoes, Cartao cartao, LancamentoCartao lancamento)
     {
-        Transacao transacao = transacoes.DoCartao(cartao, lancamento.SemCategoria().ComoPagamentoFatura());
+        Transacao transacao = transacoes.DoCartao(cartao, lancamento.SemCategoria().ComoPagamentoFaturaAnterior());
 
         transacao.EhCompraAVistaNoCartao.Should().BeFalse();
     }
 
     [Theory, TransacaoAutoData]
-    public void CompoeTotalFatura_Quando_CompraNoCartaoNoMesDaFatura_Deve_SerVerdadeiro(TransacoesDeTeste transacoes, Cartao cartao, Lancamento lancamento)
+    public void CompoeTotalFatura_Quando_CompraNoCartaoNoMesDaFatura_Deve_SerVerdadeiro(TransacoesDeTeste transacoes, Cartao cartao, LancamentoConta lancamento)
     {
         Transacao transacao = transacoes.DoCartao(cartao, lancamento.SemCategoria().ComoSaida());
 
@@ -130,7 +130,7 @@ public sealed class TransacaoTests
     }
 
     [Theory, TransacaoAutoData]
-    public void CompoeTotalFatura_Quando_EstornoNoCartao_Deve_SerVerdadeiro(TransacoesDeTeste transacoes, Cartao cartao, Lancamento lancamento)
+    public void CompoeTotalFatura_Quando_EstornoNoCartao_Deve_SerVerdadeiro(TransacoesDeTeste transacoes, Cartao cartao, LancamentoConta lancamento)
     {
         Transacao transacao = transacoes.DoCartao(cartao, lancamento.SemCategoria().ComoEntrada());
 
@@ -138,7 +138,7 @@ public sealed class TransacaoTests
     }
 
     [Theory, TransacaoAutoData]
-    public void CompoeTotalFatura_Quando_FaturaDeOutroMes_Deve_SerFalso(TransacoesDeTeste transacoes, Cartao cartao, Lancamento lancamento)
+    public void CompoeTotalFatura_Quando_FaturaDeOutroMes_Deve_SerFalso(TransacoesDeTeste transacoes, Cartao cartao, LancamentoConta lancamento)
     {
         Transacao transacao = transacoes.DoCartao(cartao, lancamento.SemCategoria().ComoSaida());
         FaturaCartao faturaMesSeguinte = FaturaCartao.DoCartao(cartao.Id, [cartao], transacao.MesVencimentoFatura!.Posterior());
@@ -147,7 +147,7 @@ public sealed class TransacaoTests
     }
 
     [Theory, TransacaoAutoData]
-    public void CompoeTotalFatura_Quando_FaturaDeOutroCartao_Deve_SerFalso(TransacoesDeTeste transacoes, Cartao cartao, Lancamento lancamento)
+    public void CompoeTotalFatura_Quando_FaturaDeOutroCartao_Deve_SerFalso(TransacoesDeTeste transacoes, Cartao cartao, LancamentoConta lancamento)
     {
         Transacao transacao = transacoes.DoCartao(cartao, lancamento.SemCategoria().ComoSaida());
 
@@ -155,15 +155,15 @@ public sealed class TransacaoTests
     }
 
     [Theory, TransacaoAutoData]
-    public void CompoeTotalFatura_Quando_PagamentoFaturaAnterior_Deve_SerFalso(TransacoesDeTeste transacoes, Cartao cartao, Lancamento lancamento)
+    public void CompoeTotalFatura_Quando_PagamentoFaturaAnterior_Deve_SerFalso(TransacoesDeTeste transacoes, Cartao cartao, LancamentoCartao lancamento)
     {
-        Transacao transacao = transacoes.DoCartao(cartao, lancamento.SemCategoria().ComoPagamentoFatura());
+        Transacao transacao = transacoes.DoCartao(cartao, lancamento.SemCategoria().ComoPagamentoFaturaAnterior());
 
         transacao.CompoeTotalFatura(FaturaTransacao(cartao, transacao)).Should().BeFalse();
     }
 
     [Theory, TransacaoAutoData]
-    public void CompoeTotalFatura_Quando_DaConta_Deve_SerFalso(TransacoesDeTeste transacoes, Cartao cartao, Lancamento lancamento, MesReferencia mesVencimento)
+    public void CompoeTotalFatura_Quando_DaConta_Deve_SerFalso(TransacoesDeTeste transacoes, Cartao cartao, LancamentoConta lancamento, MesReferencia mesVencimento)
     {
         Transacao transacao = transacoes.DaConta(lancamento.SemCategoria().ComoSaida());
 
@@ -171,7 +171,7 @@ public sealed class TransacaoTests
     }
 
     [Theory, TransacaoAutoData]
-    public void EhSaidaConta_Quando_SaidaDaConta_Deve_SerVerdadeiro(TransacoesDeTeste transacoes, Lancamento lancamento)
+    public void EhSaidaConta_Quando_SaidaDaConta_Deve_SerVerdadeiro(TransacoesDeTeste transacoes, LancamentoConta lancamento)
     {
         Transacao transacao = transacoes.DaConta(lancamento.SemCategoria().ComoSaida());
 
@@ -179,7 +179,7 @@ public sealed class TransacaoTests
     }
 
     [Theory, TransacaoAutoData]
-    public void EhSaidaConta_Quando_EntradaNaConta_Deve_SerFalso(TransacoesDeTeste transacoes, Lancamento lancamento)
+    public void EhSaidaConta_Quando_EntradaNaConta_Deve_SerFalso(TransacoesDeTeste transacoes, LancamentoConta lancamento)
     {
         Transacao transacao = transacoes.DaConta(lancamento.SemCategoria().ComoEntrada());
 
@@ -187,7 +187,7 @@ public sealed class TransacaoTests
     }
 
     [Theory, TransacaoAutoData]
-    public void EhSaidaConta_Quando_SaidaNoCartao_Deve_SerFalso(TransacoesDeTeste transacoes, Cartao cartao, Lancamento lancamento)
+    public void EhSaidaConta_Quando_SaidaNoCartao_Deve_SerFalso(TransacoesDeTeste transacoes, Cartao cartao, LancamentoConta lancamento)
     {
         Transacao transacao = transacoes.DoCartao(cartao, lancamento.SemCategoria().ComoSaida());
 

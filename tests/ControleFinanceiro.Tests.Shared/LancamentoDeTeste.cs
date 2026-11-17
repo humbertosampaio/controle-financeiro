@@ -9,52 +9,53 @@ public static class LancamentoDeTeste
     extension(Lancamento lancamento)
     {
         /// <summary>
-        /// A mesma linha, como se viesse do tipo de origem pedido. No extrato, sem a parcela, que ele nunca traz. Já no tipo
-        /// pedido, a própria linha, com a marca do <see cref="ComoPagamentoFatura"/>.
+        /// A mesma linha no extrato de uma conta, sem a parcela e a marca de pagamento, que ele nunca traz. Já da conta, a
+        /// própria linha.
         /// </summary>
-        public Lancamento NaOrigem(TipoOrigem tipoOrigem)
+        public LancamentoConta NaConta()
         {
-            return lancamento.TipoOrigem == tipoOrigem
-                ? lancamento
-                : lancamento.Montar(tipoOrigem, lancamento.Descricao, lancamento.Contraparte, lancamento.CategoriaBanco);
+            return lancamento as LancamentoConta
+                ?? LancamentoConta.Criar(
+                    lancamento.Data,
+                    lancamento.Hora,
+                    lancamento.Valor,
+                    lancamento.Descricao,
+                    lancamento.Contraparte,
+                    lancamento.CategoriaBanco,
+                    lancamento.Identidade);
         }
 
-        /// <summary>A mesma linha sem categoria do banco: o lote não precisa de categorias do usuário.</summary>
-        public Lancamento SemCategoria() => lancamento.Montar(lancamento.TipoOrigem, lancamento.Descricao, lancamento.Contraparte, categoriaBanco: null);
-
-        /// <summary>A mesma linha com outra descrição e outra contraparte, para o caso cujo assunto são esses textos.</summary>
-        public Lancamento ComTextos(TextoObrigatorio descricao, string? contraparte) =>
-            lancamento.Montar(lancamento.TipoOrigem, descricao, contraparte, lancamento.CategoriaBanco);
-
-        /// <summary>A mesma linha com outra identidade, para o caso cujo assunto é o identificador que o banco atribui.</summary>
-        public Lancamento ComIdentidade(IdentidadeLancamento identidade) =>
-            lancamento.Montar(lancamento.TipoOrigem, lancamento.Valor, lancamento.Descricao, lancamento.Contraparte, lancamento.CategoriaBanco, identidade);
-
-        /// <summary>A mesma linha como saída de dinheiro, com o valor negativo e nunca zero: só uma saída paga despesa.</summary>
-        public Lancamento ComoSaida()
+        /// <summary>
+        /// A mesma linha na fatura de um cartão; a da conta vira uma linha sem parcela. Já do cartão, a própria linha, com a
+        /// marca do <see cref="ComoPagamentoFaturaAnterior"/>.
+        /// </summary>
+        public LancamentoCartao NoCartao()
         {
-            return lancamento.Montar(
-                lancamento.TipoOrigem,
-                -(decimal.Abs(lancamento.Valor) + 1m),
-                lancamento.Descricao,
-                lancamento.Contraparte,
-                lancamento.CategoriaBanco,
-                lancamento.Identidade);
+            return lancamento as LancamentoCartao
+                ?? LancamentoCartao.Criar(
+                    lancamento.Data,
+                    lancamento.Hora,
+                    lancamento.Valor,
+                    lancamento.Descricao,
+                    lancamento.Contraparte,
+                    parcela: null,
+                    lancamento.CategoriaBanco,
+                    lancamento.Identidade);
         }
 
         /// <summary>
         /// A mesma linha na fatura de um cartão, como compra ou estorno, com o valor do caso e sem categoria, para o caso cujo
         /// assunto é o total da fatura.
         /// </summary>
-        public Lancamento NoCartaoComValor(decimal valor)
+        public LancamentoCartao NoCartaoComValor(decimal valor)
         {
-            return Lancamento.DoCartao(
+            return LancamentoCartao.Criar(
                 lancamento.Data,
                 lancamento.Hora,
                 valor,
                 lancamento.Descricao,
                 lancamento.Contraparte,
-                lancamento.Parcela,
+                (lancamento as LancamentoCartao)?.Parcela,
                 categoriaBanco: null,
                 lancamento.Identidade);
         }
@@ -63,18 +64,74 @@ public static class LancamentoDeTeste
         /// A mesma linha no extrato de uma conta, na data e com o valor do caso e sem categoria, para o caso cujo assunto é a
         /// saída que paga a fatura.
         /// </summary>
-        public Lancamento NaContaComValor(DateOnly data, decimal valor)
+        public LancamentoConta NaContaComValor(DateOnly data, decimal valor)
         {
-            return Lancamento.DaConta(data, lancamento.Hora, valor, lancamento.Descricao, lancamento.Contraparte, categoriaBanco: null, lancamento.Identidade);
+            return LancamentoConta.Criar(data, lancamento.Hora, valor, lancamento.Descricao, lancamento.Contraparte, categoriaBanco: null, lancamento.Identidade);
+        }
+    }
+
+    /// <remarks>
+    /// Remontam a linha pelo tipo dela: a do cartão mantém a parcela e descarta a marca do <see cref="ComoPagamentoFaturaAnterior"/>,
+    /// que é a última a aplicar.
+    /// </remarks>
+    extension<T>(T lancamento)
+        where T : Lancamento
+    {
+        /// <summary>A mesma linha sem categoria do banco: o lote não precisa de categorias do usuário.</summary>
+        public T SemCategoria() => lancamento.Montar(lancamento.Valor, lancamento.Descricao, lancamento.Contraparte, categoriaBanco: null, lancamento.Identidade);
+
+        /// <summary>A mesma linha com outra descrição e outra contraparte, para o caso cujo assunto são esses textos.</summary>
+        public T ComTextos(TextoObrigatorio descricao, string? contraparte) =>
+            lancamento.Montar(lancamento.Valor, descricao, contraparte, lancamento.CategoriaBanco, lancamento.Identidade);
+
+        /// <summary>A mesma linha com outra identidade, para o caso cujo assunto é o identificador que o banco atribui.</summary>
+        public T ComIdentidade(IdentidadeLancamento identidade) =>
+            lancamento.Montar(lancamento.Valor, lancamento.Descricao, lancamento.Contraparte, lancamento.CategoriaBanco, identidade);
+
+        /// <summary>A mesma linha como saída de dinheiro, com o valor negativo e nunca zero: só uma saída paga despesa.</summary>
+        public T ComoSaida()
+        {
+            return lancamento.Montar(
+                -(decimal.Abs(lancamento.Valor) + 1m),
+                lancamento.Descricao,
+                lancamento.Contraparte,
+                lancamento.CategoriaBanco,
+                lancamento.Identidade);
         }
 
-        /// <summary>
-        /// A mesma linha na fatura de um cartão, na data e com a parcela do caso, para o caso cujo assunto é a data da compra
-        /// diante do vencimento.
-        /// </summary>
-        public Lancamento NaFatura(DateOnly data, Parcela? parcela)
+        /// <summary>A mesma linha como entrada de dinheiro, com o valor positivo e nunca zero, como o estorno.</summary>
+        public T ComoEntrada()
         {
-            return Lancamento.DoCartao(
+            return lancamento.Montar(
+                decimal.Abs(lancamento.Valor) + 1m,
+                lancamento.Descricao,
+                lancamento.Contraparte,
+                lancamento.CategoriaBanco,
+                lancamento.Identidade);
+        }
+
+        private T Montar(Reais valor, TextoObrigatorio descricao, string? contraparte, string? categoriaBanco, IdentidadeLancamento identidade)
+        {
+            Lancamento montado = lancamento switch
+            {
+                LancamentoCartao cartao => LancamentoCartao.Criar(cartao.Data, cartao.Hora, valor, descricao, contraparte, cartao.Parcela, categoriaBanco, identidade),
+                LancamentoConta conta => LancamentoConta.Criar(conta.Data, conta.Hora, valor, descricao, contraparte, categoriaBanco, identidade),
+                _ => throw new ArgumentOutOfRangeException(nameof(lancamento), lancamento, message: null),
+            };
+
+            return (T)montado;
+        }
+    }
+
+    extension(LancamentoCartao lancamento)
+    {
+        /// <summary>
+        /// A mesma linha na fatura, na data e com a parcela do caso, para o caso cujo assunto é a data da compra diante do
+        /// vencimento.
+        /// </summary>
+        public LancamentoCartao NaFatura(DateOnly data, Parcela? parcela)
+        {
+            return LancamentoCartao.Criar(
                 data,
                 lancamento.Hora,
                 lancamento.Valor,
@@ -85,27 +142,14 @@ public static class LancamentoDeTeste
                 lancamento.Identidade);
         }
 
-        /// <summary>A mesma linha como entrada de dinheiro, com o valor positivo e nunca zero, como o estorno.</summary>
-        public Lancamento ComoEntrada()
-        {
-            return lancamento.Montar(
-                lancamento.TipoOrigem,
-                decimal.Abs(lancamento.Valor) + 1m,
-                lancamento.Descricao,
-                lancamento.Contraparte,
-                lancamento.CategoriaBanco,
-                lancamento.Identidade);
-        }
-
         /// <summary>
-        /// A mesma linha como o pagamento da fatura anterior: com o <see cref="Lancamento.ValorAbsoluto"/>, sem parcela e na
-        /// origem cartão. É o último a aplicar: o <see cref="SemCategoria"/>, o <see cref="ComTextos"/>, o
-        /// <see cref="ComIdentidade"/> e o <see cref="ComoSaida"/> remontam a linha pelo <c>DoCartao</c> ou pelo <c>DaConta</c> e
-        /// descartam a marca.
+        /// A mesma linha como o pagamento da fatura anterior: com o <see cref="Lancamento.ValorAbsoluto"/> e sem parcela. É o
+        /// último a aplicar: o <c>SemCategoria</c>, o <c>ComTextos</c>, o <c>ComIdentidade</c> e o <c>ComoSaida</c> remontam a
+        /// linha pelo <see cref="LancamentoCartao.Criar"/> e descartam a marca.
         /// </summary>
-        public Lancamento ComoPagamentoFatura()
+        public LancamentoCartao ComoPagamentoFaturaAnterior()
         {
-            return Lancamento.PagamentoFaturaCartao(
+            return LancamentoCartao.PagamentoFaturaAnterior(
                 lancamento.Data,
                 lancamento.Hora,
                 lancamento.ValorAbsoluto,
@@ -113,22 +157,6 @@ public static class LancamentoDeTeste
                 lancamento.Contraparte,
                 lancamento.CategoriaBanco,
                 lancamento.Identidade);
-        }
-
-        private Lancamento Montar(TipoOrigem tipoOrigem, TextoObrigatorio descricao, string? contraparte, string? categoriaBanco) =>
-            lancamento.Montar(tipoOrigem, lancamento.Valor, descricao, contraparte, categoriaBanco, lancamento.Identidade);
-
-        private Lancamento Montar(
-            TipoOrigem tipoOrigem,
-            Reais valor,
-            TextoObrigatorio descricao,
-            string? contraparte,
-            string? categoriaBanco,
-            IdentidadeLancamento identidade)
-        {
-            return tipoOrigem == TipoOrigem.Cartao
-                ? Lancamento.DoCartao(lancamento.Data, lancamento.Hora, valor, descricao, contraparte, lancamento.Parcela, categoriaBanco, identidade)
-                : Lancamento.DaConta(lancamento.Data, lancamento.Hora, valor, descricao, contraparte, categoriaBanco, identidade);
         }
     }
 }

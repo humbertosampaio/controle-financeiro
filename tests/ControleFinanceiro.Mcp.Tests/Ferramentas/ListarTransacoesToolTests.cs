@@ -93,7 +93,7 @@ public sealed class ListarTransacoesToolTests : IAsyncLifetime
         Fixture fixture)
     {
         fixture.Inject(_servidor.Usuario.Id);
-        Lancamento comDocumentos = NaData(fixture, mes.Inicio)
+        LancamentoConta comDocumentos = NaData(fixture, mes.Inicio)
             .ComTextos((TextoObrigatorio)$"PIX {documentos.Em(forma)}", $"FULANO {documentos.Em(forma)}");
         await GravarExtratoAsync(fixture, comDocumentos);
 
@@ -107,7 +107,7 @@ public sealed class ListarTransacoesToolTests : IAsyncLifetime
     public async Task Listar_Quando_ContraparteAusente_Deve_OmitirOCampo(MesReferencia mes, Fixture fixture)
     {
         fixture.Inject(_servidor.Usuario.Id);
-        Lancamento lancamento = NaData(fixture, mes.Inicio);
+        LancamentoConta lancamento = NaData(fixture, mes.Inicio);
         await GravarExtratoAsync(fixture, lancamento.ComTextos(lancamento.Descricao, contraparte: null));
 
         JsonObject json = (await _servidor.ClienteMcp.ChamarDoMesAsync(Tools.ListarTransacoes, mes.Ano, mes.Mes)).Json;
@@ -156,14 +156,14 @@ public sealed class ListarTransacoesToolTests : IAsyncLifetime
         return new TransacoesDoMesLidas(resultado.Json);
     }
 
-    private static Lancamento NaData(IFixture fixture, DateOnly data)
+    private static LancamentoConta NaData(IFixture fixture, DateOnly data)
     {
         fixture.Inject(data);
-        return fixture.Create<Lancamento>().SemCategoria();
+        return fixture.Create<LancamentoConta>().SemCategoria();
     }
 
     /// <summary>Grava os lançamentos como um extrato de uma conta nova do usuário injetado no <paramref name="fixture"/>.</summary>
-    private Task<IReadOnlyList<Transacao>> GravarExtratoAsync(IFixture fixture, params Lancamento[] lancamentos)
+    private Task<IReadOnlyList<Transacao>> GravarExtratoAsync(IFixture fixture, params LancamentoConta[] lancamentos)
     {
         ContaBancaria conta = fixture.Freeze<ContaBancaria>();
 

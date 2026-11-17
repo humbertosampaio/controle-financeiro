@@ -18,8 +18,8 @@ public sealed class CandidatosPagamentoFaturaParaModeloTests
         [Frozen] VencimentoFatura vencimento,
         Cartao cartao,
         CenarioPagamentoFatura cenario,
-        Lancamento compra,
-        Lancamento linhaSaida)
+        LancamentoConta compra,
+        LancamentoConta linhaSaida)
     {
         JsonObject json = cenario.CandidatoPagamentoFaturaUnico(cartao, vencimento, compra, linhaSaida).ParaModelo().Serializar();
 
@@ -31,8 +31,8 @@ public sealed class CandidatosPagamentoFaturaParaModeloTests
         [Frozen] VencimentoFatura vencimento,
         Cartao cartao,
         CenarioPagamentoFatura cenario,
-        Lancamento compra,
-        Lancamento linhaSaida)
+        LancamentoConta compra,
+        LancamentoConta linhaSaida)
     {
         CandidatoPagamentoFaturaDto candidatoDto = cenario.CandidatoPagamentoFaturaUnico(cartao, vencimento, compra, linhaSaida);
 
@@ -52,8 +52,8 @@ public sealed class CandidatosPagamentoFaturaParaModeloTests
         [Frozen] VencimentoFatura vencimento,
         Cartao cartao,
         CenarioPagamentoFatura cenario,
-        Lancamento compra,
-        Lancamento linhaSaida)
+        LancamentoConta compra,
+        LancamentoConta linhaSaida)
     {
         CandidatoPagamentoFaturaDto candidatoDto = cenario.CandidatoPagamentoFaturaUnico(cartao, vencimento, compra, linhaSaida);
 

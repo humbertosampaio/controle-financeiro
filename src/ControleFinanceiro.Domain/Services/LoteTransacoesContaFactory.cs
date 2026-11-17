@@ -20,7 +20,7 @@ public static class LoteTransacoesContaFactory
     /// <param name="categoriasDoUsuario">Todas as categorias do usuário, e só as dele.</param>
     /// <param name="importacao">A importação do arquivo, da mesma conta.</param>
     /// <exception cref="ArgumentException">
-    /// Quando a importação é de outra conta, um lançamento é de outro tipo de origem, ou uma das listas traz um beneficiário
+    /// Quando a importação é de outra conta, ou uma das listas traz um beneficiário
     /// ou uma categoria de outro usuário.
     /// </exception>
     public static Result<IReadOnlyList<Transacao>, Erro> Criar(
@@ -29,13 +29,10 @@ public static class LoteTransacoesContaFactory
         IReadOnlyCollection<CategoriaDespesa> categoriasDoUsuario,
         ContaBancaria conta,
         ImportacaoExtrato importacao,
-        IReadOnlyList<Lancamento> lancamentos)
+        IReadOnlyList<LancamentoConta> lancamentos)
     {
         if (importacao.IdConta != conta.Id)
             throw new ArgumentException("A importação é de outra conta.", nameof(importacao));
-
-        if (lancamentos.Any(l => l.TipoOrigem != TipoOrigem.Conta))
-            throw new ArgumentException("A lista traz um lançamento de outro tipo de origem.", nameof(lancamentos));
 
         return LoteTransacoes
             .Conferir(idUsuario, beneficiariosDoUsuario, categoriasDoUsuario, conta.IdUsuario, lancamentos)
@@ -46,13 +43,13 @@ public static class LoteTransacoesContaFactory
         IdUsuario idUsuario,
         ContaBancaria conta,
         ImportacaoExtrato importacao,
-        IReadOnlyList<Lancamento> lancamentos)
+        IReadOnlyList<LancamentoConta> lancamentos)
     {
         OrigemTransacao origem = OrigemTransacao.DaConta(conta.Id);
         IReadOnlyList<ChaveDeduplicacao> chaves = ChaveDeduplicacao.CalcularLote(conta.Banco, origem, lancamentos.Select(l => l.Identidade));
 
         return lancamentos
-            .Zip(chaves, (lancamento, chave) => Transacao.Criar(idUsuario, importacao.Id, origem, mesVencimentoFatura: null, lancamento, chave))
+            .Zip(chaves, (lancamento, chave) => Transacao.CriarDaConta(idUsuario, importacao.Id, conta.Id, lancamento, chave))
             .ToArray();
     }
 }

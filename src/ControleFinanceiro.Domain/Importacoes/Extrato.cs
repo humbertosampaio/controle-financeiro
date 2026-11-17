@@ -20,7 +20,7 @@ public sealed class Extrato : ValueObject
     public IReadOnlyList<SaldoDiario> Saldos { get; }
 
     /// <summary>Os lançamentos na ordem do arquivo, como a <see cref="Services.LoteTransacoesContaFactory"/> os recebe.</summary>
-    public IReadOnlyList<Lancamento> Lancamentos { get; }
+    public IReadOnlyList<LancamentoConta> Lancamentos { get; }
 
     private Extrato(
         Banco banco,

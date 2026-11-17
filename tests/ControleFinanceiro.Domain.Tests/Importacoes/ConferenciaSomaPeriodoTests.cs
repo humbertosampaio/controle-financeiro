@@ -46,7 +46,7 @@ public sealed class ConferenciaSomaPeriodoTests
         Extrato extrato,
         [Frozen] ContaBancaria conta,
         ImportacaoExtrato importacao,
-        Lancamento naoReconhecido)
+        LancamentoConta naoReconhecido)
     {
         Transacao[] gravadas = Lote(conta, importacao, [.. extrato.Lancamentos, naoReconhecido]);
 
@@ -66,7 +66,7 @@ public sealed class ConferenciaSomaPeriodoTests
         TextoObrigatorio descricao)
     {
         DateOnly depoisDoFim = periodo.Fim.AddDays(1);
-        Lancamento foraDoPeriodo = Lancamento.DaConta(
+        LancamentoConta foraDoPeriodo = LancamentoConta.Criar(
             depoisDoFim, hora: null, valor, descricao, contraparte: null, categoriaBanco: null, IdentidadeLancamento.Composta(depoisDoFim).ComValor(valor).ComTexto(descricao));
         Extrato extrato = Extrato.Criar(
             arquivo.Banco,
@@ -81,7 +81,7 @@ public sealed class ConferenciaSomaPeriodoTests
         result.Should().Fail();
     }
 
-    private static Transacao[] Lote(ContaBancaria conta, ImportacaoExtrato importacao, IReadOnlyList<Lancamento> lancamentos)
+    private static Transacao[] Lote(ContaBancaria conta, ImportacaoExtrato importacao, IReadOnlyList<LancamentoConta> lancamentos)
     {
         IReadOnlyList<Beneficiario> beneficiarios = BeneficiariosResolvidos.Dos(conta.IdUsuario, lancamentos);
         IReadOnlyList<CategoriaDespesa> categorias = CategoriasResolvidas.Dos(conta.IdUsuario, lancamentos);
@@ -114,10 +114,10 @@ public sealed class ConferenciaSomaPeriodoTests
         {
         }
 
-        private static Lancamento NoInicio(Periodo periodo, Reais valor, TextoObrigatorio descricao)
+        private static LancamentoConta NoInicio(Periodo periodo, Reais valor, TextoObrigatorio descricao)
         {
             IdentidadeLancamento identidade = IdentidadeLancamento.Composta(periodo.Inicio).ComValor(valor).ComTexto(descricao);
-            return Lancamento.DaConta(periodo.Inicio, hora: null, valor, descricao, contraparte: null, categoriaBanco: null, identidade);
+            return LancamentoConta.Criar(periodo.Inicio, hora: null, valor, descricao, contraparte: null, categoriaBanco: null, identidade);
         }
     }
 }

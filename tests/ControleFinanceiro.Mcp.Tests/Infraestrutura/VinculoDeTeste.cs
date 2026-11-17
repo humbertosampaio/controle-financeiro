@@ -28,7 +28,7 @@ internal sealed class VinculoDeTeste
     public async Task<(Transacao Transacao, Despesa Despesa)> GravarSaidaEDespesaAsync(IFixture fixture, MesReferencia mes)
     {
         Despesa despesa = await GravarDespesaAsync(fixture, mes);
-        Transacao saida = await GravarExtratoAsync(fixture, fixture.Create<Lancamento>().SemCategoria().ComoSaida());
+        Transacao saida = await GravarExtratoAsync(fixture, fixture.Create<LancamentoConta>().SemCategoria().ComoSaida());
         return (saida, despesa);
     }
 
@@ -48,14 +48,14 @@ internal sealed class VinculoDeTeste
     }
 
     /// <summary>Grava o lançamento como um extrato de uma conta nova do usuário injetado no <paramref name="fixture"/>.</summary>
-    public async Task<Transacao> GravarExtratoAsync(IFixture fixture, Lancamento lancamento) =>
+    public async Task<Transacao> GravarExtratoAsync(IFixture fixture, LancamentoConta lancamento) =>
         (await GravarExtratoAsync(fixture, [lancamento])).Single();
 
     /// <summary>
     /// Grava os lançamentos como um extrato de uma conta nova do usuário injetado no <paramref name="fixture"/>. Uma vez
     /// por teste: a conta fica congelada no fixture.
     /// </summary>
-    public async Task<IReadOnlyList<Transacao>> GravarExtratoAsync(IFixture fixture, IReadOnlyList<Lancamento> lancamentos)
+    public async Task<IReadOnlyList<Transacao>> GravarExtratoAsync(IFixture fixture, IReadOnlyList<LancamentoConta> lancamentos)
     {
         ContaBancaria conta = fixture.Freeze<ContaBancaria>();
 

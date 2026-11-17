@@ -1,4 +1,5 @@
 using ControleFinanceiro.Domain.Cartoes;
+using ControleFinanceiro.Domain.Contas;
 using ControleFinanceiro.Domain.Importacoes;
 using ControleFinanceiro.Domain.Shared;
 using ControleFinanceiro.Domain.Shared.ValueObjects;
@@ -79,7 +80,9 @@ public sealed class Transacao : AggregateRoot<IdTransacao>, IPertenceAoUsuario
     public ReaisPositivo ValorAbsoluto => (ReaisPositivo)decimal.Abs(Valor);
 
     /// <summary>O texto do arquivo que diz quem recebeu o dinheiro de uma saída, pela regra do <see cref="Lancamento.TextoBeneficiario"/>.</summary>
-    public string? TextoBeneficiario => Lancamento.TextoBeneficiarioDe(EhSaida, Descricao, Contraparte, Origem.Tipo);
+    public string? TextoBeneficiario => EhOrigemConta
+        ? LancamentoConta.TextoBeneficiarioDe(EhSaida, Contraparte)
+        : LancamentoCartao.TextoBeneficiarioDe(EhSaida, Descricao);
 
     /// <summary>O alias do <see cref="TextoBeneficiario"/>, pela regra do <see cref="Lancamento.AliasTextoBeneficiario"/>.</summary>
     public Alias? AliasTextoBeneficiario => Alias.DoTextoOuNulo(TextoBeneficiario);
@@ -92,14 +95,14 @@ public sealed class Transacao : AggregateRoot<IdTransacao>, IPertenceAoUsuario
 
     /// <summary>
     /// Verdadeiro na saída sem parcela da fatura de um cartão. A linha sem texto de beneficiário fica de fora porque a
-    /// despesa exige um beneficiário, como no <see cref="Lancamento.EhCompraParcelada"/>. O pagamento da fatura e o estorno
+    /// despesa exige um beneficiário, como no <see cref="LancamentoCartao.EhCompraParcelada"/>. O pagamento da fatura e o estorno
     /// chegam como entrada e também ficam de fora.
     /// </summary>
     public bool EhCompraAVistaNoCartao => EhSaida && !EhParcelada && !EhOrigemConta && AliasTextoBeneficiario is not null;
 
     /// <summary>
     /// Verdadeiro quando a transação é a entrada no cartão que pagou a fatura anterior, copiado do
-    /// <see cref="Lancamento.EhPagamentoFatura"/>. A transação importada antes da marca fica falsa.
+    /// <see cref="LancamentoCartao.EhPagamentoFaturaAnterior"/>. A transação importada antes da marca fica falsa.
     /// </summary>
     public bool EhPagamentoFatura { get; private set; }
 
@@ -132,6 +135,8 @@ public sealed class Transacao : AggregateRoot<IdTransacao>, IPertenceAoUsuario
         OrigemTransacao origem,
         MesReferencia? mesVencimentoFatura,
         Lancamento lancamento,
+        Parcela? parcela,
+        bool ehPagamentoFatura,
         ChaveDeduplicacao chave)
             : base(id)
     {
@@ -144,30 +149,59 @@ public sealed class Transacao : AggregateRoot<IdTransacao>, IPertenceAoUsuario
         Valor = lancamento.Valor;
         Descricao = lancamento.Descricao;
         Contraparte = lancamento.Contraparte;
-        Parcela = lancamento.Parcela;
+        Parcela = parcela;
         CategoriaBanco = lancamento.CategoriaBanco;
-        EhPagamentoFatura = lancamento.EhPagamentoFatura;
+        EhPagamentoFatura = ehPagamentoFatura;
         Chave = chave;
     }
 
     /// <remarks>
-    /// Interno pois a <paramref name="chave"/> precisa vir de <see cref="ChaveDeduplicacao.CalcularLote"/>, com a mesma origem e o lote do
-    /// lançamento, o <paramref name="idUsuario"/> precisa ser o dono da origem e a importação precisa ser da mesma origem, e só a
-    /// <see cref="Services.LoteTransacoesContaFactory"/> e a <see cref="Services.LoteTransacoesCartaoFactory"/> garantem isso.
+    /// Interno pois a <paramref name="chave"/> precisa vir de <see cref="ChaveDeduplicacao.CalcularLote"/>, com a mesma conta e o lote do
+    /// lançamento, o <paramref name="idUsuario"/> precisa ser o dono da conta e a importação precisa ser da mesma conta, e só a
+    /// <see cref="Services.LoteTransacoesContaFactory"/> garante isso.
     /// </remarks>
-    /// <param name="mesVencimentoFatura">O mês da fatura da importação: presente no cartão e nulo na conta.</param>
-    /// <exception cref="ArgumentException">Quando a presença do mês não bate com o tipo da origem: é bug de quem chama.</exception>
-    internal static Transacao Criar(
+    internal static Transacao CriarDaConta(
         IdUsuario idUsuario,
         IdImportacao idImportacao,
-        OrigemTransacao origem,
-        MesReferencia? mesVencimentoFatura,
-        Lancamento lancamento,
+        IdConta idConta,
+        LancamentoConta lancamento,
         ChaveDeduplicacao chave)
     {
-        if ((origem.Tipo == TipoOrigem.Cartao) != (mesVencimentoFatura is not null))
-            throw new ArgumentException("Só a transação do cartão tem o mês da fatura, e ela sempre o tem.", nameof(mesVencimentoFatura));
+        return new Transacao(
+            IdTransacao.FromNewVersion7Guid(),
+            idUsuario,
+            idImportacao,
+            OrigemTransacao.DaConta(idConta),
+            mesVencimentoFatura: null,
+            lancamento,
+            parcela: null,
+            ehPagamentoFatura: false,
+            chave);
+    }
 
-        return new Transacao(IdTransacao.FromNewVersion7Guid(), idUsuario, idImportacao, origem, mesVencimentoFatura, lancamento, chave);
+    /// <remarks>
+    /// Interno pois a <paramref name="chave"/> precisa vir de <see cref="ChaveDeduplicacao.CalcularLote"/>, com o mesmo cartão e o lote do
+    /// lançamento, o <paramref name="idUsuario"/> precisa ser o dono do cartão e a importação precisa ser do mesmo cartão, e só a
+    /// <see cref="Services.LoteTransacoesCartaoFactory"/> garante isso.
+    /// </remarks>
+    /// <param name="mesVencimentoFatura">O mês da fatura da importação.</param>
+    internal static Transacao CriarDoCartao(
+        IdUsuario idUsuario,
+        IdImportacao idImportacao,
+        IdCartao idCartao,
+        MesReferencia mesVencimentoFatura,
+        LancamentoCartao lancamento,
+        ChaveDeduplicacao chave)
+    {
+        return new Transacao(
+            IdTransacao.FromNewVersion7Guid(),
+            idUsuario,
+            idImportacao,
+            OrigemTransacao.DoCartao(idCartao),
+            mesVencimentoFatura,
+            lancamento,
+            lancamento.Parcela,
+            lancamento.EhPagamentoFaturaAnterior,
+            chave);
     }
 }

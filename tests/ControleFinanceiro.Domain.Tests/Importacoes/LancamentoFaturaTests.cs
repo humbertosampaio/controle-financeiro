@@ -8,7 +8,7 @@ namespace ControleFinanceiro.Domain.Tests.Importacoes;
 public sealed class LancamentoFaturaTests
 {
     [Theory, DomainAutoData]
-    public void Criar_Deve_GuardarOLancamentoEOFinal(Lancamento lancamento, SufixoCartao sufixo)
+    public void Criar_Deve_GuardarOLancamentoEOFinal(LancamentoCartao lancamento, SufixoCartao sufixo)
     {
         LancamentoFatura result = LancamentoFatura.Criar(lancamento, sufixo);
 
@@ -17,7 +17,7 @@ public sealed class LancamentoFaturaTests
     }
 
     [Theory, DomainAutoData]
-    public void Equals_Quando_MesmosCampos_Deve_SerIgual(Lancamento lancamento, SufixoCartao sufixo)
+    public void Equals_Quando_MesmosCampos_Deve_SerIgual(LancamentoCartao lancamento, SufixoCartao sufixo)
     {
         LancamentoFatura lancamentoFatura = LancamentoFatura.Criar(lancamento, sufixo);
 

@@ -122,7 +122,7 @@ public sealed class ErrosParaModeloTests
         DespesaSimples despesa,
         DespesaSimples outra,
         TransacoesDeTeste transacoes,
-        Lancamento lancamento)
+        LancamentoConta lancamento)
     {
         Transacao transacao = transacoes.DaConta(lancamento.SemCategoria().ComoSaida());
         Erro erro = VinculoTransacaoService.Vincular(transacao, despesa, outra, cartoesDoUsuario: []).Error;
@@ -156,10 +156,10 @@ public sealed class ErrosParaModeloTests
         [Frozen] IdUsuario idUsuario,
         [Frozen] ContaBancaria conta,
         ImportacaoExtrato importacao,
-        Lancamento lancamento,
+        LancamentoConta lancamento,
         IdentidadeLancamento identidade)
     {
-        Lancamento repetido = lancamento.SemCategoria().ComIdentidade(identidade);
+        LancamentoConta repetido = lancamento.SemCategoria().ComIdentidade(identidade);
         Erro erro = LoteTransacoesContaFactory
             .Criar(idUsuario, beneficiariosDoUsuario: [], categoriasDoUsuario: [], conta, importacao, [repetido, repetido])
             .Error;

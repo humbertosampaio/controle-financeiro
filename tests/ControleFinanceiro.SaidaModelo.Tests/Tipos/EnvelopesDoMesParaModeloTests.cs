@@ -15,7 +15,7 @@ namespace ControleFinanceiro.SaidaModelo.Tests.Tipos;
 public sealed class EnvelopesDoMesParaModeloTests
 {
     [Theory, UsuarioUnicoAutoData]
-    public void SerializarTransacoes_Deve_TerOMesEAsTransacoes(TransacoesDeTeste transacoes, Lancamento lancamento)
+    public void SerializarTransacoes_Deve_TerOMesEAsTransacoes(TransacoesDeTeste transacoes, LancamentoConta lancamento)
     {
         Transacao transacao = transacoes.DaConta(lancamento.SemCategoria());
         MesReferencia mes = transacao.Data;

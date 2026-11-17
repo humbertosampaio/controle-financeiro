@@ -14,9 +14,9 @@ public sealed class ExtratoTests
         Extrato arquivo,
         DateOnly dia,
         Reais saldoBase,
-        Lancamento primeiro,
-        Lancamento segundo,
-        Lancamento terceiro)
+        LancamentoConta primeiro,
+        LancamentoConta segundo,
+        LancamentoConta terceiro)
     {
         DateOnly diaSeguinte = dia.AddDays(3);
 
@@ -34,8 +34,8 @@ public sealed class ExtratoTests
         Extrato arquivo,
         DateOnly dia,
         Reais saldoBase,
-        Lancamento primeiro,
-        Lancamento segundo)
+        LancamentoConta primeiro,
+        LancamentoConta segundo)
     {
         DateOnly diaSeguinte = dia.AddDays(1);
 
@@ -53,12 +53,12 @@ public sealed class ExtratoTests
         Extrato arquivo,
         DateOnly sabado,
         Reais saldoBase,
-        Lancamento anterior,
-        Lancamento pixSabado)
+        LancamentoConta anterior,
+        LancamentoConta pixSabado)
     {
         DateOnly sexta = sabado.AddDays(-1);
         DateOnly segunda = sabado.AddDays(2);
-        Lancamento pix = Lancamento.DaConta(
+        LancamentoConta pix = LancamentoConta.Criar(
             sabado,
             pixSabado.Hora,
             pixSabado.Valor,
@@ -81,7 +81,7 @@ public sealed class ExtratoTests
         Extrato arquivo,
         DateOnly dia,
         Reais saldo,
-        Lancamento lancamento)
+        LancamentoConta lancamento)
     {
         Result<Extrato> result = Criar(
             arquivo,
@@ -97,8 +97,8 @@ public sealed class ExtratoTests
         Extrato arquivo,
         DateOnly fim,
         Reais saldoBase,
-        Lancamento noFim,
-        Lancamento depoisDoFim)
+        LancamentoConta noFim,
+        LancamentoConta depoisDoFim)
     {
         DateOnly diaUtilSeguinte = fim.AddDays(2);
 
@@ -116,8 +116,8 @@ public sealed class ExtratoTests
         Extrato arquivo,
         DateOnly dia,
         Reais saldoBase,
-        Lancamento primeiro,
-        Lancamento segundo)
+        LancamentoConta primeiro,
+        LancamentoConta segundo)
     {
         DateOnly diaSeguinte = dia.AddDays(1);
 
@@ -135,8 +135,8 @@ public sealed class ExtratoTests
         Extrato arquivo,
         DateOnly dia,
         Reais saldo,
-        Lancamento primeiro,
-        Lancamento segundo)
+        LancamentoConta primeiro,
+        LancamentoConta segundo)
     {
         DateOnly diaSeguinte = dia.AddDays(1);
 
@@ -155,7 +155,7 @@ public sealed class ExtratoTests
         DateOnly dia,
         Reais saldo,
         Reais outroSaldo,
-        Lancamento lancamento)
+        LancamentoConta lancamento)
     {
         DateOnly diaSemRepeticao = dia.AddDays(1);
         DateOnly outroDia = dia.AddDays(2);

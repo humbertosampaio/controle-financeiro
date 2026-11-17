@@ -18,7 +18,7 @@ public static class CartoesDeTeste
         public Cartao OutroFinal(SufixoCartao sufixo) => cartao.Copiar(cartao.Banco, sufixo);
 
         /// <summary>A fatura do banco do cartão, com o vencimento e os lançamentos pedidos, todos no final dele.</summary>
-        public Fatura FaturaCom(VencimentoFatura vencimento, params Lancamento[] lancamentos)
+        public Fatura FaturaCom(VencimentoFatura vencimento, params LancamentoCartao[] lancamentos)
         {
             return Fatura
                 .Criar(cartao.Banco, vencimento, lancamentos.Select(lancamento => LancamentoFatura.Criar(lancamento, cartao.Sufixo)))

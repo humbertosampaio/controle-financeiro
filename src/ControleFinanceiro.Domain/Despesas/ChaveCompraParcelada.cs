@@ -28,7 +28,7 @@ public sealed class ChaveCompraParcelada : ValueObject
         new(transacao.Origem.IdCartao!.Value, transacao.Data, (TextoNormalizado)transacao.Descricao, transacao.Parcela!.Total);
 
     /// <param name="lancamento">Uma compra parcelada da fatura do cartão, o que quem chama já conferiu.</param>
-    internal static ChaveCompraParcelada DoLancamento(IdCartao idCartao, Lancamento lancamento) =>
+    internal static ChaveCompraParcelada DoLancamento(IdCartao idCartao, LancamentoCartao lancamento) =>
         new(idCartao, lancamento.Data, (TextoNormalizado)lancamento.Descricao, lancamento.Parcela!.Total);
 
     protected override IEnumerable<object?> GetEqualityComponents()

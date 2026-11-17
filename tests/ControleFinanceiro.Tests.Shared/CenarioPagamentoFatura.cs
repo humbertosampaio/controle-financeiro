@@ -34,7 +34,7 @@ public sealed class CenarioPagamentoFatura
     }
 
     /// <returns>As transações da fatura, na ordem das linhas.</returns>
-    public IReadOnlyList<Transacao> ImportarFatura(Cartao cartao, VencimentoFatura vencimento, params Lancamento[] linhas)
+    public IReadOnlyList<Transacao> ImportarFatura(Cartao cartao, VencimentoFatura vencimento, params LancamentoCartao[] linhas)
     {
         ImportacaoFatura importacao = ImportacaoArquivoFactory
             .Registrar(cartao, cartoesUsuario: [cartao], importacoesFaturaMes: [], _layout, _periodo, vencimento, linhas.Length, _importadaEm)
@@ -52,7 +52,7 @@ public sealed class CenarioPagamentoFatura
     /// <summary>Uma saída da conta na data e no valor do caso, com os textos e a identidade da linha gerada.</summary>
     public Transacao Saida(Lancamento linha, DateOnly data, ReaisPositivo valor)
     {
-        Lancamento lancamento = linha.NaContaComValor(data, -valor);
+        LancamentoConta lancamento = linha.NaContaComValor(data, -valor);
         ImportacaoExtrato importacao = ImportacaoArquivoFactory.Registrar(_conta, _layout, _periodo, lidas: 1, _importadaEm);
         Transacao saida = LoteTransacoesContaFactory
             .Criar(_idUsuario, BeneficiariosResolvidos.Dos(_idUsuario, [lancamento]), categoriasDoUsuario: [], _conta, importacao, [lancamento])
