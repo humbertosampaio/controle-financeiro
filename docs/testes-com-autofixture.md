@@ -21,6 +21,8 @@ Antes de escrever `new` ou chamar um método de fábrica no corpo do teste, veja
 - `LancamentoGenerator` monta o `LancamentoConta` e o `LancamentoCartao`, e não o `Lancamento` abstrato: o teste pede a filha da origem que o caso usa. O mesmo vale para toda base abstrata, que não ganha relay para uma filha escolhida.
 - `[Frozen] Banco banco` e `[Frozen] SufixoConta sufixo` fazem duas `ContaBancaria` pedidas como parâmetro terem o mesmo banco e o mesmo sufixo, em vez de duas chamadas à `ContaBancariaFactory` no corpo do teste.
 
+O método testado é chamado no corpo do teste, mesmo quando um generator já o chama: o `Registrar` da `ImportacaoArquivoFactory` é chamado no teste dela, e não recebido pronto numa `ImportacaoFatura` do `ImportacaoFaturaGenerator`, que esconderia o que está sendo testado.
+
 O teste monta o objeto à mão só quando todos os valores dele são o assunto do teste, como no texto canônico de um hash conhecido. Quando só alguns são, como em duas contas em bancos **diferentes**, ele declara esses e o resto continua gerado.
 
 ### Cada parâmetro precisa se justificar
