@@ -10,6 +10,7 @@ using ControleFinanceiro.Domain.Transacoes;
 using ControleFinanceiro.Infrastructure.Importacao.C6;
 using ControleFinanceiro.Infrastructure.Importacao.MercadoPago;
 using ControleFinanceiro.Infrastructure.Persistence;
+using ControleFinanceiro.Infrastructure.Persistence.Outbox;
 using ControleFinanceiro.Tests.Shared;
 using Microsoft.EntityFrameworkCore;
 using System.Globalization;
@@ -126,6 +127,14 @@ internal sealed class ImportacaoDeTeste
             await dbContext.Transacoes.CountAsync(),
             await dbContext.Despesas.OfType<DespesaParcelada>().CountAsync(),
             await dbContext.Despesas.OfType<DespesaAdiada>().CountAsync());
+    }
+
+    /// <summary>As mensagens do outbox, que não pertencem a um usuário e ficam fora do filtro.</summary>
+    public async Task<List<MensagemOutbox>> LerMensagensOutboxAsync()
+    {
+        await using ControleFinanceiroDbContext dbContext = _servidor.CriarDbContext(_servidor.Usuario.Id);
+
+        return await dbContext.MensagensOutbox.AsNoTracking().ToListAsync();
     }
 
     private static async Task<Extrato> LerExtratoAsync(LayoutArquivoImportacao layout, string caminho)

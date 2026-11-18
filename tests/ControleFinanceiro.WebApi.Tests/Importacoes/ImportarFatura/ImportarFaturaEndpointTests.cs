@@ -3,9 +3,11 @@ using ControleFinanceiro.Domain.Cartoes;
 using ControleFinanceiro.Domain.Categorias;
 using ControleFinanceiro.Domain.Despesas;
 using ControleFinanceiro.Domain.Importacoes;
+using ControleFinanceiro.Domain.Importacoes.Eventos;
 using ControleFinanceiro.Domain.Shared.ValueObjects;
 using ControleFinanceiro.Domain.Transacoes;
 using ControleFinanceiro.Domain.Usuarios;
+using ControleFinanceiro.Infrastructure.Persistence.Outbox;
 using ControleFinanceiro.WebApi.Endpoints.Despesas.CadastrarRecorrente;
 using ControleFinanceiro.WebApi.Endpoints.Despesas.GerarDoMes;
 using ControleFinanceiro.WebApi.Endpoints.Importacoes.ImportarFatura;
@@ -19,6 +21,7 @@ using FastEndpoints;
 using Microsoft.EntityFrameworkCore;
 using System.Net;
 using System.Net.Http.Json;
+using System.Text.Json;
 
 namespace ControleFinanceiro.WebApi.Tests.Importacoes.ImportarFatura;
 
@@ -108,6 +111,27 @@ public sealed class ImportarFaturaEndpointTests : IAsyncLifetime
         });
         transacoes.Should().OnlyContain(t => t.MesVencimentoFatura == FaturaCartaoC6.MesVencimento);
         transacoes.Sum(t => t.Valor).Should().Be(213.75m);
+    }
+
+    [Theory, ApiAutoData]
+    public async Task Post_Deve_GravarUmaMensagemPendentePorCartaoImportado(CadastrarUsuarioRequest cadastro)
+    {
+        Guid idUsuario = await _api.CadastrarUsuarioAsync(cadastro);
+        await ResolverPendenciasAsync(idUsuario, FaturaCartaoC6.Completo());
+
+        await ImportarComSucessoAsync(idUsuario, FaturaCartaoC6.Completo());
+
+        List<ImportacaoFatura> importacoes = await _api.ObterTodosAsync(db => db.Importacoes.OfType<ImportacaoFatura>());
+        List<MensagemOutbox> mensagens = await _api.ObterTodosAsync(db => db.MensagensOutbox);
+        mensagens.Should().AllSatisfy(m =>
+        {
+            m.Tipo.Should().Be("fatura-cartao-importada");
+            m.ProcessadaEm.Should().BeNull();
+            m.Tentativas.Should().Be(0);
+            m.UltimoErro.Should().BeNull();
+        });
+        mensagens.Select(m => JsonSerializer.Deserialize<FaturaCartaoImportadaEvent>(m.Conteudo)).Should().BeEquivalentTo(
+            importacoes.Select(i => new FaturaCartaoImportadaEvent(IdUsuario.From(idUsuario), i.Id, i.IdCartao)));
     }
 
     [Theory, ApiAutoData]
