@@ -48,7 +48,8 @@ O resto o `revisor-convencoes` cobra.
 ## Texto e SmartEnum
 
 - **Texto fixo num lugar só.** A mensagem fixa que o domínio define chega às outras camadas pelo `Result` ou pelo `Erro` que a carrega, e nenhuma camada a redefine nem a guarda numa constante para repetir: o `Fatura.ConferirPagamentoAnterior` falha com o próprio texto, a API lê o `.Error`, e a saída para o modelo o recebe como `DocumentoMascarado`. Só tem texto próprio a saída cuja mensagem de domínio traz valores, como a da soma do período. Nos testes, o assert copia o texto literal, para não conferir o resultado com o mesmo código que o produziu.
-- **Código e nome de SmartEnum vêm do SmartEnum.** O texto que cita um SmartEnum usa o `.Value` para o código (`$"O layout {LayoutArquivoImportacao.C6CartaoCsv.Value} pede..."`) e o próprio SmartEnum, sem `.Value`, para o nome, e nunca o literal, inclusive no comentário XML, que usa `<see cref>`. Ficam de fora o atributo, que exige constante, e o assert de teste.
+- **Nome de código vem do código**, para o rename levá-lo junto: `nameof` na string interpolada e no assert (`$"O evento {tipo.Name} não declara o {nameof(DomainEventNameAttribute)}."`), e `<see cref>`, e não `<c>`, no comentário XML. Fica o literal quando o `nameof` piora a leitura e o teste já falha no rename (o `"Classe.Propriedade"` do FluentValidation). O nome gravado como dado, como o do `DomainEventName`, é contrato, e não nome de código: o assert o copia literal.
+- **Código e nome de SmartEnum vêm do SmartEnum.** O texto que cita um SmartEnum usa o `.Value` para o código (`$"O layout {LayoutArquivoImportacao.C6CartaoCsv.Value} pede..."`) e o próprio SmartEnum, sem `.Value`, para o nome, e nunca o literal. Ficam de fora o atributo, que exige constante, e o assert de teste.
 
 ## Injeção de dependência
 
