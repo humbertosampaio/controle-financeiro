@@ -324,5 +324,6 @@ public sealed class PreVisualizarFaturaEndpointTests : IAsyncLifetime
         (await _api.ObterTodosAsync(db => db.Importacoes)).Should().BeEmpty();
         (await _api.ObterTodosAsync(db => db.Beneficiarios)).Should().BeEmpty();
         (await _api.ObterTodosAsync(db => db.Categorias)).Should().ContainSingle().Which.EhOutros.Should().BeTrue();
+        (await _api.ObterTodosAsync(db => db.MensagensOutbox)).Should().BeEmpty();
     }
 }

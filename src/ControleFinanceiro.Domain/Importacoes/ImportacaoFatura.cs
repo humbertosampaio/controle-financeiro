@@ -1,4 +1,5 @@
 using ControleFinanceiro.Domain.Cartoes;
+using ControleFinanceiro.Domain.Importacoes.Eventos;
 using ControleFinanceiro.Domain.Shared.ValueObjects;
 using ControleFinanceiro.Domain.Usuarios;
 
@@ -34,6 +35,7 @@ public sealed class ImportacaoFatura : ImportacaoArquivo
         Vencimento = vencimento;
     }
 
+    /// <summary>Registra a importação e o <see cref="FaturaCartaoImportadaEvent"/> dela.</summary>
     /// <param name="lidas">Quantos lançamentos o arquivo trazia.</param>
     /// <remarks>
     /// Interno pois o <paramref name="idUsuario"/> precisa ser o dono do cartão, e só a
@@ -48,7 +50,10 @@ public sealed class ImportacaoFatura : ImportacaoArquivo
         int lidas,
         DateTimeOffset importadaEm)
     {
-        return new ImportacaoFatura(IdImportacao.FromNewVersion7Guid(), idUsuario, idCartao, layout, periodo, vencimento, lidas, importadaEm);
+        ImportacaoFatura importacao = new(IdImportacao.FromNewVersion7Guid(), idUsuario, idCartao, layout, periodo, vencimento, lidas, importadaEm);
+        importacao.RegistrarEvento(new FaturaCartaoImportadaEvent(idUsuario, importacao.Id, idCartao));
+
+        return importacao;
     }
 
     /// <summary>

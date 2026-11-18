@@ -2,6 +2,7 @@ using AutoFixture.Xunit2;
 using ControleFinanceiro.Domain.Cartoes;
 using ControleFinanceiro.Domain.Contas;
 using ControleFinanceiro.Domain.Importacoes;
+using ControleFinanceiro.Domain.Importacoes.Eventos;
 using ControleFinanceiro.Domain.Services;
 using ControleFinanceiro.Domain.Shared;
 using ControleFinanceiro.Domain.Shared.ValueObjects;
@@ -48,6 +49,35 @@ public sealed class ImportacaoArquivoFactoryTests
         result.IdCartao.Should().Be(cartao.Id);
         result.Vencimento.Should().Be(vencimento);
         result.MesVencimento.Should().Be(vencimento.Mes);
+    }
+
+    [Theory, DomainAutoData]
+    public void Registrar_Quando_Cartao_Deve_RegistrarFaturaCartaoImportadaEvent(
+        Cartao cartao,
+        LayoutArquivoImportacao layout,
+        Periodo periodo,
+        VencimentoFatura vencimento,
+        byte lidas,
+        DateTimeOffset importadaEm)
+    {
+        ImportacaoFatura result = ImportacaoArquivoFactory
+            .Registrar(cartao, cartoesUsuario: [cartao], importacoesFaturaMes: [], layout, periodo, vencimento, lidas, importadaEm)
+            .Value;
+
+        result.Eventos.Should().Equal(new FaturaCartaoImportadaEvent(cartao.IdUsuario, result.Id, cartao.Id));
+    }
+
+    [Theory, DomainAutoData]
+    public void Registrar_Quando_Conta_Deve_FicarSemEventos(
+        ContaBancaria conta,
+        LayoutArquivoImportacao layout,
+        Periodo periodo,
+        byte lidas,
+        DateTimeOffset importadaEm)
+    {
+        ImportacaoExtrato result = ImportacaoArquivoFactory.Registrar(conta, layout, periodo, lidas, importadaEm);
+
+        result.Eventos.Should().BeEmpty();
     }
 
     [Theory, DomainAutoData]

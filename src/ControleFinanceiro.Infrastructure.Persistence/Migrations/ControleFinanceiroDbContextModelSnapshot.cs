@@ -594,6 +594,54 @@ namespace ControleFinanceiro.Infrastructure.Persistence.Migrations
                         });
                 });
 
+            modelBuilder.Entity("ControleFinanceiro.Infrastructure.Persistence.Outbox.MensagemOutbox", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<string>("Conteudo")
+                        .IsRequired()
+                        .HasColumnType("jsonb")
+                        .HasColumnName("conteudo");
+
+                    b.Property<DateTimeOffset?>("ProcessadaEm")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("processada_em");
+
+                    b.Property<DateTimeOffset>("RegistradaEm")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("registrada_em");
+
+                    b.Property<int>("Tentativas")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasDefaultValue(0)
+                        .HasColumnName("tentativas");
+
+                    b.Property<string>("Tipo")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("tipo");
+
+                    b.Property<string>("UltimoErro")
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)")
+                        .HasColumnName("ultimo_erro");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Tentativas", "RegistradaEm")
+                        .HasDatabaseName("IX_mensagens_outbox_pendentes")
+                        .HasFilter("processada_em IS NULL");
+
+                    b.ToTable("mensagens_outbox", null, t =>
+                        {
+                            t.HasCheckConstraint("CK_mensagens_outbox_tentativas", "tentativas >= 0");
+                        });
+                });
+
             modelBuilder.Entity("ControleFinanceiro.Domain.Despesas.DespesaInteira", b =>
                 {
                     b.HasBaseType("ControleFinanceiro.Domain.Despesas.Despesa");

@@ -13,11 +13,13 @@ using ControleFinanceiro.Infrastructure.Persistence.Categorias;
 using ControleFinanceiro.Infrastructure.Persistence.Contas;
 using ControleFinanceiro.Infrastructure.Persistence.Despesas;
 using ControleFinanceiro.Infrastructure.Persistence.Importacoes;
+using ControleFinanceiro.Infrastructure.Persistence.Outbox;
 using ControleFinanceiro.Infrastructure.Persistence.Transacoes;
 using ControleFinanceiro.Infrastructure.Persistence.Usuarios;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 
 namespace ControleFinanceiro.Infrastructure.Persistence;
 
@@ -38,8 +40,12 @@ public static class DependencyInjection
                     connectionString,
                     npgsql => npgsql.UseQuerySplittingBehavior(QuerySplittingBehavior.SplitQuery)));
 
+            // O host pode registrar outro relógio antes; o outbox só precisa de um.
+            services.TryAddSingleton(TimeProvider.System);
+
             return services
                 .AddTransient<IUnitOfWork, EntityFrameworkUnitOfWork>()
+                .AddTransient<MensagemOutboxRepository>()
                 .AddTransient<IUsuarioRepository, UsuarioRepository>()
                 .AddTransient<ICartaoRepository, CartaoRepository>()
                 .AddTransient<IContaRepository, ContaRepository>()

@@ -5,10 +5,12 @@ using ControleFinanceiro.Domain.Categorias;
 using ControleFinanceiro.Domain.Contas;
 using ControleFinanceiro.Domain.Despesas;
 using ControleFinanceiro.Domain.Importacoes;
+using ControleFinanceiro.Domain.Shared;
 using ControleFinanceiro.Domain.Shared.ValueObjects;
 using ControleFinanceiro.Domain.Transacoes;
 using ControleFinanceiro.Domain.Usuarios;
 using ControleFinanceiro.Infrastructure.Persistence.Conventions;
+using ControleFinanceiro.Infrastructure.Persistence.Outbox;
 using ControleFinanceiro.Infrastructure.Persistence.ValueConverters;
 using ControleFinanceiro.Infrastructure.Persistence.ValueConverters.ValueObjects;
 using Microsoft.EntityFrameworkCore;
@@ -42,6 +44,7 @@ public sealed class ControleFinanceiroDbContext : DbContext
     public DbSet<CategoriaDespesa> Categorias => Set<CategoriaDespesa>();
     public DbSet<DespesaRecorrente> DespesasRecorrentes => Set<DespesaRecorrente>();
     public DbSet<Despesa> Despesas => Set<Despesa>();
+    public DbSet<MensagemOutbox> MensagensOutbox => Set<MensagemOutbox>();
 
     /// <summary>Lido pelo filtro a cada consulta: o EF troca o <c>this</c> da expressão pela instância corrente.</summary>
     private IdUsuario IdUsuarioAtual => _usuarioAtual.Id;
@@ -50,6 +53,7 @@ public sealed class ControleFinanceiroDbContext : DbContext
     {
         modelBuilder.ApplyConfigurationsFromAssembly(_assembly);
         FiltrarPeloUsuarioAtual(modelBuilder);
+        IgnorarEventos(modelBuilder);
     }
 
     protected override void ConfigureConventions(ModelConfigurationBuilder configurationBuilder)
@@ -80,7 +84,7 @@ public sealed class ControleFinanceiroDbContext : DbContext
     private void FiltrarPeloUsuarioAtual(ModelBuilder modelBuilder)
     {
         IEnumerable<IMutableEntityType> doUsuario = modelBuilder.Model.GetEntityTypes()
-            .Where(tipo => typeof(IPertenceAoUsuario).IsAssignableFrom(tipo.ClrType))
+            .Where(tipo => tipo.ClrType.IsAssignableTo(typeof(IPertenceAoUsuario)))
             .Where(tipo => tipo.BaseType is null && !tipo.IsOwned());
 
         foreach (IMutableEntityType tipo in doUsuario)
@@ -92,5 +96,19 @@ public sealed class ControleFinanceiroDbContext : DbContext
 
             modelBuilder.Entity(tipo.ClrType).HasQueryFilter(FiltroUsuario, Expression.Lambda(doUsuarioAtual, entidade));
         }
+    }
+
+    /// <summary>
+    /// Tira do modelo os eventos de toda raiz que implementa <see cref="IAggregateRoot"/>: eles vão para o outbox no
+    /// commit, e não para uma coluna. O <see cref="Microsoft.EntityFrameworkCore.Metadata.Builders.EntityTypeBuilder.Ignore(string)"/> vai só na raiz da hierarquia e vale para os tipos derivados.
+    /// </summary>
+    private static void IgnorarEventos(ModelBuilder modelBuilder)
+    {
+        IEnumerable<IMutableEntityType> raizes = modelBuilder.Model.GetEntityTypes()
+            .Where(tipo => tipo.ClrType.IsAssignableTo(typeof(IAggregateRoot)))
+            .Where(tipo => tipo.BaseType is null && !tipo.IsOwned());
+
+        foreach (IMutableEntityType tipo in raizes.ToArray())
+            modelBuilder.Entity(tipo.ClrType).Ignore(nameof(IAggregateRoot.Eventos));
     }
 }

@@ -93,14 +93,15 @@ As camadas de fora reagem aos tipos (o endpoint mapeia cada um para um status nu
 
 Quando alterar um agregado precisa mudar outro de tipo diferente (a seção 2 proíbe fazer os dois no mesmo caso de uso), o efeito vai por **evento de domínio**: o primeiro agregado registra que algo aconteceu, e um tratador altera o segundo, depois, na sua própria transação. A consistência entre os dois é eventual.
 
-**Esse mecanismo ainda não existe.** No primeiro caso real, abra uma issue para desenhá-lo antes de implementar. O ponto de partida:
+O mecanismo nasceu na #160, com a conciliação das parcelas depois de cada fatura importada:
 
-- a raiz registra os eventos numa lista própria, preenchida pelos métodos que mudam o estado;
-- os eventos são despachados depois do commit, para que um tratador nunca veja estado que não foi gravado;
-- o despacho começa dentro do próprio processo. Se perder um evento não for aceitável, os eventos vão para uma tabela de outbox na mesma transação do agregado e são publicados depois;
-- um broker (RabbitMQ, Kafka ou parecido) só entra quando houver outro processo para consumir os eventos.
+- **A raiz registra o evento.** A `AggregateRoot<TId>` guarda a lista (`Eventos`), e o método que muda o estado chama o `RegistrarEvento`, como o `ImportacaoFatura.Registrar`, que registra o `FaturaCartaoImportadaEvent`. A Persistence lê a lista pelo `IAggregateRoot`, sem conhecer o tipo do id, e o `LimparEventos` fica explícito na interface, fora da API pública da raiz.
+- **O commit grava o evento no outbox.** O `EntityFrameworkUnitOfWork.CommitAsync` junta os eventos das raízes do `ChangeTracker`, grava uma `MensagemOutbox` por evento na tabela `mensagens_outbox`, na mesma transação dos agregados, e limpa os eventos antes do `SaveChanges`, para um commit repetido não gravar a mesma mensagem de novo. O evento que não chega ao `CommitAsync` (a prévia, a importação que falha) não é gravado. O conteúdo é o JSON do evento, e o tipo, o nome estável que o evento declara no `DomainEventNameAttribute` (`[DomainEventName("fatura-cartao-importada")]`), e não o da classe: renomear o evento não deixa sem tipo as mensagens já gravadas. O nome declarado nunca muda, e o evento gravado só ganha campos; mudança incompatível pede evento novo ou o outbox drenado antes do deploy.
+- **Um processo à parte trata a mensagem depois** (o worker da #215; até lá, as mensagens ficam pendentes), na transação do tratador, e a marca como processada no mesmo commit, para que um tratador nunca veja estado que não foi gravado e um evento não se perca. Um broker (RabbitMQ, Kafka ou parecido) só entra quando houver outro sistema para consumir os eventos.
 
-Até lá, uma feature que precise disso para no plano.
+O evento é um fato: um `sealed record` sem invariante nem derivação, com o nome no particípio e o sufixo `Event` (`FaturaCartaoImportadaEvent`), na pasta `Eventos/` do agregado que o registra, com os dados do fato que o tratador precisa, e outro agregado referenciado pelo id da raiz (seção 1). O evento de um agregado do usuário implementa o `IPertenceAoUsuario`, para o tratador saber de quem é. O `NomesCamadaTests` confere o sufixo e que cada evento declara um nome estável só dele.
+
+O tratador mora na Application, em `<Area>/Eventos/`, com o sufixo `EventHandler`, e altera agregados de um tipo só, como qualquer caso de uso (seção 2). Ele é achado pela DI pelo tipo do evento, sem `switch`: evento novo é a classe do evento e a do tratador.
 
 ## 7. Value objects e ids
 

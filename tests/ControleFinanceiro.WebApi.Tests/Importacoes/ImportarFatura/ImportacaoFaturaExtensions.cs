@@ -91,6 +91,7 @@ internal static class ImportacaoFaturaExtensions
             (await api.ObterTodosAsync(db => db.Transacoes)).Should().BeEmpty();
             (await api.ObterTodosAsync(db => db.Importacoes)).Should().BeEmpty();
             (await api.ObterTodosAsync(db => db.Despesas)).Should().BeEmpty();
+            (await api.ObterTodosAsync(db => db.MensagensOutbox)).Should().BeEmpty();
         }
     }
 }

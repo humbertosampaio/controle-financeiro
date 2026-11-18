@@ -2,6 +2,8 @@ using AutoFixture;
 using ControleFinanceiro.Application.IA.Saida;
 using ControleFinanceiro.Domain.Cartoes;
 using ControleFinanceiro.Domain.Importacoes;
+using ControleFinanceiro.Domain.Importacoes.Eventos;
+using ControleFinanceiro.Infrastructure.Persistence.Outbox;
 using ControleFinanceiro.Mcp.Tests.Infraestrutura;
 using ControleFinanceiro.Tests.Shared.AutoFixture.Attributes;
 using ControleFinanceiro.Tests.Shared.Respostas;
@@ -134,6 +136,37 @@ public sealed class ConfirmarImportacaoToolTests : IAsyncLifetime
             Transacoes: importacao.Novas,
             importacao.DespesasParceladas,
             importacao.DespesasAdiadas));
+    }
+
+    [Theory]
+    [InlineData("c6-cartao-csv", ImportacaoDeTeste.FaturaC6)]
+    [InlineData("mercado-pago-cartao-csv", ImportacaoDeTeste.FaturaMercadoPago)]
+    public async Task Confirmar_Quando_Fatura_Deve_GravarUmaMensagemPendentePorCartao(string codigoLayout, string caminho)
+    {
+        LayoutArquivoImportacao layout = LayoutArquivoImportacao.FromValue(codigoLayout);
+        await _importacao.ResolverAsync(layout, caminho);
+        string resumo = await PreverAsync(layout, caminho);
+
+        CallToolResult resultado = await _servidor.ClienteMcp.ConfirmarImportacaoAsync(layout, resumo, caminho);
+
+        ImportacaoLida importacao = new(resultado.Json);
+        List<MensagemOutbox> mensagens = await _importacao.LerMensagensOutboxAsync();
+        mensagens.Should().HaveCount(importacao.Finais.Count).And.AllSatisfy(m =>
+        {
+            m.Tipo.Should().Be("fatura-cartao-importada");
+            m.ProcessadaEm.Should().BeNull();
+            JsonSerializer.Deserialize<FaturaCartaoImportadaEvent>(m.Conteudo)!.IdUsuario.Should().Be(_servidor.Usuario.Id);
+        });
+    }
+
+    [Fact]
+    public async Task Prever_Quando_Fatura_Deve_NaoGravarMensagem()
+    {
+        await _importacao.ResolverAsync(LayoutArquivoImportacao.C6CartaoCsv, ImportacaoDeTeste.FaturaC6);
+
+        await PreverAsync(LayoutArquivoImportacao.C6CartaoCsv, ImportacaoDeTeste.FaturaC6);
+
+        (await _importacao.LerMensagensOutboxAsync()).Should().BeEmpty();
     }
 
     [Fact]

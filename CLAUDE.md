@@ -70,7 +70,7 @@ O Claude Code carrega o `CLAUDE.md` da pasta do arquivo que lê. Os agentes e a 
 
 Valem no repositório inteiro:
 
-- **PT-BR em tudo**: domínio, identificadores (`Usuario`, `Despesa`, `MesReferencia`), mensagens, commits, issues, PRs e comentários. Termos técnicos consagrados ficam em inglês (`Result`, `Repository`, `Endpoint`).
+- **PT-BR em tudo**: domínio, identificadores (`Usuario`, `Despesa`, `MesReferencia`), mensagens, commits, issues, PRs e comentários. Termos técnicos consagrados ficam em inglês (`Result`, `Repository`, `Endpoint`, `AggregateRoot`, `DomainEvent`, `EventHandler`, `Dispatcher`).
 - **Siga o exemplo existente**: antes de criar algo, leia o análogo mais próximo e cite-o no plano. Não invente API nem pacote. Dependência nova pede justificativa e confirmação.
 
 ## Comandos
